@@ -26,7 +26,7 @@ export function SchoolCalendarWidget({
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
           <CalendarDays className="h-5 w-5 text-[color:var(--school-primary)]" aria-hidden="true" />
-          Calendário escolar
+          Calendário compartilhado
         </CardTitle>
         <Link href="/dashboard/calendario">
           <Button variant="ghost" size="sm" className="gap-1">

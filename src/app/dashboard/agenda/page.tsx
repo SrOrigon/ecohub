@@ -36,7 +36,7 @@ export default async function AgendaPage({
         <Link href="/dashboard/calendario">
           <Button variant="outline" className="gap-2">
             <CalendarDays className="h-4 w-4" aria-hidden="true" />
-            Calendário escolar
+            Agenda compartilhada
           </Button>
         </Link>
       </PageHeader>

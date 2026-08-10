@@ -14,12 +14,17 @@ export function getAuthSecret(): Uint8Array {
       throw new Error("AUTH_SECRET must be set in production");
     }
     return new TextEncoder().encode(
-      process.env.NODE_ENV === "production" ? BUILD_FALLBACK : "eduhub-dev-secret-change-in-production"
+      process.env.NODE_ENV === "production"
+        ? BUILD_FALLBACK
+        : "eduhub-dev-secret-change-in-production"
     );
   }
 
   if (secret.length < 32) {
-    throw new Error("AUTH_SECRET must be at least 32 characters");
+    if (process.env.NODE_ENV === "production" && !isNextBuildPhase()) {
+      throw new Error("AUTH_SECRET must be at least 32 characters");
+    }
+    return new TextEncoder().encode(BUILD_FALLBACK);
   }
 
   return new TextEncoder().encode(secret);

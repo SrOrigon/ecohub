@@ -11,6 +11,7 @@ import { formatSchoolDays, getTodaySchoolStatus } from "@/lib/school-calendar";
 import { formatDate } from "@/lib/utils";
 import { redirect } from "next/navigation";
 import { NotebookPen } from "lucide-react";
+import { SharedCalendarManager } from "@/components/school/shared-calendar-manager";
 
 export default async function CalendarioPage() {
   const user = await getSessionUser();
@@ -20,6 +21,8 @@ export default async function CalendarioPage() {
     getSchoolSettings(user.schoolId),
     fetchPersonalNotesForUser(user, user.id),
   ]);
+  const canManageItems = ["admin", "director", "secretary", "teacher"].includes(user.role);
+  const canManageMeta = ["admin", "director", "secretary"].includes(user.role);
   const today = getTodaySchoolStatus(settings);
   const todayStr = new Date().toISOString().split("T")[0];
   const todayPersonalNotes = notes.filter((n) => n.date === todayStr);
@@ -40,8 +43,8 @@ export default async function CalendarioPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Calendário escolar"
-        description={settings.branding.tagline || "Datas, horários e eventos da instituição"}
+        title="Agenda compartilhada"
+        description="Feriados, eventos e datas importantes da escola — visíveis para todos."
       >
         <Link href="/dashboard/agenda">
           <Button variant="outline" className="gap-2">
@@ -109,6 +112,12 @@ export default async function CalendarioPage() {
         </Card>
       )}
 
+      <SharedCalendarManager
+        settings={settings}
+        canManageItems={canManageItems}
+        canManageMeta={canManageMeta}
+      />
+
       <SchoolCalendarWidget settings={settings} />
 
       <Card>
@@ -118,7 +127,8 @@ export default async function CalendarioPage() {
         <CardContent>
           {allItems.length === 0 ? (
             <p className="text-[var(--muted-foreground)]">
-              Nenhum item cadastrado. Configure em Configurações.
+              Nenhum item cadastrado ainda.
+              {canManageItems ? " Use o formulário acima para publicar feriados e eventos." : ""}
             </p>
           ) : (
             <ul className="space-y-2">

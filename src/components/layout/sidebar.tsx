@@ -67,7 +67,7 @@ const allNavItems: NavItem[] = [
   { href: "/dashboard/boletim", label: "Meu boletim", icon: FileText, roles: ["student"] },
   { href: "/dashboard/responsavel", label: "Meus Filhos", icon: Heart, roles: ["parent"] },
   { href: "/dashboard/assistente", label: "EduHub IA", icon: Bot, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
-  { href: "/dashboard/calendario", label: "Calendário", icon: CalendarDays, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
+  { href: "/dashboard/calendario", label: "Agenda compartilhada", icon: CalendarDays, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/agenda", label: "Minha agenda", icon: NotebookPen, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/alunos", label: "Alunos", icon: Users, roles: ["admin", "director", "secretary", "teacher"] },
   { href: "/dashboard/turmas", label: "Turmas", icon: GraduationCap, roles: ["admin", "director", "secretary", "teacher"] },
