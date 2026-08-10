@@ -24,7 +24,7 @@ export function TeacherInvitePanel({ invites }: { invites: InviteRow[] }) {
   const [copied, setCopied] = useState(false);
 
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string; success?: boolean; url?: string; token?: string } | null, formData: FormData) => {
+    async (_prev: { error?: string; success?: boolean; url?: string; token?: string; emailSent?: boolean; emailSkipped?: boolean } | null, formData: FormData) => {
       const result = await createTeacherInviteAction(formData);
       if (result.success && result.url && result.token) {
         setLastInvite({ url: result.url, token: result.token });
@@ -78,6 +78,14 @@ export function TeacherInvitePanel({ invites }: { invites: InviteRow[] }) {
         {(lastInvite || state?.url) && (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
             <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">Convite criado!</p>
+            {state?.emailSent && (
+              <p className="mt-1 text-sm text-emerald-800 dark:text-emerald-300">E-mail enviado ao convidado.</p>
+            )}
+            {state?.emailSkipped && (
+              <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+                E-mail não configurado (RESEND_API_KEY) — copie o link abaixo.
+              </p>
+            )}
             <p className="mt-1 break-all font-mono text-xs">{lastInvite?.url ?? state?.url}</p>
             <Button
               type="button"

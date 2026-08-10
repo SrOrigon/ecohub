@@ -15,9 +15,11 @@ interface TeacherOption {
 
 export function CreateClassForm({
   teachers = [],
+  allTeachers = [],
   teacherMode = false,
 }: {
   teachers?: TeacherOption[];
+  allTeachers?: TeacherOption[];
   teacherMode?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -64,6 +66,19 @@ export function CreateClassForm({
                   <option key={t.id} value={t.id}>{t.fullName}</option>
                 ))}
               </Select>
+            </div>
+          )}
+          {!teacherMode && allTeachers.length > 1 && (
+            <div>
+              <Label>Co-docentes (opcional)</Label>
+              <div className="mt-2 flex flex-wrap gap-3">
+                {allTeachers.map((t) => (
+                  <label key={t.id} className="flex items-center gap-1.5 text-sm">
+                    <input type="checkbox" name="coTeacherIds" value={t.id} />
+                    {t.fullName}
+                  </label>
+                ))}
+              </div>
             </div>
           )}
           {state?.error && <p className="text-sm text-red-600">{state.error}</p>}

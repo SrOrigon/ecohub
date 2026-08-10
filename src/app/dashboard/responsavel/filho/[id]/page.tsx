@@ -16,6 +16,7 @@ import { formatDate } from "@/lib/utils";
 import { ATTENDANCE_LABELS, OCCURRENCE_LABELS, type AttendanceStatus, type OccurrenceKind } from "@/lib/constants";
 import { getOccurrencesForStudent } from "@/actions/diary";
 import { getHomeTasksForStudent } from "@/actions/home-tasks";
+import { JustifyAbsencePanel } from "@/components/parents/justify-absence-form";
 import { CreateHomeTaskForm } from "@/components/forms/create-home-task-form";
 import { ParentHomeTasksPanel } from "@/components/home-tasks/parent-home-tasks-panel";
 import { notFound, redirect } from "next/navigation";
@@ -164,15 +165,29 @@ export default async function FilhoDetailPage({ params }: { params: Promise<{ id
 
         <Card>
           <CardHeader><CardTitle>Frequência recente</CardTitle></CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <JustifyAbsencePanel
+              studentId={student.id}
+              absences={student.attendance.map((a) => ({
+                id: a.id,
+                date: a.date,
+                status: a.status,
+                justificationNote: a.justificationNote,
+              }))}
+            />
             {student.attendance.length === 0 ? (
               <EmptyState title="Sem registros" description="A frequência aparecerá após a chamada." className="py-6" />
             ) : (
               <ul className="space-y-2 text-sm">
                 {student.attendance.map((a) => (
-                  <li key={a.id} className="flex justify-between border-b border-slate-100 py-2">
-                    <span>{formatDate(a.date)}</span>
-                    <Badge>{attendanceLabel(a.status)}</Badge>
+                  <li key={a.id} className="border-b border-slate-100 py-2">
+                    <div className="flex justify-between gap-2">
+                      <span>{formatDate(a.date)}</span>
+                      <Badge>{attendanceLabel(a.status)}</Badge>
+                    </div>
+                    {a.justificationNote && (
+                      <p className="mt-1 text-xs text-slate-500">{a.justificationNote}</p>
+                    )}
                   </li>
                 ))}
               </ul>

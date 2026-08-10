@@ -16,6 +16,7 @@ import {
 } from "@/lib/security/rate-limit";
 import { validatePassword } from "@/lib/security/password-policy";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
+import { sendEmail } from "@/lib/email";
 
 const INVITE_TTL_DAYS = 14;
 
@@ -59,11 +60,35 @@ export async function createTeacherInviteAction(formData: FormData) {
   });
 
   revalidateInvites();
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "";
+  const invitePath = `/convite/professor/${invite.token}`;
+  const fullUrl = baseUrl ? `${baseUrl.replace(/\/$/, "")}${invitePath}` : invitePath;
+
+  let emailSent = false;
+  let emailSkipped = false;
+  if (email) {
+    const result = await sendEmail({
+      to: email,
+      subject: `Convite para professor — ${school.name}`,
+      html: `
+        <p>Olá,</p>
+        <p>Você foi convidado(a) para lecionar em <strong>${school.name}</strong> no EduHub.</p>
+        <p><a href="${fullUrl}">Clique aqui para aceitar o convite</a> (válido por ${INVITE_TTL_DAYS} dias).</p>
+        <p>Se o link não abrir, copie e cole no navegador:<br/><code>${fullUrl}</code></p>
+      `,
+    });
+    emailSent = result.sent;
+    emailSkipped = !!result.skipped;
+  }
+
   return {
     success: true,
     token: invite.token,
-    url: `/convite/professor/${invite.token}`,
+    url: invitePath,
     expiresAt: invite.expiresAt.toISOString(),
+    emailSent,
+    emailSkipped,
   };
 }
 

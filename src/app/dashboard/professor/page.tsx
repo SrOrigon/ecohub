@@ -17,8 +17,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { UserIdentity } from "@/components/profile/user-identity";
 import { RankingList } from "@/components/profile/ranking-list";
-import { redirect } from "next/navigation";
+import { TeacherDayOverview } from "@/components/teacher/teacher-day-overview";
+import { BulkCompleteMissionsForm } from "@/components/forms/bulk-complete-missions-form";
+import { getTeacherDayOverview } from "@/lib/teacher-day";
+import { getPendingMissionConfirmations } from "@/lib/mission-requests";
+import { teacherClassWhere } from "@/lib/teacher-classes";
 import { BookOpen, ClipboardList, Users, Medal, PenLine, AlertCircle, Settings2 } from "lucide-react";
+import { redirect } from "next/navigation";
 
 export default async function TeacherDashboardPage() {
   const user = await getSessionUser();
@@ -26,7 +31,7 @@ export default async function TeacherDashboardPage() {
   if (user.role !== "teacher") redirect("/dashboard");
 
   const myClasses = await prisma.classGroup.findMany({
-    where: { teacherId: user.id },
+    where: { schoolId: user.schoolId ?? undefined, ...teacherClassWhere(user.id) },
     include: {
       students: { include: { user: { select: { fullName: true, avatarUrl: true } }, grades: { select: { value: true } } } },
       _count: { select: { students: true } },
@@ -34,13 +39,25 @@ export default async function TeacherDashboardPage() {
   });
 
   const totalStudents = myClasses.reduce((s, c) => s + c._count.students, 0);
-  const [ranking, exercises, settings, agenda, teacherClasses] = await Promise.all([
+  const [ranking, exercises, settings, agenda, teacherClasses, dayOverview, pendingMissions] = await Promise.all([
     getRanking(user.schoolId),
     getExercisesForUser(user),
     getSchoolSettings(user.schoolId),
     getTodayAgendaForTeacher(user, user.schoolId),
     getTeacherClasses(user),
+    user.schoolId ? getTeacherDayOverview(user.schoolId, user.id) : Promise.resolve([]),
+    user.schoolId ? getPendingMissionConfirmations(user.schoolId, user.id) : Promise.resolve([]),
   ]);
+
+  const pendingItems = pendingMissions.map((pm) => ({
+    studentId: pm.studentId,
+    missionId: pm.missionId,
+    studentName: pm.student.user.fullName,
+    className: pm.student.classGroup?.name ?? null,
+    missionTitle: pm.mission.title,
+    xpReward: pm.mission.xpReward,
+    coinReward: pm.mission.coinReward,
+  }));
 
   const canCreateClass = hasPermission(user.role, settings, "teacher.createClasses");
 
@@ -92,6 +109,19 @@ export default async function TeacherDashboardPage() {
         title="Sua agenda de hoje"
         subtitle={`${agenda.classCount} turma(s) · ${agenda.items.filter((i) => !i.done).length} pendência(s)`}
       />
+
+      <TeacherDayOverview classes={dayOverview} />
+
+      {pendingItems.length > 0 && (
+        <Card className="border-indigo-200">
+          <CardHeader>
+            <CardTitle className="text-lg">Missões aguardando confirmação</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BulkCompleteMissionsForm items={pendingItems} />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>

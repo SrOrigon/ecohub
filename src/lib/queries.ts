@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import type { SessionUser } from "@/lib/auth";
+import { teacherClassWhere } from "@/lib/teacher-classes";
 
 export async function getDashboardStats(schoolId: string | null) {
   if (!schoolId) {
@@ -211,10 +212,13 @@ export async function getClasses(schoolId: string | null, teacherId?: string) {
   return prisma.classGroup.findMany({
     where: {
       schoolId,
-      ...(teacherId ? { teacherId } : {}),
+      ...(teacherId ? teacherClassWhere(teacherId) : {}),
     },
     include: {
-      teacher: { select: { fullName: true, avatarUrl: true } },
+      teacher: { select: { id: true, fullName: true, avatarUrl: true } },
+      coTeachers: {
+        include: { teacher: { select: { id: true, fullName: true, avatarUrl: true } } },
+      },
       students: { include: { user: { select: { fullName: true, avatarUrl: true } } } },
       _count: { select: { students: true } },
     },
@@ -248,6 +252,7 @@ export async function getAttendance(schoolId: string | null, date?: Date) {
     include: {
       student: { include: { user: { select: { fullName: true } } } },
       classGroup: { select: { name: true } },
+      justifiedBy: { select: { fullName: true } },
     },
     orderBy: { student: { user: { fullName: "asc" } } },
   });

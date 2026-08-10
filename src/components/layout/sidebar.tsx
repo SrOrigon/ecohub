@@ -27,6 +27,7 @@ import {
   Activity,
   Flag,
   FileText,
+  Shield,
 } from "lucide-react";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -130,6 +131,7 @@ function NavLinks({
   permissions,
   features,
   kidFriendly,
+  showPlatformAdmin,
   onNavigate,
 }: {
   pathname: string;
@@ -137,6 +139,7 @@ function NavLinks({
   permissions: SchoolSettings["permissions"];
   features?: { trailsEnabled: boolean };
   kidFriendly: boolean;
+  showPlatformAdmin?: boolean;
   onNavigate?: () => void;
 }) {
   const items = filterNav(role, permissions, features);
@@ -164,6 +167,22 @@ function NavLinks({
           </Link>
         );
       })}
+      {showPlatformAdmin && (
+        <Link
+          href="/dashboard/plataforma"
+          onClick={onNavigate}
+          className={cn(
+            "nav-link flex items-center gap-3 rounded-xl font-medium transition-colors",
+            kidFriendly ? "min-h-12 px-4 py-3 text-base" : "min-h-11 px-3 py-2.5 text-sm",
+            pathname.startsWith("/dashboard/plataforma")
+              ? "bg-[color:var(--school-primary-soft)] text-[color:var(--school-primary)] ring-2 ring-[color:var(--school-primary-ring)]"
+              : "nav-link-inactive"
+          )}
+        >
+          <Shield className={cn("shrink-0", kidFriendly ? "h-6 w-6" : "h-5 w-5")} aria-hidden="true" />
+          <span className="truncate">Plataforma</span>
+        </Link>
+      )}
     </nav>
   );
 }
@@ -181,6 +200,7 @@ export function Sidebar({
   tagline,
   mobileOpen,
   onMobileOpenChange,
+  showPlatformAdmin,
 }: {
   pathname: string;
   userName: string;
@@ -194,6 +214,7 @@ export function Sidebar({
   tagline?: string;
   mobileOpen: boolean;
   onMobileOpenChange: (open: boolean) => void;
+  showPlatformAdmin?: boolean;
 }) {
   useEffect(() => {
     if (mobileOpen) {
@@ -239,6 +260,7 @@ export function Sidebar({
               features={features}
               tagline={tagline}
               kidFriendly={kidFriendly}
+              showPlatformAdmin={showPlatformAdmin}
               onNavigate={() => onMobileOpenChange(false)}
             />
           </aside>
@@ -260,6 +282,7 @@ export function Sidebar({
           features={features}
           tagline={tagline}
           kidFriendly={kidFriendly}
+          showPlatformAdmin={showPlatformAdmin}
         />
       </aside>
     </>
@@ -277,6 +300,7 @@ function SidebarContent({
   features,
   tagline,
   kidFriendly,
+  showPlatformAdmin,
   onNavigate,
 }: {
   pathname: string;
@@ -289,6 +313,7 @@ function SidebarContent({
   features?: { trailsEnabled: boolean };
   tagline?: string;
   kidFriendly: boolean;
+  showPlatformAdmin?: boolean;
   onNavigate?: () => void;
 }) {
   return (
@@ -312,6 +337,7 @@ function SidebarContent({
           permissions={permissions}
           features={features}
           kidFriendly={kidFriendly}
+          showPlatformAdmin={showPlatformAdmin}
           onNavigate={onNavigate}
         />
       </div>

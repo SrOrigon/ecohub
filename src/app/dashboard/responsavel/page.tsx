@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { fetchParentChildren } from "@/lib/reads/parent-reads";
 import { getHomeTasksForParent } from "@/actions/home-tasks";
 import { ProvisionStudentForm } from "@/components/parents/provision-student-form";
+import { LinkChildForm } from "@/components/parents/link-child-form";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +54,10 @@ export default async function ResponsavelPortalPage() {
         {childOptions.length > 0 && <CreateHomeTaskForm childOptions={childOptions} />}
       </PageHeader>
 
-      <ProvisionStudentForm classes={classes} />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <LinkChildForm />
+        <ProvisionStudentForm classes={classes} />
+      </div>
 
       {childOptions.length > 0 && (
         <Card>
@@ -73,7 +77,7 @@ export default async function ResponsavelPortalPage() {
         <EmptyState
           icon={Users}
           title="Nenhum filho vinculado"
-          description="Peça à secretaria da escola para vincular seu perfil ao aluno."
+          description="Vincule um filho já matriculado pela matrícula ou cadastre um menor para receber PIN de acesso."
         />
       ) : (
         <div className="grid gap-6 md:grid-cols-2">

@@ -14,6 +14,9 @@ import { getRewardsForSchool } from "@/actions/rewards";
 import { getRewardCategoriesForSchool } from "@/actions/reward-categories";
 import { InstitutionShopManager } from "@/components/shop/institution-shop-manager";
 import { RankingList } from "@/components/profile/ranking-list";
+import { BulkCompleteMissionsForm } from "@/components/forms/bulk-complete-missions-form";
+import { getPendingMissionConfirmations } from "@/lib/mission-requests";
+
 import { redirect } from "next/navigation";
 
 const iconMap = { clock: Clock, star: Star, target: Target };
@@ -23,14 +26,27 @@ export default async function GamificacaoPage() {
   if (!user) redirect("/login");
   if (user.role === "student") redirect("/dashboard/aluno");
 
-  const [missions, badges, ranking, classes, students, settings] = await Promise.all([
+  const teacherFilter = user.role === "teacher" ? user.id : undefined;
+
+  const [missions, badges, ranking, classes, students, settings, pendingMissions] = await Promise.all([
     getMissions(user.schoolId),
     getBadges(user.schoolId),
     getRanking(user.schoolId),
     getClasses(user.schoolId),
     getStudents(user.schoolId),
     getSchoolSettings(user.schoolId),
+    user.schoolId ? getPendingMissionConfirmations(user.schoolId, teacherFilter) : Promise.resolve([]),
   ]);
+
+  const pendingItems = pendingMissions.map((pm) => ({
+    studentId: pm.studentId,
+    missionId: pm.missionId,
+    studentName: pm.student.user.fullName,
+    className: pm.student.classGroup?.name ?? null,
+    missionTitle: pm.mission.title,
+    xpReward: pm.mission.xpReward,
+    coinReward: pm.mission.coinReward,
+  }));
 
   const classOptions = classes.map((c) => ({ id: c.id, name: c.name }));
   const isStaff = user.role === "director" || user.role === "teacher" || user.role === "admin";
@@ -59,6 +75,18 @@ export default async function GamificacaoPage() {
           />
         )}
       </PageHeader>
+
+      {isStaff && pendingItems.length > 0 && (
+        <Card className="border-indigo-200 dark:border-indigo-900">
+          <CardHeader>
+            <CardTitle>Confirmações pendentes</CardTitle>
+            <CardDescription>Alunos pediram confirmação de missões concluídas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BulkCompleteMissionsForm items={pendingItems} />
+          </CardContent>
+        </Card>
+      )}
 
       {canManageShop && (
         <InstitutionShopManager categories={shopCategories} rewards={rewards} />

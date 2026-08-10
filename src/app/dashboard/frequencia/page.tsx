@@ -4,10 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RecordAttendanceForm } from "@/components/forms/record-attendance-form";
 import { BulkAttendanceForm } from "@/components/forms/bulk-attendance-form";
+import { JustificationsPanel } from "@/components/attendance/justifications-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { formatDate } from "@/lib/utils";
 import { getAttendance, getStudents } from "@/lib/queries";
+import { fetchJustifiedAttendance } from "@/lib/reads/attendance-reads";
 import { redirect } from "next/navigation";
 
 const statusLabels: Record<string, { label: string; variant: "success" | "danger" | "warning" | "secondary" }> = {
@@ -22,13 +24,30 @@ export default async function FrequenciaPage() {
   if (!user) redirect("/login");
   if (user.role === "student") redirect("/dashboard/aluno");
 
-  const [attendance, students, classes] = await Promise.all([
+  const teacherFilter = user.role === "teacher" ? user.id : undefined;
+
+  const [attendance, students, classes, justifications] = await Promise.all([
     getAttendance(user.schoolId),
     getStudents(user.schoolId),
-    getClasses(user.schoolId),
+    getClasses(user.schoolId, teacherFilter),
+    user.schoolId
+      ? fetchJustifiedAttendance(user, user.schoolId, teacherFilter)
+      : Promise.resolve([]),
   ]);
 
-  const studentOptions = students.map((s) => ({
+  const classStudentIds = new Set(
+    teacherFilter ? classes.flatMap((c) => c.students.map((s) => s.id)) : []
+  );
+
+  const filteredAttendance = teacherFilter
+    ? attendance.filter((a) => classStudentIds.has(a.studentId))
+    : attendance;
+
+  const filteredStudents = teacherFilter
+    ? students.filter((s) => s.classId && classes.some((c) => c.id === s.classId))
+    : students;
+
+  const studentOptions = filteredStudents.map((s) => ({
     id: s.id,
     name: s.user.fullName,
     classId: s.classId,
@@ -40,8 +59,8 @@ export default async function FrequenciaPage() {
     students: c.students.map((s) => ({ id: s.id, name: s.user.fullName })),
   }));
 
-  const present = attendance.filter((a) => a.status === "present" || a.status === "late").length;
-  const rate = attendance.length > 0 ? Math.round((present / attendance.length) * 100) : 0;
+  const present = filteredAttendance.filter((a) => a.status === "present" || a.status === "late").length;
+  const rate = filteredAttendance.length > 0 ? Math.round((present / filteredAttendance.length) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -53,9 +72,11 @@ export default async function FrequenciaPage() {
         <RecordAttendanceForm students={studentOptions} />
       </PageHeader>
 
+      <JustificationsPanel records={justifications} />
+
       <Card>
         <CardHeader>
-          <CardTitle>Registros de hoje ({attendance.length})</CardTitle>
+          <CardTitle>Registros de hoje ({filteredAttendance.length})</CardTitle>
         </CardHeader>
         <CardContent className="min-w-0">
           <ResponsiveTable minWidth="36rem">
@@ -68,7 +89,7 @@ export default async function FrequenciaPage() {
               </tr>
             </thead>
             <tbody>
-              {attendance.map((record) => {
+              {filteredAttendance.map((record) => {
                 const status = statusLabels[record.status] ?? statusLabels.present;
                 return (
                   <tr key={record.id} className="border-b border-slate-100">
@@ -77,11 +98,14 @@ export default async function FrequenciaPage() {
                     <td className="hidden py-3 pr-4 md:table-cell">{record.classGroup.name}</td>
                     <td className="py-3">
                       <Badge variant={status.variant}>{status.label}</Badge>
+                      {record.justificationNote && (
+                        <p className="mt-1 max-w-xs text-xs text-slate-500">{record.justificationNote}</p>
+                      )}
                     </td>
                   </tr>
                 );
               })}
-              {attendance.length === 0 && (
+              {filteredAttendance.length === 0 && (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-slate-500">
                     Nenhum registro hoje. Use &quot;Chamada por turma&quot; para registrar.

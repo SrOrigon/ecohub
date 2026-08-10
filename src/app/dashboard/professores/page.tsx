@@ -9,6 +9,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { UserIdentity } from "@/components/profile/user-identity";
 import { UserCog } from "lucide-react";
 import { redirect } from "next/navigation";
+import { CreateTeacherForm } from "@/components/forms/create-teacher-form";
+import { teacherClassWhere } from "@/lib/teacher-classes";
 
 export default async function ProfessoresPage() {
   const user = await getSessionUser();
@@ -21,7 +23,7 @@ export default async function ProfessoresPage() {
   const teachersWithClasses = await Promise.all(
     teachers.map(async (t) => {
       const classes = await prisma.classGroup.findMany({
-        where: { teacherId: t.id },
+        where: { schoolId: user.schoolId!, ...teacherClassWhere(t.id) },
         select: { name: true },
       });
       return { ...t, classes };
@@ -30,7 +32,9 @@ export default async function ProfessoresPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Professores" description="Equipe docente da instituição" />
+      <PageHeader title="Professores" description="Equipe docente da instituição">
+        <CreateTeacherForm />
+      </PageHeader>
 
       <TeacherInvitePanel invites={invites} />
 

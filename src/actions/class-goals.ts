@@ -7,6 +7,7 @@ import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
 import { checkAndAwardClassGoals } from "@/lib/class-goals";
 import { CLASS_GOAL_METRICS } from "@/lib/constants";
+import { teacherClassWhere } from "@/lib/teacher-classes";
 
 function revalidateGoals() {
   revalidatePath("/dashboard/metas-coletivas");
@@ -74,7 +75,7 @@ export async function getClassGoalsForSchool(schoolId: string, teacherId?: strin
     where: {
       classGroup: {
         schoolId,
-        ...(teacherId ? { teacherId } : {}),
+        ...(teacherId ? teacherClassWhere(teacherId) : {}),
       },
     },
     include: {

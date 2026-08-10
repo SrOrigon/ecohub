@@ -46,6 +46,17 @@ export async function fetchParentsForSchool(actor: SessionUser, schoolId: string
   }));
 }
 
+export async function fetchParentClassIds(actor: SessionUser, parentId: string) {
+  assertParentSelf(actor, parentId);
+
+  const links = await prisma.parentStudent.findMany({
+    where: { parentId },
+    select: { student: { select: { classId: true } } },
+  });
+
+  return [...new Set(links.map((l) => l.student.classId).filter((id): id is string => Boolean(id)))];
+}
+
 export async function fetchParentChildren(actor: SessionUser, parentId: string) {
   assertParentSelf(actor, parentId);
 

@@ -26,6 +26,7 @@ import { hasPermission } from "@/lib/permissions";
 import { validatePassword } from "@/lib/security/password-policy";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 import { parseBirthDate } from "@/lib/student-age";
+import { teacherClassWhere } from "@/lib/teacher-classes";
 import {
   generateStudentPin,
   hashStudentPin,
@@ -152,9 +153,23 @@ export async function createClassAction(formData: FormData) {
 
   if (!name || !gradeLevel) return { error: "Nome e série são obrigatórios." };
 
-  await prisma.classGroup.create({
+  const coTeacherIds = formData
+    .getAll("coTeacherIds")
+    .map((v) => String(v))
+    .filter(Boolean);
+
+  const created = await prisma.classGroup.create({
     data: { schoolId: user.schoolId, name, gradeLevel, year, teacherId },
   });
+
+  const uniqueCoTeachers = [...new Set(coTeacherIds)].filter((id) => id !== teacherId);
+  if (uniqueCoTeachers.length > 0) {
+    for (const tid of uniqueCoTeachers) {
+      await prisma.classGroupCoTeacher.create({
+        data: { classId: created.id, teacherId: tid },
+      }).catch(() => undefined);
+    }
+  }
 
   revalidateAll();
   revalidatePath("/dashboard/professor");
@@ -217,6 +232,179 @@ export async function createGradeAction(formData: FormData) {
 
   revalidateAll();
   return { success: true };
+}
+
+export async function updateGradeAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const settings = await getSchoolSettings(user.schoolId);
+  if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.createGrades")) {
+    return { error: "Sem permissão para editar notas." };
+  }
+
+  const gradeId = String(formData.get("gradeId") ?? "");
+  const value = parseFloat(String(formData.get("value") ?? "0"));
+  const maxGrade = settings.academic.maxGrade;
+
+  if (!gradeId || isNaN(value)) return { error: "Dados inválidos." };
+  if (value < 0 || value > maxGrade) return { error: `Nota deve ser entre 0 e ${maxGrade}.` };
+
+  const grade = await prisma.grade.findFirst({
+    where: { id: gradeId, student: { user: { schoolId: user.schoolId } } },
+    include: { student: true },
+  });
+  if (!grade) return { error: "Nota não encontrada." };
+
+  await prisma.grade.update({ where: { id: gradeId }, data: { value } });
+
+  await notifyStudent(
+    grade.studentId,
+    "Nota atualizada",
+    `${grade.subject}: ${value.toFixed(1)} (${grade.period})`,
+    "/dashboard/aluno"
+  );
+  await notifyStudentParents(
+    grade.studentId,
+    "Nota atualizada",
+    `${grade.subject}: ${value.toFixed(1)} (${grade.period})`,
+    `/dashboard/responsavel/filho/${grade.studentId}`,
+    "grade"
+  );
+
+  revalidateAll();
+  return { success: true };
+}
+
+export async function deleteGradeAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const settings = await getSchoolSettings(user.schoolId);
+  if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.createGrades")) {
+    return { error: "Sem permissão para excluir notas." };
+  }
+
+  const gradeId = String(formData.get("gradeId") ?? "");
+  const grade = await prisma.grade.findFirst({
+    where: { id: gradeId, student: { user: { schoolId: user.schoolId } } },
+  });
+  if (!grade) return { error: "Nota não encontrada." };
+
+  await prisma.grade.delete({ where: { id: gradeId } });
+  revalidateAll();
+  return { success: true };
+}
+
+export async function updateClassCoTeachersAction(formData: FormData) {
+  const user = await requireSession(["admin", "director"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const classId = String(formData.get("classId") ?? "");
+  const coTeacherIds = formData
+    .getAll("coTeacherIds")
+    .map((v) => String(v))
+    .filter(Boolean);
+
+  const turma = await prisma.classGroup.findFirst({
+    where: { id: classId, schoolId: user.schoolId },
+  });
+  if (!turma) return { error: "Turma não encontrada." };
+
+  const unique = [...new Set(coTeacherIds)].filter((id) => id !== turma.teacherId);
+
+  await prisma.classGroupCoTeacher.deleteMany({ where: { classId } });
+  for (const teacherId of unique) {
+    await prisma.classGroupCoTeacher.create({ data: { classId, teacherId } });
+  }
+
+  revalidateAll();
+  revalidatePath("/dashboard/turmas");
+  revalidatePath("/dashboard/professor");
+  return { success: true };
+}
+
+export async function bulkCompleteMissionsAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const settings = await getSchoolSettings(user.schoolId);
+  if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.completeMissions")) {
+    return { error: "Sem permissão para concluir missões." };
+  }
+
+  const items = formData.getAll("items").map(String).filter(Boolean);
+  if (items.length === 0) return { error: "Selecione ao menos uma missão." };
+
+  let completed = 0;
+  const errors: string[] = [];
+
+  for (const item of items) {
+    const [studentId, missionId] = item.split(":");
+    if (!studentId || !missionId) continue;
+
+    try {
+      const student = await prisma.student.findFirst({
+        where: { id: studentId, user: { schoolId: user.schoolId } },
+      });
+      if (!student) {
+        errors.push("Aluno não encontrado.");
+        continue;
+      }
+
+      if (user.role === "teacher") {
+        const allowed = await prisma.student.findFirst({
+          where: {
+            id: studentId,
+            user: { schoolId: user.schoolId },
+            classGroup: teacherClassWhere(user.id),
+          },
+        });
+        if (!allowed) {
+          errors.push("Sem acesso a um dos alunos.");
+          continue;
+        }
+      }
+
+      const mission = await prisma.mission.findFirst({
+        where: { id: missionId, schoolId: user.schoolId, isActive: true },
+      });
+      if (!mission) {
+        errors.push("Missão não encontrada.");
+        continue;
+      }
+
+      await completeMission(studentId, missionId);
+      await notifyStudent(
+        studentId,
+        "Missão concluída!",
+        `Você ganhou ${mission.xpReward} XP e ${mission.coinReward} moedas em "${mission.title}".`,
+        "/dashboard/aluno"
+      );
+      await notifyStudentParents(
+        studentId,
+        "Missão concluída",
+        `Missão "${mission.title}" foi concluída.`,
+        `/dashboard/responsavel/filho/${studentId}`,
+        "mission"
+      );
+      await syncTrailAfterAction(studentId, "mission", missionId);
+      if (student.classId) await checkAndAwardClassGoals(student.classId);
+      completed++;
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : "Erro ao concluir missão.");
+    }
+  }
+
+  revalidateAll();
+  revalidatePath("/dashboard/gamificacao");
+  revalidatePath("/dashboard/professor");
+
+  if (completed === 0) {
+    return { error: errors[0] ?? "Nenhuma missão foi concluída." };
+  }
+
+  return { success: true, completed, errors: errors.length > 0 ? errors : undefined };
 }
 
 export async function recordAttendanceAction(formData: FormData) {

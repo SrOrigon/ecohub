@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { UserIdentity } from "@/components/profile/user-identity";
 import { GraduationCap } from "lucide-react";
 import { redirect } from "next/navigation";
+import { ClassCoTeachersForm } from "@/components/forms/class-co-teachers-form";
 
 export default async function TurmasPage() {
   const user = await getSessionUser();
@@ -40,7 +41,7 @@ export default async function TurmasPage() {
         }
       >
         {canCreateClass && (
-          <CreateClassForm teachers={teachers} teacherMode={isTeacher} />
+          <CreateClassForm teachers={teachers} teacherMode={isTeacher} allTeachers={teachers} />
         )}
       </PageHeader>
 
@@ -75,6 +76,11 @@ export default async function TurmasPage() {
                     {!isTeacher && " · Prof. Não definido"}
                   </p>
                 )}
+                {turma.coTeachers.length > 0 && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    Co-docentes: {turma.coTeachers.map((ct) => ct.teacher.fullName).join(", ")}
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 <p className="mb-3 text-sm font-medium">{turma._count.students} alunos matriculados</p>
@@ -89,6 +95,15 @@ export default async function TurmasPage() {
                     </li>
                   ))}
                 </ul>
+                {!isTeacher && teachers.length > 0 && (
+                  <ClassCoTeachersForm
+                    classId={turma.id}
+                    className={turma.name}
+                    primaryTeacherId={turma.teacher?.id ?? null}
+                    currentCoTeacherIds={turma.coTeachers.map((ct) => ct.teacher.id)}
+                    teachers={teachers}
+                  />
+                )}
               </CardContent>
             </Card>
           ))}

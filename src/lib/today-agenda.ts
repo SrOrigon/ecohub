@@ -3,6 +3,7 @@ import type { SessionUser } from "@/lib/auth";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { getTodaySchoolStatus, getUpcomingEvents } from "@/lib/school-calendar";
 import { fetchTodayPersonalNotes } from "@/lib/reads/personal-note-reads";
+import { teacherClassWhere } from "@/lib/teacher-classes";
 import type { TodayItem } from "@/components/student/today-checklist";
 import { formatDate } from "@/lib/utils";
 
@@ -185,8 +186,43 @@ export async function getTodayAgendaForTeacher(actor: SessionUser, schoolId: str
   const events = getUpcomingEvents(settings, 5);
 
   const classes = await prisma.classGroup.findMany({
-    where: { teacherId: actor.id },
+    where: { schoolId: schoolId ?? undefined, ...teacherClassWhere(actor.id) },
     include: { _count: { select: { students: true } } },
+  });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const classIds = classes.map((c) => c.id);
+  const attendanceRecords =
+    classIds.length > 0
+      ? await prisma.attendance.findMany({
+          where: { classId: { in: classIds }, date: { gte: today, lt: tomorrow } },
+          select: { classId: true },
+        })
+      : [];
+
+  const attendanceByClass = new Map<string, number>();
+  for (const a of attendanceRecords) {
+    attendanceByClass.set(a.classId, (attendanceByClass.get(a.classId) ?? 0) + 1);
+  }
+
+  const pendingMissionRequests = await prisma.studentMission.count({
+    where: {
+      completedAt: null,
+      mission: { schoolId: schoolId ?? undefined, isActive: true },
+      student: { classGroup: teacherClassWhere(actor.id) },
+    },
+  });
+
+  const justifiedRecent = await prisma.attendance.count({
+    where: {
+      status: "justified",
+      justifiedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      student: { classGroup: teacherClassWhere(actor.id) },
+    },
   });
 
   const pendingSubmissions = await prisma.exerciseSubmission.count({
@@ -231,16 +267,45 @@ export async function getTodayAgendaForTeacher(actor: SessionUser, schoolId: str
     });
   }
 
-  for (const c of classes) {
-    items.push({
-      id: `class-${c.id}`,
-      title: c.name,
-      subtitle: `${c._count.students} alunos`,
-      href: "/dashboard/diario",
+  if (pendingMissionRequests > 0) {
+    items.unshift({
+      id: "pending-missions",
+      title: `${pendingMissionRequests} missão(ões) para confirmar`,
+      subtitle: "Alunos aguardam confirmação",
+      href: "/dashboard/gamificacao",
       done: false,
-      cta: "Diário de classe",
+      cta: "Confirmar",
+      badge: "Missões",
     });
   }
 
-  return { items: items.slice(0, 8), dayStatus, events, classCount: classes.length };
+  if (justifiedRecent > 0) {
+    items.unshift({
+      id: "justifications",
+      title: `${justifiedRecent} justificativa(s) recente(s)`,
+      subtitle: "Faltas justificadas por responsáveis",
+      href: "/dashboard/frequencia",
+      done: false,
+      cta: "Ver",
+      badge: "Família",
+    });
+  }
+
+  for (const c of classes) {
+    const studentsTotal = c._count.students;
+    const recorded = attendanceByClass.get(c.id) ?? 0;
+    const needsAttendance = studentsTotal > 0 && recorded < studentsTotal;
+    items.push({
+      id: `class-${c.id}`,
+      title: c.name,
+      subtitle: needsAttendance
+        ? `${c._count.students} alunos · chamada pendente`
+        : `${c._count.students} alunos · chamada registrada`,
+      href: "/dashboard/frequencia",
+      done: !needsAttendance && studentsTotal > 0,
+      cta: needsAttendance ? "Fazer chamada" : "Diário de classe",
+    });
+  }
+
+  return { items: items.slice(0, 12), dayStatus, events, classCount: classes.length };
 }

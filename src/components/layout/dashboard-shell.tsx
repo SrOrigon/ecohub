@@ -18,6 +18,7 @@ export function DashboardShell({
   branding,
   permissions,
   features,
+  showPlatformAdmin,
 }: {
   children: React.ReactNode;
   userName: string;
@@ -28,6 +29,7 @@ export function DashboardShell({
   branding: SchoolSettings["branding"];
   permissions: SchoolSettings["permissions"];
   features?: { trailsEnabled: boolean };
+  showPlatformAdmin?: boolean;
 }) {
   const pathname = usePathname();
   const kidFriendly = isKidFriendlyRole(role);
@@ -53,6 +55,7 @@ export function DashboardShell({
           kidFriendly={kidFriendly}
           permissions={permissions}
           features={features}
+          showPlatformAdmin={showPlatformAdmin}
           tagline={branding.tagline}
           mobileOpen={mobileMenuOpen}
           onMobileOpenChange={setMobileMenuOpen}

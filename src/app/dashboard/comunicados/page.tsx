@@ -16,19 +16,24 @@ export default async function ComunicadosPage() {
     ? await prisma.student.findUnique({ where: { userId: user.id }, select: { classId: true } })
     : null;
 
-  const parentClassId =
+  const parentClassIds =
     user.role === "parent"
       ? (
-          await prisma.parentStudent.findFirst({
+          await prisma.parentStudent.findMany({
             where: { parentId: user.id },
             include: { student: { select: { classId: true } } },
           })
-        )?.student.classId
+        )
+          .map((link) => link.student.classId)
+          .filter((id): id is string => Boolean(id))
       : null;
 
-  const classId = student?.classId ?? parentClassId ?? undefined;
+  const classIds =
+    user.role === "student" && student?.classId
+      ? [student.classId]
+      : parentClassIds ?? undefined;
 
-  const announcements = await getAnnouncementsForUser(user, user.id, user.schoolId, classId);
+  const announcements = await getAnnouncementsForUser(user, user.id, user.schoolId, classIds);
 
   const canCreate =
     user.role === "admin" ||

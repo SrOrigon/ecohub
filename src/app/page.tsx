@@ -60,6 +60,20 @@ const portalLinks = [
       "border-amber-200 bg-amber-50/50 hover:border-amber-400 dark:border-amber-800 dark:bg-amber-950/30 dark:hover:border-amber-600",
   },
   {
+    href: "/entrar",
+    title: "Aluno (PIN)",
+    description: "Entrada rápida com matrícula e PIN — ideal para crianças",
+    color:
+      "border-orange-200 bg-orange-50/50 hover:border-orange-400 dark:border-orange-800 dark:bg-orange-950/30 dark:hover:border-orange-600",
+  },
+  {
+    href: "/login/responsavel",
+    title: "Responsável",
+    description: "Acompanhe filhos, notas, faltas e tarefas de casa",
+    color:
+      "border-violet-200 bg-violet-50/50 hover:border-violet-400 dark:border-violet-800 dark:bg-violet-950/30 dark:hover:border-violet-600",
+  },
+  {
     href: "/login/escola",
     title: "Instituição",
     description: "Gestão, relatórios e código para vincular a escola",
@@ -115,7 +129,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-10 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+        <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {portalLinks.map((link) => (
             <Link
               key={link.href}

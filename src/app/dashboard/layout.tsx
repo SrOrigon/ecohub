@@ -1,6 +1,7 @@
 import { getSessionUser } from "@/lib/auth";
 import { getSchool } from "@/lib/queries";
 import { parseSchoolSettings } from "@/lib/school-settings";
+import { isPlatformAdmin } from "@/lib/platform-admin";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { SchoolVerificationBanner } from "@/components/school/school-verification-banner";
 import { redirect } from "next/navigation";
@@ -22,6 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       branding={settings.branding}
       permissions={settings.permissions}
       features={{ trailsEnabled: settings.trails.enabled }}
+      showPlatformAdmin={isPlatformAdmin(user.email)}
     >
       {(user.role === "admin" || user.role === "director") && school && (
         <SchoolVerificationBanner

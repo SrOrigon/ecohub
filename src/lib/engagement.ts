@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { teacherClassWhere } from "@/lib/teacher-classes";
 
 export type ClassEngagement = {
   classId: string;
@@ -28,7 +29,7 @@ export async function getEngagementOverview(schoolId: string | null, teacherId?:
     return emptyOverview();
   }
 
-  const classFilter = teacherId ? { schoolId, teacherId } : { schoolId };
+  const classFilter = teacherId ? { schoolId, ...teacherClassWhere(teacherId) } : { schoolId };
 
   const classes = await prisma.classGroup.findMany({
     where: classFilter,

@@ -98,15 +98,17 @@ export async function getAnnouncementsForUser(
   actor: { id: string; schoolId: string | null },
   userId: string,
   schoolId: string | null,
-  classId?: string | null
+  classIds?: string[] | null
 ) {
   if (actor.id !== userId) return [];
   if (!schoolId || actor.schoolId !== schoolId) return [];
 
+  const uniqueClassIds = [...new Set((classIds ?? []).filter(Boolean))];
+
   const announcements = await prisma.announcement.findMany({
     where: {
       schoolId,
-      OR: [{ classId: null }, ...(classId ? [{ classId }] : [])],
+      OR: [{ classId: null }, ...uniqueClassIds.map((classId) => ({ classId }))],
     },
     include: {
       author: { select: { fullName: true } },

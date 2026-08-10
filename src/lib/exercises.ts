@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { teacherClassWhere } from "@/lib/teacher-classes";
 import type { SessionUser } from "@/lib/auth";
 
 export type ExerciseKind = "homework" | "exam";
@@ -29,7 +30,7 @@ export async function getTeacherClasses(user: SessionUser) {
     });
   }
   return prisma.classGroup.findMany({
-    where: { schoolId: user.schoolId, teacherId: user.id },
+    where: { schoolId: user.schoolId, ...teacherClassWhere(user.id) },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
@@ -63,7 +64,12 @@ export async function getExercisesForUser(user: SessionUser) {
 
   const classFilter =
     user.role === "teacher"
-      ? { OR: [{ teacherId: user.id }, { classGroup: { teacherId: user.id } }] }
+      ? {
+          OR: [
+            { teacherId: user.id },
+            { classGroup: teacherClassWhere(user.id) },
+          ],
+        }
       : {};
 
   return prisma.exercise.findMany({

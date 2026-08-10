@@ -1,25 +1,21 @@
 import { getSessionUser } from "@/lib/auth";
 import { getGrades, getStudents } from "@/lib/queries";
 import { getSchoolSettings } from "@/lib/school-settings";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateGradeForm } from "@/components/forms/create-grade-form";
+import { GradeRowActions } from "@/components/forms/grade-row-actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { redirect } from "next/navigation";
 import { BookOpen } from "lucide-react";
 
-function gradeVariant(value: number, passGrade: number) {
-  if (value >= passGrade) return "success" as const;
-  if (value >= passGrade - 2) return "warning" as const;
-  return "danger" as const;
-}
-
 export default async function NotasPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
   if (user.role === "student") redirect("/dashboard/aluno");
+
+  const canManage = user.role === "admin" || user.role === "director" || user.role === "teacher";
 
   const [grades, students, settings] = await Promise.all([
     getGrades(user.schoolId),
@@ -78,9 +74,16 @@ export default async function NotasPage() {
                       {grade.createdAt.toLocaleDateString("pt-BR")}
                     </td>
                     <td className="py-3">
-                      <Badge variant={gradeVariant(grade.value, settings.academic.passGrade)}>
-                        {grade.value.toFixed(1)} / {grade.maxValue}
-                      </Badge>
+                      {canManage ? (
+                        <GradeRowActions
+                          gradeId={grade.id}
+                          value={grade.value}
+                          maxGrade={settings.academic.maxGrade}
+                          passGrade={settings.academic.passGrade}
+                        />
+                      ) : (
+                        <span>{grade.value.toFixed(1)}</span>
+                      )}
                     </td>
                   </tr>
                 ))}

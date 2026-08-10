@@ -6,6 +6,13 @@ import { hashStudentPin } from "../src/lib/student-pin";
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.announcementRead.deleteMany();
+  await prisma.announcement.deleteMany();
+  await prisma.studentTrailProgress.deleteMany();
+  await prisma.trailStep.deleteMany();
+  await prisma.learningTrail.deleteMany();
+  await prisma.classGoal.deleteMany();
+  await prisma.classGroupCoTeacher.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.exerciseAnswer.deleteMany();
   await prisma.exerciseSubmission.deleteMany();
@@ -279,11 +286,115 @@ async function main() {
     },
   });
 
+  const mission2 = await prisma.mission.findFirst({
+    where: { schoolId: school.id, title: "Leitura Semanal" },
+  });
+
+  if (mission2) {
+    await prisma.studentMission.create({
+      data: { studentId: students[1].id, missionId: mission2.id },
+    });
+  }
+
+  const director = await prisma.user.findFirst({
+    where: { email: "admin@eduhub.local" },
+  });
+
+  await prisma.announcement.create({
+    data: {
+      schoolId: school.id,
+      classId: class8A.id,
+      authorId: director!.id,
+      title: "Reunião de pais — 8º Ano A",
+      body: "Reunião na próxima sexta-feira às 19h no auditório. Presença dos responsáveis é importante.",
+    },
+  });
+
+  await prisma.announcement.create({
+    data: {
+      schoolId: school.id,
+      authorId: director!.id,
+      title: "Calendário de provas bimestrais",
+      body: "As provas do 1º bimestre ocorrem entre 18 e 22 de agosto. Consulte o calendário escolar.",
+    },
+  });
+
+  const trail = await prisma.learningTrail.create({
+    data: {
+      schoolId: school.id,
+      classId: class8A.id,
+      title: "Trilha Matemática — Frações",
+      description: "Complete missões e exercícios para dominar frações.",
+      xpBonus: 200,
+      coinBonus: 75,
+      isActive: true,
+      steps: {
+        create: [
+          { sortOrder: 0, stepType: "mission", missionId: mission1.id, title: "Quiz de Frações" },
+        ],
+      },
+    },
+  });
+
+  await prisma.studentTrailProgress.create({
+    data: { studentId: students[0].id, trailId: trail.id, currentStep: 1, completedAt: new Date() },
+  });
+
+  await prisma.classGoal.create({
+    data: {
+      classId: class8A.id,
+      title: "80% da turma conclui missões do bimestre",
+      metric: "mission",
+      targetPercent: 80,
+      xpBonus: 150,
+      coinBonus: 40,
+      deadline: new Date("2026-08-30"),
+      isActive: true,
+    },
+  });
+
+  const teacher2 = await prisma.user.create({
+    data: {
+      email: "professor2@eduhub.local",
+      passwordHash,
+      fullName: "Fernanda Co-docente",
+      role: "teacher",
+      schoolId: school.id,
+    },
+  });
+
+  await prisma.classGroupCoTeacher.create({
+    data: { classId: class9B.id, teacherId: teacher2.id },
+  });
+
+  await prisma.school.create({
+    data: {
+      name: "Colégio Aguardando Análise",
+      slug: "colegio-analise",
+      city: "Rio de Janeiro",
+      state: "RJ",
+      legalName: "Colégio Exemplo Serviços LTDA",
+      cnpj: "00000000000191",
+      verificationStatus: "manual_review",
+      cnpjCheckedAt: new Date(),
+      users: {
+        create: {
+          email: "diretor@colegio-analise.local",
+          passwordHash,
+          fullName: "João Pendente",
+          role: "director",
+        },
+      },
+    },
+  });
+
   console.log("Seed concluído!");
   console.log("Diretor: admin@eduhub.local / demo123");
   console.log("Professor: professor@eduhub.local / demo123");
+  console.log("Co-docente: professor2@eduhub.local / demo123");
   console.log("Responsável: mariana@responsavel.local / demo123 (filhos: Lucas e Ana)");
   console.log("Alunos: lucas@aluno.local / demo123 · PIN demo: matrícula 2026001 / PIN 123456");
+  console.log("Plataforma: defina PLATFORM_ADMIN_EMAILS=admin@eduhub.local para aprovar escolas pendentes");
 }
 
 main()
