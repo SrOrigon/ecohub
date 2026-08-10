@@ -4,6 +4,12 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { parseBirthDate } from "@/lib/student-age";
+import {
+  generateStudentPin,
+  hashStudentPin,
+  syntheticStudentEmail,
+} from "@/lib/student-pin";
 
 export async function createParentAction(formData: FormData) {
   const user = await requireSession(["admin", "director"]);
@@ -82,7 +88,89 @@ export async function unlinkParentStudentAction(formData: FormData) {
 }
 
 function revalidateParentPaths() {
-  ["/dashboard/responsaveis", "/dashboard/responsavel"].forEach((p) => revalidatePath(p));
+  ["/dashboard/responsaveis", "/dashboard/responsavel", "/dashboard/alunos"].forEach((p) =>
+    revalidatePath(p)
+  );
+}
+
+export async function provisionStudentForParentAction(formData: FormData) {
+  const user = await requireSession(["parent"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const fullName = String(formData.get("fullName") ?? "").trim();
+  const birthDateStr = String(formData.get("birthDate") ?? "").trim();
+  const classId = String(formData.get("classId") ?? "") || null;
+  const relation = String(formData.get("relation") ?? "responsavel");
+  let enrollmentCode = String(formData.get("enrollmentCode") ?? "").trim();
+
+  if (!fullName || !birthDateStr) {
+    return { error: "Nome e data de nascimento são obrigatórios." };
+  }
+
+  const birthDate = parseBirthDate(birthDateStr);
+  if (!birthDate) return { error: "Data de nascimento inválida." };
+
+  const school = await prisma.school.findUnique({
+    where: { id: user.schoolId },
+    select: { slug: true },
+  });
+  if (!school) return { error: "Escola não encontrada." };
+
+  if (!enrollmentCode) {
+    enrollmentCode = `ALU-${Date.now().toString(36).toUpperCase()}`;
+  }
+
+  const existingCode = await prisma.student.findUnique({ where: { enrollmentCode } });
+  if (existingCode) return { error: "Matrícula já em uso." };
+
+  if (classId) {
+    const turma = await prisma.classGroup.findFirst({
+      where: { id: classId, schoolId: user.schoolId },
+    });
+    if (!turma) return { error: "Turma inválida." };
+  }
+
+  const pin = generateStudentPin();
+  const accessPinHash = await hashStudentPin(pin);
+  const email = syntheticStudentEmail(school.slug, enrollmentCode);
+  const passwordHash = await bcrypt.hash(pin, 10);
+
+  const studentUser = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      fullName,
+      role: "student",
+      schoolId: user.schoolId,
+      student: {
+        create: {
+          enrollmentCode,
+          classId,
+          birthDate,
+          accessPinHash,
+          accountType: "provisioned",
+          provisionedById: user.id,
+        },
+      },
+    },
+    include: { student: true },
+  });
+
+  await prisma.parentStudent.create({
+    data: {
+      parentId: user.id,
+      studentId: studentUser.student!.id,
+      relation,
+    },
+  });
+
+  revalidateParentPaths();
+  return {
+    success: true,
+    enrollmentCode,
+    pin,
+    fullName,
+  };
 }
 
 export async function getParentsForSchool(schoolId: string | null) {

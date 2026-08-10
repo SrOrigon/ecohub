@@ -22,6 +22,12 @@ import {
   type SchoolSettings,
 } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
+import { parseBirthDate } from "@/lib/student-age";
+import {
+  generateStudentPin,
+  hashStudentPin,
+  syntheticStudentEmail,
+} from "@/lib/student-pin";
 
 function revalidateAll() {
   [
@@ -42,17 +48,48 @@ export async function createStudentAction(formData: FormData) {
   if (!user.schoolId) return { error: "Escola não configurada." };
 
   const fullName = String(formData.get("fullName") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  let email = String(formData.get("email") ?? "").trim().toLowerCase();
   const enrollmentCode = String(formData.get("enrollmentCode") ?? "").trim();
   const classId = String(formData.get("classId") ?? "") || null;
   const password = String(formData.get("password") ?? "demo123");
+  const birthDateStr = String(formData.get("birthDate") ?? "").trim();
+  const accountMode = String(formData.get("accountMode") ?? "standard");
+  const customPin = String(formData.get("pin") ?? "").trim();
 
-  if (!fullName || !email || !enrollmentCode) {
-    return { error: "Nome, e-mail e matrícula são obrigatórios." };
+  if (!fullName || !enrollmentCode || !birthDateStr) {
+    return { error: "Nome, matrícula e data de nascimento são obrigatórios." };
+  }
+
+  const birthDate = parseBirthDate(birthDateStr);
+  if (!birthDate) return { error: "Data de nascimento inválida." };
+
+  const school = await prisma.school.findUnique({
+    where: { id: user.schoolId },
+    select: { slug: true },
+  });
+  if (!school) return { error: "Escola não encontrada." };
+
+  let pin: string | null = null;
+  let accessPinHash: string | null = null;
+  let accountType = "standard";
+
+  if (accountMode === "pin_only") {
+    accountType = "pin_only";
+    pin = customPin || generateStudentPin();
+    if (!/^\d{6}$/.test(pin)) {
+      return { error: "PIN deve ter 6 dígitos numéricos." };
+    }
+    accessPinHash = await hashStudentPin(pin);
+    email = syntheticStudentEmail(school.slug, enrollmentCode);
+  } else if (!email) {
+    return { error: "E-mail é obrigatório para conta com senha." };
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "E-mail já cadastrado." };
+
+  const existingCode = await prisma.student.findUnique({ where: { enrollmentCode } });
+  if (existingCode) return { error: "Matrícula já em uso." };
 
   const passwordHash = await bcrypt.hash(password, 10);
   await prisma.user.create({
@@ -63,13 +100,24 @@ export async function createStudentAction(formData: FormData) {
       role: "student",
       schoolId: user.schoolId,
       student: {
-        create: { enrollmentCode, classId },
+        create: {
+          enrollmentCode,
+          classId,
+          birthDate,
+          accessPinHash,
+          accountType,
+        },
       },
     },
   });
 
   revalidateAll();
-  return { success: true };
+  return {
+    success: true,
+    pin: pin ?? undefined,
+    enrollmentCode,
+    accountType,
+  };
 }
 
 export async function createClassAction(formData: FormData) {

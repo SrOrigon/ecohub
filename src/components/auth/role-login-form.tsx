@@ -82,10 +82,12 @@ export function RoleLoginForm({
   portal,
   defaultEmail,
   defaultRememberEmail = false,
+  tenantSlug,
 }: {
   portal: Portal;
   defaultEmail?: string;
   defaultRememberEmail?: boolean;
+  tenantSlug?: string;
 }) {
   const cfg = portalConfig[portal];
   const Icon = portalIcons[portal];
@@ -124,6 +126,7 @@ export function RoleLoginForm({
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4" aria-label={`Login ${cfg.title}`}>
+          {tenantSlug && <input type="hidden" name="tenantSlug" value={tenantSlug} />}
           <div>
             <Label htmlFor="email">E-mail</Label>
             <Input
@@ -187,18 +190,43 @@ export function RoleLoginForm({
 
         {portal === "aluno" && (
           <p className="mt-4 text-sm text-[var(--muted-foreground)]">
+            Menor de idade ou sem e-mail?{" "}
+            <Link
+              href={tenantSlug ? `/e/${tenantSlug}/entrar` : "/entrar"}
+              className="font-semibold text-indigo-700 hover:underline dark:text-indigo-400"
+            >
+              Entrar com matrícula e PIN
+            </Link>
+            {" · "}
             É pai, mãe ou responsável?{" "}
-            <Link href="/login/responsavel" className="font-semibold text-rose-700 hover:underline dark:text-rose-400">
-              Acesse o portal de responsáveis
+            <Link href={tenantSlug ? `/e/${tenantSlug}/login/responsavel` : "/login/responsavel"} className="font-semibold text-rose-700 hover:underline dark:text-rose-400">
+              Portal de responsáveis
             </Link>
           </p>
         )}
 
+        {portal === "professor" && (
+          <p className="mt-4 text-sm text-[var(--muted-foreground)]">
+            Cadastro apenas por convite. Peça um link ao diretor da escola.
+          </p>
+        )}
+
         <p className="mt-4 text-center text-sm text-[var(--muted-foreground)]">
-          Não tem conta?{" "}
-          <Link href={cfg.registerHref} className="font-semibold text-[color:var(--school-primary)] hover:underline">
-            Cadastre-se
-          </Link>
+          {portal !== "professor" && (
+            <>
+              Não tem conta?{" "}
+              <Link
+                href={
+                  tenantSlug && portal !== "escola"
+                    ? `/registro/${portal === "aluno" ? "aluno" : portal === "responsavel" ? "responsavel" : portal}?escola=${tenantSlug}`
+                    : cfg.registerHref
+                }
+                className="font-semibold text-[color:var(--school-primary)] hover:underline"
+              >
+                Cadastre-se
+              </Link>
+            </>
+          )}
         </p>
 
         <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-[var(--border-subtle)] pt-4 text-xs text-[var(--muted-foreground)]">

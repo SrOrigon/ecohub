@@ -90,6 +90,11 @@ export type SchoolSettings = {
   ai: {
     enabled: boolean;
   };
+  auth: {
+    teacherSignupMode: "invite_only" | "open";
+    studentSelfSignupMinAge: number;
+    allowStudentPinLogin: boolean;
+  };
   permissions: {
     teacher: {
       createGrades: boolean;
@@ -201,6 +206,11 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
   },
   ai: {
     enabled: false,
+  },
+  auth: {
+    teacherSignupMode: "invite_only",
+    studentSelfSignupMinAge: 18,
+    allowStudentPinLogin: true,
   },
   permissions: {
     teacher: {

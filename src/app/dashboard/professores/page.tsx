@@ -2,7 +2,8 @@ import { getSessionUser } from "@/lib/auth";
 import { getTeachers } from "@/lib/queries";
 import { prisma } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreateTeacherForm } from "@/components/forms/create-teacher-form";
+import { getTeacherInvitesForSchool } from "@/actions/invites";
+import { TeacherInvitePanel } from "@/components/invites/teacher-invite-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { UserIdentity } from "@/components/profile/user-identity";
@@ -15,6 +16,7 @@ export default async function ProfessoresPage() {
   if (user.role !== "admin" && user.role !== "director") redirect("/dashboard");
 
   const teachers = await getTeachers(user.schoolId);
+  const invites = user.schoolId ? await getTeacherInvitesForSchool(user.schoolId) : [];
 
   const teachersWithClasses = await Promise.all(
     teachers.map(async (t) => {
@@ -28,9 +30,9 @@ export default async function ProfessoresPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Professores" description="Equipe docente da instituição">
-        <CreateTeacherForm />
-      </PageHeader>
+      <PageHeader title="Professores" description="Equipe docente da instituição" />
+
+      <TeacherInvitePanel invites={invites} />
 
       {teachers.length === 0 ? (
         <EmptyState

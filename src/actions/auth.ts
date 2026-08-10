@@ -4,9 +4,8 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  createSessionToken,
   clearSessionCookie,
-  setSessionCookie,
+  establishSession,
   requireSession,
 } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -18,6 +17,9 @@ import {
   canAcceptPublicSignup,
   SCHOOL_VERIFICATION_STATUS,
 } from "@/lib/school-verification";
+import { getSchoolSettings } from "@/lib/school-settings";
+import { canSelfRegisterStudent, parseBirthDate } from "@/lib/student-age";
+import { verifyStudentPin } from "@/lib/student-pin";
 import type { UserRole } from "@/lib/constants";
 
 function dashboardForRole(role: UserRole) {
@@ -68,10 +70,17 @@ export async function loginAction(formData: FormData) {
   }
 
   const remember = formData.get("rememberMe") === "true";
+  const tenantSlug = formData.get("tenantSlug")?.toString().trim().toLowerCase() || null;
   await saveLoginPreferencesAction(formData);
 
-  const token = await createSessionToken(user.id, remember);
-  await setSessionCookie(token, remember);
+  if (tenantSlug && user.schoolId) {
+    const tenantSchool = await findSchoolBySlug(tenantSlug);
+    if (tenantSchool && tenantSchool.id !== user.schoolId) {
+      return { error: "Esta conta não pertence a esta instituição." };
+    }
+  }
+
+  await establishSession(user, { remember, tenantSlug });
   redirect(dashboardForRole(user.role as UserRole));
 }
 
@@ -136,23 +145,35 @@ export async function registerSchoolAction(formData: FormData) {
     },
   });
 
-  const token = await createSessionToken(user.id);
-  await setSessionCookie(token);
+  await establishSession(user, { tenantSlug: school.slug });
   redirect("/dashboard");
 }
 
-export async function registerTeacherAction(formData: FormData) {
+export async function registerTeacherAction(_formData: FormData) {
+  return {
+    error:
+      "Cadastro de professor apenas por convite. Peça ao diretor da escola um link de convite ou acesse o link recebido por e-mail.",
+  };
+}
+
+export async function registerStudentAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const fullName = String(formData.get("fullName") ?? "").trim();
   const schoolSlug = String(formData.get("schoolSlug") ?? "").trim().toLowerCase();
+  const classId = String(formData.get("classId") ?? "").trim();
+  const birthDateStr = String(formData.get("birthDate") ?? "").trim();
+  let enrollmentCode = String(formData.get("enrollmentCode") ?? "").trim();
 
-  if (!email || !password || !fullName || !schoolSlug) {
-    return { error: "Preencha nome, e-mail, senha e código da escola." };
+  if (!email || !password || !fullName || !schoolSlug || !classId || !birthDateStr) {
+    return { error: "Preencha todos os campos, incluindo data de nascimento e turma." };
   }
   if (password.length < 6) {
     return { error: "A senha deve ter pelo menos 6 caracteres." };
   }
+
+  const birthDate = parseBirthDate(birthDateStr);
+  if (!birthDate) return { error: "Data de nascimento inválida." };
 
   const school = await findSchoolBySlug(schoolSlug);
   if (!school) {
@@ -167,50 +188,10 @@ export async function registerTeacherAction(formData: FormData) {
     };
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: "Este e-mail já está cadastrado." };
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      fullName,
-      role: "teacher",
-      schoolId: school.id,
-    },
-  });
-
-  const token = await createSessionToken(user.id);
-  await setSessionCookie(token);
-  redirect("/dashboard/professor");
-}
-
-export async function registerStudentAction(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
-  const fullName = String(formData.get("fullName") ?? "").trim();
-  const schoolSlug = String(formData.get("schoolSlug") ?? "").trim().toLowerCase();
-  const classId = String(formData.get("classId") ?? "").trim();
-  let enrollmentCode = String(formData.get("enrollmentCode") ?? "").trim();
-
-  if (!email || !password || !fullName || !schoolSlug || !classId) {
-    return { error: "Preencha todos os campos, incluindo turma." };
-  }
-  if (password.length < 6) {
-    return { error: "A senha deve ter pelo menos 6 caracteres." };
-  }
-
-  const school = await findSchoolBySlug(schoolSlug);
-  if (!school) {
-    return { error: "Escola não encontrada. Confira o código com a instituição." };
-  }
-  await saveSchoolSlugPreference(school.slug);
-
-  if (!canAcceptPublicSignup(school.verificationStatus)) {
+  const settings = await getSchoolSettings(school.id);
+  if (!canSelfRegisterStudent(birthDate, settings.auth.studentSelfSignupMinAge)) {
     return {
-      error:
-        "Esta instituição ainda não está verificada para cadastros públicos. Aguarde a aprovação ou peça ao diretor.",
+      error: `Alunos menores de ${settings.auth.studentSelfSignupMinAge} anos não podem criar conta própria. Peça à escola ou ao responsável para liberar seu acesso.`,
     };
   }
 
@@ -240,7 +221,7 @@ export async function registerStudentAction(formData: FormData) {
       role: "student",
       schoolId: school.id,
       student: {
-        create: { enrollmentCode, classId: turma.id },
+        create: { enrollmentCode, classId: turma.id, birthDate, accountType: "standard" },
       },
     },
   });
@@ -251,8 +232,7 @@ export async function registerStudentAction(formData: FormData) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return { error: "Erro ao criar conta." };
 
-  const token = await createSessionToken(user.id);
-  await setSessionCookie(token);
+  await establishSession(user, { tenantSlug: school.slug });
   redirect("/dashboard/aluno");
 }
 
@@ -309,9 +289,45 @@ export async function registerParentAction(formData: FormData) {
     data: { parentId: parent.id, studentId: student.id, relation },
   });
 
-  const token = await createSessionToken(parent.id);
-  await setSessionCookie(token);
+  await establishSession(parent, { tenantSlug: school.slug });
   redirect("/dashboard/responsavel");
+}
+
+export async function studentPinLoginAction(formData: FormData) {
+  const schoolSlug = String(formData.get("schoolSlug") ?? "").trim().toLowerCase();
+  const enrollmentCode = String(formData.get("enrollmentCode") ?? "").trim();
+  const pin = String(formData.get("pin") ?? "").trim();
+
+  if (!schoolSlug || !enrollmentCode || !pin) {
+    return { error: "Informe escola, matrícula e PIN." };
+  }
+
+  const school = await findSchoolBySlug(schoolSlug);
+  if (!school) return { error: "Escola não encontrada." };
+
+  const settings = await getSchoolSettings(school.id);
+  if (!settings.auth.allowStudentPinLogin) {
+    return { error: "Login por PIN desativado nesta escola." };
+  }
+
+  const student = await prisma.student.findFirst({
+    where: {
+      enrollmentCode,
+      user: { schoolId: school.id, role: "student" },
+    },
+    include: { user: true },
+  });
+
+  if (!student?.accessPinHash) {
+    return { error: "Matrícula ou PIN inválidos." };
+  }
+
+  const valid = await verifyStudentPin(pin, student.accessPinHash);
+  if (!valid) return { error: "Matrícula ou PIN inválidos." };
+
+  await saveSchoolSlugPreference(school.slug);
+  await establishSession(student.user, { tenantSlug: school.slug });
+  redirect("/dashboard/aluno");
 }
 
 /** Lista turmas públicas para cadastro de aluno (por código parcial da escola). */

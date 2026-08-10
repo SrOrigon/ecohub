@@ -2,11 +2,19 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import type { UserRole } from "@/lib/constants";
+import { findSchoolBySlug } from "@/lib/school-lookup";
+import { TENANT_COOKIE } from "@/lib/tenant";
 
 const SESSION_COOKIE = "eduhub_session";
 const secret = new TextEncoder().encode(
   process.env.AUTH_SECRET ?? "eduhub-dev-secret-change-in-production"
 );
+
+export interface SessionPayload {
+  userId: string;
+  schoolId: string | null;
+  role: string;
+}
 
 export interface SessionUser {
   id: string;
@@ -17,18 +25,31 @@ export interface SessionUser {
   avatarUrl: string | null;
 }
 
-export async function createSessionToken(userId: string, remember = false) {
+export async function createSessionToken(
+  userId: string,
+  schoolId: string | null,
+  role: string,
+  remember = false
+) {
   const duration = remember ? "30d" : "7d";
-  return new SignJWT({ userId })
+  return new SignJWT({ userId, schoolId, role })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime(duration)
     .setIssuedAt()
     .sign(secret);
 }
 
-export async function verifySessionToken(token: string) {
-  const { payload } = await jwtVerify(token, secret);
-  return payload.userId as string;
+export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    return {
+      userId: payload.userId as string,
+      schoolId: (payload.schoolId as string | null) ?? null,
+      role: (payload.role as string) ?? "student",
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function setSessionCookie(token: string, remember = false) {
@@ -42,9 +63,30 @@ export async function setSessionCookie(token: string, remember = false) {
   });
 }
 
+export async function setTenantCookie(slug: string) {
+  const cookieStore = await cookies();
+  cookieStore.set(TENANT_COOKIE, slug.toLowerCase(), {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+}
+
 export async function clearSessionCookie() {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE);
+}
+
+async function validateTenantForUser(user: SessionUser): Promise<boolean> {
+  const cookieStore = await cookies();
+  const tenantSlug = cookieStore.get(TENANT_COOKIE)?.value;
+  if (!tenantSlug || !user.schoolId) return true;
+
+  const school = await findSchoolBySlug(tenantSlug);
+  if (!school) return true;
+  return school.id === user.schoolId;
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
@@ -52,17 +94,25 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  try {
-    const userId = await verifySessionToken(token);
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, fullName: true, role: true, schoolId: true, avatarUrl: true },
-    });
-    if (!user) return null;
-    return { ...user, role: user.role as SessionUser["role"] };
-  } catch {
+  const payload = await verifySessionToken(token);
+  if (!payload) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { id: true, email: true, fullName: true, role: true, schoolId: true, avatarUrl: true },
+  });
+  if (!user) return null;
+
+  const sessionUser: SessionUser = { ...user, role: user.role as SessionUser["role"] };
+
+  if (payload.schoolId && user.schoolId && payload.schoolId !== user.schoolId) {
     return null;
   }
+
+  const tenantOk = await validateTenantForUser(sessionUser);
+  if (!tenantOk) return null;
+
+  return sessionUser;
 }
 
 export async function requireSession(allowedRoles?: UserRole[]) {
@@ -76,7 +126,6 @@ export type SessionResult =
   | { ok: true; user: SessionUser }
   | { ok: false; error: string };
 
-/** Use in server actions with useActionState — returns error instead of throwing. */
 export async function requireSessionResult(allowedRoles?: UserRole[]): Promise<SessionResult> {
   const user = await getSessionUser();
   if (!user) return { ok: false, error: "Sessão expirada. Faça login novamente." };
@@ -86,4 +135,21 @@ export async function requireSessionResult(allowedRoles?: UserRole[]): Promise<S
   return { ok: true, user };
 }
 
-export { SESSION_COOKIE };
+export async function establishSession(
+  user: { id: string; schoolId: string | null; role: string },
+  options?: { remember?: boolean; tenantSlug?: string | null }
+) {
+  const token = await createSessionToken(user.id, user.schoolId, user.role, options?.remember);
+  await setSessionCookie(token, options?.remember);
+  if (options?.tenantSlug) {
+    await setTenantCookie(options.tenantSlug);
+  } else if (user.schoolId) {
+    const school = await prisma.school.findUnique({
+      where: { id: user.schoolId },
+      select: { slug: true },
+    });
+    if (school) await setTenantCookie(school.slug);
+  }
+}
+
+export { SESSION_COOKIE, TENANT_COOKIE };

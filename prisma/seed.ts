@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { ensureDefaultBadges, ensureDefaultRewards } from "../src/lib/school-setup";
+import { hashStudentPin } from "../src/lib/student-pin";
 
 const prisma = new PrismaClient();
 
@@ -14,6 +15,7 @@ async function main() {
   await prisma.reward.deleteMany();
   await prisma.rewardCategory.deleteMany();
   await prisma.parentStudent.deleteMany();
+  await prisma.teacherInvite.deleteMany();
   await prisma.xpTransaction.deleteMany();
   await prisma.studentBadge.deleteMany();
   await prisma.studentMission.deleteMany();
@@ -28,6 +30,8 @@ async function main() {
   await prisma.school.deleteMany();
 
   const passwordHash = await bcrypt.hash("demo123", 10);
+  const lucasPinHash = await hashStudentPin("123456");
+  const adultBirth = new Date("2010-05-15");
 
   const school = await prisma.school.create({
     data: {
@@ -85,10 +89,10 @@ async function main() {
   });
 
   const studentUsers = [
-    { email: "lucas@aluno.local", name: "Lucas Henrique", code: "2026001", classId: class8A.id, xp: 2450, level: 8, coins: 370 },
-    { email: "ana@aluno.local", name: "Ana Beatriz", code: "2026002", classId: class8A.id, xp: 1980, level: 6, coins: 210 },
-    { email: "maria@aluno.local", name: "Maria Eduarda", code: "2026003", classId: class9B.id, xp: 3120, level: 10, coins: 450 },
-    { email: "pedro@aluno.local", name: "Pedro Santos", code: "2026004", classId: class9B.id, xp: 890, level: 3, coins: 95 },
+    { email: "lucas@aluno.local", name: "Lucas Henrique", code: "2026001", classId: class8A.id, xp: 2450, level: 8, coins: 370, pinHash: lucasPinHash },
+    { email: "ana@aluno.local", name: "Ana Beatriz", code: "2026002", classId: class8A.id, xp: 1980, level: 6, coins: 210, pinHash: null as string | null },
+    { email: "maria@aluno.local", name: "Maria Eduarda", code: "2026003", classId: class9B.id, xp: 3120, level: 10, coins: 450, pinHash: null },
+    { email: "pedro@aluno.local", name: "Pedro Santos", code: "2026004", classId: class9B.id, xp: 890, level: 3, coins: 95, pinHash: null },
   ];
 
   const students = [];
@@ -110,6 +114,9 @@ async function main() {
         xpTotal: s.xp,
         level: s.level,
         coins: s.coins,
+        birthDate: adultBirth,
+        accessPinHash: s.pinHash,
+        accountType: s.pinHash ? "standard" : "standard",
       },
     });
     students.push(student);
@@ -276,7 +283,7 @@ async function main() {
   console.log("Diretor: admin@eduhub.local / demo123");
   console.log("Professor: professor@eduhub.local / demo123");
   console.log("Responsável: mariana@responsavel.local / demo123 (filhos: Lucas e Ana)");
-  console.log("Alunos: lucas@aluno.local / demo123 (320 moedas na loja)");
+  console.log("Alunos: lucas@aluno.local / demo123 · PIN demo: matrícula 2026001 / PIN 123456");
 }
 
 main()

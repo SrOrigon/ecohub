@@ -82,6 +82,13 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
             </Select>
           </div>
           <div>
+            <Label htmlFor="birthDate">Data de nascimento</Label>
+            <Input id="birthDate" name="birthDate" type="date" required />
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+              Menores de 18 anos precisam que a escola ou responsável libere o acesso.
+            </p>
+          </div>
+          <div>
             <Label htmlFor="fullName">Seu nome</Label>
             <Input id="fullName" name="fullName" required />
           </div>
@@ -106,7 +113,11 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
         </form>
         <p className="mt-4 text-center text-sm">
           <Link href="/login/aluno" className="text-indigo-600 hover:underline">
-            Já tenho conta
+            Já tenho conta (e-mail)
+          </Link>
+          {" · "}
+          <Link href="/entrar" className="text-indigo-600 hover:underline">
+            Entrar com PIN
           </Link>
         </p>
       </CardContent>

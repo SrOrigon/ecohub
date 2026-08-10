@@ -3,6 +3,8 @@ import { Users, BookOpen, Home } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { getParentChildren } from "@/actions/parents";
 import { getHomeTasksForParent } from "@/actions/home-tasks";
+import { ProvisionStudentForm } from "@/components/parents/provision-student-form";
+import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,9 +27,16 @@ export default async function ResponsavelPortalPage() {
   if (!user) redirect("/login/responsavel");
   if (user.role !== "parent") redirect("/dashboard");
 
-  const [children, homeTasks] = await Promise.all([
+  const [children, homeTasks, classes] = await Promise.all([
     getParentChildren(user.id),
     getHomeTasksForParent(user.id),
+    user.schoolId
+      ? prisma.classGroup.findMany({
+          where: { schoolId: user.schoolId },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        })
+      : Promise.resolve([]),
   ]);
 
   const childOptions = children.map(({ student }) => ({
@@ -43,6 +52,8 @@ export default async function ResponsavelPortalPage() {
       >
         {childOptions.length > 0 && <CreateHomeTaskForm childOptions={childOptions} />}
       </PageHeader>
+
+      <ProvisionStudentForm classes={classes} />
 
       {childOptions.length > 0 && (
         <Card>

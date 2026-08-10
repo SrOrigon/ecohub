@@ -29,6 +29,7 @@ model School {
   exercises   Exercise[]
   trails      LearningTrail[]
   announcements Announcement[]
+  teacherInvites TeacherInvite[]
 }
 
 model User {
@@ -56,6 +57,9 @@ model User {
   announcements  Announcement[]
   announcementReads AnnouncementRead[]
   personalNotes  UserNote[]
+  teacherInvitesSent TeacherInvite[] @relation("TeacherInvitesSent")
+  teacherInvitesUsed TeacherInvite[] @relation("TeacherInvitesUsed")
+  studentsProvisioned Student[] @relation("StudentProvisionedBy")
 }
 
 model Notification {
@@ -111,17 +115,21 @@ model ClassGroup {
 }
 
 model Student {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  enrollmentCode String   @unique
-  birthDate      DateTime?
-  classId        String?
-  xpTotal        Int      @default(0)
-  level          Int      @default(1)
-  coins          Int      @default(0)
-  createdAt      DateTime @default(now())
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  enrollmentCode  String    @unique
+  birthDate       DateTime?
+  accessPinHash   String?
+  accountType     String    @default("standard")
+  provisionedById String?
+  classId         String?
+  xpTotal         Int       @default(0)
+  level           Int       @default(1)
+  coins           Int       @default(0)
+  createdAt       DateTime  @default(now())
 
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provisionedBy   User?             @relation("StudentProvisionedBy", fields: [provisionedById], references: [id], onDelete: SetNull)
   classGroup      ClassGroup?       @relation(fields: [classId], references: [id], onDelete: SetNull)
   grades          Grade[]
   attendance      Attendance[]
@@ -551,4 +559,23 @@ model UserNote {
 
   @@index([userId, date])
   @@index([userId, createdAt])
+}
+
+model TeacherInvite {
+  id          String    @id @default(cuid())
+  schoolId    String
+  token       String    @unique
+  email       String?
+  invitedById String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  usedById    String?
+  createdAt   DateTime  @default(now())
+
+  school    School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  invitedBy User   @relation("TeacherInvitesSent", fields: [invitedById], references: [id], onDelete: Cascade)
+  usedBy    User?  @relation("TeacherInvitesUsed", fields: [usedById], references: [id], onDelete: SetNull)
+
+  @@index([schoolId])
+  @@index([token])
 }

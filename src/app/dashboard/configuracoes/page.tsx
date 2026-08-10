@@ -12,6 +12,7 @@ import {
   verificationStatusMessage,
   type SchoolVerificationStatus,
 } from "@/lib/school-verification";
+import { TenantUrlCard } from "@/components/school/tenant-url-card";
 import { redirect } from "next/navigation";
 
 export default async function ConfiguracoesPage() {
@@ -84,6 +85,15 @@ export default async function ConfiguracoesPage() {
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
             Compartilhe com professores e famílias após a verificação. Demo: <strong>escola-demo</strong>
           </p>
+        </CardContent>
+      </Card>
+
+      <Card className="border-indigo-200 bg-indigo-50/80 dark:border-indigo-900 dark:bg-indigo-950/30">
+        <CardHeader>
+          <CardTitle className="text-base">Links do portal da escola</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TenantUrlCard slug={school.slug} schoolName={school.name} />
         </CardContent>
       </Card>
 
