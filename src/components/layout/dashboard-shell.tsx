@@ -34,7 +34,7 @@ export function DashboardShell({
   return (
     <SchoolThemeProvider branding={branding}>
       <div
-        className="app-shell bg-[#f8fafc]"
+        className="app-shell"
         data-audience={kidFriendly ? "student" : "staff"}
       >
         <a href="#main-content" className="skip-link">

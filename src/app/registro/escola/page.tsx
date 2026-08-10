@@ -18,7 +18,7 @@ export default function RegisterEscolaPage() {
   );
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-gradient-to-b from-indigo-50 to-white px-4 py-8">
+    <main className="auth-page flex min-h-dvh items-center justify-center px-4 py-8">
       <Card className="w-full max-w-lg rounded-2xl border-2">
         <CardHeader>
           <Link href="/registro" className="mb-2 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-indigo-600">

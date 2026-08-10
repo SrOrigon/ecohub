@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form-fields";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { ArrowLeft, Building2, GraduationCap, Heart, UserRound } from "lucide-react";
 
 type Portal = "escola" | "professor" | "aluno" | "responsavel";
@@ -90,18 +91,22 @@ export function RoleLoginForm({ portal }: { portal: Portal }) {
   );
 
   return (
-    <Card className="w-full max-w-lg rounded-2xl border-2 shadow-lg">
+    <div className="relative w-full max-w-lg">
+      <div className="absolute -top-12 right-0 sm:-top-14">
+        <ThemeToggle compact />
+      </div>
+      <Card className="w-full rounded-2xl border-2 shadow-[var(--shadow-md)]">
       <CardHeader>
         <Link
           href="/login"
-          className="mb-2 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-indigo-600"
+          className="mb-2 inline-flex items-center gap-1 text-sm text-[var(--muted-foreground)] hover:text-[color:var(--school-primary)]"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Voltar
         </Link>
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
-            <Icon className="h-6 w-6 text-indigo-600" aria-hidden="true" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950">
+            <Icon className="h-6 w-6 text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
           </div>
           <div>
             <CardTitle className="text-xl">{cfg.title}</CardTitle>
@@ -120,7 +125,10 @@ export function RoleLoginForm({ portal }: { portal: Portal }) {
             <Input id="password" name="password" type="password" required autoComplete="current-password" />
           </div>
           {state?.error && (
-            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800" role="alert">
+            <p
+              className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800 dark:bg-red-950/50 dark:text-red-200"
+              role="alert"
+            >
               {state.error}
             </p>
           )}
@@ -130,7 +138,7 @@ export function RoleLoginForm({ portal }: { portal: Portal }) {
         </form>
 
         <div className="mt-5 space-y-2">
-          <p className="text-sm font-medium text-slate-700">Demo rápido:</p>
+          <p className="text-sm font-medium text-[var(--foreground)]">Demo rápido:</p>
           <form action={formAction}>
             <input type="hidden" name="portal" value={portal} />
             <input type="hidden" name="email" value={cfg.demoEmail} />
@@ -139,33 +147,34 @@ export function RoleLoginForm({ portal }: { portal: Portal }) {
               {cfg.demoLabel}
             </Button>
           </form>
-          <p className="text-xs text-slate-500">Senha demo: demo123</p>
+          <p className="text-xs text-[var(--muted-foreground)]">Senha demo: demo123</p>
         </div>
 
         {portal === "aluno" && (
-          <p className="mt-4 text-sm text-slate-600">
+          <p className="mt-4 text-sm text-[var(--muted-foreground)]">
             É pai, mãe ou responsável?{" "}
-            <Link href="/login/responsavel" className="font-semibold text-rose-700 hover:underline">
+            <Link href="/login/responsavel" className="font-semibold text-rose-700 hover:underline dark:text-rose-400">
               Acesse o portal de responsáveis
             </Link>
           </p>
         )}
 
-        <p className="mt-4 text-center text-sm text-slate-600">
+        <p className="mt-4 text-center text-sm text-[var(--muted-foreground)]">
           Não tem conta?{" "}
-          <Link href={cfg.registerHref} className="font-semibold text-indigo-700 hover:underline">
+          <Link href={cfg.registerHref} className="font-semibold text-[color:var(--school-primary)] hover:underline">
             Cadastre-se
           </Link>
         </p>
 
-        <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-slate-100 pt-4 text-xs text-slate-500">
+        <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-[var(--border-subtle)] pt-4 text-xs text-[var(--muted-foreground)]">
           {cfg.otherPortals.map((o) => (
-            <Link key={o.href} href={o.href} className="hover:text-indigo-600 hover:underline">
+            <Link key={o.href} href={o.href} className="hover:text-[color:var(--school-primary)] hover:underline">
               {o.label}
             </Link>
           ))}
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }

@@ -154,7 +154,7 @@ function NavLinks({
               kidFriendly ? "min-h-12 px-4 py-3 text-base" : "min-h-11 px-3 py-2.5 text-sm",
               active
                 ? "bg-[color:var(--school-primary-soft)] text-[color:var(--school-primary)] ring-2 ring-[color:var(--school-primary-ring)]"
-                : "text-slate-700 hover:bg-slate-100"
+                : "nav-link-inactive"
             )}
           >
             <Icon className={cn("shrink-0", kidFriendly ? "h-6 w-6" : "h-5 w-5")} aria-hidden="true" />
@@ -213,7 +213,7 @@ export function Sidebar({
           />
           <aside
             id="mobile-sidebar"
-            className="relative flex h-full w-[min(20rem,90vw)] flex-col bg-white shadow-xl safe-area-bottom safe-area-top"
+            className="relative flex h-full w-[min(20rem,90vw)] flex-col sidebar-panel shadow-[var(--shadow-md)] safe-area-bottom safe-area-top"
             aria-label="Menu lateral"
           >
             <button
@@ -241,7 +241,7 @@ export function Sidebar({
       )}
 
       <aside
-        className="hidden h-dvh w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex xl:w-72"
+        className="sidebar-panel hidden h-dvh w-64 shrink-0 flex-col border-r md:flex xl:w-72"
         aria-label="Menu lateral"
       >
         <SidebarContent
@@ -285,15 +285,17 @@ function SidebarContent({
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-slate-200 px-4 sm:px-6">
+      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-[var(--border)] px-4 sm:px-6">
         <Medal className="h-8 w-8 shrink-0 text-[color:var(--school-primary)]" aria-hidden="true" />
         <div className="min-w-0">
-          <p className="truncate text-lg font-bold text-slate-900">EduHub</p>
-          <p className="truncate text-sm text-slate-600">{ROLE_LABELS[role]}</p>
+          <p className="truncate text-lg font-bold text-[var(--foreground)]">EduHub</p>
+          <p className="truncate text-sm text-[var(--muted-foreground)]">{ROLE_LABELS[role]}</p>
         </div>
       </div>
       {tagline && (
-        <p className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">{tagline}</p>
+        <p className="border-b border-[var(--border-subtle)] px-4 py-2 text-xs text-[var(--muted-foreground)]">
+          {tagline}
+        </p>
       )}
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <NavLinks
@@ -305,16 +307,16 @@ function SidebarContent({
           onNavigate={onNavigate}
         />
       </div>
-      <div className="shrink-0 border-t border-slate-200 p-4">
+      <div className="shrink-0 border-t border-[var(--border)] p-4">
         <Link
           href="/dashboard/perfil"
           onClick={onNavigate}
-          className="mb-3 flex min-h-12 items-center gap-3 rounded-xl p-2 transition hover:bg-slate-50 active:bg-slate-100"
+          className="mb-3 flex min-h-12 items-center gap-3 rounded-xl p-2 transition hover:bg-[var(--hover)] active:opacity-90"
         >
           <ProfileAvatar name={userName} avatarUrl={avatarUrl} size="sm" className="ring-2" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-slate-900">{userName}</p>
-            <p className="truncate text-xs text-slate-600">{schoolName}</p>
+            <p className="truncate text-sm font-semibold text-[var(--foreground)]">{userName}</p>
+            <p className="truncate text-xs text-[var(--muted-foreground)]">{schoolName}</p>
           </div>
         </Link>
         <form action={logoutAction} className="mt-1">

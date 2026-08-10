@@ -71,7 +71,7 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-[var(--overlay)]" onClick={onClose} aria-hidden="true" />
       <div
         ref={dialogRef}
         role="dialog"
@@ -79,17 +79,17 @@ export function Modal({
         aria-labelledby="modal-title"
         className={cn(
           "relative z-10 flex max-h-[90dvh] w-full flex-col safe-area-bottom",
-          "rounded-t-2xl border border-slate-200 bg-white shadow-xl sm:max-w-xl sm:rounded-xl"
+          "rounded-t-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-md)] sm:max-w-xl sm:rounded-xl"
         )}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-6">
-          <h2 id="modal-title" className="pr-4 text-lg font-semibold text-slate-900">
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4 py-4 sm:px-6">
+          <h2 id="modal-title" className="pr-4 text-lg font-semibold text-[var(--foreground)]">
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover)]"
             aria-label="Fechar"
           >
             <X className="h-5 w-5" />

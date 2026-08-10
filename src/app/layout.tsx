@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { ThemeProvider } from "@/components/theme/theme-provider";
+import { ThemeScript } from "@/components/theme/theme-script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -45,10 +47,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} light h-full bg-white antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} light h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="flex min-h-dvh flex-col bg-white text-slate-900">
-        {children}
+      <head>
+        <ThemeScript />
+      </head>
+      <body className="flex min-h-dvh flex-col bg-[var(--background)] text-[var(--foreground)]">
+        <ThemeProvider>{children}</ThemeProvider>
         <ServiceWorkerRegister />
       </body>
     </html>

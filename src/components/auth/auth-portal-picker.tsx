@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Building2, GraduationCap, Heart, UserRound } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Medal } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 const portals = [
   {
@@ -10,8 +11,9 @@ const portals = [
     icon: Building2,
     title: "Instituição",
     description: "Direção e gestão da escola — turmas, relatórios e configurações.",
-    color: "border-indigo-200 bg-indigo-50/50 hover:border-indigo-400",
-    iconColor: "text-indigo-600 bg-indigo-100",
+    color:
+      "border-indigo-200 bg-indigo-50/50 hover:border-indigo-400 dark:border-indigo-800 dark:bg-indigo-950/30 dark:hover:border-indigo-600",
+    iconColor: "text-indigo-600 bg-indigo-100 dark:text-indigo-300 dark:bg-indigo-950",
   },
   {
     href: "/login/professor",
@@ -19,8 +21,9 @@ const portals = [
     icon: GraduationCap,
     title: "Professor",
     description: "Cadastre turmas, publique exercícios e acompanhe entregas.",
-    color: "border-emerald-200 bg-emerald-50/50 hover:border-emerald-400",
-    iconColor: "text-emerald-600 bg-emerald-100",
+    color:
+      "border-emerald-200 bg-emerald-50/50 hover:border-emerald-400 dark:border-emerald-800 dark:bg-emerald-950/30 dark:hover:border-emerald-600",
+    iconColor: "text-emerald-600 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-950",
   },
   {
     href: "/login/aluno",
@@ -28,8 +31,9 @@ const portals = [
     icon: UserRound,
     title: "Aluno",
     description: "Exercícios escolares, missões e tarefas de casa da família.",
-    color: "border-amber-200 bg-amber-50/50 hover:border-amber-400",
-    iconColor: "text-amber-600 bg-amber-100",
+    color:
+      "border-amber-200 bg-amber-50/50 hover:border-amber-400 dark:border-amber-800 dark:bg-amber-950/30 dark:hover:border-amber-600",
+    iconColor: "text-amber-600 bg-amber-100 dark:text-amber-300 dark:bg-amber-950",
   },
   {
     href: "/login/responsavel",
@@ -37,22 +41,26 @@ const portals = [
     icon: Heart,
     title: "Responsável",
     description: "Veja desempenho dos filhos e crie tarefas de casa com recompensas.",
-    color: "border-rose-200 bg-rose-50/50 hover:border-rose-400",
-    iconColor: "text-rose-600 bg-rose-100",
+    color:
+      "border-rose-200 bg-rose-50/50 hover:border-rose-400 dark:border-rose-800 dark:bg-rose-950/30 dark:hover:border-rose-600",
+    iconColor: "text-rose-600 bg-rose-100 dark:text-rose-300 dark:bg-rose-950",
   },
 ];
 
 export function AuthPortalPicker({ mode }: { mode: "login" | "register" }) {
   return (
     <div className="w-full max-w-4xl space-y-6">
+      <div className="flex justify-end">
+        <ThemeToggle compact />
+      </div>
       <div className="text-center">
-        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100">
-          <Medal className="h-7 w-7 text-indigo-600" aria-hidden="true" />
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950">
+          <Medal className="h-7 w-7 text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold text-[var(--foreground)]">
           {mode === "login" ? "Entrar no EduHub" : "Criar conta no EduHub"}
         </h1>
-        <p className="mt-2 text-slate-600">Escolha seu tipo de acesso</p>
+        <p className="mt-2 text-[var(--muted-foreground)]">Escolha seu tipo de acesso</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -63,7 +71,9 @@ export function AuthPortalPicker({ mode }: { mode: "login" | "register" }) {
             <Link key={p.href} href={href} className="block min-h-11">
               <Card className={`h-full border-2 transition-colors ${p.color}`}>
                 <CardHeader className="pb-2 text-center">
-                  <div className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full ${p.iconColor}`}>
+                  <div
+                    className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full ${p.iconColor}`}
+                  >
                     <Icon className="h-6 w-6" aria-hidden="true" />
                   </div>
                   <CardTitle className="text-lg">{p.title}</CardTitle>
@@ -80,18 +90,24 @@ export function AuthPortalPicker({ mode }: { mode: "login" | "register" }) {
         })}
       </div>
 
-      <p className="text-center text-sm text-slate-600">
+      <p className="text-center text-sm text-[var(--muted-foreground)]">
         {mode === "login" ? (
           <>
             Não tem conta?{" "}
-            <Link href="/registro" className="font-semibold text-indigo-700 hover:underline">
+            <Link
+              href="/registro"
+              className="font-semibold text-[color:var(--school-primary)] hover:underline"
+            >
               Cadastre-se
             </Link>
           </>
         ) : (
           <>
             Já tem conta?{" "}
-            <Link href="/login" className="font-semibold text-indigo-700 hover:underline">
+            <Link
+              href="/login"
+              className="font-semibold text-[color:var(--school-primary)] hover:underline"
+            >
               Entrar
             </Link>
           </>
