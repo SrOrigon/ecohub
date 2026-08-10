@@ -23,15 +23,15 @@ export function PageHeader({
         {backHref && (
           <Link
             href={backHref}
-            className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[color:var(--school-primary)] hover:underline"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             {backLabel}
           </Link>
         )}
-        <div>
+        <div className="space-y-1">
           <h1 className="page-title">{title}</h1>
-          {description && <p className="page-subtitle mt-1">{description}</p>}
+          {description && <p className="page-subtitle">{description}</p>}
         </div>
       </div>
       {children && <div className="page-header-actions shrink-0">{children}</div>}

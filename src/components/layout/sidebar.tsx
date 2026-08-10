@@ -9,6 +9,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Medal,
+  NotebookPen,
   Settings,
   Target,
   User,
@@ -58,6 +59,7 @@ const allNavItems: NavItem[] = [
   { href: "/dashboard/boletim", label: "Meu boletim", icon: FileText, roles: ["student"] },
   { href: "/dashboard/responsavel", label: "Meus Filhos", icon: Heart, roles: ["parent"] },
   { href: "/dashboard/calendario", label: "Calendário", icon: CalendarDays, roles: ["admin", "director", "teacher", "student", "parent"] },
+  { href: "/dashboard/agenda", label: "Minha agenda", icon: NotebookPen, roles: ["admin", "director", "teacher", "student", "parent"] },
   { href: "/dashboard/alunos", label: "Alunos", icon: Users, roles: ["admin", "director", "teacher"] },
   { href: "/dashboard/turmas", label: "Turmas", icon: GraduationCap, roles: ["admin", "director", "teacher"] },
   { href: "/dashboard/professores", label: "Professores", icon: UserCog, roles: ["admin", "director"], permission: "director.manageTeachers" },
@@ -285,7 +287,7 @@ function SidebarContent({
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-[var(--border)] px-4 sm:px-6">
+      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-gradient-to-r from-[color:var(--school-primary-soft)] to-transparent px-4 sm:px-6">
         <Medal className="h-8 w-8 shrink-0 text-[color:var(--school-primary)]" aria-hidden="true" />
         <div className="min-w-0">
           <p className="truncate text-lg font-bold text-[var(--foreground)]">EduHub</p>

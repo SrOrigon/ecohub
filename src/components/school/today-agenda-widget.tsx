@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sun, Calendar, ChevronRight } from "lucide-react";
 import type { TodayItem } from "@/components/student/today-checklist";
+import { cn } from "@/lib/utils";
 
 type DayStatus = {
   label: string;
@@ -28,11 +29,11 @@ export function TodayAgendaWidget({
 
   return (
     <Card
-      className={
+      className={cn(
         kidFriendly
-          ? "kid-card border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-white to-indigo-50"
-          : "border-slate-200"
-      }
+          ? "kid-card border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-[var(--surface)] to-indigo-50 dark:border-amber-800 dark:from-amber-950/30 dark:to-indigo-950/20"
+          : "border-[var(--border)]"
+      )}
     >
       <CardHeader className="pb-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -47,28 +48,32 @@ export function TodayAgendaWidget({
             </Badge>
           )}
         </div>
-        <p className={`text-slate-600 ${kidFriendly ? "text-base" : "text-sm"}`}>
+        <p className={cn("text-[var(--muted-foreground)]", kidFriendly ? "text-base" : "text-sm")}>
           {subtitle ??
             (pending === 0 ? "Nada pendente para hoje." : `${pending} item(ns) na sua agenda`)}
         </p>
       </CardHeader>
       <CardContent className="space-y-2">
         {items.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-4 text-sm text-slate-600">
+          <div className="flex items-center gap-2 rounded-xl border border-dashed border-[var(--border)] bg-[var(--hover)] px-3 py-4 text-sm text-[var(--muted-foreground)]">
             <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
-            Agenda livre — aproveite para revisar ou explorar trilhas!
+            Agenda livre — aproveite para revisar ou anotar lembretes!
           </div>
         ) : (
           items.slice(0, 6).map((item) => (
-            <div
-              key={item.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 bg-white p-3 shadow-sm"
-            >
+            <div key={item.id} className="agenda-item-row">
               <div className="min-w-0 flex-1">
-                <p className={`font-semibold text-slate-900 ${kidFriendly ? "text-base" : "text-sm"}`}>
+                <p
+                  className={cn(
+                    "font-semibold text-[var(--foreground)]",
+                    kidFriendly ? "text-base" : "text-sm"
+                  )}
+                >
                   {item.title}
                 </p>
-                {item.subtitle && <p className="text-xs text-slate-500">{item.subtitle}</p>}
+                {item.subtitle && (
+                  <p className="text-xs text-[var(--muted-foreground)]">{item.subtitle}</p>
+                )}
                 {item.badge && (
                   <Badge variant="warning" className="mt-1">
                     {item.badge}
@@ -77,7 +82,7 @@ export function TodayAgendaWidget({
               </div>
               {!item.done && (
                 <Link href={item.href}>
-                  <Button size={kidFriendly ? "lg" : "sm"} variant="secondary" className="gap-1 shrink-0">
+                  <Button size={kidFriendly ? "lg" : "sm"} variant="secondary" className="shrink-0 gap-1">
                     {item.cta}
                     <ChevronRight className="h-4 w-4" aria-hidden="true" />
                   </Button>
@@ -86,11 +91,16 @@ export function TodayAgendaWidget({
             </div>
           ))
         )}
-        {items.length > 6 && (
-          <Link href="/dashboard/calendario" className="block text-center text-sm text-[color:var(--school-primary)]">
-            Ver calendário completo
+        <div className="flex flex-wrap justify-center gap-3 pt-1 text-sm">
+          <Link href="/dashboard/agenda" className="font-medium text-[color:var(--school-primary)] hover:underline">
+            Minha agenda
           </Link>
-        )}
+          {items.length > 6 && (
+            <Link href="/dashboard/calendario" className="text-[color:var(--school-primary)] hover:underline">
+              Calendário escolar
+            </Link>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

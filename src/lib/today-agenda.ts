@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/db";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { getTodaySchoolStatus, getUpcomingEvents } from "@/lib/school-calendar";
+import { getTodayPersonalNotes } from "@/actions/personal-notes";
 import type { TodayItem } from "@/components/student/today-checklist";
 import { formatDate } from "@/lib/utils";
 
-export async function getTodayAgendaForStudent(studentId: string, classId: string | null, schoolId: string | null) {
-  const [student, settings, announcements, trails] = await Promise.all([
+export async function getTodayAgendaForStudent(studentId: string, classId: string | null, schoolId: string | null, userId?: string) {
+  const [student, settings, announcements, trails, todayNotes] = await Promise.all([
     prisma.student.findUnique({
       where: { id: studentId },
       include: {
@@ -35,6 +36,7 @@ export async function getTodayAgendaForStudent(studentId: string, classId: strin
       },
       take: 5,
     }),
+    userId ? getTodayPersonalNotes(userId) : Promise.resolve([]),
   ]);
 
   if (!student) return { items: [] as TodayItem[], dayStatus: null, events: [] };
@@ -66,6 +68,18 @@ export async function getTodayAgendaForStudent(studentId: string, classId: strin
   );
 
   const items: TodayItem[] = [];
+
+  for (const note of todayNotes) {
+    items.push({
+      id: `note-${note.id}`,
+      title: note.title ?? "Minha anotação",
+      subtitle: note.content.slice(0, 80) + (note.content.length > 80 ? "…" : ""),
+      href: "/dashboard/agenda",
+      done: false,
+      cta: "Ver agenda",
+      badge: "Anotação",
+    });
+  }
 
   for (const ht of pendingHomeTasks) {
     items.push({
@@ -157,7 +171,10 @@ export async function getTodayAgendaForStudent(studentId: string, classId: strin
 }
 
 export async function getTodayAgendaForTeacher(userId: string, schoolId: string | null) {
-  const settings = await getSchoolSettings(schoolId);
+  const [settings, todayNotes] = await Promise.all([
+    getSchoolSettings(schoolId),
+    getTodayPersonalNotes(userId),
+  ]);
   const dayStatus = getTodaySchoolStatus(settings);
   const events = getUpcomingEvents(settings, 5);
 
@@ -173,16 +190,28 @@ export async function getTodayAgendaForTeacher(userId: string, schoolId: string 
     },
   });
 
-  const items: TodayItem[] = events
-    .filter((e) => e.isToday || e.daysUntil <= 2)
-    .map((e) => ({
-      id: `ev-${e.date}`,
-      title: e.label,
-      subtitle: e.isToday ? "Hoje" : `Em ${e.daysUntil} dia(s)`,
-      href: "/dashboard/calendario",
-      done: false,
-      cta: "Ver calendário",
-    }));
+  const items: TodayItem[] = todayNotes.map((note) => ({
+    id: `note-${note.id}`,
+    title: note.title ?? "Minha anotação",
+    subtitle: note.content.slice(0, 80) + (note.content.length > 80 ? "…" : ""),
+    href: "/dashboard/agenda",
+    done: false,
+    cta: "Ver agenda",
+    badge: "Anotação",
+  }));
+
+  items.push(
+    ...events
+      .filter((e) => e.isToday || e.daysUntil <= 2)
+      .map((e) => ({
+        id: `ev-${e.date}`,
+        title: e.label,
+        subtitle: e.isToday ? "Hoje" : `Em ${e.daysUntil} dia(s)`,
+        href: "/dashboard/calendario",
+        done: false,
+        cta: "Ver calendário",
+      }))
+  );
 
   if (pendingSubmissions > 0) {
     items.unshift({
