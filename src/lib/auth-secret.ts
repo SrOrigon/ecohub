@@ -9,12 +9,22 @@ function isNextBuildPhase(): boolean {
   return process.env.NEXT_PHASE === "phase-production-build";
 }
 
-/** Segredo JWT — nunca lança em runtime; usa fallback demo se AUTH_SECRET faltar. */
+function isDemoMode(): boolean {
+  return (
+    process.env.EDUHUB_ENABLE_DEMO === "1" || process.env.EDUHUB_ENABLE_DEMO === "true"
+  );
+}
+
+/** Segredo JWT — fallback demo só em EDUHUB_ENABLE_DEMO ou fase de build. */
 export function getAuthSecret(): Uint8Array {
   const secret = process.env.AUTH_SECRET?.trim();
 
   if (!secret || secret.length < 32) {
-    if (process.env.NODE_ENV === "production" && !isNextBuildPhase()) {
+    if (
+      process.env.NODE_ENV === "production" &&
+      !isNextBuildPhase() &&
+      isDemoMode()
+    ) {
       return new TextEncoder().encode(DEMO_AUTH_SECRET);
     }
     return new TextEncoder().encode(

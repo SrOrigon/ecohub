@@ -58,9 +58,21 @@ npm run build        # compilar produção
 npm run db:migrate   # aplicar migrations
 npm run db:seed      # popular banco demo
 npm run db:reset     # resetar banco + seed
+npm run check        # lint + build
+npm run test:smoke -- https://sua-url   # smoke pós-deploy
 ```
 
-## Estrutura
+## Implantação em instituições
+
+Para colocar o EduHub numa escola real:
+
+1. Leia **`DEPLOY.md`** (variáveis e Railway)
+2. Siga **`docs/GUIA_INSTITUICOES.md`** (checklist completo de testes)
+3. Cadastre a escola em **`/registro/escola`** (modo institucional — sem demo automático)
+4. Verifique **`GET /api/health`** após o deploy
+
+**Demo pública:** configure `EDUHUB_ENABLE_DEMO=1` no servidor (ver `DEPLOY.md`).
+
 
 ```
 src/

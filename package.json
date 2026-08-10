@@ -9,6 +9,8 @@
     "build": "node scripts/prisma-generate.mjs && next build",
     "start": "node scripts/start-production.mjs",
     "lint": "eslint",
+    "check": "npm run lint && npm run build",
+    "test:smoke": "node scripts/smoke-test.mjs",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",

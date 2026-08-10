@@ -7,6 +7,9 @@ startCommand = "npm start"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
-# Variáveis obrigatórias no painel Railway (Variables):
-# AUTH_SECRET — segredo JWT, mínimo 32 caracteres
-# DATABASE_URL — PostgreSQL (Railway Postgres plugin)
+# Variáveis no painel Railway (Variables):
+# AUTH_SECRET          — JWT, mínimo 32 caracteres (obrigatório em produção institucional)
+# DATABASE_URL         — file:/data/prod.db (monte Volume em /data)
+# EDUHUB_ENABLE_DEMO   — 1 para ambiente demo público (seed automático)
+# NEXT_PUBLIC_APP_URL  — URL pública do app
+# PLATFORM_ADMIN_EMAILS — admins da plataforma (aprovar escolas)
