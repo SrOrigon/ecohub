@@ -1,14 +1,16 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { createExerciseAction } from "@/actions/exercises";
+import { generateExerciseQuestionsAction } from "@/actions/ai";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import { FormMessage } from "@/components/ui/form-utils";
 import { Modal } from "@/components/ui/modal";
 import type { QuestionType } from "@/lib/exercises";
-import { ChevronLeft, ChevronRight, PenLine } from "lucide-react";
+import { SUBJECTS } from "@/lib/constants";
+import { ChevronLeft, ChevronRight, PenLine, Sparkles } from "lucide-react";
 
 interface ClassOption {
   id: string;
@@ -58,6 +60,10 @@ export function CreateExerciseForm({
     coins: mid.coins,
     maxPoints: mid.points,
   });
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiSubject, setAiSubject] = useState(SUBJECTS[0] ?? "Matemática");
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiPending, startAiTransition] = useTransition();
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
@@ -84,6 +90,35 @@ export function CreateExerciseForm({
   function closeModal() {
     setOpen(false);
     setStep(1);
+  }
+
+  function generateWithAi() {
+    if (!aiTopic.trim()) {
+      setAiError("Informe o tema das questões.");
+      return;
+    }
+    setAiError(null);
+    startAiTransition(async () => {
+      const fd = new FormData();
+      fd.set("topic", aiTopic);
+      fd.set("subject", aiSubject);
+      fd.set("count", "3");
+      const result = await generateExerciseQuestionsAction(fd);
+      if (result.error) {
+        setAiError(result.error);
+        return;
+      }
+      if (result.questions?.length) {
+        setQuestions(
+          result.questions.map((q) => ({
+            prompt: q.prompt,
+            type: q.type,
+            points: q.points,
+            options: q.options.length ? q.options : newQuestion("choice").options,
+          }))
+        );
+      }
+    });
   }
 
   return (
@@ -207,6 +242,40 @@ export function CreateExerciseForm({
 
           {step === 3 && (
             <div className="space-y-3">
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 p-3">
+                <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-indigo-900">
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  Gerar com EduHub IA (local, sem API)
+                </p>
+                <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+                  <Input
+                    value={aiTopic}
+                    onChange={(e) => setAiTopic(e.target.value)}
+                    placeholder="Tema, ex.: frações equivalentes"
+                    aria-label="Tema para gerar questões"
+                  />
+                  <Select
+                    value={aiSubject}
+                    onChange={(e) => setAiSubject(e.target.value)}
+                    aria-label="Disciplina"
+                    className="min-w-[8rem]"
+                  >
+                    {SUBJECTS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </Select>
+                  <Button type="button" variant="outline" disabled={aiPending} onClick={generateWithAi}>
+                    {aiPending ? "Gerando…" : "Gerar questões"}
+                  </Button>
+                </div>
+                {aiError && (
+                  <p className="mt-2 text-sm text-red-600" role="alert">
+                    {aiError}
+                  </p>
+                )}
+              </div>
               <div className="flex items-center justify-between">
                 <p className="font-semibold text-slate-800">Questões ({questions.length})</p>
                 <Button

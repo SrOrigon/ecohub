@@ -6,3 +6,7 @@ buildCommand = "npm run build"
 startCommand = "npm start"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+
+# Variáveis obrigatórias no painel Railway (Variables):
+# AUTH_SECRET — segredo JWT, mínimo 32 caracteres
+# DATABASE_URL — PostgreSQL (Railway Postgres plugin)

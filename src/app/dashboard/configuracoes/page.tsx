@@ -13,6 +13,10 @@ import {
   type SchoolVerificationStatus,
 } from "@/lib/school-verification";
 import { TenantUrlCard } from "@/components/school/tenant-url-card";
+import { PERIODS } from "@/lib/constants";
+import { closePeriodAction } from "@/actions/product-suite";
+import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/form-fields";
 import { redirect } from "next/navigation";
 
 export default async function ConfiguracoesPage() {
@@ -99,6 +103,38 @@ export default async function ConfiguracoesPage() {
 
       <SchoolSettingsForm school={school} />
       <SchoolRulesForm initial={settings} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Fechamento de bimestre</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-slate-600">
+            Períodos fechados bloqueiam edição e exclusão de notas. Atualmente fechados:{" "}
+            {settings.gradeRules.closedPeriods.length > 0
+              ? settings.gradeRules.closedPeriods.join(", ")
+              : "nenhum"}
+          </p>
+          <form action={closePeriodAction} className="flex flex-wrap items-end gap-3">
+            <div>
+              <label htmlFor="period" className="mb-1 block text-sm font-medium">
+                Fechar período
+              </label>
+              <Select id="period" name="period" required defaultValue={PERIODS[0]}>
+                {PERIODS.map((p) => (
+                  <option key={p} value={p} disabled={settings.gradeRules.closedPeriods.includes(p)}>
+                    {p}
+                    {settings.gradeRules.closedPeriods.includes(p) ? " (fechado)" : ""}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <Button type="submit" variant="outline">
+              Fechar bimestre
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

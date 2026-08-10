@@ -6,7 +6,9 @@ import { getAuthSecret } from "@/lib/auth-secret";
 import { loginHubPath } from "@/lib/login-paths";
 import { resolveTenantSlug, TENANT_HEADER } from "@/lib/tenant";
 
-const secret = getAuthSecret();
+function authSecret() {
+  return getAuthSecret();
+}
 
 const publicPaths = ["/", "/login", "/registro", "/entrar", "/convite"];
 
@@ -16,6 +18,7 @@ function isPublicPath(pathname: string) {
   if (pathname.startsWith("/registro/")) return true;
   if (pathname.startsWith("/convite/")) return true;
   if (pathname.startsWith("/e/")) return true;
+  if (pathname.startsWith("/inscricao/")) return true;
   if (pathname.startsWith("/entrar")) return true;
   return false;
 }
@@ -46,7 +49,7 @@ export async function proxy(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(token, secret);
+    await jwtVerify(token, authSecret());
     return NextResponse.next({ request: { headers: requestHeaders } });
   } catch {
     const response = NextResponse.redirect(new URL(loginHubPath(tenantSlug), request.url));

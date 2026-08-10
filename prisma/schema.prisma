@@ -30,6 +30,11 @@ model School {
   trails      LearningTrail[]
   announcements Announcement[]
   teacherInvites TeacherInvite[]
+  enrollmentApplications EnrollmentApplication[]
+  authorizationForms AuthorizationForm[]
+  chatThreads ChatThread[]
+  issuedDocuments IssuedDocument[]
+  scheduleSlots ClassScheduleSlot[]
 }
 
 model User {
@@ -62,6 +67,13 @@ model User {
   teacherInvitesUsed TeacherInvite[] @relation("TeacherInvitesUsed")
   studentsProvisioned Student[] @relation("StudentProvisionedBy")
   attendanceJustifications Attendance[] @relation("AttendanceJustifier")
+  aiChatLogs AiChatLog[]
+  chatMessagesSent ChatMessage[] @relation("ChatSender")
+  authorizationFormsCreated AuthorizationForm[] @relation("AuthFormCreator")
+  authorizationResponses AuthorizationResponse[] @relation("AuthParent")
+  documentsIssued IssuedDocument[] @relation("DocIssuer")
+  enrollmentReviews EnrollmentApplication[] @relation("EnrollmentReviewer")
+  chatThreadsAsParent ChatThread[] @relation("ChatParent")
 }
 
 model Notification {
@@ -113,6 +125,8 @@ model ClassGroup {
   classGoals  ClassGoal[]
   coTeachers  ClassGroupCoTeacher[]
   announcements Announcement[]
+  scheduleSlots ClassScheduleSlot[]
+  authorizationForms AuthorizationForm[]
 
   @@index([schoolId])
 }
@@ -158,6 +172,10 @@ model Student {
   trailProgress     StudentTrailProgress[]
   occurrences       Occurrence[]
   homeTasks         HomeTask[]
+  chatThreads       ChatThread[]
+  authorizationResponses AuthorizationResponse[]
+  issuedDocuments   IssuedDocument[]
+  enrollmentLinks   EnrollmentApplication[] @relation("EnrollmentStudent")
 
   @@index([classId])
 }
@@ -512,8 +530,42 @@ model Announcement {
   classGroup ClassGroup?        @relation(fields: [classId], references: [id], onDelete: SetNull)
   author     User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
   reads      AnnouncementRead[]
+  poll       AnnouncementPoll?
 
   @@index([schoolId, publishedAt])
+}
+
+model AnnouncementPoll {
+  id             String @id @default(cuid())
+  announcementId String @unique
+  question       String
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  options      AnnouncementPollOption[]
+  votes        AnnouncementPollVote[]
+}
+
+model AnnouncementPollOption {
+  id     String @id @default(cuid())
+  pollId String
+  label  String
+  sortOrder Int @default(0)
+
+  poll  AnnouncementPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes AnnouncementPollVote[]
+}
+
+model AnnouncementPollVote {
+  id       String @id @default(cuid())
+  pollId   String
+  optionId String
+  userId   String
+  votedAt  DateTime @default(now())
+
+  poll   AnnouncementPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option AnnouncementPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
 }
 
 model AnnouncementRead {
@@ -598,4 +650,132 @@ model TeacherInvite {
 
   @@index([schoolId])
   @@index([token])
+}
+
+model EnrollmentApplication {
+  id           String    @id @default(cuid())
+  schoolId     String
+  studentName  String
+  birthDate    DateTime
+  parentName   String
+  parentEmail  String
+  parentPhone  String?
+  gradeLevel   String
+  status       String    @default("pending")
+  notes        String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  studentId    String?
+  createdAt    DateTime  @default(now())
+
+  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  reviewedBy User?    @relation("EnrollmentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  student    Student? @relation("EnrollmentStudent", fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@index([schoolId, status])
+}
+
+model AuthorizationForm {
+  id        String    @id @default(cuid())
+  schoolId  String
+  classId   String?
+  title     String
+  body      String
+  deadline  DateTime?
+  createdById String
+  createdAt DateTime  @default(now())
+
+  school    School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classGroup ClassGroup? @relation(fields: [classId], references: [id], onDelete: SetNull)
+  createdBy User       @relation("AuthFormCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  responses AuthorizationResponse[]
+}
+
+model AuthorizationResponse {
+  id        String   @id @default(cuid())
+  formId    String
+  parentId  String
+  studentId String?
+  signedAt  DateTime @default(now())
+  note      String?
+
+  form    AuthorizationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  parent  User              @relation("AuthParent", fields: [parentId], references: [id], onDelete: Cascade)
+  student Student?          @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@unique([formId, parentId, studentId])
+}
+
+model ChatThread {
+  id        String   @id @default(cuid())
+  schoolId  String
+  studentId String
+  parentId  String
+  subject   String?
+  updatedAt DateTime @updatedAt
+
+  school   School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student  Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parent   User    @relation("ChatParent", fields: [parentId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@unique([schoolId, studentId, parentId])
+  @@index([schoolId])
+}
+
+model ChatMessage {
+  id        String    @id @default(cuid())
+  threadId  String
+  senderId  String
+  body      String
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  thread ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User       @relation("ChatSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+}
+
+model ClassScheduleSlot {
+  id        String @id @default(cuid())
+  schoolId  String
+  classId   String
+  weekday   Int
+  startTime String
+  endTime   String
+  subject   String
+  room      String?
+
+  school     School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classGroup ClassGroup @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([classId, weekday])
+}
+
+model IssuedDocument {
+  id         String   @id @default(cuid())
+  schoolId   String
+  studentId  String
+  type       String
+  title      String
+  body       String
+  issuedById String
+  issuedAt   DateTime @default(now())
+
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  issuedBy  User    @relation("DocIssuer", fields: [issuedById], references: [id], onDelete: Cascade)
+}
+
+model AiChatLog {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

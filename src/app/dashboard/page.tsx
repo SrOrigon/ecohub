@@ -33,6 +33,7 @@ export default async function DashboardPage() {
   if (user.role === "student") redirect("/dashboard/aluno");
   if (user.role === "teacher") redirect("/dashboard/professor");
   if (user.role === "parent") redirect("/dashboard/responsavel");
+  if (user.role === "secretary") redirect("/dashboard/secretaria");
 
   const schoolId = user.schoolId;
   const [stats, ranking, missions, recentXp, monthlyData, classData] = await Promise.all([

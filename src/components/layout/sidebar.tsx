@@ -27,6 +27,12 @@ import {
   Activity,
   Flag,
   FileText,
+  Bot,
+  AlertTriangle,
+  MessageSquare,
+  FileCheck,
+  ClipboardPen,
+  Clock,
   Shield,
 } from "lucide-react";
 import { useEffect } from "react";
@@ -55,18 +61,26 @@ type NavItem = {
 
 const allNavItems: NavItem[] = [
   { href: "/dashboard", label: "Visão Geral", icon: LayoutDashboard, roles: ["admin", "director"] },
+  { href: "/dashboard/secretaria", label: "Painel Secretaria", icon: ClipboardPen, roles: ["secretary"] },
   { href: "/dashboard/professor", label: "Minhas Turmas", icon: LayoutDashboard, roles: ["teacher"] },
   { href: "/dashboard/aluno", label: "Meu Perfil", icon: User, roles: ["student"] },
   { href: "/dashboard/boletim", label: "Meu boletim", icon: FileText, roles: ["student"] },
   { href: "/dashboard/responsavel", label: "Meus Filhos", icon: Heart, roles: ["parent"] },
-  { href: "/dashboard/calendario", label: "Calendário", icon: CalendarDays, roles: ["admin", "director", "teacher", "student", "parent"] },
-  { href: "/dashboard/agenda", label: "Minha agenda", icon: NotebookPen, roles: ["admin", "director", "teacher", "student", "parent"] },
-  { href: "/dashboard/alunos", label: "Alunos", icon: Users, roles: ["admin", "director", "teacher"] },
-  { href: "/dashboard/turmas", label: "Turmas", icon: GraduationCap, roles: ["admin", "director", "teacher"] },
+  { href: "/dashboard/assistente", label: "EduHub IA", icon: Bot, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
+  { href: "/dashboard/calendario", label: "Calendário", icon: CalendarDays, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
+  { href: "/dashboard/agenda", label: "Minha agenda", icon: NotebookPen, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
+  { href: "/dashboard/alunos", label: "Alunos", icon: Users, roles: ["admin", "director", "secretary", "teacher"] },
+  { href: "/dashboard/turmas", label: "Turmas", icon: GraduationCap, roles: ["admin", "director", "secretary", "teacher"] },
   { href: "/dashboard/professores", label: "Professores", icon: UserCog, roles: ["admin", "director"], permission: "director.manageTeachers" },
-  { href: "/dashboard/notas", label: "Notas", icon: BookOpen, roles: ["admin", "director", "teacher"], permission: "teacher.createGrades" },
-  { href: "/dashboard/frequencia", label: "Frequência", icon: ClipboardList, roles: ["admin", "director", "teacher"], permission: "teacher.recordAttendance" },
+  { href: "/dashboard/notas", label: "Notas", icon: BookOpen, roles: ["admin", "director", "secretary", "teacher"], permission: "teacher.createGrades" },
+  { href: "/dashboard/frequencia", label: "Frequência", icon: ClipboardList, roles: ["admin", "director", "secretary", "teacher"], permission: "teacher.recordAttendance" },
   { href: "/dashboard/diario", label: "Diário de classe", icon: BookMarked, roles: ["admin", "director", "teacher"], permission: "teacher.manageDiary" },
+  { href: "/dashboard/matriculas", label: "Matrículas", icon: FileCheck, roles: ["admin", "director", "secretary"] },
+  { href: "/dashboard/autorizacoes", label: "Autorizações", icon: ClipboardPen, roles: ["admin", "director", "secretary", "parent"] },
+  { href: "/dashboard/documentos", label: "Documentos", icon: FileText, roles: ["admin", "director", "secretary"] },
+  { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, roles: ["admin", "director", "secretary", "teacher", "parent"] },
+  { href: "/dashboard/alertas", label: "Alertas de risco", icon: AlertTriangle, roles: ["admin", "director", "secretary"] },
+  { href: "/dashboard/horarios", label: "Horários", icon: Clock, roles: ["admin", "director", "secretary", "teacher"] },
   {
     href: "/dashboard/exercicios",
     label: "Exercícios",
@@ -88,15 +102,15 @@ const allNavItems: NavItem[] = [
     roles: ["admin", "director", "teacher", "student"],
     permission: "teacher.accessShop",
   },
-  { href: "/dashboard/responsaveis", label: "Responsáveis", icon: Heart, roles: ["admin", "director"] },
-  { href: "/dashboard/relatorios", label: "Relatórios", icon: BarChart3, roles: ["admin", "director", "teacher"], permission: "teacher.viewReports" },
+  { href: "/dashboard/responsaveis", label: "Responsáveis", icon: Heart, roles: ["admin", "director", "secretary"] },
+  { href: "/dashboard/relatorios", label: "Relatórios", icon: BarChart3, roles: ["admin", "director", "secretary", "teacher"], permission: "teacher.viewReports" },
   { href: "/dashboard/engajamento", label: "Engajamento", icon: Activity, roles: ["admin", "director", "teacher"], permission: "teacher.viewReports" },
   { href: "/dashboard/trilhas", label: "Trilhas", icon: Route, roles: ["admin", "director", "teacher", "student"], permission: "teacher.createTrails" },
   { href: "/dashboard/metas-coletivas", label: "Metas coletivas", icon: Flag, roles: ["admin", "director", "teacher"], permission: "teacher.createClassGoals" },
-  { href: "/dashboard/comunicados", label: "Comunicados", icon: Megaphone, roles: ["admin", "director", "teacher", "student", "parent"] },
+  { href: "/dashboard/comunicados", label: "Comunicados", icon: Megaphone, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/busca", label: "Busca", icon: BookOpen, roles: ["student", "parent"] },
-  { href: "/dashboard/notificacoes", label: "Notificações", icon: Bell, roles: ["admin", "director", "teacher", "student", "parent"] },
-  { href: "/dashboard/perfil", label: "Minha conta", icon: UserCircle, roles: ["admin", "director", "teacher", "student", "parent"] },
+  { href: "/dashboard/notificacoes", label: "Notificações", icon: Bell, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
+  { href: "/dashboard/perfil", label: "Minha conta", icon: UserCircle, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings, roles: ["admin", "director"], permission: "director.editSettings" },
 ];
 
@@ -117,8 +131,7 @@ function filterNav(
     if (item.permission && role === "teacher") {
       return canAccessNav(role, permissions, item.permission);
     }
-    if (item.href === "/dashboard/comunicados") return true;
-    if (item.permission && role === "director") {
+    if (item.permission && (role === "director" || role === "secretary")) {
       return canAccessNav(role, permissions, item.permission);
     }
     return true;

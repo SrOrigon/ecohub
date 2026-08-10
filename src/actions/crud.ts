@@ -204,6 +204,11 @@ export async function createGradeAction(formData: FormData) {
   });
   if (!student) return { error: "Aluno não encontrado." };
 
+  const { isPeriodClosed } = await import("@/lib/grade-formulas");
+  if (isPeriodClosed(period, settings)) {
+    return { error: `O período "${period}" está fechado. Reabra nas configurações ou contate o diretor.` };
+  }
+
   await prisma.grade.create({
     data: {
       studentId,
@@ -256,6 +261,11 @@ export async function updateGradeAction(formData: FormData) {
   });
   if (!grade) return { error: "Nota não encontrada." };
 
+  const { isPeriodClosed } = await import("@/lib/grade-formulas");
+  if (isPeriodClosed(grade.period, settings)) {
+    return { error: `O período "${grade.period}" está fechado para edição.` };
+  }
+
   await prisma.grade.update({ where: { id: gradeId }, data: { value } });
 
   await notifyStudent(
@@ -290,6 +300,11 @@ export async function deleteGradeAction(formData: FormData) {
     where: { id: gradeId, student: { user: { schoolId: user.schoolId } } },
   });
   if (!grade) return { error: "Nota não encontrada." };
+
+  const { isPeriodClosed } = await import("@/lib/grade-formulas");
+  if (isPeriodClosed(grade.period, settings)) {
+    return { error: `O período "${grade.period}" está fechado para exclusão.` };
+  }
 
   await prisma.grade.delete({ where: { id: gradeId } });
   revalidateAll();

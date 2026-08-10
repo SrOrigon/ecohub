@@ -1,11 +1,11 @@
-export type UserRole = "admin" | "director" | "teacher" | "student" | "parent";
+export type UserRole = "admin" | "director" | "secretary" | "teacher" | "student" | "parent";
 export type AttendanceStatus = "present" | "absent" | "late" | "justified";
 export type XpSource = "grade" | "attendance" | "mission" | "badge" | "manual" | "exercise" | "trail" | "classGoal" | "occurrence" | "homeTask";
 
 export const HOME_TASK_DEFAULT_XP = 100;
 export const HOME_TASK_DEFAULT_COINS = 10;
 
-export const USER_ROLES: UserRole[] = ["admin", "director", "teacher", "student", "parent"];
+export const USER_ROLES: UserRole[] = ["admin", "director", "secretary", "teacher", "student", "parent"];
 export const ATTENDANCE_STATUSES: AttendanceStatus[] = ["present", "absent", "late", "justified"];
 
 export const ATTENDANCE_LABELS: Record<AttendanceStatus, string> = {
@@ -18,6 +18,7 @@ export const ATTENDANCE_LABELS: Record<AttendanceStatus, string> = {
 export const ROLE_LABELS: Record<UserRole, string> = {
   admin: "Administrador",
   director: "Diretor",
+  secretary: "Secretaria",
   teacher: "Professor",
   student: "Aluno",
   parent: "Responsável",

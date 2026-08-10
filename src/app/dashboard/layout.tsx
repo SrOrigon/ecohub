@@ -6,6 +6,8 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { SchoolVerificationBanner } from "@/components/school/school-verification-banner";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
   if (!user) redirect("/login");

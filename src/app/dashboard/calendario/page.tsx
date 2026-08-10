@@ -49,6 +49,9 @@ export default async function CalendarioPage() {
             Minha agenda
           </Button>
         </Link>
+        <a href="/api/calendar/ics">
+          <Button variant="outline">Exportar ICS</Button>
+        </a>
       </PageHeader>
 
       <div className="stat-grid">

@@ -79,6 +79,11 @@ export function hasPermission(
     return true;
   }
 
+  if (role === "secretary") {
+    if (group === "director" && action === "editSettings") return false;
+    return true;
+  }
+
   if (role === "teacher" && group === "teacher") {
     return perms.teacher[action as keyof typeof perms.teacher] ?? false;
   }
@@ -127,6 +132,11 @@ export function canAccessNav(
   permissions: SchoolSettings["permissions"],
   permission?: NavPermission
 ): boolean {
+  if (role === "secretary") {
+    if (!permission) return true;
+    if (permission === "director.editSettings") return false;
+    return true;
+  }
   if (!permission) return true;
   return hasPermission(role, permissions, permission);
 }

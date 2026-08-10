@@ -7,7 +7,10 @@ import { getAuthSecret } from "@/lib/auth-secret";
 import { TENANT_COOKIE } from "@/lib/tenant";
 
 const SESSION_COOKIE = "eduhub_session";
-const secret = getAuthSecret();
+
+function authSecret() {
+  return getAuthSecret();
+}
 
 export interface SessionPayload {
   userId: string;
@@ -35,12 +38,12 @@ export async function createSessionToken(
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime(duration)
     .setIssuedAt()
-    .sign(secret);
+    .sign(authSecret());
 }
 
 export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, authSecret());
     return {
       userId: payload.userId as string,
       schoolId: (payload.schoolId as string | null) ?? null,

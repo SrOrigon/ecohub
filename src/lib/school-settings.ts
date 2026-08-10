@@ -89,6 +89,20 @@ export type SchoolSettings = {
   };
   ai: {
     enabled: boolean;
+    assistantName: string;
+  };
+  gradeRules: {
+    /** Peso por disciplina (1 = padrão) */
+    subjectWeights: Record<string, number>;
+    recoveryEnabled: boolean;
+    /** Períodos fechados — notas não editáveis */
+    closedPeriods: string[];
+  };
+  gamificationSeason: {
+    enabled: boolean;
+    name: string;
+    startDate: string;
+    endDate: string;
   };
   auth: {
     teacherSignupMode: "invite_only" | "open";
@@ -205,7 +219,19 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
     completionXpBonus: 75,
   },
   ai: {
+    enabled: true,
+    assistantName: "EduHub IA",
+  },
+  gradeRules: {
+    subjectWeights: {},
+    recoveryEnabled: true,
+    closedPeriods: [],
+  },
+  gamificationSeason: {
     enabled: false,
+    name: "Temporada 2026.1",
+    startDate: "2026-02-01",
+    endDate: "2026-06-30",
   },
   auth: {
     teacherSignupMode: "invite_only",

@@ -6,6 +6,17 @@ import { hashStudentPin } from "../src/lib/student-pin";
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.announcementPollVote.deleteMany();
+  await prisma.announcementPollOption.deleteMany();
+  await prisma.announcementPoll.deleteMany();
+  await prisma.aiChatLog.deleteMany();
+  await prisma.chatMessage.deleteMany();
+  await prisma.chatThread.deleteMany();
+  await prisma.authorizationResponse.deleteMany();
+  await prisma.authorizationForm.deleteMany();
+  await prisma.enrollmentApplication.deleteMany();
+  await prisma.issuedDocument.deleteMany();
+  await prisma.classScheduleSlot.deleteMany();
   await prisma.announcementRead.deleteMany();
   await prisma.announcement.deleteMany();
   await prisma.studentTrailProgress.deleteMany();
@@ -61,6 +72,16 @@ async function main() {
       passwordHash,
       fullName: "Ana Diretora",
       role: "director",
+      schoolId: school.id,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: "secretaria@eduhub.local",
+      passwordHash,
+      fullName: "Paula Secretaria",
+      role: "secretary",
       schoolId: school.id,
     },
   });
@@ -367,6 +388,19 @@ async function main() {
     data: { classId: class9B.id, teacherId: teacher2.id },
   });
 
+  await prisma.enrollmentApplication.create({
+    data: {
+      schoolId: school.id,
+      studentName: "Pedro Oliveira",
+      birthDate: new Date("2012-03-10"),
+      parentName: "Carla Oliveira",
+      parentEmail: "carla@exemplo.local",
+      parentPhone: "11988887777",
+      gradeLevel: "7",
+      status: "pending",
+    },
+  });
+
   await prisma.school.create({
     data: {
       name: "Colégio Aguardando Análise",
@@ -390,6 +424,7 @@ async function main() {
 
   console.log("Seed concluído!");
   console.log("Diretor: admin@eduhub.local / demo123");
+  console.log("Secretaria: secretaria@eduhub.local / demo123");
   console.log("Professor: professor@eduhub.local / demo123");
   console.log("Co-docente: professor2@eduhub.local / demo123");
   console.log("Responsável: mariana@responsavel.local / demo123 (filhos: Lucas e Ana)");

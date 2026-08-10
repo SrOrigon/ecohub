@@ -5,6 +5,7 @@ import { tenantLoginPath } from "@/lib/tenant";
 const ROLE_PORTAL: Record<UserRole, LoginPortal> = {
   admin: "escola",
   director: "escola",
+  secretary: "escola",
   teacher: "professor",
   student: "aluno",
   parent: "responsavel",
