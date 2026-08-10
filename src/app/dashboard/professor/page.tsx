@@ -156,7 +156,7 @@ export default async function TeacherDashboardPage() {
         </Card>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         {myClasses.map((turma) => {
           const allGrades = turma.students.flatMap((s) => s.grades);
           const media = allGrades.length > 0

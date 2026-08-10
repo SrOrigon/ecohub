@@ -21,7 +21,7 @@ export default async function EngajamentoPage() {
         description="Missões, exercícios, frequência e XP — visão unificada da participação."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm text-slate-500">Alunos</CardTitle>
@@ -52,7 +52,7 @@ export default async function EngajamentoPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -66,7 +66,7 @@ export default async function EngajamentoPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Engajamento por turma</CardTitle>
           </CardHeader>

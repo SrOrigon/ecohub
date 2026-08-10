@@ -258,7 +258,7 @@ export default async function AlunoPortalPage() {
         </section>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         <Card className="kid-card" id="missoes">
           <CardHeader>
             <CardTitle className="text-xl">Minhas missões</CardTitle>

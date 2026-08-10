@@ -56,7 +56,7 @@ export default async function DiarioPage() {
       {classes.length === 0 ? (
         <p className="text-slate-600">Nenhuma turma disponível.</p>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Últimos registros — {classes[0].name}</CardTitle>

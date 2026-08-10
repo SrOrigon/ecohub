@@ -65,7 +65,7 @@ export default async function ResponsavelPortalPage() {
           description="Peça à secretaria da escola para vincular seu perfil ao aluno."
         />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           {children.map(({ student, relation }) => {
             const avg =
               student.grades.length > 0

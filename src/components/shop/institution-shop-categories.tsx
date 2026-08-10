@@ -6,6 +6,7 @@ import { EditRewardCategoryForm } from "@/components/forms/edit-reward-category-
 import { ToggleRewardCategoryButton } from "@/components/forms/toggle-reward-category-button";
 import { DeleteRewardCategoryButton } from "@/components/forms/delete-reward-category-button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ResponsiveTable } from "@/components/ui/responsive-table";
 
 export type RewardCategoryRow = {
   id: string;
@@ -21,7 +22,7 @@ export function InstitutionShopCategories({ categories }: { categories: RewardCa
 
   return (
     <Card className="border-2 border-indigo-200 bg-indigo-50/20">
-      <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <CardTitle className="flex items-center gap-2">
             <FolderOpen className="h-5 w-5 text-indigo-600" aria-hidden="true" />
@@ -48,45 +49,43 @@ export function InstitutionShopCategories({ categories }: { categories: RewardCa
             className="py-6"
           />
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-            <table className="w-full min-w-[32rem] text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50 text-left text-slate-500">
-                  <th scope="col" className="px-4 py-3 font-medium">Categoria</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Ordem</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Itens</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Ações</th>
+          <ResponsiveTable minWidth="32rem" className="rounded-xl border border-slate-200 bg-white">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50 text-left text-slate-500">
+                <th scope="col" className="px-4 py-3 font-medium">Categoria</th>
+                <th scope="col" className="px-4 py-3 font-medium">Ordem</th>
+                <th scope="col" className="px-4 py-3 font-medium">Itens</th>
+                <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="px-4 py-3 font-medium">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((cat) => (
+                <tr key={cat.id} className="border-b border-slate-50 last:border-0">
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-slate-900">{cat.name}</p>
+                    {cat.description && (
+                      <p className="mt-0.5 max-w-xs truncate text-xs text-slate-500">{cat.description}</p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{cat.sortOrder}</td>
+                  <td className="px-4 py-3 text-slate-600">{cat._count.rewards}</td>
+                  <td className="px-4 py-3">
+                    <Badge variant={cat.isActive ? "success" : "secondary"}>
+                      {cat.isActive ? "Ativa" : "Inativa"}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-1">
+                      <EditRewardCategoryForm category={cat} />
+                      <ToggleRewardCategoryButton categoryId={cat.id} isActive={cat.isActive} />
+                      <DeleteRewardCategoryButton categoryId={cat.id} hasItems={cat._count.rewards > 0} />
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {categories.map((cat) => (
-                  <tr key={cat.id} className="border-b border-slate-50 last:border-0">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900">{cat.name}</p>
-                      {cat.description && (
-                        <p className="mt-0.5 max-w-xs truncate text-xs text-slate-500">{cat.description}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{cat.sortOrder}</td>
-                    <td className="px-4 py-3 text-slate-600">{cat._count.rewards}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={cat.isActive ? "success" : "secondary"}>
-                        {cat.isActive ? "Ativa" : "Inativa"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-1">
-                        <EditRewardCategoryForm category={cat} />
-                        <ToggleRewardCategoryButton categoryId={cat.id} isActive={cat.isActive} />
-                        <DeleteRewardCategoryButton categoryId={cat.id} hasItems={cat._count.rewards > 0} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </ResponsiveTable>
         )}
       </CardContent>
     </Card>

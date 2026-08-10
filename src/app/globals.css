@@ -17,6 +17,22 @@
   --touch-min: 44px;
   --page-padding: clamp(0.75rem, 2vw, 1.5rem);
   --content-max: 90rem;
+  /* Altura aproximada do header sticky para elementos fixed/sticky abaixo dele */
+  --app-header-offset: calc(3.5rem + env(safe-area-inset-top, 0px));
+  --app-header-offset-expanded: calc(8.5rem + env(safe-area-inset-top, 0px));
+}
+
+@media (min-width: 768px) {
+  :root {
+    --app-header-offset: calc(4rem + env(safe-area-inset-top, 0px));
+    --app-header-offset-expanded: var(--app-header-offset);
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --app-header-offset: calc(4rem + env(safe-area-inset-top, 0px));
+  }
 }
 
 @theme inline {
@@ -107,6 +123,7 @@ body {
   max-width: var(--content-max);
   margin-inline: auto;
   padding: var(--page-padding);
+  padding-bottom: max(var(--page-padding), env(safe-area-inset-bottom, 0px));
 }
 
 .page-title {
@@ -130,7 +147,7 @@ body {
   margin-bottom: 1.5rem;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .page-header {
     flex-direction: row;
     align-items: flex-start;
@@ -145,7 +162,7 @@ body {
   width: 100%;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .page-header-actions {
     width: auto;
     justify-content: flex-end;
@@ -160,10 +177,18 @@ body {
   padding-inline: calc(var(--page-padding) * 0.5);
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .responsive-table-wrap {
     margin-inline: 0;
     padding-inline: 0;
+  }
+}
+
+/* Tablet portrait: bleed leve para tabelas wide dentro de cards */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .responsive-table-wrap {
+    margin-inline: calc(var(--page-padding) * -0.35);
+    padding-inline: calc(var(--page-padding) * 0.35);
   }
 }
 

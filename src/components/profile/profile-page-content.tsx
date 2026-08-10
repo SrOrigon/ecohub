@@ -74,7 +74,7 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
   return (
     <div className="space-y-6 sm:space-y-8">
       <nav
-        className="sticky top-[calc(7.5rem+env(safe-area-inset-top))] z-20 -mx-[var(--page-padding,1rem)] border-b border-slate-200 bg-white/95 px-[var(--page-padding,1rem)] backdrop-blur sm:static sm:mx-0 sm:hidden sm:border-0 sm:bg-transparent sm:px-0"
+        className="sticky top-[var(--app-header-offset-expanded)] z-20 -mx-[var(--page-padding,1rem)] border-b border-slate-200 bg-white/95 px-[var(--page-padding,1rem)] backdrop-blur sm:static sm:mx-0 sm:hidden sm:border-0 sm:bg-transparent sm:px-0"
         aria-label="Seções do perfil"
       >
         <div className="flex gap-1 overflow-x-auto">
@@ -132,7 +132,7 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
 
       <div
         className={cn(
-          "grid gap-6 lg:grid-cols-2",
+          "grid gap-6 md:grid-cols-2",
           tab === "edit" || tab === "security" ? "grid" : "hidden sm:grid"
         )}
       >
@@ -163,7 +163,7 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
         </Card>
       </div>
 
-      <div className={cn("grid gap-6 lg:grid-cols-2", tab !== "overview" && "hidden sm:grid")}>
+      <div className={cn("grid gap-6 md:grid-cols-2", tab !== "overview" && "hidden sm:grid")}>
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Informações da conta</CardTitle>

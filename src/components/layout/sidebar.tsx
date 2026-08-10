@@ -203,7 +203,7 @@ export function Sidebar({
   return (
     <>
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
+        <div className="fixed inset-0 z-50 md:hidden" role="presentation">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => onMobileOpenChange(false)}
@@ -239,7 +239,7 @@ export function Sidebar({
       )}
 
       <aside
-        className="hidden h-dvh w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex xl:w-72"
+        className="hidden h-dvh w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex xl:w-72"
         aria-label="Menu lateral"
       >
         <SidebarContent

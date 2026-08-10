@@ -27,11 +27,11 @@ export function Header({
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 safe-area-top">
-      <div className="flex min-h-14 flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:gap-3 sm:px-4 lg:min-h-16 lg:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+      <div className="flex min-h-14 flex-col gap-2 px-3 py-2 md:flex-row md:items-center md:gap-3 md:px-4 lg:min-h-16 lg:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
           <button
             type="button"
-            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white lg:hidden"
+            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white md:hidden"
             onClick={onMenuClick}
             aria-label="Abrir menu de navegação"
           >

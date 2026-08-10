@@ -116,7 +116,7 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader><CardTitle>Notas</CardTitle></CardHeader>
           <CardContent>

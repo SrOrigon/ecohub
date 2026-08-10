@@ -73,12 +73,12 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid min-w-0 gap-6 xl:grid-cols-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         <PerformanceChart data={monthlyData} />
         <ClassComparisonChart data={classData} />
       </div>
 
-      <div className="grid min-w-0 gap-6 xl:grid-cols-3">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-3">
         <Card className="min-w-0 xl:col-span-2">
           <CardHeader>
             <CardTitle>Ranking de XP</CardTitle>

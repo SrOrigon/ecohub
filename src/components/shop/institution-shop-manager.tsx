@@ -7,6 +7,7 @@ import { EditRewardForm } from "@/components/forms/edit-reward-form";
 import { ToggleRewardButton } from "@/components/forms/toggle-reward-button";
 import { DeleteRewardButton } from "@/components/forms/delete-reward-button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { InstitutionShopCategories, type RewardCategoryRow } from "@/components/shop/institution-shop-categories";
 
 type RewardRow = {
@@ -42,7 +43,7 @@ export function InstitutionShopManager({
       <InstitutionShopCategories categories={categories} />
 
       <Card className={compact ? "" : "border-2 border-amber-200 bg-amber-50/30"}>
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Gift className="h-5 w-5 text-amber-600" aria-hidden="true" />
@@ -73,67 +74,65 @@ export function InstitutionShopManager({
               className="py-8"
             />
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-              <table className="w-full min-w-[40rem] text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50 text-left text-slate-500">
-                    <th scope="col" className="px-4 py-3 font-medium">Prêmio</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Categoria</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Preço</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Estoque</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Resgates</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rewards.map((reward) => {
-                    const outOfStock = reward.stock !== null && reward.stock <= 0;
-                    return (
-                      <tr key={reward.id} className="border-b border-slate-50 last:border-0">
-                        <td className="px-4 py-3">
-                          <p className="font-medium text-slate-900">{reward.name}</p>
-                          {reward.description && (
-                            <p className="mt-0.5 max-w-xs truncate text-xs text-slate-500">
-                              {reward.description}
-                            </p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {reward.category ? (
-                            <Badge variant="secondary">{reward.category.name}</Badge>
-                          ) : (
-                            <span className="text-slate-400">Sem categoria</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge variant="warning">{reward.coinCost} moedas</Badge>
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">
-                          {reward.stock === null ? "Ilimitado" : outOfStock ? "Esgotado" : reward.stock}
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">{reward._count.redemptions}</td>
-                        <td className="px-4 py-3">
-                          <Badge variant={reward.isActive ? "success" : "secondary"}>
-                            {reward.isActive ? "Ativo" : "Inativo"}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap items-center gap-1">
-                            <EditRewardForm reward={reward} categories={categoryOptions} />
-                            <ToggleRewardButton rewardId={reward.id} isActive={reward.isActive} />
-                            <DeleteRewardButton
-                              rewardId={reward.id}
-                              hasRedemptions={reward._count.redemptions > 0}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable minWidth="40rem" className="rounded-xl border border-slate-200 bg-white">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50 text-left text-slate-500">
+                  <th scope="col" className="px-4 py-3 font-medium">Prêmio</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Categoria</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Preço</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Estoque</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Resgates</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rewards.map((reward) => {
+                  const outOfStock = reward.stock !== null && reward.stock <= 0;
+                  return (
+                    <tr key={reward.id} className="border-b border-slate-50 last:border-0">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-slate-900">{reward.name}</p>
+                        {reward.description && (
+                          <p className="mt-0.5 max-w-xs truncate text-xs text-slate-500">
+                            {reward.description}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {reward.category ? (
+                          <Badge variant="secondary">{reward.category.name}</Badge>
+                        ) : (
+                          <span className="text-slate-400">Sem categoria</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant="warning">{reward.coinCost} moedas</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {reward.stock === null ? "Ilimitado" : outOfStock ? "Esgotado" : reward.stock}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{reward._count.redemptions}</td>
+                      <td className="px-4 py-3">
+                        <Badge variant={reward.isActive ? "success" : "secondary"}>
+                          {reward.isActive ? "Ativo" : "Inativo"}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-1">
+                          <EditRewardForm reward={reward} categories={categoryOptions} />
+                          <ToggleRewardButton rewardId={reward.id} isActive={reward.isActive} />
+                          <DeleteRewardButton
+                            rewardId={reward.id}
+                            hasRedemptions={reward._count.redemptions > 0}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </ResponsiveTable>
           )}
         </CardContent>
       </Card>

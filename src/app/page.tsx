@@ -89,7 +89,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-10 grid gap-4 sm:grid-cols-3">
+        <section className="mt-10 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           <Link href="/login/professor" className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/50 p-6 text-center transition hover:border-emerald-400">
             <h2 className="text-lg font-bold text-slate-900">Professor</h2>
             <p className="mt-2 text-sm text-slate-600">Cadastre turmas e publique tarefas manualmente</p>

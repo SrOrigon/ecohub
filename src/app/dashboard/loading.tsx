@@ -13,7 +13,7 @@ export default function DashboardLoading() {
           </div>
         ))}
       </div>
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <div className="h-64 rounded-xl border border-slate-200 bg-white" />
         <div className="h-64 rounded-xl border border-slate-200 bg-white" />
       </div>

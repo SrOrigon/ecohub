@@ -96,7 +96,7 @@ export default async function GamificacaoPage() {
         </div>
       )}
 
-      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-6 md:grid-cols-2">
         <Card className="min-w-0">
           <CardHeader>
             <CardTitle>Missões ({missions.length})</CardTitle>
