@@ -33,7 +33,7 @@ export function CreateTeacherForm() {
           </div>
           <div>
             <Label htmlFor="password">Senha inicial</Label>
-            <Input id="password" name="password" type="password" defaultValue="demo123" />
+            <Input id="password" name="password" type="password" minLength={8} required placeholder="Mín. 8 caracteres, letras e números" />
           </div>
           {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
           <Button type="submit" disabled={pending} className="w-full">

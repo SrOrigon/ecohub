@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
-import { getPersonalNotesForUser } from "@/actions/personal-notes";
+import { fetchPersonalNotesForUser } from "@/lib/reads/personal-note-reads";
 import { PageHeader } from "@/components/layout/page-header";
 import { PersonalNotesManager } from "@/components/notes/personal-notes-manager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,7 @@ export default async function AgendaPage({
 
   const params = await searchParams;
   const [notes, settings] = await Promise.all([
-    getPersonalNotesForUser(user.id),
+    fetchPersonalNotesForUser(user, user.id),
     getSchoolSettings(user.schoolId),
   ]);
 

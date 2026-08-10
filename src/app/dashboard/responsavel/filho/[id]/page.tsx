@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
-import { getChildForParent } from "@/actions/parents";
+import { fetchChildForParent } from "@/lib/reads/parent-reads";
 import { getExercisesForStudentId, EXERCISE_KIND_LABELS } from "@/lib/exercises";
 import {
   ExerciseStatusBadge,
@@ -31,7 +31,7 @@ export default async function FilhoDetailPage({ params }: { params: Promise<{ id
   if (user.role !== "parent") redirect("/dashboard");
 
   const { id } = await params;
-  const link = await getChildForParent(user.id, id);
+  const link = await fetchChildForParent(user, user.id, id);
   if (!link) notFound();
 
   const student = link.student;

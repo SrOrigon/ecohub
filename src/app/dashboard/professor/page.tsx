@@ -38,7 +38,7 @@ export default async function TeacherDashboardPage() {
     getRanking(user.schoolId),
     getExercisesForUser(user),
     getSchoolSettings(user.schoolId),
-    getTodayAgendaForTeacher(user.id, user.schoolId),
+    getTodayAgendaForTeacher(user, user.schoolId),
     getTeacherClasses(user),
   ]);
 

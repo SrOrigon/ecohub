@@ -1,11 +1,17 @@
 import { prisma } from "@/lib/db";
+import type { SessionUser } from "@/lib/auth";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { getTodaySchoolStatus, getUpcomingEvents } from "@/lib/school-calendar";
-import { getTodayPersonalNotes } from "@/actions/personal-notes";
+import { fetchTodayPersonalNotes } from "@/lib/reads/personal-note-reads";
 import type { TodayItem } from "@/components/student/today-checklist";
 import { formatDate } from "@/lib/utils";
 
-export async function getTodayAgendaForStudent(studentId: string, classId: string | null, schoolId: string | null, userId?: string) {
+export async function getTodayAgendaForStudent(
+  studentId: string,
+  classId: string | null,
+  schoolId: string | null,
+  actor?: SessionUser
+) {
   const [student, settings, announcements, trails, todayNotes] = await Promise.all([
     prisma.student.findUnique({
       where: { id: studentId },
@@ -36,7 +42,7 @@ export async function getTodayAgendaForStudent(studentId: string, classId: strin
       },
       take: 5,
     }),
-    userId ? getTodayPersonalNotes(userId) : Promise.resolve([]),
+    actor ? fetchTodayPersonalNotes(actor, actor.id) : Promise.resolve([]),
   ]);
 
   if (!student) return { items: [] as TodayItem[], dayStatus: null, events: [] };
@@ -170,23 +176,23 @@ export async function getTodayAgendaForStudent(studentId: string, classId: strin
   return { items: items.slice(0, 8), dayStatus, events };
 }
 
-export async function getTodayAgendaForTeacher(userId: string, schoolId: string | null) {
+export async function getTodayAgendaForTeacher(actor: SessionUser, schoolId: string | null) {
   const [settings, todayNotes] = await Promise.all([
     getSchoolSettings(schoolId),
-    getTodayPersonalNotes(userId),
+    fetchTodayPersonalNotes(actor, actor.id),
   ]);
   const dayStatus = getTodaySchoolStatus(settings);
   const events = getUpcomingEvents(settings, 5);
 
   const classes = await prisma.classGroup.findMany({
-    where: { teacherId: userId },
+    where: { teacherId: actor.id },
     include: { _count: { select: { students: true } } },
   });
 
   const pendingSubmissions = await prisma.exerciseSubmission.count({
     where: {
       status: "submitted",
-      exercise: { teacherId: userId },
+      exercise: { teacherId: actor.id },
     },
   });
 

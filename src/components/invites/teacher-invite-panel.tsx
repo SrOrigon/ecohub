@@ -11,7 +11,6 @@ import { Copy, Link2, Mail } from "lucide-react";
 
 type InviteRow = {
   id: string;
-  token: string;
   email: string | null;
   expiresAt: Date;
   usedAt: Date | null;
@@ -136,16 +135,6 @@ export function TeacherInvitePanel({ invites }: { invites: InviteRow[] }) {
                         {inv.usedBy && ` · ${inv.usedBy.fullName}`}
                       </p>
                     </div>
-                    {status === "active" && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyLink(`/convite/professor/${inv.token}`)}
-                      >
-                        Copiar link
-                      </Button>
-                    )}
                   </li>
                 );
               })}

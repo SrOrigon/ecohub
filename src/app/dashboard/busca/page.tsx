@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getParentChildren } from "@/actions/parents";
+import { fetchChildForParent, fetchParentChildren } from "@/lib/reads/parent-reads";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,7 +45,7 @@ export default async function BuscaPage({
   }
 
   if (user.role === "parent") {
-    const children = await getParentChildren(user.id);
+    const children = await fetchParentChildren(user, user.id);
     const matches = children.filter(({ student }) => {
       const name = student.user.fullName.toLowerCase();
       const code = student.enrollmentCode.toLowerCase();

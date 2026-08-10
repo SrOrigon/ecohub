@@ -54,7 +54,7 @@ export default async function AlunoPortalPage() {
     getMissionsForStudent(user.schoolId, student.classId),
     getExercisesForUser(user),
     getSchoolSettings(user.schoolId),
-    getTodayAgendaForStudent(student.id, student.classId, user.schoolId, user.id),
+    getTodayAgendaForStudent(student.id, student.classId, user.schoolId, user),
     getHomeTasksForStudent(student.id),
   ]);
 

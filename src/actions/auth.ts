@@ -25,6 +25,29 @@ import { getSchoolSettings } from "@/lib/school-settings";
 import { canSelfRegisterStudent, parseBirthDate } from "@/lib/student-age";
 import { verifyStudentPin } from "@/lib/student-pin";
 import type { UserRole } from "@/lib/constants";
+import {
+  AUTH_RATE_LIMIT,
+  enforceRateLimit,
+  RateLimitError,
+  rateLimitMessage,
+} from "@/lib/security/rate-limit";
+import {
+  GENERIC_AUTH_ERROR,
+  GENERIC_REGISTER_ERROR,
+  validatePassword,
+} from "@/lib/security/password-policy";
+import { BCRYPT_ROUNDS } from "@/lib/security/constants";
+
+async function hashPassword(password: string) {
+  return bcrypt.hash(password, BCRYPT_ROUNDS);
+}
+
+function handleRateLimitError(error: unknown): { error: string } | null {
+  if (error instanceof RateLimitError) {
+    return { error: rateLimitMessage(error.retryAfterSec) };
+  }
+  return null;
+}
 
 function dashboardForRole(role: UserRole) {
   switch (role) {
@@ -64,9 +87,17 @@ export async function loginAction(formData: FormData) {
     return { error: "Preencha e-mail e senha." };
   }
 
+  try {
+    await enforceRateLimit("login", email, AUTH_RATE_LIMIT.login);
+  } catch (error) {
+    const limited = handleRateLimitError(error);
+    if (limited) return limited;
+    throw error;
+  }
+
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    return { error: "E-mail ou senha inválidos." };
+    return { error: GENERIC_AUTH_ERROR };
   }
 
   if (portal && !matchesPortal(user.role as UserRole, portal)) {
@@ -103,8 +134,16 @@ export async function registerSchoolAction(formData: FormData) {
   if (!email || !password || !fullName || !schoolName || !cnpjRaw) {
     return { error: "Preencha todos os campos, incluindo CNPJ." };
   }
-  if (password.length < 6) {
-    return { error: "A senha deve ter pelo menos 6 caracteres." };
+
+  const passwordCheck = validatePassword(password);
+  if (!passwordCheck.ok) return { error: passwordCheck.error };
+
+  try {
+    await enforceRateLimit("register-school", email, AUTH_RATE_LIMIT.register);
+  } catch (error) {
+    const limited = handleRateLimitError(error);
+    if (limited) return limited;
+    throw error;
   }
 
   const cnpjLookup = await fetchCnpjFromBrasilApi(cnpjRaw);
@@ -124,9 +163,9 @@ export async function registerSchoolAction(formData: FormData) {
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: "Este e-mail já está cadastrado." };
+  if (existing) return { error: GENERIC_REGISTER_ERROR };
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await hashPassword(password);
   const slug = await createUniqueSchoolSlug(schoolName);
 
   const school = await prisma.school.create({
@@ -177,8 +216,16 @@ export async function registerStudentAction(formData: FormData) {
   if (!email || !password || !fullName || !schoolSlug || !classId || !birthDateStr) {
     return { error: "Preencha todos os campos, incluindo data de nascimento e turma." };
   }
-  if (password.length < 6) {
-    return { error: "A senha deve ter pelo menos 6 caracteres." };
+
+  const passwordCheck = validatePassword(password);
+  if (!passwordCheck.ok) return { error: passwordCheck.error };
+
+  try {
+    await enforceRateLimit("register-student", email, AUTH_RATE_LIMIT.register);
+  } catch (error) {
+    const limited = handleRateLimitError(error);
+    if (limited) return limited;
+    throw error;
   }
 
   const birthDate = parseBirthDate(birthDateStr);
@@ -216,12 +263,12 @@ export async function registerStudentAction(formData: FormData) {
   }
 
   const existingEmail = await prisma.user.findUnique({ where: { email } });
-  if (existingEmail) return { error: "Este e-mail já está cadastrado." };
+  if (existingEmail) return { error: GENERIC_REGISTER_ERROR };
 
   const existingCode = await prisma.student.findUnique({ where: { enrollmentCode } });
   if (existingCode) return { error: "Matrícula já em uso. Escolha outra." };
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await hashPassword(password);
   await prisma.user.create({
     data: {
       email,
@@ -256,8 +303,16 @@ export async function registerParentAction(formData: FormData) {
   if (!email || !password || !fullName || !schoolSlug || !enrollmentCode) {
     return { error: "Preencha todos os campos, incluindo código da escola e matrícula do filho." };
   }
-  if (password.length < 6) {
-    return { error: "A senha deve ter pelo menos 6 caracteres." };
+
+  const passwordCheck = validatePassword(password);
+  if (!passwordCheck.ok) return { error: passwordCheck.error };
+
+  try {
+    await enforceRateLimit("register-parent", email, AUTH_RATE_LIMIT.register);
+  } catch (error) {
+    const limited = handleRateLimitError(error);
+    if (limited) return limited;
+    throw error;
   }
 
   const school = await findSchoolBySlug(schoolSlug);
@@ -281,9 +336,9 @@ export async function registerParentAction(formData: FormData) {
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: "Este e-mail já está cadastrado." };
+  if (existing) return { error: GENERIC_REGISTER_ERROR };
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await hashPassword(password);
   const parent = await prisma.user.create({
     data: {
       email,
@@ -309,6 +364,14 @@ export async function studentPinLoginAction(formData: FormData) {
 
   if (!schoolSlug || !enrollmentCode || !pin) {
     return { error: "Informe escola, matrícula e PIN." };
+  }
+
+  try {
+    await enforceRateLimit("pin-login", `${schoolSlug}:${enrollmentCode}`, AUTH_RATE_LIMIT.pinLogin);
+  } catch (error) {
+    const limited = handleRateLimitError(error);
+    if (limited) return limited;
+    throw error;
   }
 
   const school = await findSchoolBySlug(schoolSlug);

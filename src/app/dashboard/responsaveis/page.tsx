@@ -1,5 +1,5 @@
 import { getSessionUser } from "@/lib/auth";
-import { getParentsForSchool } from "@/actions/parents";
+import { fetchParentsForSchool } from "@/lib/reads/parent-reads";
 import { getStudents } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ export default async function ResponsaveisPage() {
   if (user.role !== "admin" && user.role !== "director") redirect("/dashboard");
 
   const [parents, students] = await Promise.all([
-    getParentsForSchool(user.schoolId),
+    fetchParentsForSchool(user, user.schoolId),
     getStudents(user.schoolId),
   ]);
 

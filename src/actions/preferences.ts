@@ -13,6 +13,7 @@ const baseOptions = {
   sameSite: "lax" as const,
   secure: process.env.NODE_ENV === "production",
   maxAge: PREF_MAX_AGE,
+  httpOnly: true,
 };
 
 export async function getPreferenceCookies() {

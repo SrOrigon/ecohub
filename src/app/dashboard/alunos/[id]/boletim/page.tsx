@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
 import { getStudentById, getSchool } from "@/lib/queries";
-import { getChildForParent } from "@/actions/parents";
+import { fetchChildForParent } from "@/lib/reads/parent-reads";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { prisma } from "@/lib/db";
 import { BoletimView } from "@/components/boletim/boletim-view";
@@ -16,7 +16,7 @@ export default async function BoletimPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
 
   if (user.role === "parent") {
-    const link = await getChildForParent(user.id, id);
+    const link = await fetchChildForParent(user, user.id, id);
     if (!link) notFound();
   }
 

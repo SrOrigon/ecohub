@@ -10,6 +10,8 @@ import {
   AVATAR_MAX_BYTES,
 } from "@/lib/avatar";
 import { prisma } from "@/lib/db";
+import { validatePassword } from "@/lib/security/password-policy";
+import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 
 function revalidateProfile() {
   revalidatePath("/dashboard/perfil");
@@ -24,51 +26,6 @@ function revalidateProfile() {
     "/dashboard/turmas",
     "/dashboard/responsaveis",
   ].forEach((p) => revalidatePath(p));
-}
-
-export async function getProfileData(userId: string) {
-  return prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      fullName: true,
-      role: true,
-      avatarUrl: true,
-      createdAt: true,
-      school: { select: { name: true, slug: true, city: true, state: true } },
-      student: {
-        select: {
-          id: true,
-          enrollmentCode: true,
-          level: true,
-          xpTotal: true,
-          coins: true,
-          classGroup: { select: { name: true } },
-        },
-      },
-      parentLinks: {
-        select: {
-          relation: true,
-          student: {
-            select: {
-              id: true,
-              user: { select: { fullName: true, avatarUrl: true } },
-              classGroup: { select: { name: true } },
-            },
-          },
-        },
-      },
-      taughtClasses: { select: { id: true, name: true }, orderBy: { name: "asc" } },
-      _count: {
-        select: {
-          notifications: true,
-          parentLinks: true,
-          taughtClasses: true,
-        },
-      },
-    },
-  });
 }
 
 async function resolveAvatarFromForm(formData: FormData, currentAvatar: string | null) {
@@ -141,15 +98,15 @@ export async function changePasswordAction(formData: FormData) {
   if (!currentPassword || !newPassword || !confirmPassword) {
     return { error: "Preencha todos os campos de senha." };
   }
-  if (newPassword.length < 6) {
-    return { error: "A nova senha deve ter pelo menos 6 caracteres." };
-  }
   if (newPassword !== confirmPassword) {
     return { error: "A confirmação da nova senha não confere." };
   }
   if (currentPassword === newPassword) {
     return { error: "A nova senha deve ser diferente da atual." };
   }
+
+  const passwordCheck = validatePassword(newPassword);
+  if (!passwordCheck.ok) return { error: passwordCheck.error };
 
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
@@ -160,7 +117,7 @@ export async function changePasswordAction(formData: FormData) {
   const valid = await bcrypt.compare(currentPassword, dbUser.passwordHash);
   if (!valid) return { error: "Senha atual incorreta." };
 
-  const passwordHash = await bcrypt.hash(newPassword, 10);
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
   await prisma.user.update({
     where: { id: user.id },
     data: { passwordHash },

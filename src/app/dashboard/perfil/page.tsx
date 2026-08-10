@@ -1,5 +1,5 @@
 import { getSessionUser } from "@/lib/auth";
-import { getProfileData } from "@/actions/profile";
+import { fetchProfileData } from "@/lib/reads/profile-reads";
 import { PageHeader } from "@/components/layout/page-header";
 import { ProfilePageContent } from "@/components/profile/profile-page-content";
 import { ROLE_LABELS, type UserRole } from "@/lib/constants";
@@ -10,7 +10,7 @@ export default async function PerfilPage() {
   const sessionUser = await getSessionUser();
   if (!sessionUser) redirect("/login");
 
-  const profile = await getProfileData(sessionUser.id);
+  const profile = await fetchProfileData(sessionUser, sessionUser.id);
   if (!profile) redirect("/login");
 
   const role = profile.role as UserRole;

@@ -1,12 +1,13 @@
 import bcrypt from "bcryptjs";
 import { randomInt } from "crypto";
+import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 
 export function generateStudentPin(): string {
   return String(randomInt(100000, 999999));
 }
 
 export async function hashStudentPin(pin: string): Promise<string> {
-  return bcrypt.hash(pin, 10);
+  return bcrypt.hash(pin, BCRYPT_ROUNDS);
 }
 
 export async function verifyStudentPin(pin: string, hash: string | null | undefined): Promise<boolean> {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { getSchoolSettings } from "@/lib/school-settings";
-import { getPersonalNotesForUser } from "@/actions/personal-notes";
+import { fetchPersonalNotesForUser } from "@/lib/reads/personal-note-reads";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ export default async function CalendarioPage() {
 
   const [settings, notes] = await Promise.all([
     getSchoolSettings(user.schoolId),
-    getPersonalNotesForUser(user.id),
+    fetchPersonalNotesForUser(user, user.id),
   ]);
   const today = getTodaySchoolStatus(settings);
   const todayStr = new Date().toISOString().split("T")[0];

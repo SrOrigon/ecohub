@@ -10,6 +10,8 @@ import {
   hashStudentPin,
   syntheticStudentEmail,
 } from "@/lib/student-pin";
+import { validatePassword } from "@/lib/security/password-policy";
+import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 
 export async function createParentAction(formData: FormData) {
   const user = await requireSession(["admin", "director"]);
@@ -17,16 +19,19 @@ export async function createParentAction(formData: FormData) {
 
   const fullName = String(formData.get("fullName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "demo123");
+  const password = String(formData.get("password") ?? "").trim();
   const studentId = String(formData.get("studentId") ?? "") || null;
   const relation = String(formData.get("relation") ?? "responsavel");
 
-  if (!fullName || !email) return { error: "Nome e e-mail são obrigatórios." };
+  if (!fullName || !email || !password) return { error: "Nome, e-mail e senha são obrigatórios." };
+
+  const passwordCheck = validatePassword(password);
+  if (!passwordCheck.ok) return { error: passwordCheck.error };
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "E-mail já cadastrado." };
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
   const parent = await prisma.user.create({
     data: { email, passwordHash, fullName, role: "parent", schoolId: user.schoolId },
   });
@@ -171,78 +176,4 @@ export async function provisionStudentForParentAction(formData: FormData) {
     pin,
     fullName,
   };
-}
-
-export async function getParentsForSchool(schoolId: string | null) {
-  if (!schoolId) return [];
-
-  const parents = await prisma.user.findMany({
-    where: { schoolId, role: "parent" },
-    orderBy: { fullName: "asc" },
-  });
-
-  if (parents.length === 0) return [];
-
-  const links = await prisma.parentStudent.findMany({
-    where: { parentId: { in: parents.map((p) => p.id) } },
-    include: {
-      student: {
-        include: {
-          user: { select: { fullName: true, avatarUrl: true } },
-          classGroup: true,
-        },
-      },
-    },
-  });
-
-  const linksByParent = new Map<string, typeof links>();
-  for (const link of links) {
-    const group = linksByParent.get(link.parentId) ?? [];
-    group.push(link);
-    linksByParent.set(link.parentId, group);
-  }
-
-  return parents.map((parent) => ({
-    ...parent,
-    parentLinks: linksByParent.get(parent.id) ?? [],
-  }));
-}
-
-export async function getParentChildren(parentId: string) {
-  return prisma.parentStudent.findMany({
-    where: { parentId },
-    include: {
-      student: {
-        include: {
-          user: true,
-          classGroup: true,
-          grades: { orderBy: { createdAt: "desc" }, take: 10 },
-          attendance: { orderBy: { date: "desc" }, take: 10 },
-          studentBadges: { include: { badge: true } },
-          rewardRedemptions: { include: { reward: true }, orderBy: { redeemedAt: "desc" }, take: 5 },
-        },
-      },
-    },
-  });
-}
-
-export async function getChildForParent(parentId: string, studentId: string) {
-  const link = await prisma.parentStudent.findFirst({
-    where: { parentId, studentId },
-    include: {
-      student: {
-        include: {
-          user: true,
-          classGroup: true,
-          grades: { orderBy: { createdAt: "desc" } },
-          attendance: { orderBy: { date: "desc" }, take: 30 },
-          xpTransactions: { orderBy: { createdAt: "desc" }, take: 15 },
-          studentMissions: { include: { mission: true } },
-          studentBadges: { include: { badge: true } },
-          rewardRedemptions: { include: { reward: true }, orderBy: { redeemedAt: "desc" } },
-        },
-      },
-    },
-  });
-  return link;
 }

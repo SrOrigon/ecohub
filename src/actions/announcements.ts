@@ -75,8 +75,14 @@ export async function createAnnouncementAction(formData: FormData) {
 
 export async function markAnnouncementReadAction(formData: FormData) {
   const user = await requireSession(["admin", "director", "teacher", "student", "parent"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
   const id = formData.get("announcementId")?.toString();
   if (!id) return { error: "Comunicado inválido." };
+
+  const announcement = await prisma.announcement.findFirst({
+    where: { id, schoolId: user.schoolId },
+  });
+  if (!announcement) return { error: "Comunicado não encontrado." };
 
   await prisma.announcementRead.upsert({
     where: { announcementId_userId: { announcementId: id, userId: user.id } },
@@ -88,8 +94,14 @@ export async function markAnnouncementReadAction(formData: FormData) {
   return { success: true };
 }
 
-export async function getAnnouncementsForUser(userId: string, schoolId: string | null, classId?: string | null) {
-  if (!schoolId) return [];
+export async function getAnnouncementsForUser(
+  actor: { id: string; schoolId: string | null },
+  userId: string,
+  schoolId: string | null,
+  classId?: string | null
+) {
+  if (actor.id !== userId) return [];
+  if (!schoolId || actor.schoolId !== schoolId) return [];
 
   const announcements = await prisma.announcement.findMany({
     where: {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Users, BookOpen, Home } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
-import { getParentChildren } from "@/actions/parents";
+import { fetchParentChildren } from "@/lib/reads/parent-reads";
 import { getHomeTasksForParent } from "@/actions/home-tasks";
 import { ProvisionStudentForm } from "@/components/parents/provision-student-form";
 import { prisma } from "@/lib/db";
@@ -28,7 +28,7 @@ export default async function ResponsavelPortalPage() {
   if (user.role !== "parent") redirect("/dashboard");
 
   const [children, homeTasks, classes] = await Promise.all([
-    getParentChildren(user.id),
+    fetchParentChildren(user, user.id),
     getHomeTasksForParent(user.id),
     user.schoolId
       ? prisma.classGroup.findMany({

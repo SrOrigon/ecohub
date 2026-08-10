@@ -65,7 +65,7 @@ export async function setSessionCookie(token: string, remember = false) {
 export async function setTenantCookie(slug: string) {
   const cookieStore = await cookies();
   cookieStore.set(TENANT_COOKIE, slug.toLowerCase(), {
-    httpOnly: false,
+    httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",

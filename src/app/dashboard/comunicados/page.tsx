@@ -28,7 +28,7 @@ export default async function ComunicadosPage() {
 
   const classId = student?.classId ?? parentClassId ?? undefined;
 
-  const announcements = await getAnnouncementsForUser(user.id, user.schoolId, classId);
+  const announcements = await getAnnouncementsForUser(user, user.id, user.schoolId, classId);
 
   const canCreate =
     user.role === "admin" ||

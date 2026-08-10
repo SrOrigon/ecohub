@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
 import { getStudentById, getClasses } from "@/lib/queries";
-import { getChildForParent } from "@/actions/parents";
+import { fetchChildForParent } from "@/lib/reads/parent-reads";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +27,7 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
   const { id } = await params;
 
   if (user.role === "parent") {
-    const link = await getChildForParent(user.id, id);
+    const link = await fetchChildForParent(user, user.id, id);
     if (!link) redirect("/dashboard/responsavel");
     redirect(`/dashboard/responsavel/filho/${id}`);
   }

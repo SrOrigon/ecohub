@@ -6,8 +6,16 @@ import { prisma } from "@/lib/db";
 import { requireSessionResult } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { getSchoolSettings } from "@/lib/school-settings";
-import { findSchoolBySlug } from "@/lib/school-lookup";
 import { canAcceptPublicSignup } from "@/lib/school-verification";
+import { fetchTeacherInviteByToken } from "@/lib/reads/teacher-invite-reads";
+import {
+  AUTH_RATE_LIMIT,
+  enforceRateLimit,
+  RateLimitError,
+  rateLimitMessage,
+} from "@/lib/security/rate-limit";
+import { validatePassword } from "@/lib/security/password-policy";
+import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 
 const INVITE_TTL_DAYS = 14;
 
@@ -59,32 +67,6 @@ export async function createTeacherInviteAction(formData: FormData) {
   };
 }
 
-export async function getTeacherInvitesForSchool(schoolId: string) {
-  return prisma.teacherInvite.findMany({
-    where: { schoolId },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-    include: {
-      invitedBy: { select: { fullName: true } },
-      usedBy: { select: { fullName: true, email: true } },
-    },
-  });
-}
-
-export async function getTeacherInviteByToken(token: string) {
-  const invite = await prisma.teacherInvite.findUnique({
-    where: { token },
-    include: { school: { select: { id: true, name: true, slug: true, verificationStatus: true } } },
-  });
-  if (!invite) return null;
-  if (invite.usedAt) return { ...invite, status: "used" as const };
-  if (invite.expiresAt < new Date()) return { ...invite, status: "expired" as const };
-  if (!canAcceptPublicSignup(invite.school.verificationStatus)) {
-    return { ...invite, status: "school_unverified" as const };
-  }
-  return { ...invite, status: "valid" as const };
-}
-
 export async function acceptTeacherInviteAction(formData: FormData) {
   const token = formData.get("token")?.toString();
   const fullName = formData.get("fullName")?.toString().trim();
@@ -94,11 +76,20 @@ export async function acceptTeacherInviteAction(formData: FormData) {
   if (!token || !fullName || !email || !password) {
     return { error: "Preencha todos os campos." };
   }
-  if (password.length < 6) {
-    return { error: "A senha deve ter pelo menos 6 caracteres." };
+
+  const passwordCheck = validatePassword(password);
+  if (!passwordCheck.ok) return { error: passwordCheck.error };
+
+  try {
+    await enforceRateLimit("invite-accept", email, AUTH_RATE_LIMIT.inviteAccept);
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      return { error: rateLimitMessage(error.retryAfterSec) };
+    }
+    throw error;
   }
 
-  const inviteData = await getTeacherInviteByToken(token);
+  const inviteData = await fetchTeacherInviteByToken(token);
   if (!inviteData || inviteData.status !== "valid") {
     return { error: "Convite inválido, expirado ou já utilizado." };
   }
@@ -107,10 +98,10 @@ export async function acceptTeacherInviteAction(formData: FormData) {
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: "Este e-mail já está cadastrado." };
+  if (existing) return { error: "Não foi possível criar a conta. Verifique os dados." };
 
   const bcrypt = await import("bcryptjs");
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
   const user = await prisma.$transaction(async (tx) => {
     const created = await tx.user.create({
@@ -135,20 +126,4 @@ export async function acceptTeacherInviteAction(formData: FormData) {
   revalidateInvites();
   const { redirect } = await import("next/navigation");
   redirect("/dashboard/professor");
-}
-
-export async function validateInviteTokenAction(token: string) {
-  const invite = await getTeacherInviteByToken(token);
-  if (!invite) return { error: "Convite não encontrado." };
-  return {
-    status: invite.status,
-    schoolName: invite.school.name,
-    schoolSlug: invite.school.slug,
-    email: invite.email,
-    expiresAt: invite.expiresAt.toISOString(),
-  };
-}
-
-export async function listSchoolBySlugForTenant(slug: string) {
-  return findSchoolBySlug(slug);
 }

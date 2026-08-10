@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { requireSession, requireSessionResult } from "@/lib/auth";
@@ -22,6 +23,8 @@ import {
   type SchoolSettings,
 } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
+import { validatePassword } from "@/lib/security/password-policy";
+import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 import { parseBirthDate } from "@/lib/student-age";
 import {
   generateStudentPin,
@@ -51,7 +54,7 @@ export async function createStudentAction(formData: FormData) {
   let email = String(formData.get("email") ?? "").trim().toLowerCase();
   const enrollmentCode = String(formData.get("enrollmentCode") ?? "").trim();
   const classId = String(formData.get("classId") ?? "") || null;
-  const password = String(formData.get("password") ?? "demo123");
+  const password = String(formData.get("password") ?? "").trim();
   const birthDateStr = String(formData.get("birthDate") ?? "").trim();
   const accountMode = String(formData.get("accountMode") ?? "standard");
   const customPin = String(formData.get("pin") ?? "").trim();
@@ -85,13 +88,22 @@ export async function createStudentAction(formData: FormData) {
     return { error: "E-mail é obrigatório para conta com senha." };
   }
 
+  let passwordHash: string;
+  if (accountMode === "pin_only") {
+    passwordHash = await bcrypt.hash(randomBytes(32).toString("hex"), BCRYPT_ROUNDS);
+  } else {
+    if (!password) return { error: "Senha inicial é obrigatória." };
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.ok) return { error: passwordCheck.error };
+    passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  }
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "E-mail já cadastrado." };
 
   const existingCode = await prisma.student.findUnique({ where: { enrollmentCode } });
   if (existingCode) return { error: "Matrícula já em uso." };
 
-  const passwordHash = await bcrypt.hash(password, 10);
   await prisma.user.create({
     data: {
       email,
@@ -219,6 +231,15 @@ export async function recordAttendanceAction(formData: FormData) {
   date.setHours(0, 0, 0, 0);
 
   if (!studentId || !classId) return { error: "Aluno e turma são obrigatórios." };
+
+  const student = await prisma.student.findFirst({
+    where: {
+      id: studentId,
+      classId,
+      user: { schoolId: user.schoolId },
+    },
+  });
+  if (!student) return { error: "Aluno não encontrado nesta turma." };
 
   const settings = await getSchoolSettings(user.schoolId);
   if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.recordAttendance")) {
@@ -391,6 +412,7 @@ export async function toggleMissionAction(formData: FormData) {
 
 export async function completeMissionAction(formData: FormData) {
   const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
   const studentId = String(formData.get("studentId") ?? "");
   const missionId = String(formData.get("missionId") ?? "");
 
@@ -407,7 +429,10 @@ export async function completeMissionAction(formData: FormData) {
   }
 
   try {
-    const mission = await prisma.mission.findUnique({ where: { id: missionId } });
+    const mission = await prisma.mission.findFirst({
+      where: { id: missionId, schoolId: user.schoolId },
+    });
+    if (!mission) return { error: "Missão não encontrada." };
     await completeMission(studentId, missionId);
 
     if (mission) {
@@ -586,14 +611,17 @@ export async function createTeacherAction(formData: FormData) {
 
   const fullName = String(formData.get("fullName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "demo123");
+  const password = String(formData.get("password") ?? "").trim();
 
-  if (!fullName || !email) return { error: "Nome e e-mail são obrigatórios." };
+  if (!fullName || !email || !password) return { error: "Nome, e-mail e senha são obrigatórios." };
+
+  const passwordCheck = validatePassword(password);
+  if (!passwordCheck.ok) return { error: passwordCheck.error };
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "E-mail já cadastrado." };
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
   await prisma.user.create({
     data: { email, passwordHash, fullName, role: "teacher", schoolId: user.schoolId },
   });

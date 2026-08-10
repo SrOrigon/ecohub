@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getTeacherInviteByToken } from "@/actions/invites";
+import { fetchTeacherInviteByToken } from "@/lib/reads/teacher-invite-reads";
 import { AcceptTeacherInviteForm } from "@/components/auth/accept-teacher-invite-form";
 import { portalLoginPath } from "@/lib/login-paths";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ export default async function ConviteProfessorPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const invite = await getTeacherInviteByToken(token);
+  const invite = await fetchTeacherInviteByToken(token);
 
   if (!invite) notFound();
 

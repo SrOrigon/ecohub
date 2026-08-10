@@ -45,7 +45,7 @@ export function CreateParentForm({ students }: { students: StudentOption[] }) {
           </div>
           <div>
             <Label htmlFor="password">Senha inicial</Label>
-            <Input id="password" name="password" type="password" defaultValue="demo123" />
+            <Input id="password" name="password" type="password" minLength={8} required placeholder="Mín. 8 caracteres, letras e números" />
           </div>
           <div>
             <Label htmlFor="studentId">Vincular a aluno (opcional)</Label>

@@ -3,13 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireSessionResult } from "@/lib/auth";
-import {
-  endOfDay,
-  parseNoteDate,
-  serializeNote,
-  startOfDay,
-  type PersonalNoteDTO,
-} from "@/lib/personal-notes";
+import { parseNoteDate } from "@/lib/personal-notes";
 
 const NOTE_ROLES = ["admin", "director", "teacher", "student", "parent"] as const;
 
@@ -19,27 +13,6 @@ function revalidateNotes() {
   revalidatePath("/dashboard/aluno");
   revalidatePath("/dashboard/professor");
   revalidatePath("/dashboard");
-}
-
-export async function getPersonalNotesForUser(userId: string): Promise<PersonalNoteDTO[]> {
-  const notes = await prisma.userNote.findMany({
-    where: { userId },
-    orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
-  });
-  return notes.map(serializeNote);
-}
-
-export async function getTodayPersonalNotes(userId: string): Promise<PersonalNoteDTO[]> {
-  const today = new Date();
-  const notes = await prisma.userNote.findMany({
-    where: {
-      userId,
-      date: { gte: startOfDay(today), lte: endOfDay(today) },
-    },
-    orderBy: { updatedAt: "desc" },
-    take: 5,
-  });
-  return notes.map(serializeNote);
 }
 
 export async function createPersonalNoteAction(formData: FormData) {
