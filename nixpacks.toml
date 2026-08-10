@@ -1,6 +1,7 @@
 [variables]
 NIXPACKS_NODE_VERSION = "20"
-DATABASE_URL = "file:/tmp/build.db"
+# Runtime: defina DATABASE_URL no Railway (ex.: file:/data/eduhub.db com volume)
+# e AUTH_SECRET com pelo menos 32 caracteres.
 
 [phases.install]
 cmds = ["npm install"]
