@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { Users, BookOpen, Home } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
+import { getSchoolSettings } from "@/lib/school-settings";
 import { fetchParentChildren } from "@/lib/reads/parent-reads";
 import { getHomeTasksForParent } from "@/actions/home-tasks";
 import { ProvisionStudentForm } from "@/components/parents/provision-student-form";
 import { LinkChildForm } from "@/components/parents/link-child-form";
+import { ParentAiTipsPanel } from "@/components/ai/parent-ai-tips-panel";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +30,7 @@ export default async function ResponsavelPortalPage() {
   if (!user) redirect("/login/responsavel");
   if (user.role !== "parent") redirect("/dashboard");
 
-  const [children, homeTasks, classes] = await Promise.all([
+  const [children, homeTasks, classes, settings] = await Promise.all([
     fetchParentChildren(user, user.id),
     getHomeTasksForParent(user.id),
     user.schoolId
@@ -38,7 +40,44 @@ export default async function ResponsavelPortalPage() {
           orderBy: { name: "asc" },
         })
       : Promise.resolve([]),
+    user.schoolId ? getSchoolSettings(user.schoolId) : null,
   ]);
+
+  const passGrade = settings?.academic.passGrade ?? 6;
+  const assistantName = settings?.ai.assistantName ?? "EduHub IA";
+  const aiEnabled = settings?.ai.enabled !== false;
+
+  const pendingByStudent =
+    children.length > 0
+      ? await prisma.exerciseSubmission.groupBy({
+          by: ["studentId"],
+          where: {
+            studentId: { in: children.map((c) => c.student.id) },
+            status: { in: ["pending", "submitted"] },
+          },
+          _count: { id: true },
+        })
+      : [];
+  const pendingMap = new Map(pendingByStudent.map((p) => [p.studentId, p._count.id]));
+
+  const childSummaries = children.map(({ student }) => {
+    const avg =
+      student.grades.length > 0
+        ? student.grades.reduce((s, g) => s + g.value, 0) / student.grades.length
+        : passGrade;
+    const present = student.attendance.filter(
+      (a) => a.status === "present" || a.status === "late"
+    ).length;
+    const freqRate =
+      student.attendance.length > 0 ? Math.round((present / student.attendance.length) * 100) : 100;
+    return {
+      id: student.id,
+      name: student.user.fullName,
+      avgGrade: avg,
+      freqRate,
+      pendingExercises: pendingMap.get(student.id) ?? 0,
+    };
+  });
 
   const childOptions = children.map(({ student }) => ({
     id: student.id,
@@ -53,6 +92,14 @@ export default async function ResponsavelPortalPage() {
       >
         {childOptions.length > 0 && <CreateHomeTaskForm childOptions={childOptions} />}
       </PageHeader>
+
+      {aiEnabled && childSummaries.length > 0 && (
+        <ParentAiTipsPanel
+          children={childSummaries}
+          passGrade={passGrade}
+          assistantName={assistantName}
+        />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <LinkChildForm />

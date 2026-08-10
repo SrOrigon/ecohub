@@ -169,10 +169,97 @@ const SCIENCE_BANK: BankEntry[] = [
   },
 ];
 
+const HISTORY_BANK: BankEntry[] = [
+  {
+    keywords: ["independencia", "1822", "brasil", "dom pedro"],
+    questions: [
+      {
+        prompt: "Em que ano foi proclamada a Independência do Brasil?",
+        type: "choice",
+        points: 1,
+        options: [
+          { id: "a", text: "1822", isCorrect: true },
+          { id: "b", text: "1889", isCorrect: false },
+          { id: "c", text: "1500", isCorrect: false },
+        ],
+      },
+    ],
+  },
+  {
+    keywords: ["colonizacao", "portugal", "indigenas"],
+    questions: [
+      {
+        prompt: "A principal atividade econômica inicial do Brasil colonial foi:",
+        type: "choice",
+        points: 1,
+        options: [
+          { id: "a", text: "Plantation de cana-de-açúcar", isCorrect: true },
+          { id: "b", text: "Industrialização", isCorrect: false },
+          { id: "c", text: "Mineração de petróleo", isCorrect: false },
+        ],
+      },
+    ],
+  },
+];
+
+const GEO_BANK: BankEntry[] = [
+  {
+    keywords: ["latitude", "longitude", "coordenada", "mapa"],
+    questions: [
+      {
+        prompt: "Linhas de latitude medem a distância em relação ao:",
+        type: "choice",
+        points: 1,
+        options: [
+          { id: "a", text: "Equador", isCorrect: true },
+          { id: "b", text: "Meridiano de Greenwich", isCorrect: false },
+          { id: "c", text: "Polo Sul apenas", isCorrect: false },
+        ],
+      },
+    ],
+  },
+  {
+    keywords: ["bioma", "amazonia", "cerrado", "caatinga"],
+    questions: [
+      {
+        prompt: "Qual bioma brasileiro possui maior biodiversidade e floresta tropical?",
+        type: "choice",
+        points: 1,
+        options: [
+          { id: "a", text: "Amazônia", isCorrect: true },
+          { id: "b", text: "Caatinga", isCorrect: false },
+          { id: "c", text: "Pampa", isCorrect: false },
+        ],
+      },
+    ],
+  },
+];
+
+const ENGLISH_BANK: BankEntry[] = [
+  {
+    keywords: ["present simple", "ingles", "english", "verb to be"],
+    questions: [
+      {
+        prompt: 'Choose the correct form: She ___ to school every day.',
+        type: "choice",
+        points: 1,
+        options: [
+          { id: "a", text: "goes", isCorrect: true },
+          { id: "b", text: "go", isCorrect: false },
+          { id: "c", text: "going", isCorrect: false },
+        ],
+      },
+    ],
+  },
+];
+
 const SUBJECT_BANKS: Record<string, BankEntry[]> = {
   Matemática: MATH_BANK,
   Português: PORTUGUESE_BANK,
   Ciências: SCIENCE_BANK,
+  História: HISTORY_BANK,
+  Geografia: GEO_BANK,
+  Inglês: ENGLISH_BANK,
 };
 
 function normalize(s: string) {
@@ -206,19 +293,7 @@ export function findQuestionsFromBank(
   }
 
   if (pool.length === 0) {
-    return Array.from({ length: count }, (_, i) => ({
-      prompt: `(${i + 1}) Sobre "${topic}" em ${subject}: escolha ou explique a resposta correta.`,
-      type: (i % 2 === 0 ? "choice" : "text") as "choice" | "text",
-      points: 1,
-      options:
-        i % 2 === 0
-          ? [
-              { id: "a", text: `Conceito principal de ${topic}`, isCorrect: true },
-              { id: "b", text: "Alternativa incorreta", isCorrect: false },
-              { id: "c", text: "Outra alternativa incorreta", isCorrect: false },
-            ]
-          : [],
-    }));
+    return [];
   }
 
   while (pool.length < count) {

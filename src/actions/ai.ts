@@ -9,6 +9,78 @@ import { computeRiskAlerts } from "@/lib/risk-alerts";
 import { getDashboardStats } from "@/lib/queries";
 import type { EduHubAiRole } from "@/lib/eduhub-ai";
 
+async function buildAiContext(user: Awaited<ReturnType<typeof requireSession>>) {
+  const settings = user.schoolId ? await getSchoolSettings(user.schoolId) : null;
+  const school = user.schoolId
+    ? await prisma.school.findUnique({ where: { id: user.schoolId }, select: { name: true } })
+    : null;
+
+  let stats;
+  let parentContext;
+
+  if (user.schoolId && ["director", "secretary", "admin"].includes(user.role)) {
+    const dash = await getDashboardStats(user.schoolId);
+    const alerts = await computeRiskAlerts(user.schoolId);
+    stats = {
+      avgGrade: dash.averageGrade,
+      attendanceRate: dash.attendanceRate,
+      atRiskStudents: alerts.length,
+    };
+  }
+
+  if (user.schoolId && user.role === "teacher") {
+    const pendingSubmissions = await prisma.exerciseSubmission.count({
+      where: {
+        status: "submitted",
+        exercise: { schoolId: user.schoolId, teacherId: user.id },
+      },
+    });
+    stats = { ...stats, pendingSubmissions };
+  }
+
+  if (user.role === "parent") {
+    const link = await prisma.parentStudent.findFirst({
+      where: { parentId: user.id },
+      include: {
+        student: {
+          include: {
+            user: { select: { fullName: true } },
+            grades: { select: { value: true } },
+            attendance: { orderBy: { date: "desc" }, take: 30 },
+            exerciseSubmissions: {
+              where: { status: { in: ["pending", "submitted"] } },
+              select: { id: true },
+            },
+          },
+        },
+      },
+    });
+    if (link && settings) {
+      const s = link.student;
+      const avg =
+        s.grades.length > 0 ? s.grades.reduce((a, g) => a + g.value, 0) / s.grades.length : settings.academic.passGrade;
+      const absences = s.attendance.filter((a) => a.status === "absent").length;
+      const total = s.attendance.length;
+      const freq = total > 0 ? ((total - absences) / total) * 100 : 100;
+      parentContext = {
+        childName: s.user.fullName,
+        avgGrade: avg,
+        passGrade: settings.academic.passGrade,
+        freqRate: freq,
+        pendingExercises: s.exerciseSubmissions.length,
+      };
+    }
+  }
+
+  return {
+    role: user.role as EduHubAiRole,
+    userName: user.fullName,
+    schoolName: school?.name,
+    stats,
+    parentContext,
+  };
+}
+
 export async function generateExerciseQuestionsAction(formData: FormData) {
   const user = await requireSession(["admin", "director", "secretary", "teacher"]);
   if (!user.schoolId) return { error: "Escola não configurada." };
@@ -35,18 +107,8 @@ export async function eduhubAiChatAction(formData: FormData) {
   const settings = user.schoolId ? await getSchoolSettings(user.schoolId) : null;
   if (settings && !settings.ai.enabled) return { error: "EduHub IA desativada." };
 
-  let stats;
-  if (user.schoolId && ["director", "secretary", "admin"].includes(user.role)) {
-    const dash = await getDashboardStats(user.schoolId);
-    const alerts = await computeRiskAlerts(user.schoolId);
-    stats = { avgGrade: dash.averageGrade, attendanceRate: dash.attendanceRate, atRiskStudents: alerts.length };
-  }
-
-  const reply = eduhubAiChat(message, {
-    role: user.role as EduHubAiRole,
-    userName: user.fullName,
-    stats,
-  });
+  const context = await buildAiContext(user);
+  const reply = eduhubAiChat(message, context);
 
   await prisma.aiChatLog.createMany({
     data: [
