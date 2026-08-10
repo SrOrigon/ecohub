@@ -12,6 +12,7 @@ export function DashboardShell({
   children,
   userName,
   schoolName,
+  schoolSlug,
   role,
   avatarUrl,
   branding,
@@ -21,6 +22,7 @@ export function DashboardShell({
   children: React.ReactNode;
   userName: string;
   schoolName: string;
+  schoolSlug?: string | null;
   role: UserRole;
   avatarUrl?: string | null;
   branding: SchoolSettings["branding"];
@@ -45,6 +47,7 @@ export function DashboardShell({
           pathname={pathname}
           userName={userName}
           schoolName={schoolName}
+          schoolSlug={schoolSlug}
           role={role}
           avatarUrl={avatarUrl}
           kidFriendly={kidFriendly}

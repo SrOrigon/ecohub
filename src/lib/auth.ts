@@ -3,12 +3,11 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import type { UserRole } from "@/lib/constants";
 import { findSchoolBySlug } from "@/lib/school-lookup";
+import { getAuthSecret } from "@/lib/auth-secret";
 import { TENANT_COOKIE } from "@/lib/tenant";
 
 const SESSION_COOKIE = "eduhub_session";
-const secret = new TextEncoder().encode(
-  process.env.AUTH_SECRET ?? "eduhub-dev-secret-change-in-production"
-);
+const secret = getAuthSecret();
 
 export interface SessionPayload {
   userId: string;
@@ -79,13 +78,22 @@ export async function clearSessionCookie() {
   cookieStore.delete(SESSION_COOKIE);
 }
 
+export async function clearTenantCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete(TENANT_COOKIE);
+}
+
 async function validateTenantForUser(user: SessionUser): Promise<boolean> {
   const cookieStore = await cookies();
   const tenantSlug = cookieStore.get(TENANT_COOKIE)?.value;
-  if (!tenantSlug || !user.schoolId) return true;
+  if (!tenantSlug) return true;
+  if (!user.schoolId) return true;
 
   const school = await findSchoolBySlug(tenantSlug);
-  if (!school) return true;
+  if (!school) {
+    cookieStore.delete(TENANT_COOKIE);
+    return true;
+  }
   return school.id === user.schoolId;
 }
 
@@ -106,6 +114,10 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const sessionUser: SessionUser = { ...user, role: user.role as SessionUser["role"] };
 
   if (payload.schoolId && user.schoolId && payload.schoolId !== user.schoolId) {
+    return null;
+  }
+
+  if (payload.role && payload.role !== user.role) {
     return null;
   }
 
@@ -141,8 +153,9 @@ export async function establishSession(
 ) {
   const token = await createSessionToken(user.id, user.schoolId, user.role, options?.remember);
   await setSessionCookie(token, options?.remember);
-  if (options?.tenantSlug) {
-    await setTenantCookie(options.tenantSlug);
+  const slug = options?.tenantSlug?.trim().toLowerCase();
+  if (slug) {
+    await setTenantCookie(slug);
   } else if (user.schoolId) {
     const school = await prisma.school.findUnique({
       where: { id: user.schoolId },

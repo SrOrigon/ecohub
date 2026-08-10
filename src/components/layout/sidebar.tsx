@@ -172,6 +172,7 @@ export function Sidebar({
   pathname,
   userName,
   schoolName,
+  schoolSlug,
   role,
   avatarUrl,
   kidFriendly,
@@ -184,6 +185,7 @@ export function Sidebar({
   pathname: string;
   userName: string;
   schoolName: string;
+  schoolSlug?: string | null;
   role: UserRole;
   avatarUrl?: string | null;
   kidFriendly: boolean;
@@ -230,6 +232,7 @@ export function Sidebar({
               pathname={pathname}
               userName={userName}
               schoolName={schoolName}
+              schoolSlug={schoolSlug}
               role={role}
               avatarUrl={avatarUrl}
               permissions={permissions}
@@ -250,6 +253,7 @@ export function Sidebar({
           pathname={pathname}
           userName={userName}
           schoolName={schoolName}
+          schoolSlug={schoolSlug}
           role={role}
           avatarUrl={avatarUrl}
           permissions={permissions}
@@ -266,6 +270,7 @@ function SidebarContent({
   pathname,
   userName,
   schoolName,
+  schoolSlug,
   role,
   avatarUrl,
   permissions,
@@ -277,6 +282,7 @@ function SidebarContent({
   pathname: string;
   userName: string;
   schoolName: string;
+  schoolSlug?: string | null;
   role: UserRole;
   avatarUrl?: string | null;
   permissions: SchoolSettings["permissions"];
@@ -322,6 +328,7 @@ function SidebarContent({
           </div>
         </Link>
         <form action={logoutAction} className="mt-1">
+          {schoolSlug && <input type="hidden" name="tenantSlug" value={schoolSlug} />}
           <Button type="submit" variant="outline" size={kidFriendly ? "lg" : "default"} className="w-full">
             Sair
           </Button>

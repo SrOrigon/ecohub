@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { SESSION_COOKIE, TENANT_COOKIE } from "@/lib/auth";
+import { SESSION_COOKIE } from "@/lib/auth";
+import { getAuthSecret } from "@/lib/auth-secret";
+import { loginHubPath } from "@/lib/login-paths";
 import { resolveTenantSlug, TENANT_HEADER } from "@/lib/tenant";
 
-const secret = new TextEncoder().encode(
-  process.env.AUTH_SECRET ?? "eduhub-dev-secret-change-in-production"
-);
+const secret = getAuthSecret();
 
 const publicPaths = ["/", "/login", "/registro", "/entrar", "/convite"];
 
@@ -36,44 +36,20 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.includes(".")
   ) {
-    const response = NextResponse.next({ request: { headers: requestHeaders } });
-    if (tenantSlug) {
-      response.cookies.set(TENANT_COOKIE, tenantSlug, {
-        path: "/",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 365,
-      });
-    }
-    return response;
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   if (!token) {
-    const loginUrl = tenantSlug ? `/e/${tenantSlug}/login` : "/login";
+    const loginUrl = loginHubPath(tenantSlug);
     return NextResponse.redirect(new URL(loginUrl, request.url));
   }
 
   try {
-    const { payload } = await jwtVerify(token, secret);
-    const jwtSchoolId = (payload.schoolId as string | null) ?? null;
-
-    if (tenantSlug) {
-      const response = NextResponse.next({ request: { headers: requestHeaders } });
-      response.cookies.set(TENANT_COOKIE, tenantSlug, {
-        path: "/",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 365,
-      });
-      return response;
-    }
-
-    if (jwtSchoolId) {
-      return NextResponse.next({ request: { headers: requestHeaders } });
-    }
-
+    await jwtVerify(token, secret);
     return NextResponse.next({ request: { headers: requestHeaders } });
   } catch {
-    const response = NextResponse.redirect(new URL("/login", request.url));
+    const response = NextResponse.redirect(new URL(loginHubPath(tenantSlug), request.url));
     response.cookies.delete(SESSION_COOKIE);
     return response;
   }

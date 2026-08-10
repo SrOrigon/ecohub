@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { findSchoolBySlug } from "@/lib/school-lookup";
 import { tenantEntrarPath } from "@/lib/tenant";
 import Link from "next/link";
@@ -49,6 +49,10 @@ export default async function TenantLoginHubPage({
           ))}
           <p className="pt-2 text-center text-xs text-[var(--muted-foreground)]">
             Código da escola: <strong className="font-mono">{school.slug}</strong>
+            {" · "}
+            <Link href="/login" className="hover:text-indigo-600 hover:underline">
+              Login global
+            </Link>
           </p>
         </CardContent>
       </Card>

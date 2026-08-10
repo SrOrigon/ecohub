@@ -31,7 +31,7 @@ async function main() {
 
   const passwordHash = await bcrypt.hash("demo123", 10);
   const lucasPinHash = await hashStudentPin("123456");
-  const adultBirth = new Date("2010-05-15");
+  const adultBirth = new Date("2006-05-15");
 
   const school = await prisma.school.create({
     data: {

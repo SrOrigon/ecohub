@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
 import { ArrowLeft } from "lucide-react";
 
-export function RegisterParentForm() {
+export function RegisterParentForm({ initialSchoolSlug = "" }: { initialSchoolSlug?: string }) {
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string } | null, formData: FormData) => {
       return (await registerParentAction(formData)) ?? null;
@@ -34,7 +34,13 @@ export function RegisterParentForm() {
         <form action={formAction} className="space-y-4">
           <div>
             <Label htmlFor="schoolSlug">Código da escola</Label>
-            <Input id="schoolSlug" name="schoolSlug" required placeholder="escola-demo" />
+            <Input
+              id="schoolSlug"
+              name="schoolSlug"
+              required
+              placeholder="escola-demo"
+              defaultValue={initialSchoolSlug}
+            />
           </div>
           <div>
             <Label htmlFor="enrollmentCode">Matrícula do filho(a)</Label>

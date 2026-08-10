@@ -13,6 +13,7 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
   const [schoolSlug, setSchoolSlug] = useState(initialSchoolSlug);
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [schoolName, setSchoolName] = useState<string | null>(null);
+  const [schoolError, setSchoolError] = useState<string | null>(null);
   const [loadingClasses, startLoad] = useTransition();
 
   const [state, formAction, pending] = useActionState(
@@ -31,6 +32,7 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
         const result = await listClassesForSignupAction(fd);
         setClasses(result.classes ?? []);
         setSchoolName(result.schoolName ?? null);
+        setSchoolError(result.error ?? null);
       });
     }, 400);
     return () => clearTimeout(t);
@@ -64,11 +66,15 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
                 if (v.length < 3) {
                   setClasses([]);
                   setSchoolName(null);
+                  setSchoolError(null);
                 }
               }}
             />
             {schoolName && (
               <p className="mt-1 text-sm text-emerald-700">Escola: {schoolName}</p>
+            )}
+            {schoolError && (
+              <p className="mt-1 text-sm text-amber-800 dark:text-amber-200">{schoolError}</p>
             )}
             {loadingClasses && <p className="mt-1 text-xs text-slate-500">Buscando turmas...</p>}
           </div>
@@ -107,7 +113,11 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
           {state?.error && (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
           )}
-          <Button type="submit" className="w-full" disabled={pending || classes.length === 0}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={pending || classes.length === 0 || !!schoolError}
+          >
             {pending ? "Criando..." : "Criar conta de aluno"}
           </Button>
         </form>

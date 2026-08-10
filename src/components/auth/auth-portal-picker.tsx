@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, GraduationCap, Heart, UserRound } from "lucide-react";
+import { Building2, GraduationCap, Heart, KeyRound, UserRound } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Medal } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -89,6 +89,18 @@ export function AuthPortalPicker({ mode }: { mode: "login" | "register" }) {
           );
         })}
       </div>
+
+      {mode === "login" && (
+        <div className="mx-auto max-w-md">
+          <Link
+            href="/entrar"
+            className="flex items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50/50 px-4 py-3 text-sm font-semibold text-indigo-800 transition hover:border-indigo-400 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-200"
+          >
+            <KeyRound className="h-4 w-4" aria-hidden="true" />
+            Aluno — entrar com matrícula e PIN
+          </Link>
+        </div>
+      )}
 
       <p className="text-center text-sm text-[var(--muted-foreground)]">
         {mode === "login" ? (

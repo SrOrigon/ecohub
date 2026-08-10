@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form-fields";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { loginHubPath, portalLoginPath, registerPathForPortal } from "@/lib/login-paths";
+import { tenantEntrarPath } from "@/lib/tenant";
 import { ArrowLeft, Building2, GraduationCap, Heart, UserRound } from "lucide-react";
 
 type Portal = "escola" | "professor" | "aluno" | "responsavel";
@@ -26,8 +28,7 @@ const portalConfig: Record<
     description: string;
     demoEmail: string;
     demoLabel: string;
-    registerHref: string;
-    otherPortals: { href: string; label: string }[];
+    otherPortals: { portal: Portal; label: string }[];
   }
 > = {
   escola: {
@@ -35,10 +36,9 @@ const portalConfig: Record<
     description: "Acesso para direção e gestão escolar",
     demoEmail: "admin@eduhub.local",
     demoLabel: "Entrar como diretor (demo)",
-    registerHref: "/registro/escola",
     otherPortals: [
-      { href: "/login/professor", label: "Sou professor" },
-      { href: "/login/aluno", label: "Sou aluno" },
+      { portal: "professor", label: "Sou professor" },
+      { portal: "aluno", label: "Sou aluno" },
     ],
   },
   professor: {
@@ -46,10 +46,9 @@ const portalConfig: Record<
     description: "Publique tarefas e gerencie suas turmas",
     demoEmail: "professor@eduhub.local",
     demoLabel: "Entrar como professor (demo)",
-    registerHref: "/registro/professor",
     otherPortals: [
-      { href: "/login/escola", label: "Sou instituição" },
-      { href: "/login/aluno", label: "Sou aluno" },
+      { portal: "escola", label: "Sou instituição" },
+      { portal: "aluno", label: "Sou aluno" },
     ],
   },
   aluno: {
@@ -57,11 +56,10 @@ const portalConfig: Record<
     description: "Faça exercícios, missões e acompanhe seu progresso",
     demoEmail: "lucas@aluno.local",
     demoLabel: "Entrar como aluno (demo)",
-    registerHref: "/registro/aluno",
     otherPortals: [
-      { href: "/login/professor", label: "Sou professor" },
-      { href: "/login/responsavel", label: "Sou responsável" },
-      { href: "/login/escola", label: "Sou instituição" },
+      { portal: "professor", label: "Sou professor" },
+      { portal: "responsavel", label: "Sou responsável" },
+      { portal: "escola", label: "Sou instituição" },
     ],
   },
   responsavel: {
@@ -69,11 +67,10 @@ const portalConfig: Record<
     description: "Acompanhe filhos, notas e crie tarefas de casa",
     demoEmail: "mariana@responsavel.local",
     demoLabel: "Entrar como responsável (demo)",
-    registerHref: "/registro/responsavel",
     otherPortals: [
-      { href: "/login/aluno", label: "Sou aluno" },
-      { href: "/login/professor", label: "Sou professor" },
-      { href: "/login/escola", label: "Sou instituição" },
+      { portal: "aluno", label: "Sou aluno" },
+      { portal: "professor", label: "Sou professor" },
+      { portal: "escola", label: "Sou instituição" },
     ],
   },
 };
@@ -91,6 +88,7 @@ export function RoleLoginForm({
 }) {
   const cfg = portalConfig[portal];
   const Icon = portalIcons[portal];
+  const backHref = loginHubPath(tenantSlug);
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string } | null, formData: FormData) => {
@@ -108,7 +106,7 @@ export function RoleLoginForm({
       <Card className="w-full rounded-2xl border-2 shadow-[var(--shadow-md)]">
       <CardHeader>
         <Link
-          href="/login"
+          href={backHref}
           className="mb-2 inline-flex items-center gap-1 text-sm text-[var(--muted-foreground)] hover:text-[color:var(--school-primary)]"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -147,7 +145,7 @@ export function RoleLoginForm({
               type="checkbox"
               name="rememberMe"
               value="true"
-              defaultChecked={defaultRememberEmail}
+              defaultChecked={false}
               className="rounded"
             />
             Manter conectado por 30 dias
@@ -179,6 +177,7 @@ export function RoleLoginForm({
           <p className="text-sm font-medium text-[var(--foreground)]">Demo rápido:</p>
           <form action={formAction}>
             <input type="hidden" name="portal" value={portal} />
+            {tenantSlug && <input type="hidden" name="tenantSlug" value={tenantSlug} />}
             <input type="hidden" name="email" value={cfg.demoEmail} />
             <input type="hidden" name="password" value="demo123" />
             <Button type="submit" variant="outline" className="w-full" disabled={pending}>
@@ -192,14 +191,17 @@ export function RoleLoginForm({
           <p className="mt-4 text-sm text-[var(--muted-foreground)]">
             Menor de idade ou sem e-mail?{" "}
             <Link
-              href={tenantSlug ? `/e/${tenantSlug}/entrar` : "/entrar"}
+              href={tenantSlug ? tenantEntrarPath(tenantSlug) : "/entrar"}
               className="font-semibold text-indigo-700 hover:underline dark:text-indigo-400"
             >
               Entrar com matrícula e PIN
             </Link>
             {" · "}
             É pai, mãe ou responsável?{" "}
-            <Link href={tenantSlug ? `/e/${tenantSlug}/login/responsavel` : "/login/responsavel"} className="font-semibold text-rose-700 hover:underline dark:text-rose-400">
+            <Link
+              href={portalLoginPath("responsavel", tenantSlug)}
+              className="font-semibold text-rose-700 hover:underline dark:text-rose-400"
+            >
               Portal de responsáveis
             </Link>
           </p>
@@ -212,18 +214,22 @@ export function RoleLoginForm({
         )}
 
         <p className="mt-4 text-center text-sm text-[var(--muted-foreground)]">
-          {portal !== "professor" && (
+          {portal !== "professor" && portal !== "escola" && (
             <>
               Não tem conta?{" "}
               <Link
-                href={
-                  tenantSlug && portal !== "escola"
-                    ? `/registro/${portal === "aluno" ? "aluno" : portal === "responsavel" ? "responsavel" : portal}?escola=${tenantSlug}`
-                    : cfg.registerHref
-                }
+                href={registerPathForPortal(portal, tenantSlug)}
                 className="font-semibold text-[color:var(--school-primary)] hover:underline"
               >
                 Cadastre-se
+              </Link>
+            </>
+          )}
+          {portal === "escola" && (
+            <>
+              Não tem conta?{" "}
+              <Link href="/registro/escola" className="font-semibold text-[color:var(--school-primary)] hover:underline">
+                Cadastre sua instituição
               </Link>
             </>
           )}
@@ -231,7 +237,11 @@ export function RoleLoginForm({
 
         <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-[var(--border-subtle)] pt-4 text-xs text-[var(--muted-foreground)]">
           {cfg.otherPortals.map((o) => (
-            <Link key={o.href} href={o.href} className="hover:text-[color:var(--school-primary)] hover:underline">
+            <Link
+              key={o.portal}
+              href={portalLoginPath(o.portal, tenantSlug)}
+              className="hover:text-[color:var(--school-primary)] hover:underline"
+            >
               {o.label}
             </Link>
           ))}

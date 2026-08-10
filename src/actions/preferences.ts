@@ -28,7 +28,9 @@ export async function getPreferenceCookies() {
 export async function saveLoginPreferencesAction(formData: FormData) {
   const store = await cookies();
   const portal = formData.get("portal")?.toString();
-  const schoolSlug = formData.get("schoolSlug")?.toString()?.trim().toLowerCase();
+  const schoolSlug =
+    formData.get("schoolSlug")?.toString()?.trim().toLowerCase() ??
+    formData.get("tenantSlug")?.toString()?.trim().toLowerCase();
   const email = formData.get("email")?.toString()?.trim().toLowerCase();
   const rememberEmail = formData.get("rememberEmail") === "true";
 

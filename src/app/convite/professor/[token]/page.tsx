@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTeacherInviteByToken } from "@/actions/invites";
 import { AcceptTeacherInviteForm } from "@/components/auth/accept-teacher-invite-form";
+import { portalLoginPath } from "@/lib/login-paths";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
@@ -31,7 +32,10 @@ export default async function ConviteProfessorPage({
             <p className="text-sm text-[var(--muted-foreground)]">
               {messages[invite.status] ?? "Convite inválido."}
             </p>
-            <Link href="/login/professor" className="text-sm text-indigo-600 hover:underline">
+            <Link
+              href={portalLoginPath("professor", invite.school.slug)}
+              className="text-sm text-indigo-600 hover:underline"
+            >
               Ir para login de professor
             </Link>
           </CardContent>
@@ -45,6 +49,7 @@ export default async function ConviteProfessorPage({
       <AcceptTeacherInviteForm
         token={token}
         schoolName={invite.school.name}
+        schoolSlug={invite.school.slug}
         presetEmail={invite.email}
       />
     </main>

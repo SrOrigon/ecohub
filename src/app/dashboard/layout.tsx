@@ -16,6 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <DashboardShell
       userName={user.fullName}
       schoolName={school?.name ?? "Sem escola"}
+      schoolSlug={school?.slug ?? null}
       role={user.role}
       avatarUrl={user.avatarUrl}
       branding={settings.branding}

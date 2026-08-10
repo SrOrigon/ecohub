@@ -3,11 +3,15 @@
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import {
   clearSessionCookie,
+  clearTenantCookie,
   establishSession,
   requireSession,
 } from "@/lib/auth";
+import { loginHubPath } from "@/lib/login-paths";
+import { TENANT_COOKIE } from "@/lib/tenant";
 import { prisma } from "@/lib/db";
 import { ensureDefaultBadges, ensureDefaultRewards } from "@/lib/school-setup";
 import { saveLoginPreferencesAction, saveSchoolSlugPreference } from "@/actions/preferences";
@@ -70,17 +74,22 @@ export async function loginAction(formData: FormData) {
   }
 
   const remember = formData.get("rememberMe") === "true";
-  const tenantSlug = formData.get("tenantSlug")?.toString().trim().toLowerCase() || null;
+  const tenantSlugRaw = formData.get("tenantSlug")?.toString().trim().toLowerCase() || null;
   await saveLoginPreferencesAction(formData);
 
-  if (tenantSlug && user.schoolId) {
-    const tenantSchool = await findSchoolBySlug(tenantSlug);
-    if (tenantSchool && tenantSchool.id !== user.schoolId) {
+  let resolvedTenantSlug: string | null = null;
+  if (tenantSlugRaw) {
+    const tenantSchool = await findSchoolBySlug(tenantSlugRaw);
+    if (!tenantSchool) {
+      return { error: "Instituição não encontrada. Verifique o endereço de acesso." };
+    }
+    if (user.schoolId && tenantSchool.id !== user.schoolId) {
       return { error: "Esta conta não pertence a esta instituição." };
     }
+    resolvedTenantSlug = tenantSchool.slug;
   }
 
-  await establishSession(user, { remember, tenantSlug });
+  await establishSession(user, { remember, tenantSlug: resolvedTenantSlug });
   redirect(dashboardForRole(user.role as UserRole));
 }
 
@@ -364,9 +373,16 @@ export async function registerAction(formData: FormData) {
   return registerSchoolAction(formData);
 }
 
-export async function logoutAction() {
+export async function logoutAction(formData?: FormData) {
+  const cookieStore = await cookies();
+  const tenantSlug =
+    formData?.get("tenantSlug")?.toString().trim().toLowerCase() ||
+    cookieStore.get(TENANT_COOKIE)?.value ||
+    null;
+
   await clearSessionCookie();
-  redirect("/login");
+  await clearTenantCookie();
+  redirect(loginHubPath(tenantSlug));
 }
 
 export async function getCurrentUserAction() {

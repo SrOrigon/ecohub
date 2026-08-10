@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { acceptTeacherInviteAction } from "@/actions/invites";
+import { portalLoginPath } from "@/lib/login-paths";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,10 +12,12 @@ import { Label } from "@/components/ui/form-fields";
 export function AcceptTeacherInviteForm({
   token,
   schoolName,
+  schoolSlug,
   presetEmail,
 }: {
   token: string;
   schoolName: string;
+  schoolSlug?: string;
   presetEmail?: string | null;
 }) {
   const [state, formAction, pending] = useActionState(
@@ -65,7 +68,7 @@ export function AcceptTeacherInviteForm({
           </Button>
         </form>
         <p className="mt-4 text-center text-sm">
-          <Link href="/login/professor" className="text-indigo-600 hover:underline">
+          <Link href={portalLoginPath("professor", schoolSlug)} className="text-indigo-600 hover:underline">
             Já tenho conta
           </Link>
         </p>
