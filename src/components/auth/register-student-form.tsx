@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
 import { ArrowLeft } from "lucide-react";
 
-export function RegisterStudentForm() {
-  const [schoolSlug, setSchoolSlug] = useState("");
+export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolSlug?: string }) {
+  const [schoolSlug, setSchoolSlug] = useState(initialSchoolSlug);
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [schoolName, setSchoolName] = useState<string | null>(null);
   const [loadingClasses, startLoad] = useTransition();

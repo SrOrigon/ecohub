@@ -17,10 +17,11 @@ export interface SessionUser {
   avatarUrl: string | null;
 }
 
-export async function createSessionToken(userId: string) {
+export async function createSessionToken(userId: string, remember = false) {
+  const duration = remember ? "30d" : "7d";
   return new SignJWT({ userId })
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("7d")
+    .setExpirationTime(duration)
     .setIssuedAt()
     .sign(secret);
 }
@@ -30,14 +31,14 @@ export async function verifySessionToken(token: string) {
   return payload.userId as string;
 }
 
-export async function setSessionCookie(token: string) {
+export async function setSessionCookie(token: string, remember = false) {
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7,
   });
 }
 

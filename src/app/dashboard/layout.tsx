@@ -2,6 +2,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getSchool } from "@/lib/queries";
 import { parseSchoolSettings } from "@/lib/school-settings";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { SchoolVerificationBanner } from "@/components/school/school-verification-banner";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -21,6 +22,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
       permissions={settings.permissions}
       features={{ trailsEnabled: settings.trails.enabled }}
     >
+      {(user.role === "admin" || user.role === "director") && school && (
+        <SchoolVerificationBanner
+          status={school.verificationStatus}
+          legalName={school.legalName}
+          cnpj={school.cnpj}
+        />
+      )}
       {children}
     </DashboardShell>
   );

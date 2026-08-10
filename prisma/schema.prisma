@@ -8,13 +8,17 @@ datasource db {
 }
 
 model School {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  city      String?
-  state     String?
-  settings  String   @default("{}")
-  createdAt DateTime @default(now())
+  id                 String    @id @default(cuid())
+  name               String
+  slug               String    @unique
+  cnpj               String?   @unique
+  legalName          String?
+  verificationStatus String    @default("pending")
+  cnpjCheckedAt      DateTime?
+  city               String?
+  state              String?
+  settings           String    @default("{}")
+  createdAt          DateTime  @default(now())
 
   users       User[]
   classGroups ClassGroup[]

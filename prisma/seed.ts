@@ -35,6 +35,9 @@ async function main() {
       slug: "escola-demo",
       city: "São Paulo",
       state: "SP",
+      legalName: "Escola Municipal Demo LTDA",
+      verificationStatus: "verified",
+      cnpjCheckedAt: new Date(),
     },
   });
 

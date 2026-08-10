@@ -1,9 +1,11 @@
 import { RegisterStudentForm } from "@/components/auth/register-student-form";
+import { getPreferenceCookies } from "@/actions/preferences";
 
-export default function RegisterAlunoPage() {
+export default async function RegistroAlunoPage() {
+  const prefs = await getPreferenceCookies();
   return (
     <main className="auth-page flex min-h-dvh items-center justify-center px-4 py-8">
-      <RegisterStudentForm />
+      <RegisterStudentForm initialSchoolSlug={prefs.lastSchoolSlug ?? ""} />
     </main>
   );
 }

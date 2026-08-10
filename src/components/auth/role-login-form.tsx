@@ -78,7 +78,15 @@ const portalConfig: Record<
   },
 };
 
-export function RoleLoginForm({ portal }: { portal: Portal }) {
+export function RoleLoginForm({
+  portal,
+  defaultEmail,
+  defaultRememberEmail = false,
+}: {
+  portal: Portal;
+  defaultEmail?: string;
+  defaultRememberEmail?: boolean;
+}) {
   const cfg = portalConfig[portal];
   const Icon = portalIcons[portal];
 
@@ -118,12 +126,39 @@ export function RoleLoginForm({ portal }: { portal: Portal }) {
         <form action={formAction} className="space-y-4" aria-label={`Login ${cfg.title}`}>
           <div>
             <Label htmlFor="email">E-mail</Label>
-            <Input id="email" name="email" type="email" required autoComplete="email" />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              defaultValue={defaultEmail}
+            />
           </div>
           <div>
             <Label htmlFor="password">Senha</Label>
             <Input id="password" name="password" type="password" required autoComplete="current-password" />
           </div>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--muted-foreground)]">
+            <input
+              type="checkbox"
+              name="rememberMe"
+              value="true"
+              defaultChecked={defaultRememberEmail}
+              className="rounded"
+            />
+            Manter conectado por 30 dias
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--muted-foreground)]">
+            <input
+              type="checkbox"
+              name="rememberEmail"
+              value="true"
+              defaultChecked={defaultRememberEmail}
+              className="rounded"
+            />
+            Lembrar meu e-mail neste dispositivo
+          </label>
           {state?.error && (
             <p
               className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800 dark:bg-red-950/50 dark:text-red-200"

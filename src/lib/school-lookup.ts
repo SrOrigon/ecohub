@@ -4,12 +4,7 @@ export async function findSchoolBySlug(input: string) {
   const normalized = input.trim().toLowerCase();
   if (!normalized) return null;
 
-  const exact = await prisma.school.findUnique({ where: { slug: normalized } });
-  if (exact) return exact;
-
-  return prisma.school.findFirst({
-    where: { slug: { contains: normalized } },
-  });
+  return prisma.school.findUnique({ where: { slug: normalized } });
 }
 
 export async function createUniqueSchoolSlug(baseName: string) {

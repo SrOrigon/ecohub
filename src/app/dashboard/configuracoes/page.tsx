@@ -6,6 +6,12 @@ import { SchoolRulesForm } from "@/components/forms/school-rules-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatCnpj } from "@/lib/cnpj";
+import {
+  SCHOOL_VERIFICATION_LABELS,
+  verificationStatusMessage,
+  type SchoolVerificationStatus,
+} from "@/lib/school-verification";
 import { redirect } from "next/navigation";
 
 export default async function ConfiguracoesPage() {
@@ -38,14 +44,45 @@ export default async function ConfiguracoesPage() {
         <Badge variant="default">{settings.branding.tagline ? "Tema personalizado" : "Tema padrão"}</Badge>
       </div>
 
-      <Card className="border-indigo-200 bg-indigo-50/80">
+      <Card className="border-indigo-200 bg-indigo-50/80 dark:border-indigo-900 dark:bg-indigo-950/30">
+        <CardHeader>
+          <CardTitle className="text-base">Instituição verificada</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              variant={
+                school.verificationStatus === "verified"
+                  ? "success"
+                  : school.verificationStatus === "manual_review"
+                    ? "warning"
+                    : "secondary"
+              }
+            >
+              {SCHOOL_VERIFICATION_LABELS[school.verificationStatus as SchoolVerificationStatus] ??
+                school.verificationStatus}
+            </Badge>
+            {school.cnpj && (
+              <span className="font-mono text-[var(--foreground)]">{formatCnpj(school.cnpj)}</span>
+            )}
+          </div>
+          {school.legalName && (
+            <p className="text-[var(--foreground)]">{school.legalName}</p>
+          )}
+          <p className="text-[var(--muted-foreground)]">
+            {verificationStatusMessage(school.verificationStatus as SchoolVerificationStatus)}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="border-indigo-200 bg-indigo-50/80 dark:border-indigo-900 dark:bg-indigo-950/30">
         <CardHeader>
           <CardTitle className="text-base">Código da escola</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="font-mono text-lg font-bold text-indigo-900">{school.slug}</p>
-          <p className="mt-2 text-sm text-slate-600">
-            Compartilhe com professores e alunos no cadastro. Demo: <strong>escola-demo</strong>
+          <p className="font-mono text-lg font-bold text-indigo-900 dark:text-indigo-200">{school.slug}</p>
+          <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+            Compartilhe com professores e famílias após a verificação. Demo: <strong>escola-demo</strong>
           </p>
         </CardContent>
       </Card>
