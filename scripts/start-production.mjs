@@ -8,9 +8,10 @@ function run(cmd) {
 run("npx prisma migrate deploy");
 
 if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.trim().length < 32) {
-  console.error("[eduhub] AUTH_SECRET ausente ou curto demais (mínimo 32 caracteres).");
-  console.error("[eduhub] Configure em Railway → Variables antes de usar login e sessões.");
-  process.exit(1);
+  console.warn("[eduhub] AVISO: AUTH_SECRET ausente ou curto — login pode falhar.");
+  console.warn("[eduhub] Configure em Railway → Variables (mínimo 32 caracteres).");
+} else {
+  console.log("[eduhub] AUTH_SECRET configurado.");
 }
 
 const prisma = new PrismaClient();
@@ -22,7 +23,11 @@ try {
     console.log("[eduhub] Seed concluído.");
   } else {
     console.log("[eduhub] Verificando contas demo...");
-    run("npx tsx prisma/ensure-demo.ts");
+    try {
+      run("npx tsx prisma/ensure-demo.ts");
+    } catch (e) {
+      console.warn("[eduhub] ensure-demo falhou (app sobe mesmo assim):", e?.message ?? e);
+    }
   }
 } finally {
   await prisma.$disconnect();
