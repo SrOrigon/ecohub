@@ -10,7 +10,7 @@ function authSecret() {
   return getAuthSecret();
 }
 
-const publicPaths = ["/", "/login", "/registro", "/entrar", "/convite"];
+const publicPaths = ["/", "/login", "/registro", "/entrar", "/convite", "/demo"];
 
 function isPublicPath(pathname: string) {
   if (publicPaths.includes(pathname)) return true;
@@ -20,6 +20,7 @@ function isPublicPath(pathname: string) {
   if (pathname.startsWith("/e/")) return true;
   if (pathname.startsWith("/inscricao/")) return true;
   if (pathname.startsWith("/entrar")) return true;
+  if (pathname.startsWith("/demo")) return true;
   return false;
 }
 

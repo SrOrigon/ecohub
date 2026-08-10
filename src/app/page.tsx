@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { DemoQuickAccess } from "@/components/auth/demo-quick-access";
 
 const features = [
   {
@@ -116,6 +117,7 @@ export default function HomePage() {
             Desenvolvido para escolas e cursos com orçamento zero.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:justify-center">
+            <DemoQuickAccess compact />
             <Link href="/registro/escola" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">
                 Registrar instituição

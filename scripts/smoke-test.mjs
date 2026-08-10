@@ -15,9 +15,8 @@ const checks = [
   { name: "Página inicial", path: "/", expectStatus: [200] },
   { name: "Login escola", path: "/login/escola", expectStatus: [200] },
   { name: "Registro escola", path: "/registro/escola", expectStatus: [200] },
+  { name: "Demo auto-login", path: "/demo/director", expectStatus: [200, 307, 308] },
 ];
-
-let failed = 0;
 
 console.log(`[smoke] Testando ${base}\n`);
 
