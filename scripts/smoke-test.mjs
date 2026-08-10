@@ -18,6 +18,8 @@ const checks = [
   { name: "Demo auto-login", path: "/demo/director", expectStatus: [200, 307, 308] },
 ];
 
+let failed = 0;
+
 console.log(`[smoke] Testando ${base}\n`);
 
 for (const check of checks) {
