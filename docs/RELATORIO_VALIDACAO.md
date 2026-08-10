@@ -12,7 +12,7 @@
 |------|--------|---------|
 | 1 — Infraestrutura | ✅ | Build, migrate, backup, health check |
 | 2 — Piloto automatizado | ✅ | **26/26 testes** passaram |
-| 3 — Go-live | ⏳ | Aguardando redeploy produção (fix boot compat) |
+| 3 — Go-live | ✅ | Produção online — smoke 4/4, health 200 |
 
 ---
 
@@ -68,12 +68,22 @@ npm run db:backup       # backup SQLite
 
 ---
 
+## Produção (2026-08-10)
+
+```
+GET /api/health → 200
+status: ok, database: ok, authSecret: ok
+Smoke: /, /login/escola, /registro/escola → 200
+URL: https://eduhub-production-b513.up.railway.app
+```
+
+---
+
 ## Próximos passos (manual)
 
-1. **Railway demo:** redeploy com fix de boot (modo compat automático)
-2. **Instituição real:** `EDUHUB_INSTITUTIONAL=1` + `AUTH_SECRET` + volume `/data`
-3. Checklist manual: `docs/GUIA_INSTITUICOES.md` seção 6
-4. Treinamento: `docs/TREINAMENTO_INSTITUICOES.md`
+1. **Instituição real:** `EDUHUB_INSTITUTIONAL=1` + `AUTH_SECRET` forte + volume `/data`
+2. Checklist manual: `docs/GUIA_INSTITUICOES.md` seção 6
+3. Treinamento presencial: `docs/TREINAMENTO_INSTITUICOES.md`
 
 ---
 
