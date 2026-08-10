@@ -1,6 +1,9 @@
 import { execSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 
+/** Mesmo valor de DEMO_AUTH_SECRET em src/lib/auth-secret.ts */
+const DEMO_AUTH_SECRET = "eduhub-railway-demo-auth-secret-v1-min-32-chars";
+
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = "file:/tmp/eduhub.db";
   console.warn("[eduhub] DATABASE_URL ausente — usando", process.env.DATABASE_URL);
@@ -29,7 +32,10 @@ try {
 }
 
 if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.trim().length < 32) {
-  console.warn("[eduhub] AVISO: AUTH_SECRET ausente ou curto — configure no Railway (≥32 chars).");
+  process.env.AUTH_SECRET = DEMO_AUTH_SECRET;
+  console.warn(
+    "[eduhub] AUTH_SECRET ausente — usando segredo demo embutido. Defina AUTH_SECRET no Railway para produção real."
+  );
 } else {
   console.log("[eduhub] AUTH_SECRET OK.");
 }

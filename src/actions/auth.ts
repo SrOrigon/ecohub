@@ -120,14 +120,7 @@ export async function loginAction(formData: FormData) {
     resolvedTenantSlug = tenantSchool.slug;
   }
 
-  try {
-    await establishSession(user, { remember, tenantSlug: resolvedTenantSlug });
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("AUTH_SECRET")) {
-      return { error: "Servidor mal configurado. Contate o suporte da plataforma." };
-    }
-    throw error;
-  }
+  await establishSession(user, { remember, tenantSlug: resolvedTenantSlug });
   redirect(dashboardForRole(user.role as UserRole));
 }
 
