@@ -58,4 +58,4 @@ export const TUTOR_GREETING =
   "Olá! Sou a **EduHub IA**, especialista em educação básica (BNCC). Posso ajudar com dúvidas de matérias, dicas de estudo, gamificação e uso do portal. O que você gostaria de saber?";
 
 export const TUTOR_FALLBACK =
-  "Posso ajudar com **matérias** (frações, gramática, ciências, história, geografia, inglês), **BNCC**, **planos de aula**, **questões**, **comunicados**, **agenda compartilhada** e uso do EduHub. Reformule com a matéria ou peça: 'Gerar questões sobre [tema]'.";
+  "Posso ajudar com **matérias**, **BNCC**, **planos de aula**, **comunicados**, **agenda compartilhada** e uso do EduHub. Professores podem pedir geração de questões no passo de criação de exercícios.";

@@ -48,6 +48,17 @@ export type AiContext = {
 
 const ALL_SNIPPETS: TutorSnippet[] = [...TUTOR_SNIPPETS, ...EXTENDED_SNIPPETS];
 
+const QUESTION_GEN_STAFF: EduHubAiRole[] = ["teacher", "director", "secretary", "admin"];
+
+function canGenerateQuestions(role: EduHubAiRole): boolean {
+  return QUESTION_GEN_STAFF.includes(role);
+}
+
+const QUESTION_GEN_PATTERN = /gerar quest|criar quest|questões sobre|exercícios sobre|monte quest|montar quest|fazer quest|lista de quest/i;
+
+const CHEAT_ATTEMPT_PATTERN =
+  /gabarito|resposta(s)? (do|da|dos|das) (exerc|prova|atividade|avali)|me (d[aá]|passa) (as )?respostas|cola na prova|colar na prova/i;
+
 const SUBJECT_ALIASES: Record<string, string> = {
   matematica: "Matemática",
   mat: "Matemática",
@@ -117,11 +128,24 @@ export function eduhubAiChat(message: string, context: AiContext): string {
     return roleHint ? `${base}\n\n${roleHint}` : base;
   }
 
-  if (/gerar quest|criar quest|questões sobre|exercícios sobre|monte quest/i.test(trimmed)) {
+  if (QUESTION_GEN_PATTERN.test(trimmed)) {
+    if (!canGenerateQuestions(context.role)) {
+      return (
+        "A **geração de questões e exercícios** é exclusiva da equipe escolar (professores, direção e secretaria), para garantir avaliações justas.\n\n" +
+        "Posso ajudar você a **entender** o conteúdo — por exemplo: *\"Como funciona fotossíntese?\"* ou *\"Explicar frações\"*."
+      );
+    }
     const topic = extractTopic(trimmed);
     const subject = detectSubject(trimmed);
     const qs = eduhubAiGenerateQuestions(topic, subject, 3);
     return formatQuestionsForChat(qs);
+  }
+
+  if (["student", "parent"].includes(context.role) && CHEAT_ATTEMPT_PATTERN.test(trimmed)) {
+    return (
+      "Não posso fornecer gabarito ou respostas de exercícios e provas — isso prejudica seu aprendizado.\n\n" +
+      "Posso **explicar o conteúdo** e dar dicas de estudo. Pergunte sobre o tema (ex.: *\"Como resolver equações?\"*)."
+    );
   }
 
   if (/bncc|habilidade|competencia|codigo ef/i.test(trimmed)) {
@@ -209,10 +233,30 @@ export function eduhubAiChat(message: string, context: AiContext): string {
   );
   if (partial.length > 0) {
     const hint = partial.map((p) => p.item.patterns[0]?.source?.replace(/\\b|\\i/g, "") ?? "tema").slice(0, 40);
-    return `${TUTOR_FALLBACK}\n\n**Talvez ajude:** tente perguntar sobre ${hint.join(" ou ")}.`;
+    return `${fallbackForRole(context.role)}\n\n**Talvez ajude:** tente perguntar sobre ${hint.join(" ou ")}.`;
   }
 
-  return `${TUTOR_FALLBACK}\n\n**Sugestões:** ${SUGGESTED_TOPICS.slice(0, 4).map((t) => `"${t}"`).join(", ")}.`;
+  return `${fallbackForRole(context.role)}\n\n**Sugestões:** ${suggestionsForRole(context.role).map((t) => `"${t}"`).join(", ")}.`;
+}
+
+function fallbackForRole(role: EduHubAiRole): string {
+  if (role === "student") {
+    return "Posso ajudar com **dúvidas de matérias**, **dicas de estudo**, **BNCC** e uso do EduHub. Não gero exercícios nem gabaritos — pergunte sobre o tema (ex.: *\"O que é fotossíntese?\"*).";
+  }
+  if (role === "parent") {
+    return "Posso orientar sobre **notas, faltas e hábitos de estudo** do seu filho. A geração de exercícios fica com a equipe escolar.";
+  }
+  return TUTOR_FALLBACK;
+}
+
+function suggestionsForRole(role: EduHubAiRole): string[] {
+  if (role === "student") {
+    return ["Como estudar para prova?", "O que é fotossíntese?", "Explicar frações", "Como ganhar mais XP?"];
+  }
+  if (role === "parent") {
+    return ["Como está meu filho?", "Plano de estudo para prova", "Justificar falta", "Tarefas de casa gamificadas"];
+  }
+  return SUGGESTED_TOPICS.slice(0, 4);
 }
 
 function eduhubAiDirectorInsight(context: AiContext): string {

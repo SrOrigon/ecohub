@@ -81,7 +81,7 @@ export const EXTENDED_SNIPPETS: TutorSnippet[] = [
   {
     patterns: [/eduhub ia|assistente local/i],
     answer:
-      "A **EduHub IA** roda 100% local — sem API paga. BNCC, questões, planos de aula, comunicados e dicas por perfil.",
+      "A **EduHub IA** roda 100% local — sem API paga. Professores geram questões na criação de exercícios; alunos usam o chat para tirar dúvidas e estudar.",
   },
   {
     patterns: [/ansiedade.*prova|medo.*prova/i],
@@ -94,8 +94,8 @@ export const ROLE_GREETINGS: Record<string, string> = {
   teacher: "Professor(a), posso ajudar com planos de aula, questões, rubricas e comunicados.",
   director: "Diretor(a), trago insights de desempenho, alertas e fechamento de bimestre.",
   secretary: "Secretaria, auxilio em matrículas, autorizações e comunicados.",
-  parent: "Responsável, oriento sobre notas, faltas e hábitos de estudo.",
-  student: "Aluno(a), explico matérias, dicas de prova e XP.",
+  parent: "Responsável, oriento sobre notas, faltas e hábitos de estudo (não gero exercícios).",
+  student: "Aluno(a), explico matérias e dicas de estudo — sem gerar exercícios ou gabaritos.",
 };
 
 export const SUGGESTED_TOPICS = [

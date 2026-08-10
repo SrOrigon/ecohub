@@ -11,14 +11,20 @@ type Message = { role: "user" | "assistant"; content: string };
 export function EduHubAiChat({
   assistantName,
   suggestions,
+  introMessage,
+  inputPlaceholder = "Pergunte sobre matérias, BNCC, comunicados…",
 }: {
   assistantName: string;
   suggestions: string[];
+  introMessage?: string;
+  inputPlaceholder?: string;
 }) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: `Olá! Sou a **${assistantName}**, assistente pedagógica local da EduHub — treinada para BNCC, sem uso de APIs externas. Como posso ajudar?`,
+      content:
+        introMessage ??
+        `Olá! Sou a **${assistantName}**, assistente pedagógica local da EduHub — treinada para BNCC, sem uso de APIs externas. Como posso ajudar?`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -116,7 +122,7 @@ export function EduHubAiChat({
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Pergunte sobre BNCC, exercícios, comunicados…"
+          placeholder={inputPlaceholder}
           rows={2}
           className="min-h-0 flex-1 resize-none"
           aria-label="Mensagem para a EduHub IA"

@@ -107,6 +107,15 @@ export async function eduhubAiChatAction(formData: FormData) {
   const settings = user.schoolId ? await getSchoolSettings(user.schoolId) : null;
   if (settings && !settings.ai.enabled) return { error: "EduHub IA desativada." };
 
+  const staffOnlyGen = /gerar quest|criar quest|questões sobre|exercícios sobre|monte quest|montar quest|fazer quest|lista de quest/i;
+  if (staffOnlyGen.test(message) && !["admin", "director", "secretary", "teacher"].includes(user.role)) {
+    return {
+      success: true,
+      reply:
+        "A geração de questões e exercícios é exclusiva da equipe escolar. Posso ajudar você a **entender** o conteúdo — reformule sua dúvida sobre o tema.",
+    };
+  }
+
   const context = await buildAiContext(user);
   const reply = eduhubAiChat(message, context);
 
