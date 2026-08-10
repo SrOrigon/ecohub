@@ -11,7 +11,7 @@ import {
   ExerciseStatusBadge,
   getStudentExerciseStatus,
 } from "@/components/exercises/exercise-status-badge";
-import { PenLine, ChevronRight } from "lucide-react";
+import { PenLine, ChevronRight, AlertTriangle } from "lucide-react";
 
 type ExerciseItem = {
   id: string;
@@ -33,6 +33,7 @@ type ExerciseItem = {
 
 const tabs = [
   { id: "pending", label: "Para fazer" },
+  { id: "overdue", label: "Atrasados" },
   { id: "submitted", label: "Enviados" },
   { id: "graded", label: "Corrigidos" },
 ] as const;
@@ -46,16 +47,20 @@ export function StudentExercisesList({ exercises }: { exercises: ExerciseItem[] 
     return { ...ex, sub, status };
   });
 
-  const filtered = enriched.filter((ex) => {
-    if (tab === "pending") return ex.status === "pending";
-    if (tab === "submitted") return ex.status === "submitted";
-    return ex.status === "graded";
-  });
+  const filtered = enriched.filter((ex) => ex.status === tab);
 
   const counts = {
     pending: enriched.filter((e) => e.status === "pending").length,
+    overdue: enriched.filter((e) => e.status === "overdue").length,
     submitted: enriched.filter((e) => e.status === "submitted").length,
     graded: enriched.filter((e) => e.status === "graded").length,
+  };
+
+  const emptyMessages: Record<(typeof tabs)[number]["id"], string> = {
+    pending: "Nada pendente — você está em dia!",
+    overdue: "Nenhum exercício com prazo encerrado.",
+    submitted: "Nenhuma entrega aguardando correção.",
+    graded: "Ainda não há exercícios corrigidos.",
   };
 
   return (
@@ -70,7 +75,9 @@ export function StudentExercisesList({ exercises }: { exercises: ExerciseItem[] 
             onClick={() => setTab(t.id)}
             className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-medium min-h-11 transition-colors ${
               tab === t.id
-                ? "bg-[color:var(--school-primary)] text-white"
+                ? t.id === "overdue"
+                  ? "bg-red-600 text-white"
+                  : "bg-[color:var(--school-primary)] text-white"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
@@ -79,22 +86,32 @@ export function StudentExercisesList({ exercises }: { exercises: ExerciseItem[] 
         ))}
       </div>
 
+      {counts.overdue > 0 && tab !== "overdue" && (
+        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <p>
+            Você tem <strong>{counts.overdue}</strong> atividade(s) com prazo encerrado. Fale com seu professor.
+          </p>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
           <PenLine className="mx-auto mb-3 h-10 w-10 text-slate-400" aria-hidden="true" />
-          <p className="font-semibold text-slate-800">
-            {tab === "pending" && "Nada pendente — você está em dia!"}
-            {tab === "submitted" && "Nenhuma entrega aguardando correção."}
-            {tab === "graded" && "Ainda não há exercícios corrigidos."}
-          </p>
+          <p className="font-semibold text-slate-800">{emptyMessages[tab]}</p>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-4 md:grid-cols-2">
           {filtered.map((ex) => (
-            <Card key={ex.id} className="kid-card border-2 border-indigo-100 transition-shadow hover:shadow-md">
+            <Card
+              key={ex.id}
+              className={`kid-card border-2 transition-shadow hover:shadow-md ${
+                ex.status === "overdue" ? "border-red-200 bg-red-50/30" : "border-indigo-100"
+              }`}
+            >
               <CardHeader className="pb-2">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
+                  <div className="min-w-0">
                     <CardTitle className="text-xl">{ex.title}</CardTitle>
                     <p className="mt-1 text-base text-slate-600">
                       {EXERCISE_KIND_LABELS[ex.kind as keyof typeof EXERCISE_KIND_LABELS] ?? ex.kind}
@@ -112,15 +129,25 @@ export function StudentExercisesList({ exercises }: { exercises: ExerciseItem[] 
                 <ExerciseRewardPills xp={ex.xpReward} coins={ex.coinReward} points={ex.maxPoints} />
                 <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
                   <span>{ex.questions.length} questão(ões)</span>
-                  {ex.dueDate && <span>Prazo: {formatDate(ex.dueDate)}</span>}
+                  {ex.dueDate && (
+                    <span className={ex.status === "overdue" ? "font-semibold text-red-700" : ""}>
+                      Prazo: {formatDate(ex.dueDate)}
+                    </span>
+                  )}
                 </div>
                 <Link href={`/dashboard/exercicios/${ex.id}`} className="block">
-                  <Button size="lg" className="w-full gap-2 sm:w-auto">
+                  <Button
+                    size="lg"
+                    variant={ex.status === "overdue" ? "outline" : "default"}
+                    className="w-full gap-2"
+                  >
                     {ex.status === "pending"
                       ? "Começar agora"
-                      : ex.status === "graded"
-                        ? "Ver resultado"
-                        : "Ver entrega"}
+                      : ex.status === "overdue"
+                        ? "Ver detalhes"
+                        : ex.status === "graded"
+                          ? "Ver resultado"
+                          : "Ver entrega"}
                     <ChevronRight className="h-5 w-5" aria-hidden="true" />
                   </Button>
                 </Link>

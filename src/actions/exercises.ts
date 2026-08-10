@@ -12,6 +12,7 @@ import {
 } from "@/lib/notifications";
 import { parseOptions, type ChoiceOption, type ExerciseKind, type QuestionType } from "@/lib/exercises";
 import { getSchoolSettings } from "@/lib/school-settings";
+import { exerciseBulletinMeta, upsertExerciseBulletinGrade } from "@/lib/exercise-bulletin";
 import { hasPermission } from "@/lib/permissions";
 import { syncTrailAfterAction } from "@/lib/trails";
 import { checkAndAwardClassGoals } from "@/lib/class-goals";
@@ -214,7 +215,10 @@ export async function submitExerciseAction(formData: FormData) {
       isActive: true,
       classId: student.classId ?? undefined,
     },
-    include: { questions: { orderBy: { sortOrder: "asc" } } },
+    include: {
+      questions: { orderBy: { sortOrder: "asc" } },
+      classGroup: { select: { name: true } },
+    },
   });
   if (!exercise) return { error: "Exercício não encontrado." };
 
@@ -317,24 +321,22 @@ export async function submitExerciseAction(formData: FormData) {
       submissionId = sub.id;
     }
 
+    if (allChoice && autoScore != null && settings.exercises.postGradeToBulletin) {
+      const { subject, period } = exerciseBulletinMeta(exercise, settings.academic.periods);
+      await upsertExerciseBulletinGrade(tx, {
+        studentId: student.id,
+        subject,
+        period,
+        value: maxScore > 0 ? (autoScore / maxScore) * maxGrade : 0,
+        maxValue: maxGrade,
+        teacherId: exercise.teacherId,
+      });
+    }
   });
 
   const studentName = user.fullName;
 
   if (allChoice && autoScore != null) {
-    if (settings.exercises.postGradeToBulletin) {
-      await prisma.grade.create({
-        data: {
-          studentId: student.id,
-          subject: exercise.kind === "exam" ? "Prova" : "Exercício",
-          value: maxScore > 0 ? (autoScore / maxScore) * maxGrade : 0,
-          maxValue: maxGrade,
-          period: exercise.title.slice(0, 40),
-          teacherId: exercise.teacherId,
-        },
-      });
-    }
-
     const ratio = maxScore > 0 ? autoScore / maxScore : 0;
     const xp = Math.round(exercise.xpReward * ratio);
     const coins = Math.round(exercise.coinReward * ratio);
@@ -389,6 +391,7 @@ export async function submitExerciseAction(formData: FormData) {
   }
 
   revalidateExercises();
+  revalidatePath(`/dashboard/alunos/${student.id}/boletim`);
   revalidatePath(`/dashboard/exercicios/${exerciseId}`);
 
   await syncTrailAfterAction(student.id, "exercise", exerciseId);
@@ -412,7 +415,7 @@ export async function gradeSubmissionAction(formData: FormData) {
   const submission = await prisma.exerciseSubmission.findUnique({
     where: { id: submissionId },
     include: {
-      exercise: { include: { questions: true } },
+      exercise: { include: { questions: true, classGroup: { select: { name: true } } } },
       student: true,
       answers: true,
     },
@@ -467,15 +470,17 @@ export async function gradeSubmissionAction(formData: FormData) {
     });
 
     if (settings.exercises.postGradeToBulletin) {
-      await tx.grade.create({
-        data: {
-          studentId: submission.studentId,
-          subject: submission.exercise.kind === "exam" ? "Prova" : "Exercício",
-          value: maxScore > 0 ? (totalScore / maxScore) * maxGrade : 0,
-          maxValue: maxGrade,
-          period: submission.exercise.title.slice(0, 40),
-          teacherId: user.id,
-        },
+      const { subject, period } = exerciseBulletinMeta(
+        submission.exercise,
+        settings.academic.periods
+      );
+      await upsertExerciseBulletinGrade(tx, {
+        studentId: submission.studentId,
+        subject,
+        period,
+        value: maxScore > 0 ? (totalScore / maxScore) * maxGrade : 0,
+        maxValue: maxGrade,
+        teacherId: user.id,
       });
     }
   });
@@ -510,6 +515,7 @@ export async function gradeSubmissionAction(formData: FormData) {
   );
 
   revalidateExercises();
+  revalidatePath(`/dashboard/alunos/${submission.studentId}/boletim`);
   revalidatePath(`/dashboard/exercicios/${submission.exerciseId}`);
 
   await syncTrailAfterAction(submission.studentId, "exercise", submission.exerciseId);

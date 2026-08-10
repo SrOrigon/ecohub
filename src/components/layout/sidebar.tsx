@@ -25,6 +25,7 @@ import {
   Megaphone,
   Activity,
   Flag,
+  FileText,
 } from "lucide-react";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,7 @@ const allNavItems: NavItem[] = [
   { href: "/dashboard", label: "Visão Geral", icon: LayoutDashboard, roles: ["admin", "director"] },
   { href: "/dashboard/professor", label: "Minhas Turmas", icon: LayoutDashboard, roles: ["teacher"] },
   { href: "/dashboard/aluno", label: "Meu Perfil", icon: User, roles: ["student"] },
+  { href: "/dashboard/boletim", label: "Meu boletim", icon: FileText, roles: ["student"] },
   { href: "/dashboard/responsavel", label: "Meus Filhos", icon: Heart, roles: ["parent"] },
   { href: "/dashboard/calendario", label: "Calendário", icon: CalendarDays, roles: ["admin", "director", "teacher", "student", "parent"] },
   { href: "/dashboard/alunos", label: "Alunos", icon: Users, roles: ["admin", "director", "teacher"] },

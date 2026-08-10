@@ -13,7 +13,12 @@ import {
 import { formatDate } from "@/lib/utils";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { AlertCircle, CheckCircle2, PartyPopper } from "lucide-react";
+import { ExerciseClassProgress } from "@/components/exercises/exercise-class-progress";
+import { ExerciseQuestionStats } from "@/components/exercises/exercise-question-stats";
+import { getSchoolSettings } from "@/lib/school-settings";
+import { AlertCircle, CheckCircle2, PartyPopper, FileText } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function ExerciseDetailPage({
   params,
@@ -24,8 +29,17 @@ export default async function ExerciseDetailPage({
   if (!user) redirect("/login");
 
   const { id } = await params;
-  const exercise = await getExerciseById(id, user);
+  const [exercise, settings] = await Promise.all([
+    getExerciseById(id, user),
+    getSchoolSettings(user.schoolId),
+  ]);
   if (!exercise) notFound();
+
+  const classStudentCount = exercise.classId
+    ? await prisma.student.count({ where: { classId: exercise.classId } })
+    : 0;
+
+  let studentRecord: { id: string } | null = null;
 
   const isStaff =
     user.role === "admin" || user.role === "director" || user.role === "teacher";
@@ -33,8 +47,8 @@ export default async function ExerciseDetailPage({
 
   let studentSubmission = null;
   if (user.role === "student") {
-    const student = await prisma.student.findUnique({ where: { userId: user.id } });
-    studentSubmission = exercise.submissions.find((s) => s.studentId === student?.id) ?? null;
+    studentRecord = await prisma.student.findUnique({ where: { userId: user.id } });
+    studentSubmission = exercise.submissions.find((s) => s.studentId === studentRecord?.id) ?? null;
   }
 
   const answerMap = studentSubmission
@@ -102,6 +116,14 @@ export default async function ExerciseDetailPage({
             <p className="mt-3 rounded-lg bg-white/80 p-3 text-base text-slate-800">
               <strong>Mensagem do professor:</strong> {studentSubmission.feedback}
             </p>
+          )}
+          {studentStatus === "graded" && settings.exercises.postGradeToBulletin && studentRecord && (
+            <Link href={`/dashboard/alunos/${studentRecord.id}/boletim`} className="mt-3 inline-block">
+              <Button variant="outline" size="sm" className="gap-2">
+                <FileText className="h-4 w-4" aria-hidden="true" />
+                Ver nota no boletim
+              </Button>
+            </Link>
           )}
         </div>
       )}
@@ -172,6 +194,18 @@ export default async function ExerciseDetailPage({
 
       {isStaff && (
         <>
+          <ExerciseClassProgress
+            className={exercise.classGroup?.name ?? null}
+            totalStudents={classStudentCount}
+            delivered={exercise.submissions.length}
+            graded={gradedSubs.length}
+            pendingGrade={pendingSubs.length}
+          />
+
+          {gradedSubs.length > 0 && (
+            <ExerciseQuestionStats questions={exercise.questions} submissions={exercise.submissions} />
+          )}
+
           {canEdit && (
             <EditExerciseForm
               exercise={{

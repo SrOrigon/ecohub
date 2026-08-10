@@ -56,14 +56,14 @@ export function TeacherExercisesList({ exercises }: { exercises: ExerciseItem[] 
         </Button>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         {list.map((ex) => {
           const pending = ex.submissions.filter((s) => s.status === "submitted").length;
           const graded = ex.submissions.filter((s) => s.status === "graded").length;
 
           return (
             <Card key={ex.id} className={pending > 0 ? "border-amber-200 ring-1 ring-amber-100" : ""}>
-              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <CardTitle className="text-lg">{ex.title}</CardTitle>
                   <p className="mt-1 text-sm text-slate-500">
