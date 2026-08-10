@@ -2,10 +2,10 @@
 
 ## Modos
 
-| Modo | Quando usar | Variável extra |
-|------|-------------|----------------|
-| **Institucional** | Escolas reais | — |
-| **Demo** | Ambiente público de demonstração | `EDUHUB_ENABLE_DEMO=1` |
+| Modo | Quando usar | Variáveis |
+|------|-------------|-----------|
+| **Demo / compat** | Demonstração pública | *(padrão se AUTH_SECRET ausente)* ou `EDUHUB_ENABLE_DEMO=1` |
+| **Institucional** | Escolas reais | `EDUHUB_INSTITUTIONAL=1` + `AUTH_SECRET` obrigatório |
 
 ---
 
@@ -14,12 +14,13 @@
 ### Obrigatórias (institucional)
 
 ```env
+EDUHUB_INSTITUTIONAL=1
 NODE_ENV=production
 DATABASE_URL=file:/data/prod.db
 AUTH_SECRET=gere-um-segredo-longo-e-aleatorio-min-32-chars
 ```
 
-### Demo pública (Railway atual)
+### Demo pública (Railway atual — padrão compatível)
 
 ```env
 EDUHUB_ENABLE_DEMO=1
@@ -27,7 +28,7 @@ DATABASE_URL=file:/data/prod.db
 AUTH_SECRET=recomendado-mesmo-no-demo
 ```
 
-> **Importante:** sem `EDUHUB_ENABLE_DEMO=1`, o boot **não** cria contas demo e exige `AUTH_SECRET` válido.
+> Sem `EDUHUB_INSTITUTIONAL=1`, o boot usa modo demo se `AUTH_SECRET` faltar (compatibilidade).
 
 ### Recomendadas
 

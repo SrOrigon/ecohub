@@ -8,8 +8,8 @@ Este guia cobre deploy, configuração inicial e **checklist de testes** antes d
 
 | Modo | Variável | Uso |
 |------|----------|-----|
-| **Institucional** (padrão) | *(não definir demo)* | Escolas reais — sem contas demo automáticas |
-| **Demo** | `EDUHUB_ENABLE_DEMO=1` | Ambiente público de demonstração (Railway demo) |
+| **Institucional** | `EDUHUB_INSTITUTIONAL=1` + `AUTH_SECRET` | Escolas reais — sem contas demo automáticas |
+| **Demo** | `EDUHUB_ENABLE_DEMO=1` ou AUTH ausente | Ambiente público de demonstração |
 
 ---
 
@@ -19,6 +19,7 @@ Este guia cobre deploy, configuração inicial e **checklist de testes** antes d
 
 ```env
 NODE_ENV=production
+EDUHUB_INSTITUTIONAL=1
 DATABASE_URL=file:/data/prod.db
 AUTH_SECRET=<segredo-aleatorio-minimo-32-caracteres>
 ```
@@ -160,7 +161,7 @@ Marque cada item antes de liberar para a comunidade escolar.
 
 ## 7. Go-live
 
-1. Remover ou não configurar `EDUHUB_ENABLE_DEMO`
+1. Definir `EDUHUB_INSTITUTIONAL=1` (não usar demo em produção real)
 2. Trocar senhas padrão de qualquer conta de teste
 3. Treinar direção, secretaria e 1–2 professores piloto
 4. Semana piloto com uma turma antes de escola toda

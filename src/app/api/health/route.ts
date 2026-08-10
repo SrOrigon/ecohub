@@ -15,7 +15,10 @@ export async function GET() {
   }
 
   const demoMode =
-    process.env.EDUHUB_ENABLE_DEMO === "1" || process.env.EDUHUB_ENABLE_DEMO === "true";
+    process.env.EDUHUB_ENABLE_DEMO === "1" ||
+    process.env.EDUHUB_ENABLE_DEMO === "true" ||
+    (!process.env.EDUHUB_INSTITUTIONAL &&
+      (!process.env.AUTH_SECRET?.trim() || process.env.AUTH_SECRET.trim().length < 32));
   const authConfigured =
     !!process.env.AUTH_SECRET?.trim() && process.env.AUTH_SECRET.trim().length >= 32;
 

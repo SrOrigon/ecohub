@@ -10,8 +10,17 @@ function isNextBuildPhase(): boolean {
 }
 
 function isDemoMode(): boolean {
+  if (
+    process.env.EDUHUB_INSTITUTIONAL === "1" ||
+    process.env.EDUHUB_INSTITUTIONAL === "true"
+  ) {
+    return false;
+  }
   return (
-    process.env.EDUHUB_ENABLE_DEMO === "1" || process.env.EDUHUB_ENABLE_DEMO === "true"
+    process.env.EDUHUB_ENABLE_DEMO === "1" ||
+    process.env.EDUHUB_ENABLE_DEMO === "true" ||
+    !process.env.AUTH_SECRET?.trim() ||
+    process.env.AUTH_SECRET.trim().length < 32
   );
 }
 
