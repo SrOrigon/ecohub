@@ -17,9 +17,12 @@ const prisma = new PrismaClient();
 try {
   const users = await prisma.user.count();
   if (users === 0) {
-    console.log("[eduhub] Banco vazio — populando contas demo...");
+    console.log("[eduhub] Banco vazio — populando contas demo (seed completo)...");
     run("npx tsx prisma/seed.ts");
     console.log("[eduhub] Seed concluído.");
+  } else {
+    console.log("[eduhub] Verificando contas demo...");
+    run("npx tsx prisma/ensure-demo.ts");
   }
 } finally {
   await prisma.$disconnect();
