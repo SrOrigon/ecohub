@@ -89,6 +89,7 @@ const allNavItems: NavItem[] = [
     roles: ["admin", "director", "teacher", "student"],
     customCheck: (role, perms) => role !== "teacher" || canSeeExerciciosStaff(role, perms),
   },
+  { href: "/dashboard/rankings", label: "Rankings", icon: Medal, roles: ["admin", "director", "secretary", "teacher", "student"] },
   {
     href: "/dashboard/gamificacao",
     label: "Gamificação",

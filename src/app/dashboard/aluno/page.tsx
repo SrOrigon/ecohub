@@ -130,6 +130,12 @@ export default async function AlunoPortalPage() {
               Meu boletim
             </Button>
           </Link>
+          <Link href="/dashboard/rankings" className="w-full sm:w-auto">
+            <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
+              <Trophy className="h-5 w-5" aria-hidden="true" />
+              Rankings
+            </Button>
+          </Link>
           <Link href="/dashboard/loja" className="w-full sm:w-auto">
             <Button size="lg" className="w-full gap-2 sm:w-auto">
               <Gift className="h-5 w-5" aria-hidden="true" />
@@ -327,6 +333,13 @@ export default async function AlunoPortalPage() {
                 })}
               </ol>
             )}
+            <Link
+              href="/dashboard/rankings"
+              className="mt-4 inline-flex items-center gap-1 text-base font-semibold text-indigo-600 hover:underline"
+            >
+              Ver ranking completo
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
 
             <h3 className="mb-3 mt-6 text-lg font-bold">Suas conquistas</h3>
             <div className="flex flex-wrap gap-2">

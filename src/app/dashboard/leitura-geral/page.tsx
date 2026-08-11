@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { getInstitutionalOverview } from "@/lib/institutional-overview";
+import { getTemporalAnalysis } from "@/lib/institutional-trends";
+import { TemporalAnalysisPanel } from "@/components/institutional/temporal-analysis-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +31,10 @@ export default async function LeituraGeralPage() {
   if (!user) redirect("/login");
   if (!["admin", "director", "secretary"].includes(user.role)) redirect("/dashboard");
 
-  const data = await getInstitutionalOverview(user.schoolId);
+  const [data, temporal] = await Promise.all([
+    getInstitutionalOverview(user.schoolId),
+    getTemporalAnalysis(user.schoolId),
+  ]);
 
   const classChartData = data.classes.map((c) => ({
     turma: c.className,
@@ -97,6 +102,8 @@ export default async function LeituraGeralPage() {
           ))}
         </CardContent>
       </Card>
+
+      <TemporalAnalysisPanel analysis={temporal} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <PerformanceChart data={data.monthlyTrend} />
