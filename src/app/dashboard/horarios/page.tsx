@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
 import { saveScheduleSlotAction } from "@/actions/product-suite";
+import { getSchoolSettings } from "@/lib/school-settings";
 import { redirect } from "next/navigation";
-import { SUBJECTS } from "@/lib/constants";
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -22,6 +22,9 @@ export default async function HorariosPage() {
     orderBy: { name: "asc" },
   });
 
+  const settings = await getSchoolSettings(user.schoolId);
+  const subjects = settings.academic.subjects;
+
   const slots = await prisma.classScheduleSlot.findMany({
     where: { schoolId: user.schoolId },
     include: { classGroup: { select: { name: true } } },
@@ -30,7 +33,10 @@ export default async function HorariosPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Horários" description="Grade semanal por turma — sala e disciplina." />
+      <PageHeader
+        title="Horários"
+        description="Grade semanal por turma ou curso — sala e disciplina cadastrada pela instituição."
+      />
 
       <Card>
         <CardContent className="space-y-4 p-4">
@@ -60,7 +66,7 @@ export default async function HorariosPage() {
             <div>
               <Label htmlFor="subject">Disciplina</Label>
               <Select id="subject" name="subject" required>
-                {SUBJECTS.map((s) => (
+                {subjects.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>

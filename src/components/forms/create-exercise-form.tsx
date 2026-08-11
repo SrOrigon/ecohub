@@ -9,7 +9,6 @@ import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import { FormMessage } from "@/components/ui/form-utils";
 import { Modal } from "@/components/ui/modal";
 import type { QuestionType } from "@/lib/exercises";
-import { SUBJECTS } from "@/lib/constants";
 import { ChevronLeft, ChevronRight, PenLine, Sparkles } from "lucide-react";
 
 interface ClassOption {
@@ -47,9 +46,11 @@ const DEFAULT_PRESETS: Preset[] = [
 export function CreateExerciseForm({
   classes,
   presets = DEFAULT_PRESETS,
+  subjects = [],
 }: {
   classes: ClassOption[];
   presets?: Preset[];
+  subjects?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
@@ -61,7 +62,7 @@ export function CreateExerciseForm({
     maxPoints: mid.points,
   });
   const [aiTopic, setAiTopic] = useState("");
-  const [aiSubject, setAiSubject] = useState(SUBJECTS[0] ?? "Matemática");
+  const [aiSubject, setAiSubject] = useState(subjects[0] ?? "Geral");
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiPending, startAiTransition] = useTransition();
 
@@ -260,7 +261,7 @@ export function CreateExerciseForm({
                     aria-label="Disciplina"
                     className="w-full min-w-0 sm:min-w-[8rem] sm:w-auto"
                   >
-                    {SUBJECTS.map((s) => (
+                    {subjects.map((s) => (
                       <option key={s} value={s}>
                         {s}
                       </option>

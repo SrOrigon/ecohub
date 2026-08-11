@@ -42,7 +42,11 @@ export default async function ExerciciosPage() {
     <div className="space-y-6">
       <PageHeader title="Exercícios" description={description}>
         {isStaff && classes.length > 0 && (
-          <CreateExerciseForm classes={classes} presets={settings.exercises.presets} />
+          <CreateExerciseForm
+            classes={classes}
+            presets={settings.exercises.presets}
+            subjects={settings.academic.subjects}
+          />
         )}
       </PageHeader>
 

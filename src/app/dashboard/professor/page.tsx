@@ -78,7 +78,11 @@ export default async function TeacherDashboardPage() {
         <div className="flex flex-wrap gap-2">
           {canCreateClass && <CreateClassForm teacherMode />}
           {teacherClasses.length > 0 && (
-            <CreateExerciseForm classes={teacherClasses} presets={settings.exercises.presets} />
+            <CreateExerciseForm
+              classes={teacherClasses}
+              presets={settings.exercises.presets}
+              subjects={settings.academic.subjects}
+            />
           )}
         </div>
       </PageHeader>

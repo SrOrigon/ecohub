@@ -803,7 +803,7 @@ export async function requestMissionCompletionAction(formData: FormData) {
 }
 
 export async function updateStudentAction(formData: FormData) {
-  const user = await requireSession(["admin", "director", "teacher"]);
+  const user = await requireSession(["admin", "director", "secretary", "teacher"]);
   if (!user.schoolId) return { error: "Escola não configurada." };
 
   const studentId = String(formData.get("studentId") ?? "");
@@ -816,6 +816,7 @@ export async function updateStudentAction(formData: FormData) {
 
   await prisma.student.update({ where: { id: studentId }, data: { classId } });
   revalidateAll();
+  revalidatePath("/dashboard/alunos");
   revalidatePath(`/dashboard/alunos/${studentId}`);
   return { success: true };
 }

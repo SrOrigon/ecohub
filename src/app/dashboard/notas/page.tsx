@@ -32,7 +32,7 @@ export default async function NotasPage() {
     <div className="space-y-6">
       <PageHeader
         title="Notas"
-        description={`Lançamento com XP automático (${settings.xp.perGradePoint} XP/ponto · bônus ≥${settings.xp.gradeBonusThreshold})`}
+        description={`Lançamento manual com disciplinas da instituição (${settings.academic.subjects.length} cadastradas · ${settings.xp.perGradePoint} XP/ponto · bônus ≥${settings.xp.gradeBonusThreshold})`}
       >
         <CreateGradeForm
           students={studentOptions}

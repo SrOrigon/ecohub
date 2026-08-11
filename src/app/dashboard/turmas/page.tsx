@@ -33,11 +33,11 @@ export default async function TurmasPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={isTeacher ? "Minhas turmas" : "Turmas"}
+        title={isTeacher ? "Minhas turmas" : "Turmas / cursos"}
         description={
           isTeacher
-            ? "Cadastre turmas e publique exercícios para todos os alunos de uma vez."
-            : "Organização de turmas, professores e alunos"
+            ? "Cadastre turmas ou cursos e publique exercícios para todos os alunos de uma vez."
+            : "Cadastre manualmente turmas, cursos e grupos — o EduHub auxilia a partir daí."
         }
       >
         {canCreateClass && (

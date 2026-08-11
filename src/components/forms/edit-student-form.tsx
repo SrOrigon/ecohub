@@ -33,15 +33,15 @@ export function EditStudentForm({
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        Editar turma
+        Editar turma / curso
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} title="Editar aluno">
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="studentId" value={studentId} />
           <div>
-            <Label htmlFor="classId">Turma</Label>
+            <Label htmlFor="classId">Turma / curso</Label>
             <Select id="classId" name="classId" defaultValue={currentClassId ?? ""}>
-              <option value="">Sem turma</option>
+              <option value="">Sem turma / curso</option>
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}

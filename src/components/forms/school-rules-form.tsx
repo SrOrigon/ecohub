@@ -270,6 +270,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
                 <Textarea
                   id="subjects"
                   rows={6}
+                  placeholder={"Ex.:\nMatemática\nInglês\nProgramação Web\nMúsica"}
                   value={settings.academic.subjects.join("\n")}
                   onChange={(e) =>
                     setSettings((s) => ({
