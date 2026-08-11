@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Gift, Star, Trophy, Coins, FileText, PenLine, ChevronRight } from "lucide-react";
+import { Gift, Star, Trophy, Coins, FileText, PenLine, ChevronRight, History } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getRanking, getMissionsForStudent } from "@/lib/queries";
@@ -21,6 +21,7 @@ import { getTodayAgendaForStudent } from "@/lib/today-agenda";
 import { getHomeTasksForStudent } from "@/actions/home-tasks";
 import { StudentHomeTasksList } from "@/components/home-tasks/student-home-tasks-list";
 import { SchoolCalendarWidget } from "@/components/school/school-calendar-widget";
+import { LiveStudentStatsCard } from "@/components/metrics/live-activity-feed";
 import { formatDate } from "@/lib/utils";
 import { redirect } from "next/navigation";
 
@@ -130,6 +131,12 @@ export default async function AlunoPortalPage() {
               Meu boletim
             </Button>
           </Link>
+          <Link href="/dashboard/aluno/historico" className="w-full sm:w-auto">
+            <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
+              <History className="h-5 w-5" aria-hidden="true" />
+              Meu histórico
+            </Button>
+          </Link>
           <Link href="/dashboard/rankings" className="w-full sm:w-auto">
             <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
               <Trophy className="h-5 w-5" aria-hidden="true" />
@@ -155,6 +162,8 @@ export default async function AlunoPortalPage() {
       <StudentHomeTasksList tasks={homeTasks} />
 
       <SchoolCalendarWidget settings={settings} compact />
+
+      <LiveStudentStatsCard />
 
       <section aria-labelledby="stats-heading">
         <h2 id="stats-heading" className="sr-only">

@@ -44,6 +44,17 @@ function revalidateAll() {
     "/dashboard/relatorios",
     "/dashboard/notificacoes",
     "/dashboard/aluno",
+    "/dashboard/professor",
+    "/dashboard/engajamento",
+    "/dashboard/rankings",
+    "/dashboard/leitura-geral",
+    "/dashboard/exercicios",
+    "/dashboard/historico",
+    "/dashboard/aluno/historico",
+    "/dashboard/precisao-disciplinas",
+    "/dashboard/alertas",
+    "/dashboard/responsavel",
+    "/dashboard/responsavel/alertas",
   ].forEach((p) => revalidatePath(p));
 }
 

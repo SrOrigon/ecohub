@@ -34,6 +34,7 @@ import {
   ClipboardPen,
   Clock,
   Shield,
+  History,
 } from "lucide-react";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -60,13 +61,17 @@ type NavItem = {
 };
 
 const allNavItems: NavItem[] = [
+  { href: "/dashboard/precisao-disciplinas", label: "Precisão por disciplina", icon: Target, roles: ["admin", "director", "secretary", "teacher"] },
+  { href: "/dashboard/historico", label: "Histórico", icon: History, roles: ["admin", "director", "secretary", "teacher"] },
   { href: "/dashboard/leitura-geral", label: "Leitura geral", icon: BarChart3, roles: ["admin", "director", "secretary"] },
   { href: "/dashboard", label: "Visão Geral", icon: LayoutDashboard, roles: ["admin", "director"] },
   { href: "/dashboard/secretaria", label: "Painel Secretaria", icon: ClipboardPen, roles: ["secretary"] },
   { href: "/dashboard/professor", label: "Minhas Turmas", icon: LayoutDashboard, roles: ["teacher"] },
   { href: "/dashboard/aluno", label: "Meu Perfil", icon: User, roles: ["student"] },
   { href: "/dashboard/boletim", label: "Meu boletim", icon: FileText, roles: ["student"] },
+  { href: "/dashboard/aluno/historico", label: "Meu histórico", icon: History, roles: ["student"] },
   { href: "/dashboard/responsavel", label: "Meus Filhos", icon: Heart, roles: ["parent"] },
+  { href: "/dashboard/responsavel/alertas", label: "Alertas de atenção", icon: AlertTriangle, roles: ["parent"] },
   { href: "/dashboard/assistente", label: "EduHub IA", icon: Bot, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/calendario", label: "Agenda compartilhada", icon: CalendarDays, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/agenda", label: "Minha agenda", icon: NotebookPen, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
@@ -80,7 +85,7 @@ const allNavItems: NavItem[] = [
   { href: "/dashboard/autorizacoes", label: "Autorizações", icon: ClipboardPen, roles: ["admin", "director", "secretary", "parent"] },
   { href: "/dashboard/documentos", label: "Documentos", icon: FileText, roles: ["admin", "director", "secretary"] },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, roles: ["admin", "director", "secretary", "teacher", "parent"] },
-  { href: "/dashboard/alertas", label: "Alertas de risco", icon: AlertTriangle, roles: ["admin", "director", "secretary"] },
+  { href: "/dashboard/alertas", label: "Alertas de atenção", icon: AlertTriangle, roles: ["admin", "director", "secretary"] },
   { href: "/dashboard/horarios", label: "Horários", icon: Clock, roles: ["admin", "director", "secretary", "teacher"] },
   {
     href: "/dashboard/exercicios",

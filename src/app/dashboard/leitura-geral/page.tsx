@@ -11,11 +11,14 @@ import {
   Route,
   Award,
   ArrowRight,
+  History,
 } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { getInstitutionalOverview } from "@/lib/institutional-overview";
 import { getTemporalAnalysis } from "@/lib/institutional-trends";
+import { getSubjectPrecisionOverview } from "@/lib/subject-precision";
 import { TemporalAnalysisPanel } from "@/components/institutional/temporal-analysis-panel";
+import { SubjectPrecisionSummaryStrip } from "@/components/institutional/subject-precision-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,9 +34,10 @@ export default async function LeituraGeralPage() {
   if (!user) redirect("/login");
   if (!["admin", "director", "secretary"].includes(user.role)) redirect("/dashboard");
 
-  const [data, temporal] = await Promise.all([
+  const [data, temporal, precision] = await Promise.all([
     getInstitutionalOverview(user.schoolId),
     getTemporalAnalysis(user.schoolId),
+    getSubjectPrecisionOverview(user.schoolId),
   ]);
 
   const classChartData = data.classes.map((c) => ({
@@ -56,7 +60,17 @@ export default async function LeituraGeralPage() {
       <PageHeader
         title="Leitura geral da instituição"
         description="Métricas pedagógicas unificadas — saúde acadêmica, engajamento, exercícios e pontos de melhoria"
-      />
+      >
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/dashboard/historico"
+            className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-800 hover:bg-violet-100"
+          >
+            <History className="h-4 w-4" aria-hidden="true" />
+            Histórico temporal
+          </Link>
+        </div>
+      </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
@@ -104,6 +118,8 @@ export default async function LeituraGeralPage() {
       </Card>
 
       <TemporalAnalysisPanel analysis={temporal} />
+
+      <SubjectPrecisionSummaryStrip data={precision} passGrade={data.passGrade} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <PerformanceChart data={data.monthlyTrend} />

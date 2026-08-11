@@ -16,6 +16,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { UserIdentity } from "@/components/profile/user-identity";
 import { CreateHomeTaskForm } from "@/components/forms/create-home-task-form";
 import { ParentHomeTasksPanel } from "@/components/home-tasks/parent-home-tasks-panel";
+import { AttentionAlertsPanel } from "@/components/alerts/attention-alerts-panel";
+import { getAttentionAlertsSnapshot } from "@/lib/attention-alerts";
 import { redirect } from "next/navigation";
 
 const relationLabels: Record<string, string> = {
@@ -30,7 +32,7 @@ export default async function ResponsavelPortalPage() {
   if (!user) redirect("/login/responsavel");
   if (user.role !== "parent") redirect("/dashboard");
 
-  const [children, homeTasks, classes, settings] = await Promise.all([
+  const [children, homeTasks, classes, settings, alertsSnapshot] = await Promise.all([
     fetchParentChildren(user, user.id),
     getHomeTasksForParent(user.id),
     user.schoolId
@@ -41,6 +43,7 @@ export default async function ResponsavelPortalPage() {
         })
       : Promise.resolve([]),
     user.schoolId ? getSchoolSettings(user.schoolId) : null,
+    getAttentionAlertsSnapshot(user),
   ]);
 
   const passGrade = settings?.academic.passGrade ?? 6;
@@ -98,6 +101,16 @@ export default async function ResponsavelPortalPage() {
           children={childSummaries}
           passGrade={passGrade}
           assistantName={assistantName}
+        />
+      )}
+
+      {children.length > 0 && (
+        <AttentionAlertsPanel
+          initialAlerts={alertsSnapshot.alerts}
+          compact
+          maxItems={5}
+          title="Alertas de atenção monitorados"
+          description="Problemas em matérias, faltas e prazos — atualização contínua."
         />
       )}
 

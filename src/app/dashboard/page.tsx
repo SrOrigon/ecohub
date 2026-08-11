@@ -18,12 +18,12 @@ import {
   getDashboardStats,
   getRanking,
   getMissions,
-  getRecentXp,
   getMonthlyPerformance,
   getClassComparison,
 } from "@/lib/queries";
 import { formatPercent } from "@/lib/utils";
 import { RankingTableRows } from "@/components/profile/ranking-list";
+import { LiveActivityFeed, LiveStatsStrip } from "@/components/metrics/live-activity-feed";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
@@ -36,11 +36,10 @@ export default async function DashboardPage() {
   if (user.role === "secretary") redirect("/dashboard/secretaria");
 
   const schoolId = user.schoolId;
-  const [stats, ranking, missions, recentXp, monthlyData, classData] = await Promise.all([
+  const [stats, ranking, missions, monthlyData, classData] = await Promise.all([
     getDashboardStats(schoolId),
     getRanking(schoolId),
     getMissions(schoolId),
-    getRecentXp(schoolId),
     getMonthlyPerformance(schoolId),
     getClassComparison(schoolId),
   ]);
@@ -66,6 +65,8 @@ export default async function DashboardPage() {
           Leitura geral da instituição
         </Link>
       </PageHeader>
+
+      <LiveStatsStrip />
 
       <div className="responsive-grid">
         {statCards.map(({ label, value, icon: Icon, color }) => (
@@ -146,29 +147,7 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Atividade recente</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {recentXp.length === 0 ? (
-                <EmptyState
-                  title="Sem atividade"
-                  description="Transações de XP aparecerão aqui."
-                  className="py-6"
-                />
-              ) : (
-                recentXp.map((tx) => (
-                  <div key={tx.id} className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
-                    <span className="min-w-0 text-slate-600">
-                      {tx.student.user.fullName}: {tx.reason}
-                    </span>
-                    <Badge variant="success" className="w-fit shrink-0">+{tx.amount} XP</Badge>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+          <LiveActivityFeed />
         </div>
       </div>
     </div>

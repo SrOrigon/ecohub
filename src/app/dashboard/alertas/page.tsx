@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
-import { computeRiskAlerts } from "@/lib/risk-alerts";
+import { getAttentionAlertsSnapshot } from "@/lib/attention-alerts";
+import { AttentionAlertsPanel } from "@/components/alerts/attention-alerts-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { redirect } from "next/navigation";
 import { ExportGradesButton } from "@/components/dashboard/export-grades-button";
 
@@ -12,41 +12,65 @@ export default async function AlertasPage() {
   if (!user?.schoolId) redirect("/login");
   if (!["admin", "director", "secretary"].includes(user.role)) redirect("/dashboard");
 
-  const alerts = await computeRiskAlerts(user.schoolId);
+  const snapshot = await getAttentionAlertsSnapshot(user);
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Alertas de risco" description="Alunos com notas baixas, faltas críticas ou evasão recente.">
+      <PageHeader
+        title="Alertas de atenção"
+        description="Monitoramento institucional: notas por matéria, frequência, faltas e prazos de entrega."
+      >
         <ExportGradesButton />
       </PageHeader>
 
-      {alerts.length === 0 ? (
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Card>
+          <CardContent className="py-4 text-center">
+            <p className="text-2xl font-bold text-red-700">{snapshot.summary.critical}</p>
+            <p className="text-xs text-slate-500">Críticos</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-4 text-center">
+            <p className="text-2xl font-bold text-orange-700">{snapshot.summary.high}</p>
+            <p className="text-xs text-slate-500">Altos</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-4 text-center">
+            <p className="text-2xl font-bold text-amber-700">{snapshot.summary.medium}</p>
+            <p className="text-xs text-slate-500">Médios</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-4 text-center">
+            <p className="text-2xl font-bold text-slate-700">{snapshot.summary.total}</p>
+            <p className="text-xs text-slate-500">Total monitorado</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {snapshot.alerts.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-slate-500">
-            Nenhum alerta no momento. Continue monitorando frequência e notas.
+            Nenhum alerta no momento. O monitoramento continua ativo.
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {alerts.map((alert) => (
-            <Link key={alert.id} href={alert.href}>
-              <Card className="transition hover:shadow-md">
-                <CardContent className="flex items-start justify-between gap-4 p-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-slate-900">{alert.title}</p>
-                      <Badge variant={alert.severity === "high" ? "danger" : "warning"}>
-                        {alert.severity === "high" ? "Alto" : "Médio"}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-sm text-slate-600">{alert.message}</p>
-                  </div>
-                  <span className="text-sm text-indigo-600">Ver →</span>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <AttentionAlertsPanel
+          initialAlerts={snapshot.alerts}
+          maxItems={100}
+          title="Todos os alertas da escola"
+          description="Atualização automática via monitoramento contínuo."
+        />
+      )}
+
+      {snapshot.summary.total > 0 && (
+        <p className="text-center text-sm text-slate-500">
+          <Link href="/dashboard/leitura-geral" className="text-indigo-600 hover:underline">
+            Ver leitura geral institucional
+          </Link>
+        </p>
       )}
     </div>
   );

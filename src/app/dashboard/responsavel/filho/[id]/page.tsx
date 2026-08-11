@@ -19,6 +19,8 @@ import { getHomeTasksForStudent } from "@/actions/home-tasks";
 import { JustifyAbsencePanel } from "@/components/parents/justify-absence-form";
 import { CreateHomeTaskForm } from "@/components/forms/create-home-task-form";
 import { ParentHomeTasksPanel } from "@/components/home-tasks/parent-home-tasks-panel";
+import { AttentionAlertsPanel } from "@/components/alerts/attention-alerts-panel";
+import { getAttentionAlertsSnapshot } from "@/lib/attention-alerts";
 import { notFound, redirect } from "next/navigation";
 import { BookOpen, FileText, Gift, Medal, Target, PenLine, Home } from "lucide-react";
 
@@ -48,9 +50,10 @@ export default async function FilhoDetailPage({ params }: { params: Promise<{ id
     return { ...ex, sub, status };
   });
   const pendingExercises = exerciseItems.filter((e) => e.status === "pending").length;
-  const [occurrences, homeTasks] = await Promise.all([
+  const [occurrences, homeTasks, alertsSnapshot] = await Promise.all([
     getOccurrencesForStudent(student.id),
     getHomeTasksForStudent(student.id),
+    getAttentionAlertsSnapshot(user),
   ]);
 
   return (
@@ -89,6 +92,15 @@ export default async function FilhoDetailPage({ params }: { params: Promise<{ id
         </Card>
       </div>
 
+      <AttentionAlertsPanel
+        initialAlerts={alertsSnapshot.alerts}
+        studentId={student.id}
+        compact
+        maxItems={6}
+        title="Alertas monitorados deste filho"
+        description="Matérias com dificuldade, faltas e prazos pendentes."
+      />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -107,7 +119,7 @@ export default async function FilhoDetailPage({ params }: { params: Promise<{ id
       </Card>
 
       {exerciseItems.length > 0 && (
-        <Card className={pendingExercises > 0 ? "border-amber-200" : ""}>
+        <Card id="exercicios" className={pendingExercises > 0 ? "border-amber-200" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <PenLine className="h-5 w-5 text-indigo-600" aria-hidden="true" />
@@ -195,7 +207,7 @@ export default async function FilhoDetailPage({ params }: { params: Promise<{ id
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="missoes">
           <CardHeader><CardTitle>Missões</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {student.studentMissions.length === 0 ? (

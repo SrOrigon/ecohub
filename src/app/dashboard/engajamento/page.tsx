@@ -1,6 +1,7 @@
 import { getSessionUser } from "@/lib/auth";
 import { getEngagementOverview } from "@/lib/engagement";
 import { PageHeader } from "@/components/layout/page-header";
+import { LiveStatsStrip, LiveActivityFeed } from "@/components/metrics/live-activity-feed";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { redirect } from "next/navigation";
@@ -20,6 +21,8 @@ export default async function EngajamentoPage() {
         title="Painel de engajamento"
         description="Missões, exercícios, frequência e XP — visão unificada da participação."
       />
+
+      <LiveStatsStrip />
 
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <Card>
@@ -112,6 +115,8 @@ export default async function EngajamentoPage() {
           </ol>
         </CardContent>
       </Card>
+
+      <LiveActivityFeed title="Feed de atividades" maxItems={10} />
     </div>
   );
 }

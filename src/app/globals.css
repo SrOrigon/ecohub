@@ -468,7 +468,9 @@ input[type="radio"] {
     visibility: hidden;
   }
   .boletim-print,
-  .boletim-print * {
+  .boletim-print *,
+  body.report-print-mode .app-main,
+  body.report-print-mode .app-main * {
     visibility: visible;
   }
   .boletim-print {
@@ -477,6 +479,20 @@ input[type="radio"] {
     top: 0;
     width: 100%;
     padding: 0;
+    margin: 0;
+  }
+  body.report-print-mode .app-shell > aside,
+  body.report-print-mode .header-bar,
+  body.report-print-mode .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body.report-print-mode .app-main {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 !important;
     margin: 0;
   }
 }

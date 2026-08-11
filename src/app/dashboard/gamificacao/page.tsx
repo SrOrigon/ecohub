@@ -14,6 +14,7 @@ import { getRewardsForSchool } from "@/actions/rewards";
 import { getRewardCategoriesForSchool } from "@/actions/reward-categories";
 import { InstitutionShopManager } from "@/components/shop/institution-shop-manager";
 import { RankingList } from "@/components/profile/ranking-list";
+import { LiveStatsStrip, LiveActivityFeed } from "@/components/metrics/live-activity-feed";
 import { BulkCompleteMissionsForm } from "@/components/forms/bulk-complete-missions-form";
 import { getPendingMissionConfirmations } from "@/lib/mission-requests";
 
@@ -75,6 +76,8 @@ export default async function GamificacaoPage() {
           />
         )}
       </PageHeader>
+
+      <LiveStatsStrip />
 
       {isStaff && pendingItems.length > 0 && (
         <Card className="border-indigo-200 dark:border-indigo-900">
@@ -194,6 +197,8 @@ export default async function GamificacaoPage() {
           </CardContent>
         </Card>
       </div>
+
+      <LiveActivityFeed maxItems={10} />
     </div>
   );
 }

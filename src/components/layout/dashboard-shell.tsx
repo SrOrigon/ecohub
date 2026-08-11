@@ -5,6 +5,9 @@ import { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { SchoolThemeProvider } from "@/components/school/school-theme-provider";
+import { LiveMetricsProvider } from "@/components/metrics/live-metrics-provider";
+import { LivePageSync } from "@/components/metrics/live-page-sync";
+import { AttentionAlertsProvider } from "@/components/alerts/attention-alerts-provider";
 import { isKidFriendlyRole, type UserRole } from "@/lib/constants";
 import type { SchoolSettings } from "@/lib/school-settings";
 
@@ -37,10 +40,13 @@ export function DashboardShell({
 
   return (
     <SchoolThemeProvider branding={branding}>
-      <div
-        className="app-shell"
-        data-audience={kidFriendly ? "student" : "staff"}
-      >
+      <LiveMetricsProvider>
+        <AttentionAlertsProvider>
+        <LivePageSync />
+        <div
+          className="app-shell"
+          data-audience={kidFriendly ? "student" : "staff"}
+        >
         <a href="#main-content" className="skip-link">
           Ir para o conteúdo principal
         </a>
@@ -78,7 +84,9 @@ export function DashboardShell({
             {children}
           </main>
         </div>
-      </div>
+        </div>
+        </AttentionAlertsProvider>
+      </LiveMetricsProvider>
     </SchoolThemeProvider>
   );
 }

@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { ROLE_LABELS, type UserRole } from "@/lib/constants";
 import { SearchBar } from "@/components/layout/search-bar";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { LiveConnectionBadge } from "@/components/metrics/live-connection-badge";
+import { AttentionAlertBadge } from "@/components/alerts/attention-alerts-panel";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
@@ -67,6 +69,8 @@ export function Header({
               </Link>
             )}
             <ThemeToggle compact />
+            <LiveConnectionBadge />
+            {role === "parent" && <AttentionAlertBadge />}
             <NotificationBell />
             <Badge variant="secondary" className="hidden md:inline-flex">
               {ROLE_LABELS[role]}
