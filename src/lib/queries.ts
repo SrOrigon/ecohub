@@ -308,7 +308,7 @@ export async function getTeachers(schoolId: string | null) {
   if (!schoolId) return [];
   return prisma.user.findMany({
     where: { schoolId, role: "teacher" },
-    select: { id: true, fullName: true, email: true, avatarUrl: true },
+    select: { id: true, fullName: true, email: true, avatarUrl: true, city: true, state: true },
   });
 }
 

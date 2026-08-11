@@ -36,6 +36,8 @@ type ProfilePayload = {
   fullName: string;
   role: UserRole;
   avatarUrl: string | null;
+  city?: string | null;
+  state?: string | null;
   createdAt: string;
   school: { name: string; slug: string; city: string | null; state: string | null } | null;
   student: {
@@ -145,7 +147,13 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
             <CardDescription>Nome e foto exibidos no sistema</CardDescription>
           </CardHeader>
           <CardContent>
-            <UpdateProfileForm fullName={profile.fullName} avatarUrl={profile.avatarUrl} />
+            <UpdateProfileForm
+              fullName={profile.fullName}
+              avatarUrl={profile.avatarUrl}
+              city={profile.city}
+              state={profile.state}
+              showLocation={role === "teacher"}
+            />
           </CardContent>
         </Card>
 

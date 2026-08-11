@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { acceptTeacherInviteAction } from "@/actions/invites";
+import { AvatarUploadField } from "@/components/forms/avatar-upload-field";
+import { LocationFields } from "@/components/forms/location-fields";
 import { portalLoginPath } from "@/lib/login-paths";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +39,7 @@ export function AcceptTeacherInviteForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={formAction} className="space-y-4">
+        <form action={formAction} className="space-y-4" encType="multipart/form-data">
           <input type="hidden" name="token" value={token} />
           <div>
             <Label htmlFor="fullName">Seu nome</Label>
@@ -58,6 +60,11 @@ export function AcceptTeacherInviteForm({
             <Label htmlFor="password">Senha</Label>
             <Input id="password" name="password" type="password" minLength={6} required />
           </div>
+
+          <AvatarUploadField label="Sua foto" hint="Opcional — aparece para alunos e responsáveis." />
+
+          <LocationFields />
+
           {state?.error && (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-200">
               {state.error}

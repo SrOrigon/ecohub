@@ -13,6 +13,8 @@ export async function fetchProfileData(actor: SessionUser, userId: string) {
       fullName: true,
       role: true,
       avatarUrl: true,
+      city: true,
+      state: true,
       schoolId: true,
       createdAt: true,
       school: { select: { name: true, slug: true, city: true, state: true } },

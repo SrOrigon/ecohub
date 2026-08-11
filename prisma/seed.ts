@@ -93,6 +93,8 @@ async function main() {
       fullName: "Carlos Professor",
       role: "teacher",
       schoolId: school.id,
+      city: "São Paulo",
+      state: "SP",
     },
   });
 
@@ -381,6 +383,8 @@ async function main() {
       fullName: "Fernanda Co-docente",
       role: "teacher",
       schoolId: school.id,
+      city: "Campinas",
+      state: "SP",
     },
   });
 

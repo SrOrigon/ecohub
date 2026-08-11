@@ -1,13 +1,14 @@
 import { getSessionUser } from "@/lib/auth";
 import { getTeachers } from "@/lib/queries";
 import { prisma } from "@/lib/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { fetchTeacherInvitesForSchool } from "@/lib/reads/teacher-invite-reads";
 import { TeacherInvitePanel } from "@/components/invites/teacher-invite-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { UserIdentity } from "@/components/profile/user-identity";
-import { UserCog } from "lucide-react";
+import { formatUserLocation } from "@/lib/constants";
+import { UserCog, MapPin } from "lucide-react";
 import { redirect } from "next/navigation";
 import { CreateTeacherForm } from "@/components/forms/create-teacher-form";
 import { teacherClassWhere } from "@/lib/teacher-classes";
@@ -26,7 +27,7 @@ export default async function ProfessoresPage() {
         where: { schoolId: user.schoolId!, ...teacherClassWhere(t.id) },
         select: { name: true },
       });
-      return { ...t, classes };
+      return { ...t, classes, location: formatUserLocation(t.city, t.state) };
     })
   );
 
@@ -56,15 +57,25 @@ export default async function ProfessoresPage() {
                   size="md"
                 />
               </CardHeader>
-              <CardContent>
-                <p className="text-sm font-medium">{teacher.classes.length} turma(s)</p>
-                {teacher.classes.length > 0 && (
-                  <ul className="mt-2 space-y-1 text-sm text-slate-600">
-                    {teacher.classes.map((c, i) => (
-                      <li key={i} className="truncate">• {c.name}</li>
-                    ))}
-                  </ul>
+              <CardContent className="space-y-3">
+                {teacher.location && (
+                  <p className="flex items-start gap-2 text-sm text-slate-600">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" aria-hidden="true" />
+                    <span>{teacher.location}</span>
+                  </p>
                 )}
+                <div>
+                  <p className="text-sm font-medium">{teacher.classes.length} turma(s)</p>
+                  {teacher.classes.length > 0 && (
+                    <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                      {teacher.classes.map((c, i) => (
+                        <li key={i} className="truncate">
+                          • {c.name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}

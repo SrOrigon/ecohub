@@ -3,12 +3,7 @@
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { requireSessionResult } from "@/lib/auth";
-import {
-  fileToAvatarDataUrl,
-  isAllowedAvatarMime,
-  isValidExternalAvatarUrl,
-  AVATAR_MAX_BYTES,
-} from "@/lib/avatar";
+import { resolveAvatarFromForm } from "@/lib/avatar";
 import { prisma } from "@/lib/db";
 import { validatePassword } from "@/lib/security/password-policy";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
@@ -28,40 +23,14 @@ function revalidateProfile() {
   ].forEach((p) => revalidatePath(p));
 }
 
-async function resolveAvatarFromForm(formData: FormData, currentAvatar: string | null) {
-  const removeAvatar = formData.get("removeAvatar") === "1";
-  if (removeAvatar) return null;
-
-  const avatarFile = formData.get("avatarFile");
-  if (avatarFile instanceof File && avatarFile.size > 0) {
-    if (!isAllowedAvatarMime(avatarFile.type)) {
-      return { error: "Formato de imagem não suportado. Use JPG, PNG, WebP ou GIF." as const };
-    }
-    if (avatarFile.size > AVATAR_MAX_BYTES) {
-      return { error: "A foto deve ter no máximo 300 KB." as const };
-    }
-    const dataUrl = await fileToAvatarDataUrl(avatarFile);
-    if (typeof dataUrl === "object") return dataUrl;
-    return dataUrl;
-  }
-
-  const avatarUrlField = String(formData.get("avatarUrl") ?? "").trim();
-  if (avatarUrlField) {
-    if (!isValidExternalAvatarUrl(avatarUrlField)) {
-      return { error: "URL da foto deve começar com http:// ou https://" as const };
-    }
-    return avatarUrlField;
-  }
-
-  return currentAvatar;
-}
-
 export async function updateProfileAction(formData: FormData) {
   const session = await requireSessionResult();
   if (!session.ok) return { error: session.error };
   const user = session.user;
 
   const fullName = String(formData.get("fullName") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const state = String(formData.get("state") ?? "").trim().toUpperCase();
 
   if (!fullName || fullName.length < 2) {
     return { error: "Informe seu nome completo (mínimo 2 caracteres)." };
@@ -79,7 +48,12 @@ export async function updateProfileAction(formData: FormData) {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { fullName, avatarUrl: avatarResult as string | null },
+    data: {
+      fullName,
+      avatarUrl: avatarResult as string | null,
+      city: city || null,
+      state: state || null,
+    },
   });
 
   revalidateProfile();

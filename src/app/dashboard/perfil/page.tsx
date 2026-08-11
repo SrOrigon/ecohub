@@ -21,6 +21,8 @@ export default async function PerfilPage() {
     fullName: profile.fullName,
     role,
     avatarUrl: profile.avatarUrl,
+    city: profile.city,
+    state: profile.state,
     createdAt: profile.createdAt.toISOString(),
     createdAtLabel: formatDate(profile.createdAt),
     school: profile.school,

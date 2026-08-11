@@ -44,6 +44,8 @@ model User {
   fullName     String
   role         String   @default("student")
   avatarUrl    String?
+  city         String?
+  state        String?
   schoolId     String?
   createdAt    DateTime @default(now())
 

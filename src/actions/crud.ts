@@ -26,6 +26,7 @@ import { hasPermission } from "@/lib/permissions";
 import { validatePassword } from "@/lib/security/password-policy";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 import { parseBirthDate } from "@/lib/student-age";
+import { resolveAvatarFromForm } from "@/lib/avatar";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 import {
   generateStudentPin,
@@ -826,6 +827,8 @@ export async function createTeacherAction(formData: FormData) {
   const fullName = String(formData.get("fullName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const state = String(formData.get("state") ?? "").trim().toUpperCase();
 
   if (!fullName || !email || !password) return { error: "Nome, e-mail e senha são obrigatórios." };
 
@@ -835,9 +838,23 @@ export async function createTeacherAction(formData: FormData) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "E-mail já cadastrado." };
 
+  const avatarResult = await resolveAvatarFromForm(formData, null);
+  if (avatarResult && typeof avatarResult === "object" && "error" in avatarResult) {
+    return { error: avatarResult.error };
+  }
+
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
   await prisma.user.create({
-    data: { email, passwordHash, fullName, role: "teacher", schoolId: user.schoolId },
+    data: {
+      email,
+      passwordHash,
+      fullName,
+      role: "teacher",
+      schoolId: user.schoolId,
+      avatarUrl: avatarResult as string | null,
+      city: city || null,
+      state: state || null,
+    },
   });
 
   revalidatePath("/dashboard/professores");

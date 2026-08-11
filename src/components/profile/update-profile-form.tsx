@@ -8,15 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form-fields";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
+import { LocationFields } from "@/components/forms/location-fields";
 import { compressAvatarFile } from "@/lib/compress-avatar";
 import { isValidExternalAvatarUrl } from "@/lib/avatar";
 
 export function UpdateProfileForm({
   fullName: initialName,
   avatarUrl: initialAvatar,
+  city: initialCity = "",
+  state: initialState = "",
+  showLocation = false,
 }: {
   fullName: string;
   avatarUrl: string | null;
+  city?: string | null;
+  state?: string | null;
+  showLocation?: boolean;
 }) {
   const [fullName, setFullName] = useState(initialName);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatar ?? "");
@@ -219,6 +226,10 @@ export function UpdateProfileForm({
           </p>
         </div>
       </details>
+
+      {showLocation && (
+        <LocationFields defaultCity={initialCity ?? ""} defaultState={initialState ?? ""} />
+      )}
 
       {state?.error && (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">

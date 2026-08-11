@@ -15,6 +15,7 @@ import {
   rateLimitMessage,
 } from "@/lib/security/rate-limit";
 import { validatePassword } from "@/lib/security/password-policy";
+import { resolveAvatarFromForm } from "@/lib/avatar";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 import { sendEmail } from "@/lib/email";
 
@@ -128,6 +129,13 @@ export async function acceptTeacherInviteAction(formData: FormData) {
   const bcrypt = await import("bcryptjs");
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
+  const city = String(formData.get("city") ?? "").trim();
+  const state = String(formData.get("state") ?? "").trim().toUpperCase();
+  const avatarResult = await resolveAvatarFromForm(formData, null);
+  if (avatarResult && typeof avatarResult === "object" && "error" in avatarResult) {
+    return { error: avatarResult.error };
+  }
+
   const user = await prisma.$transaction(async (tx) => {
     const created = await tx.user.create({
       data: {
@@ -136,6 +144,9 @@ export async function acceptTeacherInviteAction(formData: FormData) {
         fullName,
         role: "teacher",
         schoolId: inviteData.schoolId,
+        avatarUrl: avatarResult as string | null,
+        city: city || null,
+        state: state || null,
       },
     });
     await tx.teacherInvite.update({

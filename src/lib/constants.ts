@@ -37,6 +37,16 @@ export const SUBJECTS = [
 
 export const PERIODS = ["1º Bimestre", "2º Bimestre", "3º Bimestre", "4º Bimestre"];
 
+export const BRAZILIAN_STATES = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
+  "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+] as const;
+
+export function formatUserLocation(city?: string | null, state?: string | null) {
+  const parts = [city?.trim(), state?.trim()].filter(Boolean);
+  return parts.length > 0 ? parts.join(" — ") : null;
+}
+
 export const OCCURRENCE_KINDS = ["observation", "positive", "warning", "disciplinary"] as const;
 export type OccurrenceKind = (typeof OCCURRENCE_KINDS)[number];
 
