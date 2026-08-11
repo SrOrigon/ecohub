@@ -26,7 +26,7 @@ export function InstitutionalSetupHint({
               {classCount === 0 ? "Cadastrar turmas / cursos" : `Turmas / cursos (${classCount})`}
             </Link>
             {canManageSettings && (
-              <Link href="/dashboard/configuracoes" className="font-medium text-indigo-700 hover:underline">
+              <Link href="/dashboard/disciplinas" className="font-medium text-indigo-700 hover:underline">
                 {subjectCount === 0 ? "Cadastrar disciplinas" : `Disciplinas (${subjectCount})`}
               </Link>
             )}

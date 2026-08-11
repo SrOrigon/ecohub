@@ -21,7 +21,7 @@ import {
   canAcceptPublicSignup,
   SCHOOL_VERIFICATION_STATUS,
 } from "@/lib/school-verification";
-import { getSchoolSettings } from "@/lib/school-settings";
+import { DEFAULT_SCHOOL_SETTINGS, getSchoolSettings, stringifySchoolSettings } from "@/lib/school-settings";
 import { canSelfRegisterStudent, parseBirthDate } from "@/lib/student-age";
 import { verifyStudentPin } from "@/lib/student-pin";
 import type { UserRole } from "@/lib/constants";
@@ -178,6 +178,7 @@ export async function registerSchoolAction(formData: FormData) {
       cnpjCheckedAt: new Date(),
       city: cnpjLookup.city,
       state: cnpjLookup.state,
+      settings: stringifySchoolSettings(structuredClone(DEFAULT_SCHOOL_SETTINGS)),
     },
   });
   await ensureDefaultBadges(school.id);
@@ -197,7 +198,7 @@ export async function registerSchoolAction(formData: FormData) {
   redirect("/dashboard");
 }
 
-export async function registerTeacherAction(_formData: FormData) {
+export async function registerTeacherAction() {
   return {
     error:
       "Cadastro de professor apenas por convite. Peça ao diretor da escola um link de convite ou acesse o link recebido por e-mail.",

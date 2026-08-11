@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { createExerciseAction } from "@/actions/exercises";
 import { generateExerciseQuestionsAction } from "@/actions/ai";
 import { Button } from "@/components/ui/button";
@@ -62,9 +62,19 @@ export function CreateExerciseForm({
     maxPoints: mid.points,
   });
   const [aiTopic, setAiTopic] = useState("");
-  const [aiSubject, setAiSubject] = useState(subjects[0] ?? "Geral");
+  const [aiSubject, setAiSubject] = useState(subjects[0] ?? "");
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiPending, startAiTransition] = useTransition();
+
+  useEffect(() => {
+    if (subjects.length === 0) {
+      setAiSubject("");
+      return;
+    }
+    setAiSubject((current) =>
+      subjects.includes(current) ? current : subjects[0]
+    );
+  }, [subjects]);
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
@@ -260,14 +270,25 @@ export function CreateExerciseForm({
                     onChange={(e) => setAiSubject(e.target.value)}
                     aria-label="Disciplina"
                     className="w-full min-w-0 sm:min-w-[8rem] sm:w-auto"
+                    disabled={subjects.length === 0}
+                    required
                   >
-                    {subjects.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
+                    {subjects.length === 0 ? (
+                      <option value="">Cadastre disciplinas</option>
+                    ) : (
+                      subjects.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))
+                    )}
                   </Select>
-                  <Button type="button" variant="outline" disabled={aiPending} onClick={generateWithAi}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={aiPending || subjects.length === 0 || !aiSubject}
+                    onClick={generateWithAi}
+                  >
                     {aiPending ? "Gerando…" : "Gerar questões"}
                   </Button>
                 </div>

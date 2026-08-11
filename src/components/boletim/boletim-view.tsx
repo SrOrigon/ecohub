@@ -28,6 +28,7 @@ type BoletimPayload = {
   passGrade: number;
   maxGrade: number;
   schoolPeriods: string[];
+  configuredSubjects: string[];
   grades: GradeRow[];
   attendance: { status: string; date: string }[];
   level: number;
@@ -61,7 +62,7 @@ export function BoletimView({ data }: { data: BoletimPayload }) {
   const displayPeriods =
     periodFilter === "all" ? allPeriods : allPeriods.filter((p) => p === periodFilter);
 
-  const matrix = buildSubjectMatrix(filteredGrades, displayPeriods);
+  const matrix = buildSubjectMatrix(filteredGrades, displayPeriods, data.configuredSubjects);
   const overallAvg = computeOverallAverage(filteredGrades);
   const approval = approvalLabel(overallAvg, data.passGrade);
   const attendance = computeAttendanceSummary(data.attendance);

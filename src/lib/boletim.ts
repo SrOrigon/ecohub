@@ -1,5 +1,6 @@
 import type { AttendanceStatus } from "@/lib/constants";
 import { ATTENDANCE_LABELS } from "@/lib/constants";
+import { mergeSubjectLists } from "@/lib/institution-subjects";
 
 export type GradeRow = {
   id: string;
@@ -12,7 +13,6 @@ export type GradeRow = {
 
 export function gradeVariant(value: number, passGrade: number, maxValue = 10) {
   const normalized = maxValue > 0 ? (value / maxValue) * 10 : value;
-  const passNorm = (passGrade / 10) * 10;
   if (normalized >= passGrade) return "success" as const;
   if (normalized >= passGrade - 2) return "warning" as const;
   return "danger" as const;
@@ -33,9 +33,14 @@ export function sortPeriods(periods: string[], schoolPeriods: string[]) {
   });
 }
 
-export function buildSubjectMatrix(grades: GradeRow[], periods: string[]) {
-  const subjects = [...new Set(grades.map((g) => g.subject))].sort((a, b) =>
-    a.localeCompare(b, "pt-BR")
+export function buildSubjectMatrix(
+  grades: GradeRow[],
+  periods: string[],
+  configuredSubjects: string[] = []
+) {
+  const subjects = mergeSubjectLists(
+    configuredSubjects,
+    grades.map((g) => g.subject)
   );
 
   return subjects.map((subject) => {

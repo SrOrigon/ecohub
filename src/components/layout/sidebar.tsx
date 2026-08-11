@@ -77,6 +77,7 @@ const allNavItems: NavItem[] = [
   { href: "/dashboard/agenda", label: "Minha agenda", icon: NotebookPen, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/alunos", label: "Alunos", icon: Users, roles: ["admin", "director", "secretary", "teacher"] },
   { href: "/dashboard/turmas", label: "Turmas", icon: GraduationCap, roles: ["admin", "director", "secretary", "teacher"] },
+  { href: "/dashboard/disciplinas", label: "Disciplinas", icon: BookMarked, roles: ["admin", "director", "secretary"] },
   { href: "/dashboard/professores", label: "Professores", icon: UserCog, roles: ["admin", "director"], permission: "director.manageTeachers" },
   { href: "/dashboard/notas", label: "Notas", icon: BookOpen, roles: ["admin", "director", "secretary", "teacher"], permission: "teacher.createGrades" },
   { href: "/dashboard/frequencia", label: "Frequência", icon: ClipboardList, roles: ["admin", "director", "secretary", "teacher"], permission: "teacher.recordAttendance" },

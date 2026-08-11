@@ -8,6 +8,7 @@ import { CreateExerciseForm } from "@/components/forms/create-exercise-form";
 import { StudentExercisesList } from "@/components/exercises/student-exercises-list";
 import { TeacherExercisesList } from "@/components/exercises/teacher-exercises-list";
 import { TeacherExerciseStats } from "@/components/exercises/teacher-exercise-stats";
+import { ConfigureSubjectsPrompt } from "@/components/school/configure-subjects-prompt";
 import { redirect } from "next/navigation";
 import { ClipboardCheck, PenLine } from "lucide-react";
 
@@ -17,6 +18,7 @@ export default async function ExerciciosPage() {
   if (user.role === "parent") redirect("/dashboard/responsavel");
 
   const isStaff = user.role === "admin" || user.role === "director" || user.role === "teacher";
+  const canManageSettings = user.role === "admin" || user.role === "director";
   const [exercises, classes, settings] = await Promise.all([
     getExercisesForUser(user),
     isStaff ? getTeacherClasses(user) : Promise.resolve([]),
@@ -31,6 +33,8 @@ export default async function ExerciciosPage() {
     : 0;
   const activeCount = exercises.filter((ex) => ex.isActive).length;
 
+  const hasSubjects = settings.academic.subjects.length > 0;
+
   const description =
     user.role === "student"
       ? "Veja o que falta fazer, acompanhe correções e ganhe XP"
@@ -41,7 +45,7 @@ export default async function ExerciciosPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Exercícios" description={description}>
-        {isStaff && classes.length > 0 && (
+        {isStaff && classes.length > 0 && hasSubjects && (
           <CreateExerciseForm
             classes={classes}
             presets={settings.exercises.presets}
@@ -49,6 +53,10 @@ export default async function ExerciciosPage() {
           />
         )}
       </PageHeader>
+
+      {isStaff && !hasSubjects && (
+        <ConfigureSubjectsPrompt canManage={canManageSettings} />
+      )}
 
       {isStaff && exercises.length > 0 && (
         <TeacherExerciseStats

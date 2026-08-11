@@ -89,11 +89,19 @@ export async function generateExerciseQuestionsAction(formData: FormData) {
   if (!settings.ai.enabled) return { error: "EduHub IA desativada nas configurações." };
 
   const topic = formData.get("topic")?.toString().trim();
-  const subject = formData.get("subject")?.toString().trim() ?? "Geral";
+  const subject = formData.get("subject")?.toString().trim() ?? "";
   const count = Number(formData.get("count") ?? 3);
   const bncc = formData.get("bncc")?.toString().trim();
 
   if (!topic) return { error: "Informe o tema das questões." };
+  if (settings.academic.subjects.length === 0) {
+    return { error: "Cadastre as disciplinas da instituição antes de gerar questões." };
+  }
+  if (!subject) return { error: "Selecione uma disciplina cadastrada." };
+
+  const { assertInstitutionSubject } = await import("@/lib/institution-subjects");
+  const subjectCheck = assertInstitutionSubject(subject, settings.academic.subjects);
+  if (!subjectCheck.ok) return { error: subjectCheck.error };
 
   const questions = await generateQuestionsWithAi(topic, subject, count, bncc);
   return { success: true, questions, source: "eduhub-ia-local" };

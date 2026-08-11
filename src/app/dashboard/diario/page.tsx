@@ -5,6 +5,7 @@ import { hasPermission } from "@/lib/permissions";
 import { getDiaryForClass, getOccurrencesForClass } from "@/actions/diary";
 import { PageHeader } from "@/components/layout/page-header";
 import { DiaryForms } from "@/components/forms/diary-forms";
+import { ConfigureSubjectsPrompt } from "@/components/school/configure-subjects-prompt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { OCCURRENCE_LABELS, type OccurrenceKind } from "@/lib/constants";
@@ -36,6 +37,9 @@ export default async function DiarioPage() {
     students: c.students.map((s) => ({ id: s.id, name: s.user.fullName })),
   }));
 
+  const hasSubjects = settings.academic.subjects.length > 0;
+  const canManageSettings = user.role === "admin" || user.role === "director";
+
   const firstClassId = classes[0]?.id;
   const [diary, occurrences] = firstClassId
     ? await Promise.all([
@@ -52,6 +56,13 @@ export default async function DiarioPage() {
       >
         <DiaryForms classes={classOptions} subjects={settings.academic.subjects} />
       </PageHeader>
+
+      {!hasSubjects && (
+        <ConfigureSubjectsPrompt
+          canManage={canManageSettings}
+          description="Registros gerais funcionam, mas para vincular conteúdo a uma matéria cadastre as disciplinas da instituição."
+        />
+      )}
 
       {classes.length === 0 ? (
         <p className="text-slate-600">Nenhuma turma disponível.</p>

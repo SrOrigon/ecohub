@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import type { UserRole } from "@/lib/constants";
-import { parseSchoolSettings, stringifySchoolSettings } from "@/lib/school-settings";
+import { assertInstitutionSubject } from "@/lib/institution-subjects";
+import { getSchoolSettings, parseSchoolSettings, stringifySchoolSettings } from "@/lib/school-settings";
 
 const STAFF_ROLES: UserRole[] = ["admin", "director", "secretary", "teacher"];
 
@@ -214,10 +215,11 @@ export async function closePeriodAction(formData: FormData): Promise<void> {
   revalidatePath("/dashboard/notas");
 }
 
-export async function saveScheduleSlotAction(formData: FormData): Promise<void> {
+export async function saveScheduleSlotAction(formData: FormData): Promise<{ error?: string; success?: boolean }> {
   const user = await requireSession(STAFF_ROLES);
-  if (!user.schoolId) return;
+  if (!user.schoolId) return { error: "Escola não configurada." };
 
+  const settings = await getSchoolSettings(user.schoolId);
   const classId = String(formData.get("classId") ?? "");
   const weekday = Number(formData.get("weekday") ?? 1);
   const startTime = String(formData.get("startTime") ?? "");
@@ -225,13 +227,19 @@ export async function saveScheduleSlotAction(formData: FormData): Promise<void> 
   const subject = String(formData.get("subject") ?? "").trim();
   const room = String(formData.get("room") ?? "").trim() || null;
 
-  if (!classId || !startTime || !endTime || !subject) return;
+  if (!classId || !startTime || !endTime || !subject) {
+    return { error: "Preencha turma, horários e disciplina." };
+  }
+
+  const subjectCheck = assertInstitutionSubject(subject, settings.academic.subjects);
+  if (!subjectCheck.ok) return { error: subjectCheck.error };
 
   await prisma.classScheduleSlot.create({
     data: { schoolId: user.schoolId, classId, weekday, startTime, endTime, subject, room },
   });
 
   revalidatePath("/dashboard/horarios");
+  return { success: true };
 }
 
 export async function exportGradesCsvAction(): Promise<{ csv?: string; error?: string }> {

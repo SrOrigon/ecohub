@@ -63,6 +63,7 @@ export default async function BoletimPage({ params }: { params: Promise<{ id: st
     passGrade: settings.academic.passGrade,
     maxGrade: settings.academic.maxGrade,
     schoolPeriods: settings.academic.periods,
+    configuredSubjects: settings.academic.subjects,
     grades: student.grades.map((g) => ({
       id: g.id,
       subject: g.subject,

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { SUBJECTS as DEFAULT_SUBJECTS, PERIODS as DEFAULT_PERIODS } from "@/lib/constants";
+import { PERIODS as DEFAULT_PERIODS } from "@/lib/constants";
 
 export type ExercisePreset = {
   label: string;
@@ -165,7 +165,7 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
     ],
   },
   academic: {
-    subjects: [...DEFAULT_SUBJECTS],
+    subjects: [],
     periods: [...DEFAULT_PERIODS],
     maxGrade: 10,
     passGrade: 7,

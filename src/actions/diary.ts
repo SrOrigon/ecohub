@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireSessionResult } from "@/lib/auth";
+import { assertInstitutionSubject } from "@/lib/institution-subjects";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
 import { notifyStudentParents } from "@/lib/notifications";
@@ -39,6 +40,11 @@ export async function createDiaryEntryAction(formData: FormData) {
   const dateStr = formData.get("date")?.toString();
 
   if (!classId || !content || !dateStr) return { error: "Preencha turma, data e conteúdo." };
+
+  if (subject) {
+    const subjectCheck = assertInstitutionSubject(subject, settings.academic.subjects);
+    if (!subjectCheck.ok) return { error: subjectCheck.error };
+  }
 
   if (user.role === "teacher") {
     try {

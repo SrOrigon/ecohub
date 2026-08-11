@@ -17,6 +17,7 @@ import { PERIODS } from "@/lib/constants";
 import { closePeriodAction } from "@/actions/product-suite";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form-fields";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default async function ConfiguracoesPage() {
@@ -39,8 +40,11 @@ export default async function ConfiguracoesPage() {
         description="Dados da instituição e regras que movem todo o EduHub"
       />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Badge variant="default">{settings.academic.subjects.length} disciplinas</Badge>
+        <Link href="/dashboard/disciplinas" className="text-sm font-medium text-[color:var(--school-primary)] hover:underline">
+          Gerenciar disciplinas
+        </Link>
         <Badge variant="default">{settings.academic.periods.length} períodos</Badge>
         <Badge variant="success">{settings.xp.xpPerLevel} XP/nível</Badge>
         <Badge variant="warning">

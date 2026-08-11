@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { ensureDefaultBadges, ensureDefaultRewards } from "../src/lib/school-setup";
 import { hashStudentPin } from "../src/lib/student-pin";
+import { parseSchoolSettings, stringifySchoolSettings } from "../src/lib/school-settings";
 
 const prisma = new PrismaClient();
 
@@ -60,6 +61,22 @@ async function main() {
       legalName: "Escola Municipal Demo LTDA",
       verificationStatus: "verified",
       cnpjCheckedAt: new Date(),
+      settings: stringifySchoolSettings({
+        ...parseSchoolSettings(null),
+        academic: {
+          ...parseSchoolSettings(null).academic,
+          subjects: [
+            "Matemática",
+            "Português",
+            "História",
+            "Geografia",
+            "Ciências",
+            "Inglês",
+            "Educação Física",
+            "Artes",
+          ],
+        },
+      }),
     },
   });
 

@@ -266,25 +266,25 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
                 </div>
               </div>
               <div>
-                <Label htmlFor="subjects">Disciplinas (uma por linha)</Label>
-                <Textarea
-                  id="subjects"
-                  rows={6}
-                  placeholder={"Ex.:\nMatemática\nInglês\nProgramação Web\nMúsica"}
-                  value={settings.academic.subjects.join("\n")}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      academic: {
-                        ...s.academic,
-                        subjects: e.target.value
-                          .split("\n")
-                          .map((x) => x.trim())
-                          .filter(Boolean),
-                      },
-                    }))
-                  }
-                />
+                <Label htmlFor="subjects">Disciplinas da instituição</Label>
+                <p className="mb-2 text-sm text-slate-600">
+                  Gerencie a lista completa em{" "}
+                  <a href="/dashboard/disciplinas" className="font-medium text-[color:var(--school-primary)] hover:underline">
+                    Disciplinas
+                  </a>
+                  . Notas, horários, diário e exercícios usam somente essa lista.
+                </p>
+                {settings.academic.subjects.length === 0 ? (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                    Nenhuma disciplina cadastrada ainda.
+                  </p>
+                ) : (
+                  <ul className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                    {settings.academic.subjects.map((subject) => (
+                      <li key={subject}>{subject}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <div>
                 <Label htmlFor="periods">Períodos (um por linha)</Label>

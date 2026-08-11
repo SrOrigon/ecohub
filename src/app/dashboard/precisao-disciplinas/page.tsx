@@ -31,10 +31,10 @@ export default async function PrecisaoDisciplinasPage() {
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Button>
           </Link>
-          <Link href="/dashboard/configuracoes">
+          <Link href="/dashboard/disciplinas">
             <Button variant="outline" className="gap-2">
               <Target className="h-4 w-4" aria-hidden="true" />
-              Disciplinas configuradas
+              Gerenciar disciplinas
             </Button>
           </Link>
         </div>

@@ -15,6 +15,7 @@ import {
   notifyUser,
 } from "@/lib/notifications";
 import { ATTENDANCE_LABELS, type AttendanceStatus } from "@/lib/constants";
+import { assertInstitutionSubject, dedupeSubjects, normalizeSubjectName } from "@/lib/institution-subjects";
 import {
   getSchoolSettings,
   mergeSchoolSettings,
@@ -207,6 +208,10 @@ export async function createGradeAction(formData: FormData) {
   if (!studentId || !subject || isNaN(value)) {
     return { error: "Preencha todos os campos." };
   }
+
+  const subjectCheck = assertInstitutionSubject(subject, settings.academic.subjects);
+  if (!subjectCheck.ok) return { error: subjectCheck.error };
+
   if (value < 0 || value > maxGrade) {
     return { error: `Nota deve ser entre 0 e ${maxGrade}.` };
   }
@@ -923,9 +928,6 @@ export async function updateSchoolSettingsAction(formData: FormData) {
   const current = parseSchoolSettings(school.settings);
   const merged = mergeSchoolSettings(current, patch);
 
-  if (merged.academic.subjects.length === 0) {
-    return { error: "Informe ao menos uma disciplina." };
-  }
   if (merged.academic.periods.length === 0) {
     return { error: "Informe ao menos um período." };
   }
@@ -943,6 +945,7 @@ export async function updateSchoolSettingsAction(formData: FormData) {
 
   [
     "/dashboard/configuracoes",
+    "/dashboard/disciplinas",
     "/dashboard/notas",
     "/dashboard/gamificacao",
     "/dashboard/exercicios",
@@ -950,6 +953,68 @@ export async function updateSchoolSettingsAction(formData: FormData) {
     "/dashboard/professor",
     "/dashboard/loja",
     "/dashboard/calendario",
+    "/dashboard/horarios",
+    "/dashboard/diario",
+    "/dashboard/alunos",
+    "/dashboard/turmas",
+    "/dashboard/precisao-disciplinas",
+    "/dashboard/leitura-geral",
+    "/dashboard/relatorios",
+  ].forEach((p) => revalidatePath(p));
+
+  return { success: true };
+}
+
+export async function updateInstitutionSubjectsAction(formData: FormData) {
+  const user = await requireSession(["admin", "director"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const currentSettings = await getSchoolSettings(user.schoolId);
+  if (user.role === "director" && !hasPermission(user.role, currentSettings, "director.editSettings")) {
+    return { error: "Sem permissão para editar disciplinas." };
+  }
+
+  const raw = String(formData.get("subjectsJson") ?? "");
+  if (!raw) return { error: "Lista de disciplinas inválida." };
+
+  let subjects: string[];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return { error: "Lista de disciplinas inválida." };
+    subjects = dedupeSubjects(parsed.map((item) => normalizeSubjectName(String(item ?? ""))));
+  } catch {
+    return { error: "Lista de disciplinas inválida." };
+  }
+
+  if (subjects.length === 0) {
+    return { error: "Cadastre ao menos uma disciplina." };
+  }
+
+  const school = await prisma.school.findUnique({ where: { id: user.schoolId } });
+  if (!school) return { error: "Escola não encontrada." };
+
+  const current = parseSchoolSettings(school.settings);
+  const merged = mergeSchoolSettings(current, {
+    academic: { ...current.academic, subjects },
+  });
+
+  await prisma.school.update({
+    where: { id: user.schoolId },
+    data: { settings: stringifySchoolSettings(merged) },
+  });
+
+  [
+    "/dashboard/disciplinas",
+    "/dashboard/configuracoes",
+    "/dashboard/notas",
+    "/dashboard/horarios",
+    "/dashboard/diario",
+    "/dashboard/exercicios",
+    "/dashboard/professor",
+    "/dashboard/alunos",
+    "/dashboard/precisao-disciplinas",
+    "/dashboard/leitura-geral",
+    "/dashboard/relatorios",
   ].forEach((p) => revalidatePath(p));
 
   return { success: true };
