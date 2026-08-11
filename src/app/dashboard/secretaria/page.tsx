@@ -33,7 +33,14 @@ export default async function SecretariaPage() {
       <PageHeader
         title="Painel da Secretaria"
         description="Operações do dia a dia — matrículas, documentos, mensagens e alertas."
-      />
+      >
+        <Link
+          href="/dashboard/leitura-geral"
+          className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+        >
+          Leitura geral pedagógica
+        </Link>
+      </PageHeader>
 
       <div className="responsive-grid">
         {cards.map(({ label, value, href, icon: Icon }) => (

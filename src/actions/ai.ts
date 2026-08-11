@@ -5,8 +5,6 @@ import { getSchoolSettings } from "@/lib/school-settings";
 import { generateQuestionsWithAi } from "@/lib/ai-questions";
 import { eduhubAiChat } from "@/lib/eduhub-ai";
 import { prisma } from "@/lib/db";
-import { computeRiskAlerts } from "@/lib/risk-alerts";
-import { getDashboardStats } from "@/lib/queries";
 import type { EduHubAiRole } from "@/lib/eduhub-ai";
 
 async function buildAiContext(user: Awaited<ReturnType<typeof requireSession>>) {
@@ -19,12 +17,14 @@ async function buildAiContext(user: Awaited<ReturnType<typeof requireSession>>) 
   let parentContext;
 
   if (user.schoolId && ["director", "secretary", "admin"].includes(user.role)) {
-    const dash = await getDashboardStats(user.schoolId);
-    const alerts = await computeRiskAlerts(user.schoolId);
+    const { getInstitutionalOverview } = await import("@/lib/institutional-overview");
+    const overview = await getInstitutionalOverview(user.schoolId);
     stats = {
-      avgGrade: dash.averageGrade,
-      attendanceRate: dash.attendanceRate,
-      atRiskStudents: alerts.length,
+      avgGrade: overview.averageGrade,
+      attendanceRate: overview.attendanceRate,
+      atRiskStudents: overview.alertsTotal,
+      passRate: overview.passRate,
+      healthScore: overview.healthScore,
     };
   }
 

@@ -60,6 +60,7 @@ type NavItem = {
 };
 
 const allNavItems: NavItem[] = [
+  { href: "/dashboard/leitura-geral", label: "Leitura geral", icon: BarChart3, roles: ["admin", "director", "secretary"] },
   { href: "/dashboard", label: "Visão Geral", icon: LayoutDashboard, roles: ["admin", "director"] },
   { href: "/dashboard/secretaria", label: "Painel Secretaria", icon: ClipboardPen, roles: ["secretary"] },
   { href: "/dashboard/professor", label: "Minhas Turmas", icon: LayoutDashboard, roles: ["teacher"] },

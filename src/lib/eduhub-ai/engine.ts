@@ -42,6 +42,8 @@ export type AiContext = {
     attendanceRate?: number;
     atRiskStudents?: number;
     pendingSubmissions?: number;
+    passRate?: number;
+    healthScore?: number;
   };
   parentContext?: ParentContext;
 };
@@ -272,6 +274,12 @@ function eduhubAiDirectorInsight(context: AiContext): string {
   if (s.attendanceRate != null) {
     parts.push(`• Frequência média: **${Math.round(s.attendanceRate)}%**`);
   }
+  if (s.passRate != null) {
+    parts.push(`• Taxa de aprovação (meta): **${Math.round(s.passRate)}%**`);
+  }
+  if (s.healthScore != null) {
+    parts.push(`• Saúde pedagógica institucional: **${s.healthScore}/100**`);
+  }
   if (s.atRiskStudents != null && s.atRiskStudents > 0) {
     parts.push(`• 🔴 **${s.atRiskStudents}** aluno(s) em situação de atenção`);
   } else if (s.atRiskStudents === 0) {
@@ -280,7 +288,7 @@ function eduhubAiDirectorInsight(context: AiContext): string {
   if (s.pendingSubmissions != null && s.pendingSubmissions > 0) {
     parts.push(`• **${s.pendingSubmissions}** entrega(s) aguardando correção (professores)`);
   }
-  parts.push("\n**Ações sugeridas:** revisar alertas, publicar reforço na agenda compartilhada, contatar famílias em risco.");
+  parts.push("\n**Ações sugeridas:** revisar **Leitura geral** no menu, alertas, agenda compartilhada e contato com famílias em risco.");
   return parts.join("\n");
 }
 

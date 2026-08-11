@@ -58,7 +58,14 @@ export default async function DashboardPage() {
       <PageHeader
         title="Painel do Diretor"
         description="Gestão acadêmica + engajamento gamificado em tempo real"
-      />
+      >
+        <Link
+          href="/dashboard/leitura-geral"
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+        >
+          Leitura geral da instituição
+        </Link>
+      </PageHeader>
 
       <div className="responsive-grid">
         {statCards.map(({ label, value, icon: Icon, color }) => (
