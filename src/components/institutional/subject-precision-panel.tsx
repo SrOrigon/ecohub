@@ -122,7 +122,7 @@ function SubjectPrecisionCard({
         )}
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="stat-grid gap-2 text-sm">
           <MiniStat label="Confiança dos dados" value={`${entry.dataConfidence}%`} />
           <MiniStat label="Efetividade ensino" value={`${entry.teachingEffectiveness}%`} />
           <MiniStat label="Alunos c/ notas" value={String(entry.studentsWithGrades)} />
@@ -205,14 +205,14 @@ export function SubjectPrecisionSummaryStrip({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
+      <CardHeader>
+        <div className="min-w-0 flex-1">
           <CardTitle className="text-base">Precisão por disciplina</CardTitle>
           <CardDescription>Resumo dos indicadores de monitoramento e ensino</CardDescription>
         </div>
         <Link
           href="/dashboard/precisao-disciplinas"
-          className="inline-flex items-center gap-1 text-sm font-medium text-teal-600 hover:underline"
+          className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-medium text-teal-600 hover:underline"
         >
           Ver completo
           <ChevronRight className="h-4 w-4" aria-hidden="true" />

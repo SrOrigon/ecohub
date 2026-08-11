@@ -421,7 +421,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
               </div>
               <p className="text-sm text-slate-600">Presets do wizard (rótulo · XP · moedas · pontos):</p>
               {settings.exercises.presets.map((p, i) => (
-                <div key={i} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   <Input
                     value={p.label}
                     onChange={(e) =>
@@ -623,7 +623,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="primaryColor">Cor principal</Label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Input
                     id="primaryColor"
                     type="color"
@@ -649,7 +649,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
               </div>
               <div>
                 <Label htmlFor="accentColor">Cor de destaque</Label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Input
                     id="accentColor"
                     type="color"

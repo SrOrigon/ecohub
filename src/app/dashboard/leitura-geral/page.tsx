@@ -277,7 +277,7 @@ function MetricCard({
 }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardHeader className="pb-2">
         <CardTitle className="text-xs font-medium text-slate-500">{label}</CardTitle>
         <Icon className={`h-4 w-4 ${color}`} aria-hidden="true" />
       </CardHeader>

@@ -71,7 +71,7 @@ export function CreateTrailForm({ options }: { options: Options }) {
             <Label htmlFor="trail-description">Descrição</Label>
             <Textarea id="trail-description" name="description" rows={2} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="trail-xpBonus">Bônus XP ao concluir</Label>
               <Input id="trail-xpBonus" name="xpBonus" type="number" defaultValue={100} />
@@ -102,7 +102,7 @@ export function CreateTrailForm({ options }: { options: Options }) {
                   <Select
                     value={st.stepType}
                     onChange={(e) => updateStep(i, { stepType: e.target.value, missionId: "", exerciseId: "", rewardId: "" })}
-                    className="min-w-[9rem]"
+                    className="w-full min-w-0 sm:min-w-[9rem] sm:w-auto"
                   >
                     {TRAIL_STEP_TYPES.map((t) => (
                       <option key={t} value={t}>

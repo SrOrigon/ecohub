@@ -71,7 +71,7 @@ export function Header({
           <LiveConnectionBadge />
           {role === "parent" && <AttentionAlertBadge />}
           <NotificationBell />
-          <Badge variant="secondary" className="hidden lg:inline-flex">
+            <Badge variant="secondary" className="hidden md:inline-flex">
             {ROLE_LABELS[role]}
           </Badge>
           <Link

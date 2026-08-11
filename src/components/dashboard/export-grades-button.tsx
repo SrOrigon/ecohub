@@ -23,7 +23,7 @@ export function ExportGradesButton() {
   }
 
   return (
-    <Button type="button" variant="outline" size="sm" disabled={pending} onClick={handleExport} className="gap-2">
+    <Button type="button" variant="outline" disabled={pending} onClick={handleExport} className="w-full gap-2 sm:w-auto">
       <Download className="h-4 w-4" aria-hidden="true" />
       {pending ? "Exportando…" : "Exportar notas CSV"}
     </Button>

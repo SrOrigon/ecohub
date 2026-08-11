@@ -18,7 +18,7 @@ export function PageHeader({
   backLabel?: string;
 }) {
   return (
-    <header className={cn("page-header", className)}>
+    <header className={cn("page-header min-w-0", className)}>
       <div className="min-w-0 flex-1 space-y-2">
         {backHref && (
           <Link

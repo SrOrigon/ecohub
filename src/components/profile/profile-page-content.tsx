@@ -77,7 +77,7 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
         className="sticky top-[var(--app-header-offset)] z-20 -mx-[var(--page-padding,1rem)] border-b border-slate-200 bg-white/95 px-[var(--page-padding,1rem)] backdrop-blur md:static md:mx-0 md:hidden md:border-0 md:bg-transparent md:px-0"
         aria-label="Seções do perfil"
       >
-        <div className="flex gap-1 overflow-x-auto">
+        <div className="touch-scroll-x flex gap-1 pb-1">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -261,7 +261,7 @@ function RoleStatsCard({ profile, role }: { profile: ProfilePayload; role: UserR
             Seu progresso
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-3">
+        <CardContent className="stat-grid gap-3">
           <StatBox label="Turma" value={s.classGroup?.name ?? "Sem turma"} className="col-span-2 sm:col-span-1" />
           <StatBox label="Matrícula" value={s.enrollmentCode} mono />
           <StatBox label="Nível" value={`Nv. ${s.level}`} icon={Star} />

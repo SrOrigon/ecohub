@@ -24,30 +24,30 @@ export default async function EngajamentoPage() {
 
       <LiveStatsStrip />
 
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-500">Alunos</CardTitle>
             <Users className="h-4 w-4 text-indigo-600" />
           </CardHeader>
           <CardContent><p className="text-2xl font-bold">{data.totalStudents}</p></CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-500">Missões ativas</CardTitle>
             <Target className="h-4 w-4 text-amber-600" />
           </CardHeader>
           <CardContent><p className="text-2xl font-bold">{data.activeMissions}</p></CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-500">Correções pendentes</CardTitle>
             <PenLine className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent><p className="text-2xl font-bold">{data.pendingSubmissions}</p></CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-500">XP esta semana</CardTitle>
             <Zap className="h-4 w-4 text-emerald-600" />
           </CardHeader>
@@ -55,7 +55,7 @@ export default async function EngajamentoPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">

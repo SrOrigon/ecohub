@@ -90,7 +90,7 @@ export function LiveStatsStrip({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "grid grid-cols-2 gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 sm:grid-cols-4",
+        "stat-grid gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3",
         className
       )}
       aria-live="polite"
@@ -126,7 +126,7 @@ export function LiveStudentStatsCard({ className }: { className?: string }) {
       aria-live="polite"
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">Seu progresso ao vivo</p>
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="stat-grid mt-3 gap-3">
         <LiveStat label="XP total" value={String(student.xpTotal)} />
         <LiveStat label="XP semana" value={`+${student.xpThisWeek}`} accent />
         <LiveStat label="Turma" value={student.classRank ? `#${student.classRank}` : "—"} />

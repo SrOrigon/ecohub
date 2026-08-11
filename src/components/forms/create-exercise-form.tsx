@@ -258,7 +258,7 @@ export function CreateExerciseForm({
                     value={aiSubject}
                     onChange={(e) => setAiSubject(e.target.value)}
                     aria-label="Disciplina"
-                    className="min-w-[8rem]"
+                    className="w-full min-w-0 sm:min-w-[8rem] sm:w-auto"
                   >
                     {SUBJECTS.map((s) => (
                       <option key={s} value={s}>
@@ -299,7 +299,7 @@ export function CreateExerciseForm({
                           options: e.target.value === "choice" ? newQuestion("choice").options : [],
                         })
                       }
-                      className="w-auto min-w-[10rem]"
+                      className="w-full min-w-0 sm:w-auto sm:min-w-[10rem]"
                     >
                       <option value="choice">Múltipla escolha</option>
                       <option value="text">Resposta aberta</option>
@@ -367,18 +367,18 @@ export function CreateExerciseForm({
 
           <FormMessage message={state} />
 
-          <div className="flex gap-2 pt-2">
+          <div className="mobile-action-row pt-2">
             {step > 1 && (
-              <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)} className="gap-1">
+              <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)} className="w-full gap-1 sm:w-auto">
                 <ChevronLeft className="h-4 w-4" /> Voltar
               </Button>
             )}
             {step < 3 ? (
-              <Button type="button" className="ml-auto gap-1" onClick={() => setStep((s) => s + 1)}>
+              <Button type="button" className="w-full gap-1 sm:ml-auto sm:w-auto" onClick={() => setStep((s) => s + 1)}>
                 Continuar <ChevronRight className="h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={pending} className="ml-auto w-full sm:w-auto">
+              <Button type="submit" disabled={pending} className="w-full sm:ml-auto sm:w-auto">
                 {pending ? "Publicando..." : "Publicar para a turma"}
               </Button>
             )}

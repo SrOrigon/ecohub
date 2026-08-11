@@ -38,7 +38,7 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
 
   return (
     <>
-      <Button variant="secondary" onClick={() => setOpen(true)}>
+      <Button variant="secondary" onClick={() => setOpen(true)} className="w-full sm:w-auto">
         Chamada por turma
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} title="Chamada em lote">
@@ -66,9 +66,9 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
           {classData && (
             <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border p-3">
               {classData.students.map((s) => (
-                <div key={s.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="truncate">{s.name}</span>
-                  <Select name={`status_${s.id}`} defaultValue="present" className="min-h-11 w-36 shrink-0 text-base">
+                <div key={s.id} className="flex flex-col gap-2 rounded-lg border border-slate-100 p-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  <span className="min-w-0 truncate font-medium">{s.name}</span>
+                  <Select name={`status_${s.id}`} defaultValue="present" className="min-h-11 w-full shrink-0 text-base sm:w-36">
                     {ATTENDANCE_STATUSES.map((st) => (
                       <option key={st} value={st}>{statusLabels[st]}</option>
                     ))}

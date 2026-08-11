@@ -123,23 +123,23 @@ export default async function TeacherDashboardPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-500">Minhas turmas</CardTitle>
             <Users className="h-4 w-4 text-indigo-600" />
           </CardHeader>
           <CardContent><p className="text-2xl font-bold">{myClasses.length}</p></CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-500">Total de alunos</CardTitle>
             <BookOpen className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent><p className="text-2xl font-bold">{totalStudents}</p></CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-500">Ações rápidas</CardTitle>
             <ClipboardList className="h-4 w-4 text-amber-600" />
           </CardHeader>

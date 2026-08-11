@@ -223,7 +223,7 @@ export function BoletimView({ data }: { data: BoletimPayload }) {
       {attendance && (
         <section className="rounded-xl border border-slate-200 p-4">
           <h2 className="mb-3 font-semibold text-indigo-700">Frequência recente</h2>
-          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+          <div className="stat-grid gap-3 text-sm">
             <StatPill label="Presenças" value={attendance.present} tone="success" />
             <StatPill label="Faltas" value={attendance.absent} tone="danger" />
             <StatPill label="Atrasos" value={attendance.late} tone="warning" />

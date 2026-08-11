@@ -46,7 +46,7 @@ export default async function SecretariaPage() {
         {cards.map(({ label, value, href, icon: Icon }) => (
           <Link key={href} href={href}>
             <Card className="transition hover:shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-slate-500">{label}</CardTitle>
                 <Icon className="h-4 w-4 text-indigo-600" aria-hidden="true" />
               </CardHeader>

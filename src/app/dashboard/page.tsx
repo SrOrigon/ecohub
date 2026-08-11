@@ -71,7 +71,7 @@ export default async function DashboardPage() {
       <div className="responsive-grid">
         {statCards.map(({ label, value, icon: Icon, color }) => (
           <Card key={label}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-slate-500">{label}</CardTitle>
               <Icon className={`h-4 w-4 shrink-0 ${color}`} aria-hidden="true" />
             </CardHeader>

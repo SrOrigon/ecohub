@@ -23,7 +23,7 @@ export default async function AlertasPage() {
         <ExportGradesButton />
       </PageHeader>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="stat-grid gap-3">
         <Card>
           <CardContent className="py-4 text-center">
             <p className="text-2xl font-bold text-red-700">{snapshot.summary.critical}</p>

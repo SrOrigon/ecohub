@@ -29,7 +29,7 @@ export function CreateHomeTaskForm({ childOptions }: { childOptions: ChildOption
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} variant="secondary" className="gap-2">
+      <Button onClick={() => setOpen(true)} variant="secondary" className="w-full gap-2 sm:w-auto">
         <Home className="h-4 w-4" aria-hidden="true" />
         Tarefa de casa
       </Button>

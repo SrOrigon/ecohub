@@ -46,7 +46,7 @@ export function TemporalAnalysisPanel({ analysis }: { analysis: TemporalAnalysis
             {analysis.overallVerdict}
           </p>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="touch-scroll-x flex gap-2 pb-1">
             {PERIOD_TABS.map((tab) => (
               <button
                 key={tab.key}
@@ -156,7 +156,7 @@ function PeriodCard({
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
       <p className="mt-1 text-lg font-bold text-slate-900">{snapshot.label}</p>
-      <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+      <div className="stat-grid gap-2 text-sm">
         <Stat label="Média" value={snapshot.averageGrade.toFixed(1)} />
         <Stat label="Frequência" value={`${snapshot.attendanceRate}%`} />
         <Stat label="Aprovação" value={`${snapshot.passRate}%`} />

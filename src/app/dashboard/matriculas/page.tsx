@@ -28,7 +28,7 @@ export default async function MatriculasPage() {
             href={`/inscricao/${school.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-medium text-indigo-600 hover:underline"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 sm:w-auto"
           >
             Link público ↗
           </a>

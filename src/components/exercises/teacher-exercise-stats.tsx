@@ -11,7 +11,7 @@ export function TeacherExerciseStats({
   active: number;
 }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className="stat-grid gap-4">
       <Card className="border-indigo-100 bg-indigo-50/40">
         <CardContent className="flex items-center gap-3 py-4">
           <FileEdit className="h-8 w-8 shrink-0 text-indigo-600" aria-hidden="true" />

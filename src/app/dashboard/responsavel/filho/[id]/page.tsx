@@ -64,8 +64,8 @@ export default async function FilhoDetailPage({ params }: { params: Promise<{ id
         title={student.user.fullName}
         description={`${student.classGroup?.name ?? "Sem turma"} · Matrícula ${student.enrollmentCode}`}
       >
-        <Link href={`/dashboard/alunos/${student.id}/boletim`}>
-          <Button variant="outline" size="sm">
+        <Link href={`/dashboard/alunos/${student.id}/boletim`} className="w-full sm:w-auto">
+          <Button variant="outline" className="w-full sm:w-auto">
             <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
             Boletim completo
           </Button>

@@ -38,7 +38,7 @@ export function RecordAttendanceForm({ students }: { students: StudentOption[] }
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>+ Registrar frequência</Button>
+      <Button onClick={() => setOpen(true)} className="w-full sm:w-auto">+ Registrar frequência</Button>
       <Modal open={open} onClose={() => setOpen(false)} title="Registrar frequência">
         <form action={formAction} className="space-y-4">
           <div>

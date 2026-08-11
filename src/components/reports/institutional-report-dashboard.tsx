@@ -274,8 +274,8 @@ function StudentsSection({
                   </div>
                 </button>
                 {open && s.subjects.length > 0 && (
-                  <div className="border-t bg-slate-50/80 px-4 py-3">
-                    <table className="w-full text-sm">
+                  <div className="table-scroll-container border-t bg-slate-50/80 px-4 py-3">
+                    <table className="min-w-[36rem] w-full text-sm">
                       <thead>
                         <tr className="text-left text-xs text-slate-500">
                           <th className="pb-2 pr-2">Disciplina</th>
@@ -373,7 +373,7 @@ function StatCard({
 }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardHeader className="pb-2">
         <CardTitle className="text-xs font-medium text-slate-500">{label}</CardTitle>
         <Icon className="h-4 w-4 text-indigo-600" aria-hidden="true" />
       </CardHeader>

@@ -235,7 +235,7 @@ export default async function AlunoPortalPage() {
       {pendingExercises.length > 0 && (
         <section aria-labelledby="activities-heading">
           <Card className="kid-card border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-white">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader>
               <CardTitle id="activities-heading" className="flex items-center gap-2 text-xl">
                 <PenLine className="h-6 w-6 text-indigo-600" aria-hidden="true" />
                 Minhas atividades
