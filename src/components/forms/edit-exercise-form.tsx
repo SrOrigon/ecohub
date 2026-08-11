@@ -35,7 +35,7 @@ export function EditExerciseForm({
 
   return (
     <Card>
-      <CardHeader className="gap-2">
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2">
         <CardTitle className="text-base">Editar publicação</CardTitle>
         <ToggleExerciseButton id={exercise.id} isActive={exercise.isActive} />
       </CardHeader>

@@ -24,12 +24,12 @@ export function DemoQuickAccess({ compact = false }: { compact?: boolean }) {
 
   return (
     <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-white dark:border-amber-900 dark:from-amber-950/40 dark:to-slate-900">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-amber-900 dark:text-amber-100">
+      <CardHeader className="text-center sm:items-center">
+        <CardTitle className="flex items-center justify-center gap-2 text-amber-900 dark:text-amber-100">
           <Sparkles className="h-5 w-5" aria-hidden="true" />
           Acesso demo instantâneo
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-balance">
           Entre com um clique — sem digitar senha. Ideal para apresentações.
         </CardDescription>
       </CardHeader>

@@ -70,14 +70,16 @@ export function AuthPortalPicker({ mode }: { mode: "login" | "register" }) {
           return (
             <Link key={p.href} href={href} className="block min-h-11">
               <Card className={`h-full border-2 transition-colors ${p.color}`}>
-                <CardHeader className="pb-2 text-center">
+                <CardHeader className="items-center pb-2 text-center">
                   <div
                     className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full ${p.iconColor}`}
                   >
                     <Icon className="h-6 w-6" aria-hidden="true" />
                   </div>
                   <CardTitle className="text-lg">{p.title}</CardTitle>
-                  <CardDescription className="text-sm">{p.description}</CardDescription>
+                  <CardDescription className="text-balance text-sm leading-snug">
+                    {p.description}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="pb-4 text-center">
                   <span className="text-sm font-semibold text-[color:var(--school-primary,#4f46e5)]">

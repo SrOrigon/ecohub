@@ -23,7 +23,7 @@ export function SchoolCalendarWidget({
 
   return (
     <Card className={compact ? "border-[color:var(--school-primary-ring)]" : ""}>
-      <CardHeader className="pb-2">
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
           <CalendarDays className="h-5 w-5 text-[color:var(--school-primary)]" aria-hidden="true" />
           Calendário compartilhado
