@@ -6,9 +6,40 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { ensureDefaultBadges, ensureDefaultRewards } from "../src/lib/school-setup";
 import { hashStudentPin } from "../src/lib/student-pin";
+import { parseSchoolSettings, stringifySchoolSettings } from "../src/lib/school-settings";
 
 const prisma = new PrismaClient();
 const DEMO_PASSWORD = "demo123";
+
+const DEMO_SUBJECTS = [
+  "Matemática",
+  "Português",
+  "História",
+  "Geografia",
+  "Ciências",
+  "Inglês",
+  "Educação Física",
+  "Artes",
+];
+
+async function ensureDemoSchoolSettings(schoolId: string, rawSettings: string | null) {
+  const settings = parseSchoolSettings(rawSettings);
+  if (settings.academic.subjects.length > 0) return;
+
+  const next = {
+    ...settings,
+    academic: {
+      ...settings.academic,
+      subjects: DEMO_SUBJECTS,
+    },
+  };
+
+  await prisma.school.update({
+    where: { id: schoolId },
+    data: { settings: stringifySchoolSettings(next) },
+  });
+  console.log("[ensure-demo] Disciplinas da escola demo configuradas.");
+}
 
 async function ensureUser(
   schoolId: string,
@@ -41,9 +72,18 @@ async function main() {
         legalName: "Escola Municipal Demo LTDA",
         verificationStatus: "verified",
         cnpjCheckedAt: new Date(),
+        settings: stringifySchoolSettings({
+          ...parseSchoolSettings(null),
+          academic: {
+            ...parseSchoolSettings(null).academic,
+            subjects: DEMO_SUBJECTS,
+          },
+        }),
       },
     });
   }
+
+  await ensureDemoSchoolSettings(school.id, school.settings);
 
   await ensureDefaultBadges(school.id);
   await ensureDefaultRewards(school.id);
