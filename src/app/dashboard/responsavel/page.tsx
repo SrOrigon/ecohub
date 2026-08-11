@@ -173,7 +173,7 @@ export default async function ResponsavelPortalPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="stat-grid gap-2 text-center">
                     <div className="rounded-lg bg-indigo-50 p-2">
                       <p className="text-xs text-slate-500">Média</p>
                       <p className="font-bold text-indigo-700">{avg.toFixed(1)}</p>

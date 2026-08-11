@@ -74,7 +74,7 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
   return (
     <div className="space-y-6 sm:space-y-8">
       <nav
-        className="sticky top-[var(--app-header-offset-expanded)] z-20 -mx-[var(--page-padding,1rem)] border-b border-slate-200 bg-white/95 px-[var(--page-padding,1rem)] backdrop-blur sm:static sm:mx-0 sm:hidden sm:border-0 sm:bg-transparent sm:px-0"
+        className="sticky top-[var(--app-header-offset)] z-20 -mx-[var(--page-padding,1rem)] border-b border-slate-200 bg-white/95 px-[var(--page-padding,1rem)] backdrop-blur md:static md:mx-0 md:hidden md:border-0 md:bg-transparent md:px-0"
         aria-label="Seções do perfil"
       >
         <div className="flex gap-1 overflow-x-auto">
@@ -100,7 +100,7 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
       <Card
         className={cn(
           "overflow-hidden border-2 border-indigo-100 bg-gradient-to-br from-indigo-50/80 to-white",
-          tab !== "overview" && "hidden sm:block"
+          tab !== "overview" && "hidden md:block"
         )}
       >
         <CardContent className="flex flex-col items-center gap-5 p-5 text-center sm:flex-row sm:items-center sm:p-8 sm:text-left">
@@ -133,10 +133,10 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
       <div
         className={cn(
           "grid gap-6 md:grid-cols-2",
-          tab === "edit" || tab === "security" ? "grid" : "hidden sm:grid"
+          tab === "edit" || tab === "security" ? "grid" : "hidden md:grid"
         )}
       >
-        <Card className={cn(tab === "edit" ? "block" : "hidden sm:block")}>
+        <Card className={cn(tab === "edit" ? "block" : "hidden md:block")}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <User className="h-5 w-5 text-indigo-600" aria-hidden="true" />
@@ -149,7 +149,7 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
           </CardContent>
         </Card>
 
-        <Card className={cn(tab === "security" ? "block" : "hidden sm:block")}>
+        <Card className={cn(tab === "security" ? "block" : "hidden md:block")}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Shield className="h-5 w-5 text-indigo-600" aria-hidden="true" />
@@ -163,7 +163,7 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
         </Card>
       </div>
 
-      <div className={cn("grid gap-6 md:grid-cols-2", tab !== "overview" && "hidden sm:grid")}>
+      <div className={cn("grid gap-6 md:grid-cols-2", tab !== "overview" && "hidden md:grid")}>
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Informações da conta</CardTitle>
@@ -183,7 +183,7 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
         <RoleStatsCard profile={profile} role={role} />
       </div>
 
-      <Card className={cn(tab !== "overview" && "hidden sm:block")}>
+      <Card className={cn(tab !== "overview" && "hidden md:block")}>
         <CardHeader>
           <CardTitle className="text-lg">Atalhos</CardTitle>
           <CardDescription>Acesso rápido às áreas do sistema</CardDescription>

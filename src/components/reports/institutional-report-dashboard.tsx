@@ -52,17 +52,17 @@ export function InstitutionalReportDashboard({ report }: { report: Institutional
 
   return (
     <div className="report-root space-y-6">
-      <div className="no-print flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div>
+      <div className="no-print flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <p className="font-semibold text-slate-900">{report.schoolName}</p>
           <p className="text-sm text-slate-500">Gerado em {generatedLabel}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="relative">
+        <div className="mobile-action-row sm:justify-end">
+          <div className="relative w-full sm:w-auto">
             <Button
               type="button"
               variant="outline"
-              className="gap-2"
+              className="w-full gap-2 sm:w-auto"
               onClick={() => setExportOpen((v) => !v)}
             >
               <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
@@ -70,7 +70,7 @@ export function InstitutionalReportDashboard({ report }: { report: Institutional
               <ChevronDown className="h-4 w-4" aria-hidden="true" />
             </Button>
             {exportOpen && (
-              <div className="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+              <div className="absolute left-0 right-0 z-20 mt-2 max-h-[min(70dvh,24rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-lg sm:left-auto sm:right-0 sm:w-72">
                 {EXPORT_OPTIONS.map((opt) => (
                   <button
                     key={opt.kind}
@@ -85,13 +85,13 @@ export function InstitutionalReportDashboard({ report }: { report: Institutional
               </div>
             )}
           </div>
-          <Link href="/dashboard/relatorios/imprimir" target="_blank">
-            <Button type="button" variant="outline" className="gap-2">
+          <Link href="/dashboard/relatorios/imprimir" target="_blank" className="w-full sm:w-auto">
+            <Button type="button" variant="outline" className="w-full gap-2 sm:w-auto">
               <Printer className="h-4 w-4" aria-hidden="true" />
               Imprimir / PDF
             </Button>
           </Link>
-          <Button type="button" className="gap-2" onClick={() => handleExport("full")}>
+          <Button type="button" className="w-full gap-2 sm:w-auto" onClick={() => handleExport("full")}>
             <Download className="h-4 w-4" aria-hidden="true" />
             Baixar completo
           </Button>
@@ -103,7 +103,7 @@ export function InstitutionalReportDashboard({ report }: { report: Institutional
         <p className="text-sm text-slate-600">Gerado em {generatedLabel} · Meta {report.passGrade}</p>
       </div>
 
-      <div className="no-print flex flex-wrap gap-2">
+      <div className="no-print touch-scroll-x flex gap-2 pb-1">
         <TabButton active={tab === "summary"} onClick={() => setTab("summary")} label="Resumo" />
         <TabButton active={tab === "subjects"} onClick={() => setTab("subjects")} label="Disciplinas" />
         <TabButton active={tab === "students"} onClick={() => setTab("students")} label="Alunos" />
@@ -143,7 +143,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-lg px-4 py-2 text-sm font-semibold transition",
+        "shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition",
         active ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
       )}
     >
@@ -188,7 +188,7 @@ function SubjectsSection({ report }: { report: InstitutionalReport }) {
           {report.subjects.length} disciplina(s) · configuradas: {report.configuredSubjects.join(", ")}
         </CardDescription>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
+      <CardContent className="table-scroll-container">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b text-left text-slate-500">
@@ -317,7 +317,7 @@ function MatrixSection({ report }: { report: InstitutionalReport }) {
         <CardTitle>Matriz aluno × disciplina</CardTitle>
         <CardDescription>{report.studentSubjectRows.length} registro(s) — ideal para exportação Excel</CardDescription>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
+      <CardContent className="table-scroll-container">
         <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b text-left text-slate-500">

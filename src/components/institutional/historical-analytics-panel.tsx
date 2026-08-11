@@ -135,7 +135,7 @@ export function HistoricalAnalyticsPanel({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2">
+          <div className="touch-scroll-x flex gap-2 pb-1">
             {ALL_GRANULARITIES.map((g) => {
               const available = history.availableGranularities.includes(g);
               const isStudentLimited =
@@ -148,7 +148,7 @@ export function HistoricalAnalyticsPanel({
                   disabled={!available}
                   onClick={() => setGranularity(g)}
                   className={cn(
-                    "rounded-xl border px-4 py-2 text-sm font-semibold transition",
+                    "shrink-0 rounded-xl border px-4 py-2 text-sm font-semibold transition",
                     granularity === g
                       ? "border-violet-600 bg-violet-600 text-white"
                       : available
@@ -249,7 +249,7 @@ export function HistoricalAnalyticsPanel({
             {series.bucketCount} período(s) desde {history.meta.originLabel}
           </CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="table-scroll-container">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b text-left text-slate-500">

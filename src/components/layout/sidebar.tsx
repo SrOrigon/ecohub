@@ -237,6 +237,17 @@ export function Sidebar({
   showPlatformAdmin?: boolean;
 }) {
   useEffect(() => {
+    if (!mobileOpen) return;
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onMobileOpenChange(false);
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen, onMobileOpenChange]);
+
+  useEffect(() => {
     if (mobileOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -258,8 +269,10 @@ export function Sidebar({
           />
           <aside
             id="mobile-sidebar"
-            className="relative flex h-full w-[min(20rem,90vw)] flex-col sidebar-panel shadow-[var(--shadow-md)] safe-area-bottom safe-area-top"
+            className="relative flex h-full w-[min(20rem,92vw)] flex-col sidebar-panel shadow-[var(--shadow-md)] safe-area-bottom safe-area-top"
             aria-label="Menu lateral"
+            role="dialog"
+            aria-modal="true"
           >
             <button
               type="button"

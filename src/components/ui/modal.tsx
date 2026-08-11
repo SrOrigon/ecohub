@@ -9,11 +9,13 @@ export function Modal({
   onClose,
   title,
   children,
+  footer,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -78,12 +80,12 @@ export function Modal({
         aria-modal="true"
         aria-labelledby="modal-title"
         className={cn(
-          "relative z-10 flex max-h-[90dvh] w-full flex-col safe-area-bottom",
-          "rounded-t-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-md)] sm:max-w-xl sm:rounded-xl"
+          "relative z-10 flex max-h-[92dvh] w-full flex-col safe-area-bottom",
+          "rounded-t-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-md)] sm:max-h-[90dvh] sm:max-w-xl sm:rounded-xl"
         )}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4 py-4 sm:px-6">
-          <h2 id="modal-title" className="pr-4 text-lg font-semibold text-[var(--foreground)]">
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3 sm:px-6 sm:py-4">
+          <h2 id="modal-title" className="pr-4 text-base font-semibold text-[var(--foreground)] sm:text-lg">
             {title}
           </h2>
           <button
@@ -95,7 +97,8 @@ export function Modal({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:pb-6">{children}</div>
+        <div className="modal-body sm:px-6">{children}</div>
+        {footer && <div className="modal-footer sm:px-6">{footer}</div>}
       </div>
     </div>
   );

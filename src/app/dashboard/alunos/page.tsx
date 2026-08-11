@@ -42,7 +42,7 @@ export default async function AlunosPage() {
               description="Cadastre o primeiro aluno para começar."
             />
           ) : (
-          <ResponsiveTable minWidth="48rem">
+          <ResponsiveTable minWidth="36rem">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
                 <th className="pb-3 pr-4">Matrícula</th>

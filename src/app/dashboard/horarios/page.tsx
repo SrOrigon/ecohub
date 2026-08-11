@@ -86,8 +86,8 @@ export default async function HorariosPage() {
         </CardContent>
       </Card>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200">
-        <table className="min-w-full text-sm">
+      <div className="table-scroll-container rounded-xl border border-slate-200">
+        <table className="min-w-[640px] w-full text-sm">
           <thead className="bg-slate-50 text-left text-slate-500">
             <tr>
               <th className="px-4 py-3">Turma</th>

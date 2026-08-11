@@ -47,20 +47,35 @@ export function LiveConnectionBadge({ className }: { className?: string }) {
     : null;
 
   return (
-    <button
-      type="button"
-      onClick={() => void refresh()}
-      title={timeLabel ? `Última atualização: ${timeLabel}. Clique para atualizar.` : "Atualizar métricas"}
-      className={cn(
-        "hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition hover:opacity-90 sm:inline-flex",
-        config.border,
-        config.text,
-        className
-      )}
-    >
-      <span className={cn("h-2 w-2 rounded-full", config.dot)} aria-hidden="true" />
-      <Icon className="h-3 w-3" aria-hidden="true" />
-      <span>{config.label}</span>
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => void refresh()}
+        title={timeLabel ? `Última atualização: ${timeLabel}. Clique para atualizar.` : "Atualizar métricas"}
+        aria-label={config.label}
+        className={cn(
+          "icon-btn sm:hidden",
+          config.border,
+          className
+        )}
+      >
+        <span className={cn("h-2.5 w-2.5 rounded-full", config.dot)} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        onClick={() => void refresh()}
+        title={timeLabel ? `Última atualização: ${timeLabel}. Clique para atualizar.` : "Atualizar métricas"}
+        className={cn(
+          "hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition hover:opacity-90 sm:inline-flex",
+          config.border,
+          config.text,
+          className
+        )}
+      >
+        <span className={cn("h-2 w-2 rounded-full", config.dot)} aria-hidden="true" />
+        <Icon className="h-3 w-3" aria-hidden="true" />
+        <span>{config.label}</span>
+      </button>
+    </>
   );
 }

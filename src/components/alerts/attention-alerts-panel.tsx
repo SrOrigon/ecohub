@@ -136,7 +136,7 @@ export function AttentionAlertsPanel({
       <CardHeader className="pb-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg">
               <AlertTriangle className="h-5 w-5 text-amber-600" aria-hidden="true" />
               {title}
               {urgentCount > 0 && (

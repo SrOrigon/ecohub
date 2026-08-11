@@ -58,7 +58,7 @@ export function EduHubAiChat({
   }
 
   return (
-    <div className="flex min-h-[28rem] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div className="flex min-h-[min(28rem,60dvh)] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-700">
           <Bot className="h-5 w-5" aria-hidden="true" />

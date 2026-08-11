@@ -30,67 +30,59 @@ export function Header({
 
   return (
     <header className="header-bar sticky top-0 z-30 border-b safe-area-top">
-      <div className="flex min-h-14 flex-col gap-2 px-3 py-2 md:flex-row md:items-center md:gap-3 md:px-4 lg:min-h-16 lg:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
-          <button
-            type="button"
-            className="icon-btn md:hidden"
-            onClick={onMenuClick}
-            aria-label="Abrir menu de navegação"
-          >
-            <Menu className="h-5 w-5" aria-hidden="true" />
-          </button>
+      <div className="flex min-h-14 items-center gap-2 px-3 py-2 md:gap-3 md:px-4 lg:min-h-16 lg:px-6">
+        <button
+          type="button"
+          className="icon-btn shrink-0 md:hidden"
+          onClick={onMenuClick}
+          aria-label="Abrir menu de navegação"
+        >
+          <Menu className="h-5 w-5" aria-hidden="true" />
+        </button>
 
-          <div className="min-w-0 flex-1">
-            {showSearch ? (
-              <>
-                <div className="hidden md:block">
-                  <SearchBar className="max-w-full lg:max-w-md" />
-                </div>
-                <div className="md:hidden">
-                  <p className="truncate text-sm font-semibold text-[var(--foreground)]">{schoolName}</p>
-                  <p className="truncate text-xs text-[var(--muted-foreground)]">Olá, {firstName}!</p>
-                </div>
-              </>
-            ) : (
-              <div className="min-w-0">
-                <p className="truncate text-base font-semibold text-[var(--foreground)] sm:text-lg">
-                  {schoolName}
-                </p>
-                <p className="truncate text-sm text-[var(--muted-foreground)]">Olá, {firstName}!</p>
+        <div className="min-w-0 flex-1">
+          {showSearch ? (
+            <>
+              <div className="hidden md:block">
+                <SearchBar className="max-w-full lg:max-w-md" />
               </div>
-            )}
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            {showSearch && (
-              <Link href="/dashboard/busca" className="icon-btn md:hidden" aria-label="Abrir busca">
-                <Search className="h-5 w-5 text-[var(--muted-foreground)]" aria-hidden="true" />
-              </Link>
-            )}
-            <ThemeToggle compact />
-            <LiveConnectionBadge />
-            {role === "parent" && <AttentionAlertBadge />}
-            <NotificationBell />
-            <Badge variant="secondary" className="hidden md:inline-flex">
-              {ROLE_LABELS[role]}
-            </Badge>
-            <Link
-              href="/dashboard/perfil"
-              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full transition hover:opacity-90"
-              aria-label="Abrir minha conta"
-              title="Minha conta"
-            >
-              <ProfileAvatar name={userName} avatarUrl={avatarUrl} size="sm" />
-            </Link>
-          </div>
+              <div className="md:hidden">
+                <p className="truncate text-sm font-semibold text-[var(--foreground)]">{schoolName}</p>
+                <p className="truncate text-xs text-[var(--muted-foreground)]">Olá, {firstName}!</p>
+              </div>
+            </>
+          ) : (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-[var(--foreground)] sm:text-base md:text-lg">
+                {schoolName}
+              </p>
+              <p className="truncate text-xs text-[var(--muted-foreground)] sm:text-sm">Olá, {firstName}!</p>
+            </div>
+          )}
         </div>
 
-        {showSearch && (
-          <div className="w-full md:hidden">
-            <SearchBar />
-          </div>
-        )}
+        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+          {showSearch && (
+            <Link href="/dashboard/busca" className="icon-btn md:hidden" aria-label="Abrir busca">
+              <Search className="h-5 w-5 text-[var(--muted-foreground)]" aria-hidden="true" />
+            </Link>
+          )}
+          <ThemeToggle compact />
+          <LiveConnectionBadge />
+          {role === "parent" && <AttentionAlertBadge />}
+          <NotificationBell />
+          <Badge variant="secondary" className="hidden lg:inline-flex">
+            {ROLE_LABELS[role]}
+          </Badge>
+          <Link
+            href="/dashboard/perfil"
+            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full transition hover:opacity-90"
+            aria-label="Abrir minha conta"
+            title="Minha conta"
+          >
+            <ProfileAvatar name={userName} avatarUrl={avatarUrl} size="sm" />
+          </Link>
+        </div>
       </div>
     </header>
   );

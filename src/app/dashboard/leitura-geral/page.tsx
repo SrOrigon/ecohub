@@ -192,7 +192,7 @@ export default async function LeituraGeralPage() {
         <CardHeader>
           <CardTitle>Leitura por turma</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="table-scroll-container">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b text-left text-slate-500">
