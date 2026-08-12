@@ -343,123 +343,128 @@ function buildOverallVerdict(
 export async function getTemporalAnalysis(schoolId: string | null): Promise<TemporalAnalysis> {
   if (!schoolId) return emptyTemporalAnalysis();
 
-  const settings = await getSchoolSettings(schoolId);
-  const passGrade = settings.academic.passGrade;
-  const now = new Date();
+  try {
+    const settings = await getSchoolSettings(schoolId);
+    const passGrade = settings.academic?.passGrade ?? 7;
+    const now = new Date();
 
-  const [grades, attendance, xp, submissions] = await Promise.all([
-    prisma.grade.findMany({
-      where: { student: { user: { schoolId } } },
-      select: { value: true, createdAt: true, studentId: true },
-    }),
-    prisma.attendance.findMany({
-      where: { student: { user: { schoolId } } },
-      select: { status: true, date: true },
-    }),
-    prisma.xpTransaction.findMany({
-      where: { student: { user: { schoolId } } },
-      select: { amount: true, createdAt: true },
-    }),
-    prisma.exerciseSubmission.findMany({
-      where: { exercise: { schoolId } },
-      select: { submittedAt: true },
-    }),
-  ]);
+    const [grades, attendance, xp, submissions] = await Promise.all([
+      prisma.grade.findMany({
+        where: { student: { user: { schoolId } } },
+        select: { value: true, createdAt: true, studentId: true },
+      }).catch(() => []),
+      prisma.attendance.findMany({
+        where: { student: { user: { schoolId } } },
+        select: { status: true, date: true },
+      }).catch(() => []),
+      prisma.xpTransaction.findMany({
+        where: { student: { user: { schoolId } } },
+        select: { amount: true, createdAt: true },
+      }).catch(() => []),
+      prisma.exerciseSubmission.findMany({
+        where: { exercise: { schoolId } },
+        select: { submittedAt: true },
+      }).catch(() => []),
+    ]);
 
-  const rawGrades: RawGrade[] = grades.map((g) => ({
-    value: g.value,
-    createdAt: g.createdAt,
-    studentId: g.studentId,
-  }));
-  const rawAtt: RawAttendance[] = attendance.map((a) => ({ status: a.status, date: a.date }));
-  const rawXp: RawXp[] = xp.map((x) => ({ amount: x.amount, createdAt: x.createdAt }));
-  const rawSubs: RawSubmission[] = submissions.map((s) => ({ createdAt: s.submittedAt }));
+    const rawGrades: RawGrade[] = grades.map((g) => ({
+      value: g.value ?? 0,
+      createdAt: g.createdAt,
+      studentId: g.studentId,
+    }));
+    const rawAtt: RawAttendance[] = attendance.map((a) => ({ status: a.status, date: a.date }));
+    const rawXp: RawXp[] = xp.map((x) => ({ amount: x.amount ?? 0, createdAt: x.createdAt }));
+    const rawSubs: RawSubmission[] = submissions.map((s) => ({ createdAt: s.submittedAt }));
 
-  const curMonthStart = startOfMonth(now);
-  const prevMonthEnd = endOfMonth(addMonths(now, -1));
-  const prevMonthStart = startOfMonth(addMonths(now, -1));
+    const curMonthStart = startOfMonth(now);
+    const prevMonthEnd = endOfMonth(addMonths(now, -1));
+    const prevMonthStart = startOfMonth(addMonths(now, -1));
 
-  const monthly = buildComparison(
-    "monthly",
-    "Comparativo mensal",
-    curMonthStart,
-    now,
-    prevMonthStart,
-    prevMonthEnd,
-    monthLabel(now),
-    monthLabel(addMonths(now, -1)),
-    rawGrades,
-    rawAtt,
-    rawXp,
-    rawSubs,
-    passGrade
-  );
-
-  const semester = buildComparison(
-    "semester",
-    "Comparativo semestral",
-    addMonths(now, -6),
-    now,
-    addMonths(now, -12),
-    addMonths(now, -6),
-    "Últimos 6 meses",
-    "6 meses anteriores",
-    rawGrades,
-    rawAtt,
-    rawXp,
-    rawSubs,
-    passGrade
-  );
-
-  const annual = buildComparison(
-    "annual",
-    "Comparativo anual",
-    addMonths(now, -12),
-    now,
-    addMonths(now, -24),
-    addMonths(now, -12),
-    "Últimos 12 meses",
-    "Ano anterior (12m)",
-    rawGrades,
-    rawAtt,
-    rawXp,
-    rawSubs,
-    passGrade
-  );
-
-  const timeline: TimelinePoint[] = [];
-  for (let i = 11; i >= 0; i--) {
-    const d = addMonths(now, -i);
-    const start = startOfMonth(d);
-    const end = i === 0 ? now : endOfMonth(d);
-    const snap = buildSnapshot(
-      monthLabel(d),
-      start,
-      end,
+    const monthly = buildComparison(
+      "monthly",
+      "Comparativo mensal",
+      curMonthStart,
+      now,
+      prevMonthStart,
+      prevMonthEnd,
+      monthLabel(now),
+      monthLabel(addMonths(now, -1)),
       rawGrades,
       rawAtt,
       rawXp,
       rawSubs,
       passGrade
     );
-    timeline.push({
-      key: `${d.getFullYear()}-${d.getMonth()}`,
-      label: snap.label,
-      averageGrade: snap.averageGrade,
-      attendanceRate: snap.attendanceRate,
-      passRate: snap.passRate,
-      xp: snap.xpTotal,
-      healthScore: snap.healthScore,
-    });
-  }
 
-  return {
-    monthly,
-    semester,
-    annual,
-    timeline,
-    overallVerdict: buildOverallVerdict(monthly, semester, annual),
-  };
+    const semester = buildComparison(
+      "semester",
+      "Comparativo semestral",
+      addMonths(now, -6),
+      now,
+      addMonths(now, -12),
+      addMonths(now, -6),
+      "Últimos 6 meses",
+      "6 meses anteriores",
+      rawGrades,
+      rawAtt,
+      rawXp,
+      rawSubs,
+      passGrade
+    );
+
+    const annual = buildComparison(
+      "annual",
+      "Comparativo anual",
+      addMonths(now, -12),
+      now,
+      addMonths(now, -24),
+      addMonths(now, -12),
+      "Últimos 12 meses",
+      "Ano anterior (12m)",
+      rawGrades,
+      rawAtt,
+      rawXp,
+      rawSubs,
+      passGrade
+    );
+
+    const timeline: TimelinePoint[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = addMonths(now, -i);
+      const start = startOfMonth(d);
+      const end = i === 0 ? now : endOfMonth(d);
+      const snap = buildSnapshot(
+        monthLabel(d),
+        start,
+        end,
+        rawGrades,
+        rawAtt,
+        rawXp,
+        rawSubs,
+        passGrade
+      );
+      timeline.push({
+        key: `${d.getFullYear()}-${d.getMonth()}`,
+        label: snap.label,
+        averageGrade: snap.averageGrade,
+        attendanceRate: snap.attendanceRate,
+        passRate: snap.passRate,
+        xp: snap.xpTotal,
+        healthScore: snap.healthScore,
+      });
+    }
+
+    return {
+      monthly,
+      semester,
+      annual,
+      timeline,
+      overallVerdict: buildOverallVerdict(monthly, semester, annual),
+    };
+  } catch (err) {
+    console.error("[getTemporalAnalysis] Error:", err);
+    return emptyTemporalAnalysis();
+  }
 }
 
 function emptyPeriodComparison(kind: PeriodComparison["kind"], kindLabel: string): PeriodComparison {

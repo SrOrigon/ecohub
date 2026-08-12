@@ -148,298 +148,306 @@ export async function getSubjectPrecisionOverview(
 ): Promise<SubjectPrecisionOverview> {
   if (!schoolId) return emptyOverview();
 
-  const settings = await getSchoolSettings(schoolId);
-  const passGrade = settings.academic.passGrade;
-  const configuredSubjects = settings.academic.subjects;
+  try {
+    const settings = await getSchoolSettings(schoolId);
+    const passGrade = settings.academic?.passGrade ?? 7;
+    const configuredSubjects = settings.academic?.subjects ?? [];
 
-  const [totalStudents, grades, diaryEntries, scheduleSlots, exercises] = await Promise.all([
-    prisma.student.count({ where: { user: { schoolId } } }),
-    prisma.grade.findMany({
-      where: { student: { user: { schoolId } } },
-      select: {
-        subject: true,
-        value: true,
-        studentId: true,
-        createdAt: true,
-      },
-    }),
-    prisma.classDiaryEntry.findMany({
-      where: { classGroup: { schoolId } },
-      select: { subject: true, date: true, createdAt: true },
-    }),
-    prisma.classScheduleSlot.findMany({
-      where: { schoolId },
-      select: { subject: true },
-    }),
-    prisma.exercise.findMany({
-      where: { schoolId, isActive: true },
-      select: { title: true, description: true, createdAt: true },
-    }),
-  ]);
+    const [totalStudents, grades, diaryEntries, scheduleSlots, exercises] = await Promise.all([
+      prisma.student.count({ where: { user: { schoolId } } }).catch(() => 0),
+      prisma.grade.findMany({
+        where: { student: { user: { schoolId } } },
+        select: {
+          subject: true,
+          value: true,
+          studentId: true,
+          createdAt: true,
+        },
+      }).catch(() => []),
+      prisma.classDiaryEntry.findMany({
+        where: { classGroup: { schoolId } },
+        select: { subject: true, date: true, createdAt: true },
+      }).catch(() => []),
+      prisma.classScheduleSlot.findMany({
+        where: { schoolId },
+        select: { subject: true },
+      }).catch(() => []),
+      prisma.exercise.findMany({
+        where: { schoolId, isActive: true },
+        select: { title: true, description: true, createdAt: true },
+      }).catch(() => []),
+    ]);
 
-  const studentDenominator = Math.max(totalStudents, 1);
+    const studentDenominator = Math.max(totalStudents, 1);
 
-  type GradeBucket = {
-    values: number[];
-    byStudent: Map<string, number[]>;
-    lastAt: Date | null;
-  };
-
-  const gradeBySubject = new Map<string, GradeBucket>();
-  for (const g of grades) {
-    const key = g.subject.trim();
-    const bucket =
-      gradeBySubject.get(key) ??
-      ({ values: [] as number[], byStudent: new Map<string, number[]>(), lastAt: null } satisfies GradeBucket);
-    bucket.values.push(g.value);
-    const list = bucket.byStudent.get(g.studentId) ?? [];
-    list.push(g.value);
-    bucket.byStudent.set(g.studentId, list);
-    if (!bucket.lastAt || g.createdAt > bucket.lastAt) bucket.lastAt = g.createdAt;
-    gradeBySubject.set(key, bucket);
-  }
-
-  const diaryBySubject = new Map<string, { count: number; lastAt: Date | null }>();
-  for (const d of diaryEntries) {
-    const subj = d.subject?.trim();
-    if (!subj) continue;
-    const cur = diaryBySubject.get(subj) ?? { count: 0, lastAt: null };
-    cur.count++;
-    const ref = d.date > d.createdAt ? d.date : d.createdAt;
-    if (!cur.lastAt || ref > cur.lastAt) cur.lastAt = ref;
-    diaryBySubject.set(subj, cur);
-  }
-
-  const scheduleBySubject = new Map<string, { count: number }>();
-  for (const s of scheduleSlots) {
-    const subj = s.subject.trim();
-    const cur = scheduleBySubject.get(subj) ?? { count: 0 };
-    cur.count++;
-    scheduleBySubject.set(subj, cur);
-  }
-
-  const allSubjectNames = new Set<string>([
-    ...configuredSubjects,
-    ...gradeBySubject.keys(),
-    ...diaryBySubject.keys(),
-    ...scheduleBySubject.keys(),
-  ]);
-
-  const entries: SubjectPrecisionEntry[] = [];
-
-  for (const subject of allSubjectNames) {
-    const configured = configuredSubjects.some(
-      (s) => normalizeSubjectKey(s) === normalizeSubjectKey(subject)
-    );
-
-    const gradeBucket = gradeBySubject.get(subject) ?? {
-      values: [],
-      byStudent: new Map<string, number[]>(),
-      lastAt: null,
+    type GradeBucket = {
+      values: number[];
+      byStudent: Map<string, number[]>;
+      lastAt: Date | null;
     };
 
-    const gradeCount = gradeBucket.values.length;
-    const studentsWithGrades = gradeBucket.byStudent.size;
-    const average =
-      gradeCount > 0 ? round1(gradeBucket.values.reduce((a, v) => a + v, 0) / gradeCount) : 0;
-
-    let studentsBelowPass = 0;
-    let passing = 0;
-    for (const vals of gradeBucket.byStudent.values()) {
-      const avg = vals.reduce((a, v) => a + v, 0) / vals.length;
-      if (avg >= passGrade) passing++;
-      else studentsBelowPass++;
+    const gradeBySubject = new Map<string, GradeBucket>();
+    for (const g of grades) {
+      if (!g.subject) continue;
+      const key = g.subject.trim();
+      const bucket =
+        gradeBySubject.get(key) ??
+        ({ values: [] as number[], byStudent: new Map<string, number[]>(), lastAt: null } satisfies GradeBucket);
+      const val = g.value ?? 0;
+      bucket.values.push(val);
+      const list = bucket.byStudent.get(g.studentId) ?? [];
+      list.push(val);
+      bucket.byStudent.set(g.studentId, list);
+      if (!bucket.lastAt || g.createdAt > bucket.lastAt) bucket.lastAt = g.createdAt;
+      gradeBySubject.set(key, bucket);
     }
-    const passRatePercent =
-      gradeBucket.byStudent.size > 0 ? round0((passing / gradeBucket.byStudent.size) * 100) : 0;
 
-    const coveragePercent = round0((studentsWithGrades / studentDenominator) * 100);
+    const diaryBySubject = new Map<string, { count: number; lastAt: Date | null }>();
+    for (const d of diaryEntries) {
+      const subj = d.subject?.trim();
+      if (!subj) continue;
+      const cur = diaryBySubject.get(subj) ?? { count: 0, lastAt: null };
+      cur.count++;
+      const ref = d.date > d.createdAt ? d.date : d.createdAt;
+      if (!cur.lastAt || ref > cur.lastAt) cur.lastAt = ref;
+      diaryBySubject.set(subj, cur);
+    }
 
-    const diary = diaryBySubject.get(subject) ?? { count: 0, lastAt: null };
-    const schedule = scheduleBySubject.get(subject) ?? { count: 0 };
-    const exerciseMatches = exercises.filter((e) =>
-      matchExerciseToSubject(e.title, e.description, subject)
-    );
-    const exerciseLast =
-      exerciseMatches.length > 0
-        ? exerciseMatches.reduce(
-            (max, e) => (e.createdAt > max ? e.createdAt : max),
-            exerciseMatches[0].createdAt
-          )
-        : null;
+    const scheduleBySubject = new Map<string, { count: number }>();
+    for (const s of scheduleSlots) {
+      if (!s.subject) continue;
+      const subj = s.subject.trim();
+      const cur = scheduleBySubject.get(subj) ?? { count: 0 };
+      cur.count++;
+      scheduleBySubject.set(subj, cur);
+    }
 
-    const resources: ResourcePrecision[] = [
-      {
-        kind: "grades",
-        label: "Notas e avaliações",
-        count: gradeCount,
-        coveragePercent,
-        precisionScore: resourcePrecisionScore({
+    const allSubjectNames = new Set<string>([
+      ...configuredSubjects,
+      ...gradeBySubject.keys(),
+      ...diaryBySubject.keys(),
+      ...scheduleBySubject.keys(),
+    ]);
+
+    const entries: SubjectPrecisionEntry[] = [];
+
+    for (const subject of allSubjectNames) {
+      const configured = configuredSubjects.some(
+        (s) => normalizeSubjectKey(s) === normalizeSubjectKey(subject)
+      );
+
+      const gradeBucket = gradeBySubject.get(subject) ?? {
+        values: [],
+        byStudent: new Map<string, number[]>(),
+        lastAt: null,
+      };
+
+      const gradeCount = gradeBucket.values.length;
+      const studentsWithGrades = gradeBucket.byStudent.size;
+      const average =
+        gradeCount > 0 ? round1(gradeBucket.values.reduce((a, v) => a + v, 0) / gradeCount) : 0;
+
+      let studentsBelowPass = 0;
+      let passing = 0;
+      for (const vals of gradeBucket.byStudent.values()) {
+        const avg = vals.reduce((a, v) => a + v, 0) / vals.length;
+        if (avg >= passGrade) passing++;
+        else studentsBelowPass++;
+      }
+      const passRatePercent =
+        gradeBucket.byStudent.size > 0 ? round0((passing / gradeBucket.byStudent.size) * 100) : 0;
+
+      const coveragePercent = round0((studentsWithGrades / studentDenominator) * 100);
+
+      const diary = diaryBySubject.get(subject) ?? { count: 0, lastAt: null };
+      const schedule = scheduleBySubject.get(subject) ?? { count: 0 };
+      const exerciseMatches = exercises.filter((e) =>
+        matchExerciseToSubject(e.title, e.description, subject)
+      );
+      const exerciseLast =
+        exerciseMatches.length > 0
+          ? exerciseMatches.reduce(
+              (max, e) => (e.createdAt > max ? e.createdAt : max),
+              exerciseMatches[0].createdAt
+            )
+          : null;
+
+      const resources: ResourcePrecision[] = [
+        {
+          kind: "grades",
+          label: "Notas e avaliações",
           count: gradeCount,
           coveragePercent,
-          recencyDays: daysSince(gradeBucket.lastAt),
-          minCountForFull: Math.max(5, Math.ceil(studentDenominator * 0.3)),
-        }),
-        precisionLabel: precisionLabel(
-          resourcePrecisionScore({
+          precisionScore: resourcePrecisionScore({
             count: gradeCount,
             coveragePercent,
             recencyDays: daysSince(gradeBucket.lastAt),
-          })
-        ),
-        lastActivityAt: gradeBucket.lastAt?.toISOString() ?? null,
-        detail: `${gradeCount} nota(s) · ${studentsWithGrades} aluno(s)`,
-      },
-      {
-        kind: "diary",
-        label: "Diário de classe",
-        count: diary.count,
-        coveragePercent: diary.count > 0 ? Math.min(100, diary.count * 10) : 0,
-        precisionScore: resourcePrecisionScore({
+            minCountForFull: Math.max(5, Math.ceil(studentDenominator * 0.3)),
+          }),
+          precisionLabel: precisionLabel(
+            resourcePrecisionScore({
+              count: gradeCount,
+              coveragePercent,
+              recencyDays: daysSince(gradeBucket.lastAt),
+            })
+          ),
+          lastActivityAt: gradeBucket.lastAt?.toISOString() ?? null,
+          detail: `${gradeCount} nota(s) · ${studentsWithGrades} aluno(s)`,
+        },
+        {
+          kind: "diary",
+          label: "Diário de classe",
           count: diary.count,
-          coveragePercent: diary.count > 0 ? 70 : 0,
-          recencyDays: daysSince(diary.lastAt),
-          minCountForFull: 8,
-        }),
-        precisionLabel: precisionLabel(
-          resourcePrecisionScore({
+          coveragePercent: diary.count > 0 ? Math.min(100, diary.count * 10) : 0,
+          precisionScore: resourcePrecisionScore({
             count: diary.count,
             coveragePercent: diary.count > 0 ? 70 : 0,
             recencyDays: daysSince(diary.lastAt),
-          })
-        ),
-        lastActivityAt: diary.lastAt?.toISOString() ?? null,
-        detail: diary.count > 0 ? `${diary.count} registro(s) no diário` : "Nenhum registro",
-      },
-      {
-        kind: "schedule",
-        label: "Grade de horários",
-        count: schedule.count,
-        coveragePercent: schedule.count > 0 ? Math.min(100, schedule.count * 15) : 0,
-        precisionScore: resourcePrecisionScore({
+            minCountForFull: 8,
+          }),
+          precisionLabel: precisionLabel(
+            resourcePrecisionScore({
+              count: diary.count,
+              coveragePercent: diary.count > 0 ? 70 : 0,
+              recencyDays: daysSince(diary.lastAt),
+            })
+          ),
+          lastActivityAt: diary.lastAt?.toISOString() ?? null,
+          detail: diary.count > 0 ? `${diary.count} registro(s) no diário` : "Nenhum registro",
+        },
+        {
+          kind: "schedule",
+          label: "Grade de horários",
           count: schedule.count,
-          coveragePercent: schedule.count > 0 ? 80 : 0,
-          recencyDays: schedule.count > 0 ? 0 : null,
-          minCountForFull: 4,
-        }),
-        precisionLabel: precisionLabel(
-          resourcePrecisionScore({
+          coveragePercent: schedule.count > 0 ? Math.min(100, schedule.count * 15) : 0,
+          precisionScore: resourcePrecisionScore({
             count: schedule.count,
             coveragePercent: schedule.count > 0 ? 80 : 0,
             recencyDays: schedule.count > 0 ? 0 : null,
-          })
-        ),
-        lastActivityAt: null,
-        detail: schedule.count > 0 ? `${schedule.count} slot(s) na grade` : "Não cadastrada",
-      },
-      {
-        kind: "exercises",
-        label: "Exercícios e atividades",
-        count: exerciseMatches.length,
-        coveragePercent:
-          exerciseMatches.length > 0
-            ? Math.min(100, round0((exerciseMatches.length / Math.max(exercises.length, 1)) * 100))
-            : 0,
-        precisionScore: resourcePrecisionScore({
+            minCountForFull: 4,
+          }),
+          precisionLabel: precisionLabel(
+            resourcePrecisionScore({
+              count: schedule.count,
+              coveragePercent: schedule.count > 0 ? 80 : 0,
+              recencyDays: schedule.count > 0 ? 0 : null,
+            })
+          ),
+          lastActivityAt: null,
+          detail: schedule.count > 0 ? `${schedule.count} slot(s) na grade` : "Não cadastrada",
+        },
+        {
+          kind: "exercises",
+          label: "Exercícios e atividades",
           count: exerciseMatches.length,
-          coveragePercent: exerciseMatches.length > 0 ? 75 : 0,
-          recencyDays: daysSince(exerciseLast),
-          minCountForFull: 3,
-        }),
-        precisionLabel: precisionLabel(
-          resourcePrecisionScore({
+          coveragePercent:
+            exerciseMatches.length > 0
+              ? Math.min(100, round0((exerciseMatches.length / Math.max(exercises.length, 1)) * 100))
+              : 0,
+          precisionScore: resourcePrecisionScore({
             count: exerciseMatches.length,
             coveragePercent: exerciseMatches.length > 0 ? 75 : 0,
             recencyDays: daysSince(exerciseLast),
-          })
-        ),
-        lastActivityAt: exerciseLast?.toISOString() ?? null,
-        detail:
-          exerciseMatches.length > 0
-            ? `${exerciseMatches.length} exercício(s) vinculado(s)`
-            : "Nenhum exercício identificado",
-      },
-    ];
+            minCountForFull: 3,
+          }),
+          precisionLabel: precisionLabel(
+            resourcePrecisionScore({
+              count: exerciseMatches.length,
+              coveragePercent: exerciseMatches.length > 0 ? 75 : 0,
+              recencyDays: daysSince(exerciseLast),
+            })
+          ),
+          lastActivityAt: exerciseLast?.toISOString() ?? null,
+          detail:
+            exerciseMatches.length > 0
+              ? `${exerciseMatches.length} exercício(s) vinculado(s)`
+              : "Nenhum exercício identificado",
+        },
+      ];
 
-    const dataConfidence = round0(
-      resources.reduce((sum, r) => sum + r.precisionScore, 0) / resources.length
-    );
+      const dataConfidence = round0(
+        resources.reduce((sum, r) => sum + r.precisionScore, 0) / resources.length
+      );
 
-    const gradeScore = passGrade > 0 ? Math.min(100, (average / passGrade) * 100) : 0;
-    const teachingEffectiveness =
-      gradeCount > 0
-        ? round0(gradeScore * 0.5 + passRatePercent * 0.35 + coveragePercent * 0.15)
+      const gradeScore = passGrade > 0 ? Math.min(100, (average / passGrade) * 100) : 0;
+      const teachingEffectiveness =
+        gradeCount > 0
+          ? round0(gradeScore * 0.5 + passRatePercent * 0.35 + coveragePercent * 0.15)
+          : 0;
+
+      const precisionScore =
+        gradeCount > 0
+          ? round0(dataConfidence * 0.5 + teachingEffectiveness * 0.5)
+          : round0(dataConfidence * 0.85);
+
+      const partial: Omit<SubjectPrecisionEntry, "recommendations"> = {
+        subject,
+        configured,
+        precisionScore,
+        precisionLabel: precisionLabel(precisionScore),
+        dataConfidence,
+        teachingEffectiveness,
+        average,
+        gradeCount,
+        studentsWithGrades,
+        studentsBelowPass,
+        coveragePercent,
+        passRatePercent,
+        resources,
+      };
+
+      entries.push({
+        ...partial,
+        recommendations: buildRecommendations(partial),
+      });
+    }
+
+    entries.sort((a, b) => {
+      if (a.configured !== b.configured) return a.configured ? -1 : 1;
+      return b.precisionScore - a.precisionScore;
+    });
+
+    const overallPrecision =
+      entries.length > 0
+        ? round0(entries.reduce((s, e) => s + e.precisionScore, 0) / entries.length)
         : 0;
 
-    const precisionScore =
-      gradeCount > 0
-        ? round0(dataConfidence * 0.5 + teachingEffectiveness * 0.5)
-        : round0(dataConfidence * 0.85);
+    const weak = entries.filter((e) => e.precisionScore < 55);
+    const strong = entries.filter((e) => e.precisionScore >= 75);
 
-    const partial: Omit<SubjectPrecisionEntry, "recommendations"> = {
-      subject,
-      configured,
-      precisionScore,
-      precisionLabel: precisionLabel(precisionScore),
-      dataConfidence,
-      teachingEffectiveness,
-      average,
-      gradeCount,
-      studentsWithGrades,
-      studentsBelowPass,
-      coveragePercent,
-      passRatePercent,
-      resources,
+    const insights: string[] = [
+      `Precisão institucional média: ${overallPrecision}/100 (${precisionLabel(overallPrecision)}).`,
+    ];
+    if (strong.length > 0) {
+      insights.push(
+        `Disciplinas com alta precisão: ${strong.slice(0, 4).map((e) => e.subject).join(", ")}.`
+      );
+    }
+    if (weak.length > 0) {
+      insights.push(
+        `${weak.length} disciplina(s) com precisão baixa — reforce registros de notas, diário e horários.`
+      );
+    }
+    const unconfiguredWithData = entries.filter((e) => !e.configured && e.gradeCount > 0);
+    if (unconfiguredWithData.length > 0) {
+      insights.push(
+        `Há notas em disciplinas fora da lista configurada (${unconfiguredWithData.map((e) => e.subject).join(", ")}). Revise em Configurações.`
+      );
+    }
+
+    return {
+      overallPrecision,
+      overallLabel: precisionLabel(overallPrecision),
+      summary: buildOverallSummary(overallPrecision, entries.length, totalStudents),
+      totalStudents,
+      configuredSubjects,
+      entries,
+      insights: insights.slice(0, 5),
     };
-
-    entries.push({
-      ...partial,
-      recommendations: buildRecommendations(partial),
-    });
+  } catch (err) {
+    console.error("[getSubjectPrecisionOverview] Error:", err);
+    return emptyOverview();
   }
-
-  entries.sort((a, b) => {
-    if (a.configured !== b.configured) return a.configured ? -1 : 1;
-    return b.precisionScore - a.precisionScore;
-  });
-
-  const overallPrecision =
-    entries.length > 0
-      ? round0(entries.reduce((s, e) => s + e.precisionScore, 0) / entries.length)
-      : 0;
-
-  const weak = entries.filter((e) => e.precisionScore < 55);
-  const strong = entries.filter((e) => e.precisionScore >= 75);
-
-  const insights: string[] = [
-    `Precisão institucional média: ${overallPrecision}/100 (${precisionLabel(overallPrecision)}).`,
-  ];
-  if (strong.length > 0) {
-    insights.push(
-      `Disciplinas com alta precisão: ${strong.slice(0, 4).map((e) => e.subject).join(", ")}.`
-    );
-  }
-  if (weak.length > 0) {
-    insights.push(
-      `${weak.length} disciplina(s) com precisão baixa — reforce registros de notas, diário e horários.`
-    );
-  }
-  const unconfiguredWithData = entries.filter((e) => !e.configured && e.gradeCount > 0);
-  if (unconfiguredWithData.length > 0) {
-    insights.push(
-      `Há notas em disciplinas fora da lista configurada (${unconfiguredWithData.map((e) => e.subject).join(", ")}). Revise em Configurações.`
-    );
-  }
-
-  return {
-    overallPrecision,
-    overallLabel: precisionLabel(overallPrecision),
-    summary: buildOverallSummary(overallPrecision, entries.length, totalStudents),
-    totalStudents,
-    configuredSubjects,
-    entries,
-    insights: insights.slice(0, 5),
-  };
 }
 
 function buildOverallSummary(precision: number, subjectCount: number, students: number) {

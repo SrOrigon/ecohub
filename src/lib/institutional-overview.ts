@@ -161,188 +161,212 @@ export async function getInstitutionalOverview(schoolId: string | null): Promise
     return emptyOverview();
   }
 
-  const settings = await getSchoolSettings(schoolId);
-  const passGrade = settings.academic.passGrade;
+  try {
+    const settings = await getSchoolSettings(schoolId);
+    const passGrade = settings.academic?.passGrade ?? 7;
 
-  const [
-    stats,
-    engagement,
-    alerts,
-    monthlyTrend,
-    studentsWithGrades,
-    exerciseStats,
-    trailProgress,
-    badgeCount,
-    teachers,
-  ] = await Promise.all([
-    getDashboardStats(schoolId),
-    getEngagementOverview(schoolId),
-    computeRiskAlerts(schoolId),
-    getMonthlyPerformance(schoolId),
-    prisma.student.findMany({
-      where: { user: { schoolId } },
-      include: { grades: { select: { value: true } } },
-    }),
-    Promise.all([
-      prisma.exercise.count({ where: { schoolId } }),
-      prisma.exerciseSubmission.count({
-        where: { exercise: { schoolId } },
-      }),
-      prisma.exerciseSubmission.count({
-        where: { exercise: { schoolId }, status: "submitted" },
-      }),
-    ]),
-    prisma.studentTrailProgress.count({
+    const [
+      stats,
+      engagement,
+      alerts,
+      monthlyTrend,
+      studentsWithGrades,
+      exerciseStats,
+      trailProgress,
+      badgeCount,
+      teachers,
+    ] = await Promise.all([
+      getDashboardStats(schoolId).catch(() => ({
+        totalStudents: 0,
+        totalClasses: 0,
+        averageGrade: 0,
+        attendanceRate: 0,
+        activeMissions: 0,
+        totalXpAwarded: 0,
+      })),
+      getEngagementOverview(schoolId).catch(() => ({
+        totalStudents: 0,
+        activeMissions: 0,
+        pendingSubmissions: 0,
+        avgMissionRate: 0,
+        avgExerciseRate: 0,
+        avgAttendanceRate: 0,
+        xpThisWeek: 0,
+        classes: [],
+        topStudents: [],
+      })),
+      computeRiskAlerts(schoolId).catch(() => []),
+      getMonthlyPerformance(schoolId).catch(() => []),
+      prisma.student.findMany({
+        where: { user: { schoolId } },
+        include: { grades: { select: { value: true } } },
+      }).catch(() => []),
+      Promise.all([
+        prisma.exercise.count({ where: { schoolId } }),
+        prisma.exerciseSubmission.count({
+          where: { exercise: { schoolId } },
+        }),
+        prisma.exerciseSubmission.count({
+          where: { exercise: { schoolId }, status: "submitted" },
+        }),
+      ]).catch(() => [0, 0, 0]),
+      prisma.studentTrailProgress.count({
+        where: { student: { user: { schoolId } } },
+      }).catch(() => 0),
+      prisma.studentBadge.count({
+        where: { student: { user: { schoolId } } },
+      }).catch(() => 0),
+      prisma.user.count({ where: { schoolId, role: "teacher" } }).catch(() => 0),
+    ]);
+
+    const [exercisesTotal, exerciseSubmissions, exercisePendingGrading] = exerciseStats;
+
+    let studentsWithAvg = 0;
+    let studentsPassing = 0;
+    for (const s of studentsWithGrades) {
+      if (!s.grades || s.grades.length === 0) continue;
+      studentsWithAvg++;
+      const avg = s.grades.reduce((a, g) => a + (g.value ?? 0), 0) / s.grades.length;
+      if (avg >= passGrade) studentsPassing++;
+    }
+    const passRate = studentsWithAvg > 0 ? (studentsPassing / studentsWithAvg) * 100 : 0;
+    const studentsBelowPass = studentsWithAvg - studentsPassing;
+
+    const subjectGradesRaw = await prisma.grade.findMany({
       where: { student: { user: { schoolId } } },
-    }),
-    prisma.studentBadge.count({
-      where: { student: { user: { schoolId } } },
-    }),
-    prisma.user.count({ where: { schoolId, role: "teacher" } }),
-  ]);
+      select: { subject: true, value: true },
+    }).catch(() => []);
 
-  const [exercisesTotal, exerciseSubmissions, exercisePendingGrading] = exerciseStats;
-
-  let studentsWithAvg = 0;
-  let studentsPassing = 0;
-  for (const s of studentsWithGrades) {
-    if (s.grades.length === 0) continue;
-    studentsWithAvg++;
-    const avg = s.grades.reduce((a, g) => a + g.value, 0) / s.grades.length;
-    if (avg >= passGrade) studentsPassing++;
-  }
-  const passRate = studentsWithAvg > 0 ? (studentsPassing / studentsWithAvg) * 100 : 0;
-  const studentsBelowPass = studentsWithAvg - studentsPassing;
-
-  const subjectGradesRaw = await prisma.grade.findMany({
-    where: { student: { user: { schoolId } } },
-    select: { subject: true, value: true },
-  });
-
-  const subjectMap = new Map<string, { sum: number; count: number; below: number }>();
-  for (const g of subjectGradesRaw) {
-    const cur = subjectMap.get(g.subject) ?? { sum: 0, count: 0, below: 0 };
-    cur.sum += g.value;
-    cur.count++;
-    if (g.value < passGrade) cur.below++;
-    subjectMap.set(g.subject, cur);
-  }
-
-  const subjectPerformance: SubjectPerformance[] = [...subjectMap.entries()]
-    .map(([subject, data]) => ({
-      subject,
-      average: Math.round((data.sum / data.count) * 10) / 10,
-      gradeCount: data.count,
-      studentsBelowPass: data.below,
-    }))
-    .sort((a, b) => a.average - b.average);
-
-  const classGradeData = await prisma.classGroup.findMany({
-    where: { schoolId },
-    include: {
-      students: {
-        include: {
-          grades: { select: { value: true } },
-          attendance: { select: { status: true } },
-        },
-      },
-    },
-  });
-
-  const engagementByClass = new Map(engagement.classes.map((c) => [c.classId, c]));
-
-  const classes: ClassOverview[] = classGradeData.map((c) => {
-    const eng = engagementByClass.get(c.id);
-    const grades = c.students.flatMap((s) => s.grades);
-    const avgGrade =
-      grades.length > 0 ? grades.reduce((a, g) => a + g.value, 0) / grades.length : 0;
-
-    let withGrades = 0;
-    let passing = 0;
-    for (const s of c.students) {
-      if (s.grades.length === 0) continue;
-      withGrades++;
-      const avg = s.grades.reduce((a, g) => a + g.value, 0) / s.grades.length;
-      if (avg >= passGrade) passing++;
+    const subjectMap = new Map<string, { sum: number; count: number; below: number }>();
+    for (const g of subjectGradesRaw) {
+      if (!g.subject) continue;
+      const cur = subjectMap.get(g.subject) ?? { sum: 0, count: 0, below: 0 };
+      const val = g.value ?? 0;
+      cur.sum += val;
+      cur.count++;
+      if (val < passGrade) cur.below++;
+      subjectMap.set(g.subject, cur);
     }
 
-    const att = c.students.flatMap((s) => s.attendance);
-    const attPresent = att.filter((a) => a.status === "present" || a.status === "late").length;
-    const attendanceRate = att.length > 0 ? Math.round((attPresent / att.length) * 100) : 0;
+    const subjectPerformance: SubjectPerformance[] = [...subjectMap.entries()]
+      .map(([subject, data]) => ({
+        subject,
+        average: data.count > 0 ? Math.round((data.sum / data.count) * 10) / 10 : 0,
+        gradeCount: data.count,
+        studentsBelowPass: data.below,
+      }))
+      .sort((a, b) => a.average - b.average);
+
+    const classGradeData = await prisma.classGroup.findMany({
+      where: { schoolId },
+      include: {
+        students: {
+          include: {
+            grades: { select: { value: true } },
+            attendance: { select: { status: true } },
+          },
+        },
+      },
+    }).catch(() => []);
+
+    const engagementByClass = new Map(engagement.classes.map((c) => [c.classId, c]));
+
+    const classes: ClassOverview[] = classGradeData.map((c) => {
+      const eng = engagementByClass.get(c.id);
+      const grades = c.students.flatMap((s) => s.grades ?? []);
+      const avgGrade =
+        grades.length > 0 ? grades.reduce((a, g) => a + (g.value ?? 0), 0) / grades.length : 0;
+
+      let withGrades = 0;
+      let passing = 0;
+      for (const s of c.students) {
+        if (!s.grades || s.grades.length === 0) continue;
+        withGrades++;
+        const avg = s.grades.reduce((a, g) => a + (g.value ?? 0), 0) / s.grades.length;
+        if (avg >= passGrade) passing++;
+      }
+
+      const att = c.students.flatMap((s) => s.attendance ?? []);
+      const attPresent = att.filter((a) => a.status === "present" || a.status === "late").length;
+      const attendanceRate = att.length > 0 ? Math.round((attPresent / att.length) * 100) : 0;
+
+      return {
+        classId: c.id,
+        className: c.name,
+        studentCount: c.students.length,
+        averageGrade: Math.round(avgGrade * 10) / 10,
+        passRate: withGrades > 0 ? Math.round((passing / withGrades) * 100) : 0,
+        attendanceRate,
+        engagementScore: eng?.engagementScore ?? 0,
+        missionRate: eng?.missionRate ?? 0,
+        exerciseRate: eng?.exerciseRate ?? 0,
+      };
+    });
+
+    classes.sort((a, b) => a.averageGrade - b.averageGrade);
+
+    const exerciseCompletionRate =
+      exerciseSubmissions > 0
+        ? Math.round(((exerciseSubmissions - exercisePendingGrading) / exerciseSubmissions) * 100)
+        : 0;
+
+    const safePassGrade = passGrade > 0 ? passGrade : 7;
+    const rawAverage = isNaN(stats.averageGrade) ? 0 : stats.averageGrade;
+    const gradeScore = Math.min(100, (rawAverage / safePassGrade) * 100);
+    const attendanceScore = isNaN(stats.attendanceRate) ? 0 : stats.attendanceRate;
+    const engagementScore = Math.round(
+      ((engagement.avgMissionRate ?? 0) + (engagement.avgExerciseRate ?? 0) + (engagement.avgAttendanceRate ?? 0)) / 3
+    );
+    const alertPenalty = Math.min(30, alerts.filter((a) => a.severity === "high").length * 5);
+    const rawHealthScore = Math.round(gradeScore * 0.3 + attendanceScore * 0.25 + engagementScore * 0.25 + (100 - alertPenalty) * 0.2);
+    const healthScore = isNaN(rawHealthScore) ? 0 : Math.max(0, Math.min(100, rawHealthScore));
+
+    const improvements = buildImprovements({
+      passRate: isNaN(passRate) ? 0 : passRate,
+      attendanceRate: attendanceScore,
+      pendingSubmissions: engagement.pendingSubmissions ?? 0,
+      avgMissionRate: engagement.avgMissionRate ?? 0,
+      avgExerciseRate: engagement.avgExerciseRate ?? 0,
+      alertsHigh: alerts.filter((a) => a.severity === "high").length,
+      weakestSubject: subjectPerformance[0],
+    });
 
     return {
-      classId: c.id,
-      className: c.name,
-      studentCount: c.students.length,
-      averageGrade: Math.round(avgGrade * 10) / 10,
-      passRate: withGrades > 0 ? Math.round((passing / withGrades) * 100) : 0,
-      attendanceRate,
-      engagementScore: eng?.engagementScore ?? 0,
-      missionRate: eng?.missionRate ?? 0,
-      exerciseRate: eng?.exerciseRate ?? 0,
+      passGrade: safePassGrade,
+      maxGrade: settings.academic?.maxGrade ?? 10,
+      totalStudents: stats.totalStudents,
+      totalClasses: stats.totalClasses,
+      totalTeachers: teachers,
+      averageGrade: Math.round(rawAverage * 10) / 10,
+      passRate: isNaN(passRate) ? 0 : Math.round(passRate),
+      studentsBelowPass,
+      studentsWithGrades: studentsWithAvg,
+      attendanceRate: Math.round(attendanceScore),
+      activeMissions: stats.activeMissions,
+      totalXpAwarded: stats.totalXpAwarded,
+      xpThisWeek: engagement.xpThisWeek ?? 0,
+      exercisesTotal,
+      exerciseSubmissions,
+      exercisePendingGrading,
+      exerciseCompletionRate,
+      trailProgressCount: trailProgress,
+      badgeEarnedCount: badgeCount,
+      healthScore,
+      healthLabel: healthFromScore(healthScore),
+      alertsTotal: alerts.length,
+      alertsHigh: alerts.filter((a) => a.severity === "high").length,
+      alertsMedium: alerts.filter((a) => a.severity === "medium").length,
+      topAlerts: alerts.slice(0, 8),
+      subjectPerformance,
+      classes,
+      monthlyTrend,
+      improvements,
+      engagement,
     };
-  });
-
-  classes.sort((a, b) => a.averageGrade - b.averageGrade);
-
-  const exerciseCompletionRate =
-    exerciseSubmissions > 0
-      ? Math.round(((exerciseSubmissions - exercisePendingGrading) / exerciseSubmissions) * 100)
-      : 0;
-
-  const gradeScore = Math.min(100, (stats.averageGrade / passGrade) * 100);
-  const attendanceScore = stats.attendanceRate;
-  const engagementScore = Math.round(
-    (engagement.avgMissionRate + engagement.avgExerciseRate + engagement.avgAttendanceRate) / 3
-  );
-  const alertPenalty = Math.min(30, alerts.filter((a) => a.severity === "high").length * 5);
-  const healthScore = Math.max(
-    0,
-    Math.round(gradeScore * 0.3 + attendanceScore * 0.25 + engagementScore * 0.25 + (100 - alertPenalty) * 0.2)
-  );
-
-  const improvements = buildImprovements({
-    passRate,
-    attendanceRate: stats.attendanceRate,
-    pendingSubmissions: engagement.pendingSubmissions,
-    avgMissionRate: engagement.avgMissionRate,
-    avgExerciseRate: engagement.avgExerciseRate,
-    alertsHigh: alerts.filter((a) => a.severity === "high").length,
-    weakestSubject: subjectPerformance[0],
-  });
-
-  return {
-    passGrade,
-    maxGrade: settings.academic.maxGrade,
-    totalStudents: stats.totalStudents,
-    totalClasses: stats.totalClasses,
-    totalTeachers: teachers,
-    averageGrade: Math.round(stats.averageGrade * 10) / 10,
-    passRate: Math.round(passRate),
-    studentsBelowPass,
-    studentsWithGrades: studentsWithAvg,
-    attendanceRate: Math.round(stats.attendanceRate),
-    activeMissions: stats.activeMissions,
-    totalXpAwarded: stats.totalXpAwarded,
-    xpThisWeek: engagement.xpThisWeek,
-    exercisesTotal,
-    exerciseSubmissions,
-    exercisePendingGrading,
-    exerciseCompletionRate,
-    trailProgressCount: trailProgress,
-    badgeEarnedCount: badgeCount,
-    healthScore,
-    healthLabel: healthFromScore(healthScore),
-    alertsTotal: alerts.length,
-    alertsHigh: alerts.filter((a) => a.severity === "high").length,
-    alertsMedium: alerts.filter((a) => a.severity === "medium").length,
-    topAlerts: alerts.slice(0, 8),
-    subjectPerformance,
-    classes,
-    monthlyTrend,
-    improvements,
-    engagement,
-  };
+  } catch (err) {
+    console.error("[getInstitutionalOverview] Error:", err);
+    return emptyOverview();
+  }
 }
 
 function emptyOverview(): InstitutionalOverview {
