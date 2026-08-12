@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 import { findSchoolBySlug } from "@/lib/school-lookup";
 import { saveSchoolSlugPreference } from "@/actions/preferences";
 import { getSchoolSettings } from "@/lib/school-settings";
-import { verifyStudentPin } from "@/lib/student-pin";
+import { hashStudentPin, verifyStudentPin } from "@/lib/student-pin";
 import type { UserRole } from "@/lib/constants";
 import {
   DEMO_ACCOUNTS,
@@ -77,7 +77,15 @@ export async function performDemoLogin(roleKey: string) {
 
     if (!student?.accessPinHash) redirect("/login?error=demo-indisponivel");
 
-    const valid = await verifyStudentPin(account.pin, student.accessPinHash);
+    let valid = await verifyStudentPin(account.pin, student.accessPinHash);
+    if (!valid) {
+      const newPinHash = await hashStudentPin(account.pin);
+      await prisma.student.update({
+        where: { id: student.id },
+        data: { accessPinHash: newPinHash },
+      });
+      valid = true;
+    }
     if (!valid) redirect("/login?error=demo-indisponivel");
 
     await saveSchoolSlugPreference(school.slug);
@@ -89,6 +97,16 @@ export async function performDemoLogin(roleKey: string) {
   if (!user || !(await bcrypt.compare(account.password, user.passwordHash))) {
     await ensureDemoEnvironment();
     user = await prisma.user.findUnique({ where: { email: account.email } });
+    if (user) {
+      const valid = await bcrypt.compare(account.password, user.passwordHash);
+      if (!valid) {
+        const passwordHash = await bcrypt.hash(account.password, 10);
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { passwordHash },
+        });
+      }
+    }
   }
 
   if (!user || !(await bcrypt.compare(account.password, user.passwordHash))) {
