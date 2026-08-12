@@ -108,204 +108,209 @@ export async function getLiveMetricsSnapshot(user: SessionUser): Promise<LiveMet
 
   if (!schoolId) return empty;
 
-  const today = startOfToday();
-  const week = weekAgo();
-  const isTeacher = user.role === "teacher";
-  const teacherStudentFilter = isTeacher ? studentInTeacherClassWhere(user.id) : undefined;
+  try {
+    const today = startOfToday();
+    const week = weekAgo();
+    const isTeacher = user.role === "teacher";
+    const teacherStudentFilter = isTeacher ? studentInTeacherClassWhere(user.id) : undefined;
 
-  const exerciseWhere = isTeacher
-    ? { schoolId, teacherId: user.id }
-    : { schoolId };
+    const exerciseWhere = isTeacher
+      ? { schoolId, teacherId: user.id }
+      : { schoolId };
 
-  const pendingExerciseWhere = isTeacher
-    ? { status: "submitted" as const, exercise: { teacherId: user.id, schoolId } }
-    : { status: "submitted" as const, exercise: { schoolId } };
+    const pendingExerciseWhere = isTeacher
+      ? { status: "submitted" as const, exercise: { teacherId: user.id, schoolId } }
+      : { status: "submitted" as const, exercise: { schoolId } };
 
-  const [
-    xpWeekAgg,
-    xpTotalAgg,
-    pendingGrading,
-    pendingMissions,
-    activeMissions,
-    submissionsToday,
-    studentCount,
-    gradeAgg,
-    attendanceAgg,
-    recentXp,
-    recentSubmissions,
-    recentMissions,
-    recentGrades,
-    studentRecord,
-  ] = await Promise.all([
-    prisma.xpTransaction.aggregate({
-      where: {
-        createdAt: { gte: week },
-        student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) },
-      },
-      _sum: { amount: true },
-    }),
-    prisma.student.aggregate({
-      where: { user: { schoolId }, ...(teacherStudentFilter ?? {}) },
-      _sum: { xpTotal: true },
-    }),
-    prisma.exerciseSubmission.count({ where: pendingExerciseWhere }),
-    prisma.studentMission.count({
-      where: {
-        completedAt: null,
-        student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) },
-        mission: { schoolId, isActive: true },
-      },
-    }),
-    prisma.mission.count({ where: { schoolId, isActive: true } }),
-    prisma.exerciseSubmission.count({
-      where: {
-        submittedAt: { gte: today },
-        exercise: exerciseWhere,
-      },
-    }),
-    prisma.student.count({
-      where: { user: { schoolId }, ...(teacherStudentFilter ?? {}) },
-    }),
-    prisma.grade.aggregate({
-      where: { student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) } },
-      _avg: { value: true },
-    }),
-    prisma.attendance.findMany({
-      where: { student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) } },
-      select: { status: true },
-      take: 500,
-      orderBy: { date: "desc" },
-    }),
-    prisma.xpTransaction.findMany({
-      where: { student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) } },
-      include: {
-        student: { include: { user: { select: { fullName: true } } } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-    }),
-    prisma.exerciseSubmission.findMany({
-      where: { exercise: exerciseWhere },
-      include: {
-        student: { include: { user: { select: { fullName: true } } } },
-        exercise: { select: { title: true } },
-      },
-      orderBy: { submittedAt: "desc" },
-      take: 6,
-    }),
-    prisma.studentMission.findMany({
-      where: {
-        completedAt: { not: null },
-        student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) },
-      },
-      include: {
-        student: { include: { user: { select: { fullName: true } } } },
-        mission: { select: { title: true, xpReward: true } },
-      },
-      orderBy: { completedAt: "desc" },
-      take: 6,
-    }),
-    prisma.grade.findMany({
-      where: { student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) } },
-      include: {
-        student: { include: { user: { select: { fullName: true } } } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 4,
-    }),
-    user.role === "student"
-      ? prisma.student.findFirst({
-          where: { userId: user.id },
-          select: { id: true, classId: true, xpTotal: true, level: true, coins: true },
-        })
-      : Promise.resolve(null),
-  ]);
-
-  const present = attendanceAgg.filter((a) => a.status === "present" || a.status === "late").length;
-  const attendanceRate =
-    attendanceAgg.length > 0 ? Math.round((present / attendanceAgg.length) * 100) : 0;
-
-  const stats: LiveStats = {
-    xpThisWeek: xpWeekAgg._sum.amount ?? 0,
-    totalXpAwarded: xpTotalAgg._sum.xpTotal ?? 0,
-    pendingGrading,
-    pendingMissionConfirmations: pendingMissions,
-    activeMissions,
-    exerciseSubmissionsToday: submissionsToday,
-    totalStudents: studentCount,
-    averageGrade: Math.round((gradeAgg._avg.value ?? 0) * 10) / 10,
-    attendanceRate,
-  };
-
-  const activities: ActivityEvent[] = [
-    ...recentXp.map((tx) => ({
-      id: `xp-${tx.id}`,
-      type: "xp" as const,
-      studentName: tx.student.user.fullName,
-      studentId: tx.studentId,
-      label: tx.reason,
-      amount: tx.amount,
-      createdAt: tx.createdAt.toISOString(),
-    })),
-    ...recentSubmissions.map((sub) => ({
-      id: `ex-${sub.id}`,
-      type: "exercise" as const,
-      studentName: sub.student.user.fullName,
-      studentId: sub.studentId,
-      label: sub.exercise.title,
-      detail: sub.status === "submitted" ? "Entrega aguardando correção" : "Exercício entregue",
-      createdAt: sub.submittedAt.toISOString(),
-    })),
-    ...recentMissions.map((sm) => ({
-      id: `ms-${sm.id}`,
-      type: "mission" as const,
-      studentName: sm.student.user.fullName,
-      studentId: sm.studentId,
-      label: sm.mission.title,
-      amount: sm.mission.xpReward,
-      detail: "Missão concluída",
-      createdAt: (sm.completedAt ?? sm.createdAt).toISOString(),
-    })),
-    ...recentGrades.map((g) => ({
-      id: `gr-${g.id}`,
-      type: "grade" as const,
-      studentName: g.student.user.fullName,
-      studentId: g.studentId,
-      label: g.subject,
-      detail: `Nota ${g.value.toFixed(1)}`,
-      createdAt: g.createdAt.toISOString(),
-    })),
-  ]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 15);
-
-  let student: LiveStudentStats | undefined;
-  if (studentRecord) {
-    const [ranks, studentXpWeek] = await Promise.all([
-      getStudentRanks(schoolId, studentRecord.id, studentRecord.classId),
+    const [
+      xpWeekAgg,
+      xpTotalAgg,
+      pendingGrading,
+      pendingMissions,
+      activeMissions,
+      submissionsToday,
+      studentCount,
+      gradeAgg,
+      attendanceAgg,
+      recentXp,
+      recentSubmissions,
+      recentMissions,
+      recentGrades,
+      studentRecord,
+    ] = await Promise.all([
       prisma.xpTransaction.aggregate({
-        where: { studentId: studentRecord.id, createdAt: { gte: week } },
+        where: {
+          createdAt: { gte: week },
+          student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) },
+        },
         _sum: { amount: true },
       }),
+      prisma.student.aggregate({
+        where: { user: { schoolId }, ...(teacherStudentFilter ?? {}) },
+        _sum: { xpTotal: true },
+      }),
+      prisma.exerciseSubmission.count({ where: pendingExerciseWhere }),
+      prisma.studentMission.count({
+        where: {
+          completedAt: null,
+          student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) },
+          mission: { schoolId, isActive: true },
+        },
+      }),
+      prisma.mission.count({ where: { schoolId, isActive: true } }),
+      prisma.exerciseSubmission.count({
+        where: {
+          submittedAt: { gte: today },
+          exercise: exerciseWhere,
+        },
+      }),
+      prisma.student.count({
+        where: { user: { schoolId }, ...(teacherStudentFilter ?? {}) },
+      }),
+      prisma.grade.aggregate({
+        where: { student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) } },
+        _avg: { value: true },
+      }),
+      prisma.attendance.findMany({
+        where: { student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) } },
+        select: { status: true },
+        take: 500,
+        orderBy: { date: "desc" },
+      }),
+      prisma.xpTransaction.findMany({
+        where: { student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) } },
+        include: {
+          student: { include: { user: { select: { fullName: true } } } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+      }),
+      prisma.exerciseSubmission.findMany({
+        where: { exercise: exerciseWhere },
+        include: {
+          student: { include: { user: { select: { fullName: true } } } },
+          exercise: { select: { title: true } },
+        },
+        orderBy: { submittedAt: "desc" },
+        take: 6,
+      }),
+      prisma.studentMission.findMany({
+        where: {
+          completedAt: { not: null },
+          student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) },
+        },
+        include: {
+          student: { include: { user: { select: { fullName: true } } } },
+          mission: { select: { title: true, xpReward: true } },
+        },
+        orderBy: { completedAt: "desc" },
+        take: 6,
+      }),
+      prisma.grade.findMany({
+        where: { student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) } },
+        include: {
+          student: { include: { user: { select: { fullName: true } } } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 4,
+      }),
+      user.role === "student"
+        ? prisma.student.findFirst({
+            where: { userId: user.id },
+            select: { id: true, classId: true, xpTotal: true, level: true, coins: true },
+          })
+        : Promise.resolve(null),
     ]);
-    student = {
-      xpTotal: studentRecord.xpTotal,
-      level: studentRecord.level,
-      coins: studentRecord.coins,
-      xpThisWeek: studentXpWeek._sum.amount ?? 0,
-      classRank: ranks.classRank,
-      schoolRank: ranks.schoolRank,
-    };
-  }
 
-  return {
-    version: buildVersion(
+    const present = attendanceAgg.filter((a) => a.status === "present" || a.status === "late").length;
+    const attendanceRate =
+      attendanceAgg.length > 0 ? Math.round((present / attendanceAgg.length) * 100) : 0;
+
+    const stats: LiveStats = {
+      xpThisWeek: xpWeekAgg._sum.amount ?? 0,
+      totalXpAwarded: xpTotalAgg._sum.xpTotal ?? 0,
+      pendingGrading,
+      pendingMissionConfirmations: pendingMissions,
+      activeMissions,
+      exerciseSubmissionsToday: submissionsToday,
+      totalStudents: studentCount,
+      averageGrade: Math.round((gradeAgg._avg.value ?? 0) * 10) / 10,
+      attendanceRate,
+    };
+
+    const activities: ActivityEvent[] = [
+      ...recentXp.map((tx) => ({
+        id: `xp-${tx.id}`,
+        type: "xp" as const,
+        studentName: tx.student?.user?.fullName ?? "Aluno",
+        studentId: tx.studentId,
+        label: tx.reason,
+        amount: tx.amount,
+        createdAt: tx.createdAt.toISOString(),
+      })),
+      ...recentSubmissions.map((sub) => ({
+        id: `ex-${sub.id}`,
+        type: "exercise" as const,
+        studentName: sub.student?.user?.fullName ?? "Aluno",
+        studentId: sub.studentId,
+        label: sub.exercise?.title ?? "Exercício",
+        detail: sub.status === "submitted" ? "Entrega aguardando correção" : "Exercício entregue",
+        createdAt: sub.submittedAt.toISOString(),
+      })),
+      ...recentMissions.map((sm) => ({
+        id: `ms-${sm.id}`,
+        type: "mission" as const,
+        studentName: sm.student?.user?.fullName ?? "Aluno",
+        studentId: sm.studentId,
+        label: sm.mission?.title ?? "Missão",
+        amount: sm.mission?.xpReward ?? 0,
+        detail: "Missão concluída",
+        createdAt: (sm.completedAt ?? sm.createdAt).toISOString(),
+      })),
+      ...recentGrades.map((g) => ({
+        id: `gr-${g.id}`,
+        type: "grade" as const,
+        studentName: g.student?.user?.fullName ?? "Aluno",
+        studentId: g.studentId,
+        label: g.subject,
+        detail: `Nota ${(g.value ?? 0).toFixed(1)}`,
+        createdAt: g.createdAt.toISOString(),
+      })),
+    ]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 15);
+
+    let student: LiveStudentStats | undefined;
+    if (studentRecord) {
+      const [ranks, studentXpWeek] = await Promise.all([
+        getStudentRanks(schoolId, studentRecord.id, studentRecord.classId),
+        prisma.xpTransaction.aggregate({
+          where: { studentId: studentRecord.id, createdAt: { gte: week } },
+          _sum: { amount: true },
+        }),
+      ]);
+      student = {
+        xpTotal: studentRecord.xpTotal,
+        level: studentRecord.level,
+        coins: studentRecord.coins,
+        xpThisWeek: studentXpWeek._sum.amount ?? 0,
+        classRank: ranks.classRank,
+        schoolRank: ranks.schoolRank,
+      };
+    }
+
+    return {
+      version: buildVersion(
+        stats,
+        activities.map((a) => a.id)
+      ),
+      updatedAt: new Date().toISOString(),
       stats,
-      activities.map((a) => a.id)
-    ),
-    updatedAt: new Date().toISOString(),
-    stats,
-    activities,
-    student,
-  };
+      activities,
+      student,
+    };
+  } catch (err) {
+    console.error("[getLiveMetricsSnapshot] Error:", err);
+    return empty;
+  }
 }

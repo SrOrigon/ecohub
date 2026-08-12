@@ -35,10 +35,14 @@ export function useLiveMetricsOptional() {
   return useContext(LiveMetricsContext);
 }
 
-async function fetchSnapshot(): Promise<LiveMetricsSnapshot> {
-  const res = await fetch("/api/metrics/live", { cache: "no-store" });
-  if (!res.ok) throw new Error("metrics_fetch_failed");
-  return res.json();
+async function fetchSnapshot(): Promise<LiveMetricsSnapshot | null> {
+  try {
+    const res = await fetch("/api/metrics/live", { cache: "no-store" });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
 export function LiveMetricsProvider({ children }: { children: ReactNode }) {
@@ -54,11 +58,11 @@ export function LiveMetricsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refresh = useCallback(async () => {
-    try {
-      const data = await fetchSnapshot();
+    const data = await fetchSnapshot();
+    if (data) {
       applySnapshot(data);
       setStatus((s) => (s === "offline" ? "polling" : s));
-    } catch {
+    } else {
       setStatus("offline");
     }
   }, [applySnapshot]);

@@ -395,7 +395,7 @@ export async function computeAttentionAlerts(
     }
 
     for (const sm of student.studentMissions) {
-      if (!sm.mission.isActive || !sm.mission.dueDate) continue;
+      if (!sm?.mission || !sm.mission.isActive || !sm.mission.dueDate) continue;
       const dueDate = sm.mission.dueDate;
       const severity = deadlineSeverity(dueDate, "critical");
       if (severity === "low") continue;
@@ -418,13 +418,14 @@ export async function computeAttentionAlerts(
     }
 
     for (const occ of student.occurrences) {
+      if (!occ || !occ.date) continue;
       alerts.push({
         id: `occ-${occ.id}`,
         severity: occ.kind === "disciplinary" ? "high" : "medium",
         kind: "occurrence",
         title: occ.kind === "disciplinary" ? "Ocorrência disciplinar" : "Ocorrência de alerta",
         message: `${studentName}: registro no diário de classe`,
-        detail: occ.description.slice(0, 120),
+        detail: occ.description ? occ.description.slice(0, 120) : "Sem descrição",
         studentId: student.id,
         studentName,
         className,
@@ -446,25 +447,30 @@ export async function getAttentionAlertsSnapshot(user: SessionUser): Promise<Att
     summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, byStudent: {} },
   };
 
-  if (!user.schoolId) return empty;
+  if (!user?.schoolId) return empty;
 
-  const studentIds = await resolveStudentIds(user);
-  if (studentIds && studentIds.length === 0) return empty;
+  try {
+    const studentIds = await resolveStudentIds(user);
+    if (studentIds && studentIds.length === 0) return empty;
 
-  const audience: Audience =
-    user.role === "parent" ? "parent" : user.role === "student" ? "student" : "staff";
+    const audience: Audience =
+      user.role === "parent" ? "parent" : user.role === "student" ? "student" : "staff";
 
-  const alerts = await computeAttentionAlerts(user.schoolId, {
-    studentIds: studentIds ?? undefined,
-    audience,
-  });
+    const alerts = await computeAttentionAlerts(user.schoolId, {
+      studentIds: studentIds ?? undefined,
+      audience,
+    });
 
-  return {
-    version: buildVersion(alerts),
-    updatedAt: new Date().toISOString(),
-    alerts,
-    summary: buildSummary(alerts),
-  };
+    return {
+      version: buildVersion(alerts),
+      updatedAt: new Date().toISOString(),
+      alerts,
+      summary: buildSummary(alerts),
+    };
+  } catch (err) {
+    console.error("[getAttentionAlertsSnapshot] Error:", err);
+    return empty;
+  }
 }
 
 export async function getAttentionAlertsForParent(parentId: string, schoolId: string) {
