@@ -50,13 +50,13 @@ export default async function AlunoPortalPage() {
   }
 
   const [schoolRanking, classRanking, missions, exercises, settings, agenda, homeTasks] = await Promise.all([
-    getRanking(user.schoolId),
-    getRanking(user.schoolId, student.classId),
-    getMissionsForStudent(user.schoolId, student.classId),
-    getExercisesForUser(user),
-    getSchoolSettings(user.schoolId),
-    getTodayAgendaForStudent(student.id, student.classId, user.schoolId, user),
-    getHomeTasksForStudent(student.id),
+    getRanking(user.schoolId).catch(() => []),
+    getRanking(user.schoolId, student.classId).catch(() => []),
+    getMissionsForStudent(user.schoolId, student.classId).catch(() => []),
+    getExercisesForUser(user).catch(() => []),
+    getSchoolSettings(user.schoolId).catch(() => ({ xp: { xpPerLevel: 1000 } } as any)),
+    getTodayAgendaForStudent(student.id, student.classId, user.schoolId, user).catch(() => ({ items: [], dayStatus: null })),
+    getHomeTasksForStudent(student.id).catch(() => []),
   ]);
 
   const enrichedExercises = exercises.map((ex) => {

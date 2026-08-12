@@ -34,8 +34,9 @@ export async function getDashboardStats(schoolId: string | null) {
     }),
   ]);
 
+  const validGrades = grades.map((g) => g.value).filter((v): v is number => typeof v === "number" && !isNaN(v));
   const averageGrade =
-    grades.length > 0 ? grades.reduce((s, g) => s + g.value, 0) / grades.length : 0;
+    validGrades.length > 0 ? validGrades.reduce((s, v) => s + v, 0) / validGrades.length : 0;
 
   const presentCount = attendance.filter(
     (a) => a.status === "present" || a.status === "late"
@@ -45,9 +46,9 @@ export async function getDashboardStats(schoolId: string | null) {
   return {
     totalStudents: students,
     totalClasses: classes,
-    averageGrade,
-    attendanceRate,
-    activeMissions,
+    averageGrade: isNaN(averageGrade) ? 0 : averageGrade,
+    attendanceRate: isNaN(attendanceRate) ? 0 : attendanceRate,
+    activeMissions: activeMissions ?? 0,
     totalXpAwarded: xpSum._sum.xpTotal ?? 0,
   };
 }
@@ -141,12 +142,16 @@ export async function getMonthlyPerformance(schoolId: string | null) {
     }
   });
 
-  return Object.entries(result).map(([month, data]) => ({
-    month,
-    nota: data.notaCount ? Math.round((data.nota / data.notaCount) * 10) / 10 : 0,
-    xp: data.xp,
-    frequencia: data.freqCount ? Math.round((data.frequencia / data.freqCount) * 100) : 0,
-  }));
+  return Object.entries(result).map(([month, data]) => {
+    const nota = data.notaCount ? Math.round((data.nota / data.notaCount) * 10) / 10 : 0;
+    const freq = data.freqCount ? Math.round((data.frequencia / data.freqCount) * 100) : 0;
+    return {
+      month,
+      nota: isNaN(nota) ? 0 : nota,
+      xp: isNaN(data.xp) ? 0 : data.xp,
+      frequencia: isNaN(freq) ? 0 : freq,
+    };
+  });
 }
 
 export async function getClassComparison(schoolId: string | null) {
@@ -164,17 +169,25 @@ export async function getClassComparison(schoolId: string | null) {
   });
 
   return classes.map((c) => {
-    const allGrades = c.students.flatMap((s) => s.grades);
+    const validGrades = c.students
+      .flatMap((s) => s.grades)
+      .map((g) => g?.value)
+      .filter((v): v is number => typeof v === "number" && !isNaN(v));
     const media =
-      allGrades.length > 0
-        ? allGrades.reduce((sum, g) => sum + g.value, 0) / allGrades.length
+      validGrades.length > 0
+        ? validGrades.reduce((sum, v) => sum + v, 0) / validGrades.length
         : 0;
     const avgXp =
       c.students.length > 0
-        ? c.students.reduce((s, st) => s + st.xpTotal, 0) / c.students.length
+        ? c.students.reduce((s, st) => s + (st.xpTotal ?? 0), 0) / c.students.length
         : 0;
-    const engajamento = Math.min(100, Math.round((avgXp / 3000) * 100));
-    return { turma: c.name, media: Math.round(media * 10), engajamento };
+    const engajamento = Math.min(100, Math.max(0, Math.round((avgXp / 3000) * 100)));
+    const roundedMedia = Math.round(media * 10);
+    return {
+      turma: c.name ?? "Turma",
+      media: isNaN(roundedMedia) ? 0 : roundedMedia,
+      engajamento: isNaN(engajamento) ? 0 : engajamento,
+    };
   });
 }
 

@@ -37,11 +37,18 @@ export default async function DashboardPage() {
 
   const schoolId = user.schoolId;
   const [stats, ranking, missions, monthlyData, classData] = await Promise.all([
-    getDashboardStats(schoolId),
-    getRanking(schoolId),
-    getMissions(schoolId),
-    getMonthlyPerformance(schoolId),
-    getClassComparison(schoolId),
+    getDashboardStats(schoolId).catch(() => ({
+      totalStudents: 0,
+      totalClasses: 0,
+      averageGrade: 0,
+      attendanceRate: 0,
+      activeMissions: 0,
+      totalXpAwarded: 0,
+    })),
+    getRanking(schoolId).catch(() => []),
+    getMissions(schoolId).catch(() => []),
+    getMonthlyPerformance(schoolId).catch(() => []),
+    getClassComparison(schoolId).catch(() => []),
   ]);
 
   const statCards = [

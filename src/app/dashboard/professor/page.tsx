@@ -40,13 +40,13 @@ export default async function TeacherDashboardPage() {
 
   const totalStudents = myClasses.reduce((s, c) => s + c._count.students, 0);
   const [ranking, exercises, settings, agenda, teacherClasses, dayOverview, pendingMissions] = await Promise.all([
-    getRanking(user.schoolId),
-    getExercisesForUser(user),
-    getSchoolSettings(user.schoolId),
-    getTodayAgendaForTeacher(user, user.schoolId),
-    getTeacherClasses(user),
-    user.schoolId ? getTeacherDayOverview(user.schoolId, user.id) : Promise.resolve([]),
-    user.schoolId ? getPendingMissionConfirmations(user.schoolId, user.id) : Promise.resolve([]),
+    getRanking(user.schoolId).catch(() => []),
+    getExercisesForUser(user).catch(() => []),
+    getSchoolSettings(user.schoolId).catch(() => ({ academic: { subjects: [] }, xp: {}, exercises: {}, missions: {} } as any)),
+    getTodayAgendaForTeacher(user, user.schoolId).catch(() => ({ items: [], dayStatus: null, classCount: 0 })),
+    getTeacherClasses(user).catch(() => []),
+    user.schoolId ? getTeacherDayOverview(user.schoolId, user.id).catch(() => []) : Promise.resolve([]),
+    user.schoolId ? getPendingMissionConfirmations(user.schoolId, user.id).catch(() => []) : Promise.resolve([]),
   ]);
 
   const pendingItems = pendingMissions.map((pm) => ({
