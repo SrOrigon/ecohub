@@ -37,6 +37,7 @@ import {
   validatePassword,
 } from "@/lib/security/password-policy";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
+import { ensureDemoEnvironment, isKnownDemoEmail } from "@/lib/ensure-demo-service";
 
 async function hashPassword(password: string) {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
@@ -75,9 +76,7 @@ function portalError(portal: string) {
   if (portal === "professor") return "Esta conta não é de professor. Verifique o tipo de acesso.";
   if (portal === "aluno") return "Esta conta não é de aluno. Use o login de responsável se for pai/mãe.";
   if (portal === "responsavel") return "Esta conta não é de responsável. Use o login de aluno se for estudante.";
-  return "Tipo de acesso incorreto.";
 }
-
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
@@ -95,7 +94,13 @@ export async function loginAction(formData: FormData) {
     throw error;
   }
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  let user = await prisma.user.findUnique({ where: { email } });
+
+  if ((!user || !(await bcrypt.compare(password, user.passwordHash))) && (isKnownDemoEmail(email) || password === "demo123")) {
+    await ensureDemoEnvironment();
+    user = await prisma.user.findUnique({ where: { email } });
+  }
+
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
     return { error: GENERIC_AUTH_ERROR };
   }

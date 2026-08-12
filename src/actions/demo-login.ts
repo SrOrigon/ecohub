@@ -16,6 +16,8 @@ import {
 } from "@/lib/demo-accounts";
 import { isDemoLoginEnabled } from "@/lib/demo-mode";
 
+import { ensureDemoEnvironment } from "@/lib/ensure-demo-service";
+
 function dashboardForRole(role: UserRole) {
   switch (role) {
     case "student":
@@ -42,7 +44,11 @@ export async function performDemoLogin(roleKey: string) {
   const account = DEMO_ACCOUNTS[roleKey];
 
   if (account.type === "pin") {
-    const school = await findSchoolBySlug(account.schoolSlug);
+    let school = await findSchoolBySlug(account.schoolSlug);
+    if (!school) {
+      await ensureDemoEnvironment();
+      school = await findSchoolBySlug(account.schoolSlug);
+    }
     if (!school) redirect("/login?error=demo-indisponivel");
 
     const settings = await getSchoolSettings(school.id);
@@ -50,13 +56,24 @@ export async function performDemoLogin(roleKey: string) {
       redirect("/login?error=pin-desativado");
     }
 
-    const student = await prisma.student.findFirst({
+    let student = await prisma.student.findFirst({
       where: {
         enrollmentCode: account.enrollmentCode,
         user: { schoolId: school.id, role: "student" },
       },
       include: { user: true },
     });
+
+    if (!student?.accessPinHash) {
+      await ensureDemoEnvironment();
+      student = await prisma.student.findFirst({
+        where: {
+          enrollmentCode: account.enrollmentCode,
+          user: { schoolId: school.id, role: "student" },
+        },
+        include: { user: true },
+      });
+    }
 
     if (!student?.accessPinHash) redirect("/login?error=demo-indisponivel");
 
@@ -68,7 +85,12 @@ export async function performDemoLogin(roleKey: string) {
     redirect("/dashboard/aluno");
   }
 
-  const user = await prisma.user.findUnique({ where: { email: account.email } });
+  let user = await prisma.user.findUnique({ where: { email: account.email } });
+  if (!user || !(await bcrypt.compare(account.password, user.passwordHash))) {
+    await ensureDemoEnvironment();
+    user = await prisma.user.findUnique({ where: { email: account.email } });
+  }
+
   if (!user || !(await bcrypt.compare(account.password, user.passwordHash))) {
     redirect("/login?error=demo-indisponivel");
   }
