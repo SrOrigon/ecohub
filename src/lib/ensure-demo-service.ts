@@ -32,6 +32,33 @@ export function isKnownDemoEmail(email: string): boolean {
   return KNOWN_DEMO_EMAILS.has(email.trim().toLowerCase());
 }
 
+async function ensureUser(
+  schoolId: string,
+  passwordHash: string,
+  email: string,
+  fullName: string,
+  role: string
+) {
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    const validPass = await bcrypt.compare(DEMO_PASSWORD, existing.passwordHash);
+    if (!validPass || existing.role !== role || existing.schoolId !== schoolId) {
+      return prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          passwordHash,
+          role,
+          schoolId,
+        },
+      });
+    }
+    return existing;
+  }
+  return prisma.user.create({
+    data: { email, passwordHash, fullName, role, schoolId },
+  });
+}
+
 export async function ensureDemoEnvironment() {
   try {
     const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
@@ -63,48 +90,19 @@ export async function ensureDemoEnvironment() {
     await ensureDefaultRewards(school.id);
 
     // Ensure Director
-    let director = await prisma.user.findUnique({ where: { email: "admin@eduhub.local" } });
-    if (!director) {
-      director = await prisma.user.create({
-        data: {
-          email: "admin@eduhub.local",
-          passwordHash,
-          fullName: "Ana Diretora",
-          role: "director",
-          schoolId: school.id,
-        },
-      });
-    }
+    await ensureUser(school.id, passwordHash, "admin@eduhub.local", "Ana Diretora", "director");
 
     // Ensure Secretary
-    const secretary = await prisma.user.findUnique({ where: { email: "secretaria@eduhub.local" } });
-    if (!secretary) {
-      await prisma.user.create({
-        data: {
-          email: "secretaria@eduhub.local",
-          passwordHash,
-          fullName: "Paula Secretaria",
-          role: "secretary",
-          schoolId: school.id,
-        },
-      });
-    }
+    await ensureUser(school.id, passwordHash, "secretaria@eduhub.local", "Paula Secretaria", "secretary");
 
     // Ensure Teacher
-    let teacher = await prisma.user.findUnique({ where: { email: "professor@eduhub.local" } });
-    if (!teacher) {
-      teacher = await prisma.user.create({
-        data: {
-          email: "professor@eduhub.local",
-          passwordHash,
-          fullName: "Carlos Professor",
-          role: "teacher",
-          schoolId: school.id,
-          city: "São Paulo",
-          state: "SP",
-        },
-      });
-    }
+    const teacher = await ensureUser(
+      school.id,
+      passwordHash,
+      "professor@eduhub.local",
+      "Carlos Professor",
+      "teacher"
+    );
 
     // Ensure Class 8A
     let class8A = await prisma.classGroup.findFirst({
@@ -123,18 +121,13 @@ export async function ensureDemoEnvironment() {
     }
 
     // Ensure Lucas Student
-    let lucasUser = await prisma.user.findUnique({ where: { email: "lucas@aluno.local" } });
-    if (!lucasUser) {
-      lucasUser = await prisma.user.create({
-        data: {
-          email: "lucas@aluno.local",
-          passwordHash,
-          fullName: "Lucas Henrique",
-          role: "student",
-          schoolId: school.id,
-        },
-      });
-    }
+    const lucasUser = await ensureUser(
+      school.id,
+      passwordHash,
+      "lucas@aluno.local",
+      "Lucas Henrique",
+      "student"
+    );
 
     let lucasStudent = await prisma.student.findUnique({ where: { userId: lucasUser.id } });
     if (!lucasStudent) {
@@ -159,18 +152,13 @@ export async function ensureDemoEnvironment() {
     }
 
     // Ensure Parent
-    let parent = await prisma.user.findUnique({ where: { email: "mariana@responsavel.local" } });
-    if (!parent) {
-      parent = await prisma.user.create({
-        data: {
-          email: "mariana@responsavel.local",
-          passwordHash,
-          fullName: "Mariana Ribeiro",
-          role: "parent",
-          schoolId: school.id,
-        },
-      });
-    }
+    const parent = await ensureUser(
+      school.id,
+      passwordHash,
+      "mariana@responsavel.local",
+      "Mariana Ribeiro",
+      "parent"
+    );
 
     if (lucasStudent) {
       const link = await prisma.parentStudent.findFirst({
