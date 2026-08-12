@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CosmeticBackgroundCard } from "@/components/cosmetics/cosmetic-background";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import { UpdateProfileForm } from "@/components/profile/update-profile-form";
 import { ChangePasswordForm } from "@/components/profile/change-password-form";
@@ -46,6 +47,8 @@ type ProfilePayload = {
     level: number;
     xpTotal: number;
     coins: number;
+    equippedFrame?: string | null;
+    equippedBackground?: string | null;
     classGroup: { name: string } | null;
   } | null;
   parentLinks: {
@@ -99,18 +102,23 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
         </div>
       </nav>
 
-      <Card
+      <CosmeticBackgroundCard
+        backgroundKey={profile.student?.equippedBackground}
         className={cn(
-          "overflow-hidden border-2 border-indigo-100 bg-gradient-to-br from-indigo-50/80 to-white",
           tab !== "overview" && "hidden md:block"
         )}
       >
-        <CardContent className="flex flex-col items-center gap-5 p-5 text-center sm:flex-row sm:items-center sm:p-8 sm:text-left">
-          <ProfileAvatar name={profile.fullName} avatarUrl={profile.avatarUrl} size="xl" />
+        <div className="flex flex-col items-center gap-5 p-5 text-center sm:flex-row sm:items-center sm:p-8 sm:text-left">
+          <ProfileAvatar
+            name={profile.fullName}
+            avatarUrl={profile.avatarUrl}
+            frameKey={profile.student?.equippedFrame}
+            size="xl"
+          />
           <div className="min-w-0 w-full flex-1 space-y-3">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{profile.fullName}</h2>
-              <p className="mt-1 flex items-center justify-center gap-2 break-all text-sm text-slate-600 sm:justify-start">
+              <h2 className="text-xl font-bold sm:text-2xl">{profile.fullName}</h2>
+              <p className="mt-1 flex items-center justify-center gap-2 break-all text-sm opacity-90 sm:justify-start">
                 <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
                 {profile.email}
               </p>
@@ -129,8 +137,8 @@ export function ProfilePageContent({ profile }: { profile: ProfilePayload }) {
               </Badge>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CosmeticBackgroundCard>
 
       <div
         className={cn(

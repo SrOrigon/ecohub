@@ -22,9 +22,7 @@ function run(cmd, env = {}) {
   });
 }
 
-function runCapture(cmd) {
-  return execSync(cmd, { encoding: "utf8", shell: true }).trim();
-}
+
 
 const report = {
   startedAt: new Date().toISOString(),

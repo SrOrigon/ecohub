@@ -3,7 +3,6 @@
 import { useActionState } from "react";
 import { updateClassCoTeachersAction } from "@/actions/crud";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/form-fields";
 import { Users } from "lucide-react";
 
 type TeacherOption = { id: string; fullName: string };

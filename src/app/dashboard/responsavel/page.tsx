@@ -98,7 +98,7 @@ export default async function ResponsavelPortalPage() {
 
       {aiEnabled && childSummaries.length > 0 && (
         <ParentAiTipsPanel
-          children={childSummaries}
+          childSummaries={childSummaries}
           passGrade={passGrade}
           assistantName={assistantName}
         />

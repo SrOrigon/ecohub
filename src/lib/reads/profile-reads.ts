@@ -25,6 +25,8 @@ export async function fetchProfileData(actor: SessionUser, userId: string) {
           level: true,
           xpTotal: true,
           coins: true,
+          equippedFrame: true,
+          equippedBackground: true,
           classGroup: { select: { name: true } },
         },
       },

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { isTheme, THEME_STORAGE_KEY, type Theme } from "@/lib/theme";
 
 type ThemeContextValue = {
@@ -19,17 +19,24 @@ function applyTheme(theme: Theme) {
   localStorage.setItem(THEME_STORAGE_KEY, theme);
 }
 
+const subscribe = () => () => {};
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false
+  );
+
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "light";
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    return isTheme(stored) ? stored : "light";
+  });
 
   useEffect(() => {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    const initial = isTheme(stored) ? stored : "light";
-    setThemeState(initial);
-    applyTheme(initial);
-    setMounted(true);
-  }, []);
+    applyTheme(theme);
+  }, [theme]);
 
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);

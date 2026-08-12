@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { History, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getInstitutionalHistory } from "@/lib/institutional-history";

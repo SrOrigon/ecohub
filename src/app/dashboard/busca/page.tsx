@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { fetchChildForParent, fetchParentChildren } from "@/lib/reads/parent-reads";
+import { fetchParentChildren } from "@/lib/reads/parent-reads";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

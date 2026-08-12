@@ -4,7 +4,7 @@
  * Uso: node scripts/backup-db.mjs [caminho-db] [pasta-destino]
  */
 import { copyFileSync, mkdirSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 const dbPath = process.argv[2] ?? process.env.DATABASE_URL?.replace(/^file:/, "") ?? "./prisma/dev.db";
 const destDir = process.argv[3] ?? "./backups";

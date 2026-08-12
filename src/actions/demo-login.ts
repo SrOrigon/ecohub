@@ -13,7 +13,6 @@ import {
   DEMO_ACCOUNTS,
   isDemoRoleKey,
   DEFAULT_DEMO_ROLE,
-  type DemoRoleKey,
 } from "@/lib/demo-accounts";
 import { isDemoLoginEnabled } from "@/lib/demo-mode";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { createExerciseAction } from "@/actions/exercises";
 import { generateExerciseQuestionsAction } from "@/actions/ai";
 import { Button } from "@/components/ui/button";
@@ -62,19 +62,11 @@ export function CreateExerciseForm({
     maxPoints: mid.points,
   });
   const [aiTopic, setAiTopic] = useState("");
-  const [aiSubject, setAiSubject] = useState(subjects[0] ?? "");
+  const [aiSubject, setAiSubject] = useState("");
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiPending, startAiTransition] = useTransition();
 
-  useEffect(() => {
-    if (subjects.length === 0) {
-      setAiSubject("");
-      return;
-    }
-    setAiSubject((current) =>
-      subjects.includes(current) ? current : subjects[0]
-    );
-  }, [subjects]);
+  const effectiveAiSubject = aiSubject && subjects.includes(aiSubject) ? aiSubject : (subjects[0] ?? "");
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
@@ -112,7 +104,7 @@ export function CreateExerciseForm({
     startAiTransition(async () => {
       const fd = new FormData();
       fd.set("topic", aiTopic);
-      fd.set("subject", aiSubject);
+      fd.set("subject", effectiveAiSubject);
       fd.set("count", "3");
       const result = await generateExerciseQuestionsAction(fd);
       if (result.error) {
@@ -266,7 +258,7 @@ export function CreateExerciseForm({
                     aria-label="Tema para gerar questões"
                   />
                   <Select
-                    value={aiSubject}
+                    value={effectiveAiSubject}
                     onChange={(e) => setAiSubject(e.target.value)}
                     aria-label="Disciplina"
                     className="w-full min-w-0 sm:min-w-[8rem] sm:w-auto"
@@ -286,7 +278,7 @@ export function CreateExerciseForm({
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={aiPending || subjects.length === 0 || !aiSubject}
+                    disabled={aiPending || subjects.length === 0 || !effectiveAiSubject}
                     onClick={generateWithAi}
                   >
                     {aiPending ? "Gerando…" : "Gerar questões"}

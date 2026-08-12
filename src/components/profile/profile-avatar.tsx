@@ -3,16 +3,19 @@
 import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { CosmeticFrame } from "@/components/cosmetics/cosmetic-frame";
 
 export function ProfileAvatar({
   name,
   avatarUrl,
+  frameKey,
   size = "lg",
   className,
   onImageError,
 }: {
   name: string;
   avatarUrl?: string | null;
+  frameKey?: string | null;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   onImageError?: () => void;
@@ -44,61 +47,70 @@ export function ProfileAvatar({
 
   const showImage = Boolean(avatarUrl) && avatarUrl !== failedUrl;
 
-  if (showImage) {
-    const isDataUrl = avatarUrl!.startsWith("data:");
-    const imageClass = cn(
-      "relative overflow-hidden rounded-full shadow-md",
-      ringSizes[size],
-      "ring-white",
-      sizes[size],
-      className
-    );
-
-    if (isDataUrl) {
-      return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={avatarUrl!}
-          alt={`Foto de ${name}`}
-          className={cn(imageClass, "object-cover")}
-          onError={() => {
-            setFailedUrl(avatarUrl!);
-            onImageError?.();
-          }}
-        />
-      );
-    }
-
-    return (
-      <div className={imageClass}>
-        <Image
-          src={avatarUrl!}
-          alt={`Foto de ${name}`}
-          fill
-          className="object-cover"
-          unoptimized
-          onError={() => {
-            setFailedUrl(avatarUrl!);
-            onImageError?.();
-          }}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-center rounded-full bg-[color:var(--school-primary,#4f46e5)] font-bold text-white shadow-md",
+  const renderAvatarContent = () => {
+    if (showImage) {
+      const isDataUrl = avatarUrl!.startsWith("data:");
+      const imageClass = cn(
+        "relative overflow-hidden rounded-full shadow-md",
         ringSizes[size],
         "ring-white",
         sizes[size],
         className
-      )}
-      aria-hidden={initials ? true : undefined}
-      title={name}
-    >
-      {initials || "?"}
-    </div>
+      );
+
+      if (isDataUrl) {
+        return (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarUrl!}
+            alt={`Foto de ${name}`}
+            className={cn(imageClass, "object-cover")}
+            onError={() => {
+              setFailedUrl(avatarUrl!);
+              onImageError?.();
+            }}
+          />
+        );
+      }
+
+      return (
+        <div className={imageClass}>
+          <Image
+            src={avatarUrl!}
+            alt={`Foto de ${name}`}
+            fill
+            className="object-cover"
+            unoptimized
+            onError={() => {
+              setFailedUrl(avatarUrl!);
+              onImageError?.();
+            }}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center rounded-full bg-[color:var(--school-primary,#4f46e5)] font-bold text-white shadow-md",
+          ringSizes[size],
+          "ring-white",
+          sizes[size],
+          className
+        )}
+        aria-hidden={initials ? true : undefined}
+        title={name}
+      >
+        {initials || "?"}
+      </div>
+    );
+  };
+
+  return (
+    <CosmeticFrame frameKey={frameKey} size={size}>
+      {renderAvatarContent()}
+    </CosmeticFrame>
   );
 }
+

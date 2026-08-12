@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateRewardForm } from "@/components/forms/create-reward-form";
 import { InstitutionShopManager } from "@/components/shop/institution-shop-manager";
 import { StudentShopByCategory } from "@/components/shop/student-shop-by-category";
+import { StudentInventory } from "@/components/shop/student-inventory";
+import { ShopTabsContainer } from "@/components/shop/shop-tabs-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { FulfillRedemptionButton } from "@/components/forms/fulfill-redemption-button";
 import { redirect } from "next/navigation";
@@ -65,18 +67,67 @@ export default async function LojaPage() {
     ? redemptions.filter((r) => r.status === "pending").length
     : 0;
 
+  const redemptionsSection = (
+    <Card className={kidFriendly ? "kid-card" : ""}>
+      <CardHeader>
+        <CardTitle className={kidFriendly ? "text-xl" : undefined}>
+          {isStudent ? "Meus resgates e compras" : "Resgates recentes"}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {redemptions.length === 0 ? (
+          <p className={kidFriendly ? "text-lg text-slate-600" : "text-sm text-slate-500"}>
+            Nenhum resgate ainda.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {redemptions.map((r) => (
+              <li
+                key={r.id}
+                className={`flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 py-3 ${kidFriendly ? "text-base" : "text-sm"}`}
+              >
+                <span>
+                  {!isStudent && "student" in r && (
+                    <strong>
+                      {(r as { student: { user: { fullName: string } } }).student.user.fullName}:{" "}
+                    </strong>
+                  )}
+                  {r.reward.name}
+                  <Badge
+                    variant={r.status === "fulfilled" ? "success" : "warning"}
+                    className="ml-2"
+                  >
+                    {r.status === "fulfilled" ? "Concluído" : "Aguardando entrega"}
+                  </Badge>
+                </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-slate-600">
+                    -{r.coinCost} moedas · {formatDate(r.redeemedAt)}
+                  </span>
+                  {isStaff && r.status === "pending" && (
+                    <FulfillRedemptionButton redemptionId={r.id} />
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Loja de Moedas"
+        title="Loja de Moedas & Cosméticos"
         description={
           isStudent
-            ? `Você tem ${student?.coins ?? 0} moedas. Escolha um prêmio!`
+            ? `Você tem ${student?.coins ?? 0} moedas. Compre prêmios, molduras e planos de fundo!`
             : canManageShop
-              ? "Defina categorias, cadastre prêmios e acompanhe resgates"
+              ? "Gerencie prêmios, importe catálogo de cosméticos e acompanhe resgates"
               : pendingCount > 0
                 ? `${pendingCount} resgate(s) aguardando entrega`
-                : "Prêmios disponíveis para resgate com moedas"
+                : "Prêmios e cosméticos disponíveis para resgate com moedas"
         }
       >
         {canManageShop && !isStudent && (
@@ -84,95 +135,65 @@ export default async function LojaPage() {
         )}
       </PageHeader>
 
-      {canManageShop && (
-        <InstitutionShopManager categories={categories} rewards={rewards} compact />
-      )}
-
       {isStudent && student && (
         <Card className="kid-card border-amber-300 bg-amber-50">
           <CardContent className="flex flex-wrap items-center justify-between gap-4 py-6">
-            <span className="text-lg font-bold text-amber-900">Suas moedas</span>
+            <span className="text-lg font-bold text-amber-900">Suas moedas acumuladas</span>
             <span className="kid-stat text-amber-600" aria-label={`${student.coins} moedas disponíveis`}>
-              {student.coins}
+              🪙 {student.coins} moedas
             </span>
           </CardContent>
         </Card>
       )}
 
-      {!canManageShop && (
-        <section aria-labelledby="rewards-heading">
-          <h2 id="rewards-heading" className="sr-only">
-            Prêmios por categoria
-          </h2>
-          <StudentShopByCategory
-            rewards={rewards}
-            categories={categories}
-            student={student}
-            role={user.role}
-            preview={!isStudent}
-            canRedeem={canRedeem}
-          />
-        </section>
-      )}
-
-      {canManageShop && rewards.some((r) => r.isActive) && (
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-slate-800">Vitrine do aluno (prévia)</h2>
-          <StudentShopByCategory
-            rewards={rewards}
-            categories={categories}
-            role={user.role}
-            preview
-          />
-        </section>
-      )}
-
-      <Card className={kidFriendly ? "kid-card" : ""}>
-        <CardHeader>
-          <CardTitle className={kidFriendly ? "text-xl" : undefined}>
-            {isStudent ? "Meus resgates" : "Resgates recentes"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {redemptions.length === 0 ? (
-            <p className={kidFriendly ? "text-lg text-slate-600" : "text-sm text-slate-500"}>
-              Nenhum resgate ainda.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {redemptions.map((r) => (
-                <li
-                  key={r.id}
-                  className={`flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 py-3 ${kidFriendly ? "text-base" : "text-sm"}`}
-                >
-                  <span>
-                    {!isStudent && "student" in r && (
-                      <strong>
-                        {(r as { student: { user: { fullName: string } } }).student.user.fullName}:{" "}
-                      </strong>
-                    )}
-                    {r.reward.name}
-                    <Badge
-                      variant={r.status === "fulfilled" ? "success" : "warning"}
-                      className="ml-2"
-                    >
-                      {r.status === "fulfilled" ? "Entregue" : "Aguardando entrega"}
-                    </Badge>
-                  </span>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-slate-600">
-                      -{r.coinCost} moedas · {formatDate(r.redeemedAt)}
-                    </span>
-                    {isStaff && r.status === "pending" && (
-                      <FulfillRedemptionButton redemptionId={r.id} />
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <ShopTabsContainer
+        isStudent={isStudent}
+        canManageShop={canManageShop}
+        shopTabContent={
+          <section aria-labelledby="rewards-heading">
+            <h2 id="rewards-heading" className="sr-only">
+              Prêmios por categoria
+            </h2>
+            <StudentShopByCategory
+              rewards={rewards}
+              categories={categories}
+              student={student}
+              role={user.role}
+              preview={!isStudent && !canManageShop}
+              canRedeem={canRedeem}
+            />
+          </section>
+        }
+        inventoryTabContent={
+          student ? (
+            <StudentInventory
+              student={{
+                id: student.id,
+                equippedFrame: student.equippedFrame,
+                equippedBackground: student.equippedBackground,
+              }}
+              userFullName={user.fullName}
+              avatarUrl={user.avatarUrl}
+              redemptions={redemptions.map((r) => ({
+                id: r.id,
+                reward: {
+                  id: r.reward.id,
+                  name: r.reward.name,
+                  description: r.reward.description,
+                  itemType: r.reward.itemType ?? "physical",
+                  cosmeticKey: r.reward.cosmeticKey ?? null,
+                },
+              }))}
+            />
+          ) : null
+        }
+        managerTabContent={
+          canManageShop ? (
+            <InstitutionShopManager categories={categories} rewards={rewards} />
+          ) : null
+        }
+        redemptionsTabContent={redemptionsSection}
+      />
     </div>
   );
 }

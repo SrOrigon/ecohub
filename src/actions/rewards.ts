@@ -30,13 +30,15 @@ export async function createRewardAction(formData: FormData) {
   const coinCost = parseInt(String(formData.get("coinCost") ?? "0"), 10);
   const stockStr = String(formData.get("stock") ?? "").trim();
   const stock = stockStr ? parseInt(stockStr, 10) : null;
+  const itemType = String(formData.get("itemType") ?? "physical").trim();
+  const cosmeticKey = String(formData.get("cosmeticKey") ?? "").trim() || null;
 
   if (!name || coinCost <= 0) return { error: "Nome e custo em moedas são obrigatórios." };
 
   const activeCategories = await prisma.rewardCategory.count({
     where: { schoolId: user.schoolId, isActive: true },
   });
-  if (activeCategories > 0 && !categoryId) {
+  if (itemType === "physical" && activeCategories > 0 && !categoryId) {
     return { error: "Selecione uma categoria para o item." };
   }
 
@@ -55,6 +57,8 @@ export async function createRewardAction(formData: FormData) {
       description: description || null,
       coinCost,
       stock: stock && stock > 0 ? stock : null,
+      itemType,
+      cosmeticKey,
       isActive: true,
     },
   });
@@ -81,6 +85,8 @@ export async function updateRewardAction(formData: FormData) {
   const coinCost = parseInt(String(formData.get("coinCost") ?? "0"), 10);
   const stockStr = String(formData.get("stock") ?? "").trim();
   const stock = stockStr ? parseInt(stockStr, 10) : null;
+  const itemType = String(formData.get("itemType") ?? "physical").trim();
+  const cosmeticKey = String(formData.get("cosmeticKey") ?? "").trim() || null;
 
   if (!rewardId || !name || coinCost <= 0) {
     return { error: "Nome e custo em moedas são obrigatórios." };
@@ -106,6 +112,8 @@ export async function updateRewardAction(formData: FormData) {
       description: description || null,
       coinCost,
       stock: stock !== null && stock >= 0 ? stock : null,
+      itemType,
+      cosmeticKey,
     },
   });
 
@@ -205,12 +213,28 @@ export async function redeemRewardAction(formData: FormData) {
   if (!reward) return { error: "Recompensa indisponível." };
   if (!student) return { error: "Aluno não encontrado." };
 
+  const isCosmetic = reward.itemType === "frame" || reward.itemType === "background";
+
   const settings = await getSchoolSettings(user.schoolId);
-  if (settings.shop.requireStock && reward.stock === null) {
+  if (!isCosmetic && settings.shop.requireStock && reward.stock === null) {
     return { error: "Esta escola exige estoque definido para resgates." };
   }
   if (reward.stock !== null && reward.stock <= 0) {
     return { error: "Recompensa esgotada." };
+  }
+
+  // Verificar se o aluno já possui o cosmético
+  if (isCosmetic && reward.cosmeticKey) {
+    const existingRedemption = await prisma.rewardRedemption.findFirst({
+      where: {
+        studentId,
+        reward: { cosmeticKey: reward.cosmeticKey },
+        status: "fulfilled",
+      },
+    });
+    if (existingRedemption) {
+      return { error: "Você já possui este item no seu inventário!" };
+    }
   }
 
   try {
@@ -229,9 +253,27 @@ export async function redeemRewardAction(formData: FormData) {
         if (stocked.count === 0) throw new Error("OUT_OF_STOCK");
       }
 
+      const status = isCosmetic ? "fulfilled" : "pending";
+      const fulfilledAt = isCosmetic ? new Date() : null;
+
       await tx.rewardRedemption.create({
-        data: { studentId, rewardId, coinCost: reward.coinCost },
+        data: { studentId, rewardId, coinCost: reward.coinCost, status, fulfilledAt },
       });
+
+      // Se for cosmético e o aluno não tiver um equipado do tipo, equipar automaticamente
+      if (isCosmetic && reward.cosmeticKey) {
+        if (reward.itemType === "frame" && !student.equippedFrame) {
+          await tx.student.update({
+            where: { id: studentId },
+            data: { equippedFrame: reward.cosmeticKey },
+          });
+        } else if (reward.itemType === "background" && !student.equippedBackground) {
+          await tx.student.update({
+            where: { id: studentId },
+            data: { equippedBackground: reward.cosmeticKey },
+          });
+        }
+      }
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";
@@ -242,6 +284,20 @@ export async function redeemRewardAction(formData: FormData) {
     }
     if (msg === "OUT_OF_STOCK") return { error: "Recompensa esgotada." };
     throw e;
+  }
+
+  if (isCosmetic) {
+    await notifyStudent(
+      studentId,
+      "Cosmético desbloqueado!",
+      `Você comprou ${reward.name}! O item já foi adicionado ao seu inventário.`,
+      "/dashboard/loja"
+    );
+    revalidateLoja();
+    return {
+      success: true,
+      message: `Item desbloqueado: ${reward.name}! Acesse a aba Meu Inventário para equipar.`,
+    };
   }
 
   await notifyStudent(
@@ -260,6 +316,92 @@ export async function redeemRewardAction(formData: FormData) {
 
   revalidateLoja();
   return { success: true, message: `Resgate confirmado: ${reward.name}! Retire na escola.` };
+}
+
+export async function equipStudentCosmeticAction(formData: FormData) {
+  const session = await requireSessionResult(["student"]);
+  if (!session.ok) return { error: session.error };
+  const user = session.user;
+
+  const cosmeticType = String(formData.get("cosmeticType") ?? "").trim(); // "frame" | "background"
+  const cosmeticKey = String(formData.get("cosmeticKey") ?? "").trim(); // "" to unequip
+
+  if (cosmeticType !== "frame" && cosmeticType !== "background") {
+    return { error: "Tipo de cosmético inválido." };
+  }
+
+  const student = await prisma.student.findFirst({ where: { userId: user.id } });
+  if (!student) return { error: "Perfil de aluno não encontrado." };
+
+  if (cosmeticKey) {
+    // Validar se o aluno é dono deste cosmético
+    const redemption = await prisma.rewardRedemption.findFirst({
+      where: {
+        studentId: student.id,
+        status: "fulfilled",
+        reward: { cosmeticKey, itemType: cosmeticType },
+      },
+    });
+    if (!redemption) {
+      return { error: "Você não possui este item cosmético." };
+    }
+  }
+
+  if (cosmeticType === "frame") {
+    await prisma.student.update({
+      where: { id: student.id },
+      data: { equippedFrame: cosmeticKey || null },
+    });
+  } else {
+    await prisma.student.update({
+      where: { id: student.id },
+      data: { equippedBackground: cosmeticKey || null },
+    });
+  }
+
+  revalidateLoja();
+  revalidatePath("/dashboard/perfil");
+  return {
+    success: true,
+    message: cosmeticKey ? "Item equipado com sucesso!" : "Item desequipado.",
+  };
+}
+
+export async function seedPresetCosmeticsForSchoolAction() {
+  const session = await requireSessionResult(["admin", "director"]);
+  if (!session.ok) return { error: session.error };
+  const user = session.user;
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const { ALL_PRESET_COSMETICS } = await import("@/lib/cosmetics-catalog");
+
+  let createdCount = 0;
+
+  for (const preset of ALL_PRESET_COSMETICS) {
+    const exists = await prisma.reward.findFirst({
+      where: { schoolId: user.schoolId, cosmeticKey: preset.key },
+    });
+    if (!exists) {
+      await prisma.reward.create({
+        data: {
+          schoolId: user.schoolId,
+          name: preset.name,
+          description: preset.description,
+          coinCost: preset.defaultCoinCost,
+          itemType: preset.itemType,
+          cosmeticKey: preset.key,
+          isActive: true,
+        },
+      });
+      createdCount++;
+    }
+  }
+
+  revalidateLoja();
+  return {
+    success: true,
+    message: createdCount > 0 ? `${createdCount} cosmético(s) adicionado(s) à loja da escola!` : "Todos os cosméticos já foram adicionados.",
+  };
 }
 
 export async function fulfillRedemptionAction(formData: FormData) {

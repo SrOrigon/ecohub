@@ -64,9 +64,9 @@ export async function notifyStudent(
   });
   if (!student) return;
 
-  if (kind === "absence") {
+  if (student.user.schoolId) {
     const settings = await getSchoolSettings(student.user.schoolId);
-    if (!settings.notifications.studentOnAbsence) return;
+    if (!studentAllowed(kind, settings)) return;
   }
 
   await createNotification(student.userId, title, message, href);

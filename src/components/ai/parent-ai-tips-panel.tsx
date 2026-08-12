@@ -13,15 +13,15 @@ type ChildSummary = {
 };
 
 export function ParentAiTipsPanel({
-  children,
+  childSummaries,
   passGrade,
   assistantName = "EduHub IA",
 }: {
-  children: ChildSummary[];
+  childSummaries: ChildSummary[];
   passGrade: number;
   assistantName?: string;
 }) {
-  if (children.length === 0) return null;
+  if (childSummaries.length === 0) return null;
 
   return (
     <Card className="border-indigo-100 bg-gradient-to-br from-indigo-50/80 to-white">
@@ -32,7 +32,7 @@ export function ParentAiTipsPanel({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {children.map((child) => {
+        {childSummaries.map((child) => {
           const tips = eduhubAiParentTips({
             childName: child.name,
             avgGrade: child.avgGrade,

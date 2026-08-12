@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardError({
@@ -22,9 +23,9 @@ export default function DashboardError({
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Button onClick={reset}>Tentar novamente</Button>
-        <Button variant="outline" onClick={() => (window.location.href = "/dashboard")}>
-          Ir ao painel
-        </Button>
+        <Link href="/dashboard">
+          <Button variant="outline">Ir ao painel</Button>
+        </Link>
       </div>
     </div>
   );

@@ -158,6 +158,8 @@ model Student {
   xpTotal         Int       @default(0)
   level           Int       @default(1)
   coins           Int       @default(0)
+  equippedFrame   String?
+  equippedBackground String?
   createdAt       DateTime  @default(now())
 
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -312,6 +314,8 @@ model Reward {
   description String?
   coinCost    Int
   stock       Int?
+  itemType    String   @default("physical")
+  cosmeticKey String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
 

@@ -78,7 +78,7 @@ export function SubjectPrecisionPanel({
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {data.entries.map((entry) => (
-            <SubjectPrecisionCard key={entry.subject} entry={entry} passGrade={6} />
+            <SubjectPrecisionCard key={entry.subject} entry={entry} passGrade={passGrade} />
           ))}
         </div>
       )}

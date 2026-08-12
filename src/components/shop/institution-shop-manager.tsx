@@ -9,6 +9,7 @@ import { DeleteRewardButton } from "@/components/forms/delete-reward-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { InstitutionShopCategories, type RewardCategoryRow } from "@/components/shop/institution-shop-categories";
+import { SeedCosmeticsButton } from "@/components/shop/seed-cosmetics-button";
 
 type RewardRow = {
   id: string;
@@ -17,6 +18,8 @@ type RewardRow = {
   coinCost: number;
   stock: number | null;
   isActive: boolean;
+  itemType?: string;
+  cosmeticKey?: string | null;
   categoryId: string | null;
   category: { id: string; name: string; isActive: boolean } | null;
   _count: { redemptions: number };
@@ -50,10 +53,13 @@ export function InstitutionShopManager({
               Itens da loja de moedas
             </CardTitle>
             <CardDescription className="mt-1 max-w-2xl">
-              Cadastre prêmios e vincule cada um a uma categoria definida pela instituição.
+              Cadastre prêmios e vincule cada um a uma categoria definida pela instituição, ou importe molduras e fundos digitais.
             </CardDescription>
           </div>
-          <CreateRewardForm categories={categoryOptions} />
+          <div className="flex flex-wrap gap-2">
+            <SeedCosmeticsButton />
+            <CreateRewardForm categories={categoryOptions} />
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2 text-sm text-slate-600">
