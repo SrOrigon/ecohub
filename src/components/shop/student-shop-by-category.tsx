@@ -117,7 +117,7 @@ function RewardCard({
 
 export function StudentShopByCategory({
   rewards,
-  categories,
+  categories: _categories,
   student,
   role,
   preview = false,

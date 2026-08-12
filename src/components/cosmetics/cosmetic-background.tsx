@@ -51,7 +51,7 @@ export function CosmeticBackgroundCard({
     <div
       className={cn(
         "overflow-hidden rounded-2xl transition-all duration-300",
-        getBackgroundStyles(backgroundKey),
+        getBackgroundStyles(backgroundKey ?? ""),
         className
       )}
     >
