@@ -26,8 +26,8 @@ export default async function AlunosPage() {
   const canManageSettings = user.role === "admin" || user.role === "director";
 
   const [students, classes, settings] = await Promise.all([
-    getStudents(user.schoolId),
-    getClasses(user.schoolId),
+    getStudents(user.schoolId).catch(() => []),
+    getClasses(user.schoolId).catch(() => []),
     getSchoolSettings(user.schoolId),
   ]);
 
@@ -46,7 +46,7 @@ export default async function AlunosPage() {
         <InstitutionalSetupHint
           canManageSettings={canManageSettings}
           classCount={classes.length}
-          subjectCount={settings.academic.subjects.length}
+          subjectCount={settings?.academic?.subjects?.length ?? 0}
         />
       )}
 
@@ -77,24 +77,25 @@ export default async function AlunosPage() {
               </thead>
               <tbody>
                 {students.map((student) => {
+                  const gradesList = student.grades ?? [];
                   const avg =
-                    student.grades.length > 0
-                      ? student.grades.reduce((s, g) => s + g.value, 0) / student.grades.length
+                    gradesList.length > 0
+                      ? gradesList.reduce((s, g) => s + (g.value ?? 0), 0) / gradesList.length
                       : null;
                   return (
                     <tr key={student.id} className="border-b border-slate-100">
                       <td className="py-3 pr-4 font-mono text-xs">{student.enrollmentCode}</td>
                       <td className="max-w-[14rem] py-3 pr-4 sm:max-w-none">
                         <UserIdentity
-                          name={student.user.fullName}
-                          avatarUrl={student.user.avatarUrl}
+                          name={student.user?.fullName ?? "Aluno"}
+                          avatarUrl={student.user?.avatarUrl}
                           href={`/dashboard/alunos/${student.id}`}
                           subtitle={student.classGroup?.name ?? undefined}
                           size="xs"
                         />
                       </td>
                       <td className="hidden py-3 pr-4 text-slate-500 md:table-cell">
-                        {student.user.email}
+                        {student.user?.email ?? "-"}
                       </td>
                       <td className="py-3 pr-4">
                         {canManage ? (
@@ -107,14 +108,14 @@ export default async function AlunosPage() {
                           student.classGroup?.name ?? "-"
                         )}
                       </td>
-                      <td className="py-3 pr-4">{avg !== null ? avg.toFixed(1) : "-"}</td>
+                      <td className="py-3 pr-4">{avg !== null && !isNaN(avg) ? avg.toFixed(1) : "-"}</td>
                       <td className="py-3 pr-4">
-                        <Badge>Nv. {student.level}</Badge>
+                        <Badge>Nv. {student.level ?? 1}</Badge>
                       </td>
                       <td className="hidden py-3 pr-4 text-indigo-600 lg:table-cell">
-                        {student.xpTotal.toLocaleString("pt-BR")}
+                        {(student.xpTotal ?? 0).toLocaleString("pt-BR")}
                       </td>
-                      <td className="py-3 text-amber-600">{student.coins}</td>
+                      <td className="py-3 text-amber-600">{student.coins ?? 0}</td>
                     </tr>
                   );
                 })}

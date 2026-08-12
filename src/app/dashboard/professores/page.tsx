@@ -18,16 +18,20 @@ export default async function ProfessoresPage() {
   if (!user) redirect("/login");
   if (user.role !== "admin" && user.role !== "director") redirect("/dashboard");
 
-  const teachers = await getTeachers(user.schoolId);
-  const invites = user.schoolId ? await fetchTeacherInvitesForSchool(user, user.schoolId) : [];
+  const teachers = await getTeachers(user.schoolId).catch(() => []);
+  const invites = user.schoolId ? await fetchTeacherInvitesForSchool(user, user.schoolId).catch(() => []) : [];
 
   const teachersWithClasses = await Promise.all(
     teachers.map(async (t) => {
-      const classes = await prisma.classGroup.findMany({
-        where: { schoolId: user.schoolId!, ...teacherClassWhere(t.id) },
-        select: { name: true },
-      });
-      return { ...t, classes, location: formatUserLocation(t.city, t.state) };
+      try {
+        const classes = user.schoolId ? await prisma.classGroup.findMany({
+          where: { schoolId: user.schoolId, ...teacherClassWhere(t.id) },
+          select: { name: true },
+        }) : [];
+        return { ...t, classes, location: formatUserLocation(t.city, t.state) };
+      } catch {
+        return { ...t, classes: [], location: formatUserLocation(t.city, t.state) };
+      }
     })
   );
 

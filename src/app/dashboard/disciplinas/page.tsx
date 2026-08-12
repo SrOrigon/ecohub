@@ -13,6 +13,8 @@ export default async function DisciplinasPage() {
   const settings = await getSchoolSettings(user.schoolId);
   const canManage = user.role === "admin" || user.role === "director";
 
+  const subjects = settings?.academic?.subjects ?? [];
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -23,14 +25,14 @@ export default async function DisciplinasPage() {
       <Card>
         <CardHeader>
           <CardTitle>
-            {settings.academic.subjects.length === 0
+            {subjects.length === 0
               ? "Nenhuma disciplina cadastrada"
-              : `${settings.academic.subjects.length} disciplina(s) ativa(s)`}
+              : `${subjects.length} disciplina(s) ativa(s)`}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <SubjectsManagerForm
-            initialSubjects={settings.academic.subjects}
+            initialSubjects={subjects}
             readOnly={!canManage}
           />
           {!canManage && (

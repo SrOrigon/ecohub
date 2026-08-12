@@ -3,329 +3,403 @@ import type { SessionUser } from "@/lib/auth";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 
 export async function getDashboardStats(schoolId: string | null) {
-  if (!schoolId) {
-    return {
-      totalStudents: 0,
-      totalClasses: 0,
-      averageGrade: 0,
-      attendanceRate: 0,
-      activeMissions: 0,
-      totalXpAwarded: 0,
-    };
-  }
-
-  const [students, classes, grades, attendance, activeMissions, xpSum] = await Promise.all([
-    prisma.student.count({
-      where: { user: { schoolId } },
-    }),
-    prisma.classGroup.count({ where: { schoolId } }),
-    prisma.grade.findMany({
-      where: { student: { user: { schoolId } } },
-      select: { value: true },
-    }),
-    prisma.attendance.findMany({
-      where: { student: { user: { schoolId } } },
-      select: { status: true },
-    }),
-    prisma.mission.count({ where: { schoolId, isActive: true } }),
-    prisma.student.aggregate({
-      where: { user: { schoolId } },
-      _sum: { xpTotal: true },
-    }),
-  ]);
-
-  const validGrades = grades.map((g) => g.value).filter((v): v is number => typeof v === "number" && !isNaN(v));
-  const averageGrade =
-    validGrades.length > 0 ? validGrades.reduce((s, v) => s + v, 0) / validGrades.length : 0;
-
-  const presentCount = attendance.filter(
-    (a) => a.status === "present" || a.status === "late"
-  ).length;
-  const attendanceRate = attendance.length > 0 ? (presentCount / attendance.length) * 100 : 0;
-
-  return {
-    totalStudents: students,
-    totalClasses: classes,
-    averageGrade: isNaN(averageGrade) ? 0 : averageGrade,
-    attendanceRate: isNaN(attendanceRate) ? 0 : attendanceRate,
-    activeMissions: activeMissions ?? 0,
-    totalXpAwarded: xpSum._sum.xpTotal ?? 0,
+  const empty = {
+    totalStudents: 0,
+    totalClasses: 0,
+    averageGrade: 0,
+    attendanceRate: 0,
+    activeMissions: 0,
+    totalXpAwarded: 0,
   };
+  if (!schoolId) return empty;
+
+  try {
+    const [students, classes, grades, attendance, activeMissions, xpSum] = await Promise.all([
+      prisma.student.count({
+        where: { user: { schoolId } },
+      }),
+      prisma.classGroup.count({ where: { schoolId } }),
+      prisma.grade.findMany({
+        where: { student: { user: { schoolId } } },
+        select: { value: true },
+      }),
+      prisma.attendance.findMany({
+        where: { student: { user: { schoolId } } },
+        select: { status: true },
+      }),
+      prisma.mission.count({ where: { schoolId, isActive: true } }),
+      prisma.student.aggregate({
+        where: { user: { schoolId } },
+        _sum: { xpTotal: true },
+      }),
+    ]);
+
+    const validGrades = grades.map((g) => g.value).filter((v): v is number => typeof v === "number" && !isNaN(v));
+    const averageGrade =
+      validGrades.length > 0 ? validGrades.reduce((s, v) => s + v, 0) / validGrades.length : 0;
+
+    const presentCount = attendance.filter(
+      (a) => a.status === "present" || a.status === "late"
+    ).length;
+    const attendanceRate = attendance.length > 0 ? (presentCount / attendance.length) * 100 : 0;
+
+    return {
+      totalStudents: students ?? 0,
+      totalClasses: classes ?? 0,
+      averageGrade: isNaN(averageGrade) ? 0 : averageGrade,
+      attendanceRate: isNaN(attendanceRate) ? 0 : attendanceRate,
+      activeMissions: activeMissions ?? 0,
+      totalXpAwarded: xpSum._sum.xpTotal ?? 0,
+    };
+  } catch (err) {
+    console.error("[getDashboardStats] Error:", err);
+    return empty;
+  }
 }
 
 export async function getRanking(schoolId: string | null, classId?: string | null) {
   if (!schoolId) return [];
 
-  const students = await prisma.student.findMany({
-    where: {
-      user: { schoolId },
-      ...(classId ? { classId } : {}),
-    },
-    include: {
-      user: { select: { fullName: true, avatarUrl: true } },
-      classGroup: { select: { name: true } },
-    },
-    orderBy: { xpTotal: "desc" },
-    take: classId ? 50 : 20,
-  });
+  try {
+    const students = await prisma.student.findMany({
+      where: {
+        user: { schoolId },
+        ...(classId ? { classId } : {}),
+      },
+      include: {
+        user: { select: { fullName: true, avatarUrl: true } },
+        classGroup: { select: { name: true } },
+      },
+      orderBy: { xpTotal: "desc" },
+      take: classId ? 50 : 20,
+    });
 
-  return students.map((s, i) => ({
-    rank: i + 1,
-    id: s.id,
-    name: s.user.fullName,
-    avatarUrl: s.user.avatarUrl,
-    xp: s.xpTotal,
-    level: s.level,
-    coins: s.coins,
-    className: s.classGroup?.name ?? "-",
-  }));
+    return students.map((s, i) => ({
+      rank: i + 1,
+      id: s.id,
+      name: s.user?.fullName ?? "Aluno",
+      avatarUrl: s.user?.avatarUrl ?? null,
+      xp: s.xpTotal ?? 0,
+      level: s.level ?? 1,
+      coins: s.coins ?? 0,
+      className: s.classGroup?.name ?? "-",
+    }));
+  } catch (err) {
+    console.error("[getRanking] Error:", err);
+    return [];
+  }
 }
 
 export async function getMonthlyPerformance(schoolId: string | null) {
   if (!schoolId) return [];
 
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+  try {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
 
-  const [grades, xp, attendance] = await Promise.all([
-    prisma.grade.findMany({
-      where: {
-        student: { user: { schoolId } },
-        createdAt: { gte: sixMonthsAgo },
-      },
-      select: { value: true, createdAt: true },
-    }),
-    prisma.xpTransaction.findMany({
-      where: {
-        student: { user: { schoolId } },
-        createdAt: { gte: sixMonthsAgo },
-      },
-      select: { amount: true, createdAt: true },
-    }),
-    prisma.attendance.findMany({
-      where: {
-        student: { user: { schoolId } },
-        date: { gte: sixMonthsAgo },
-      },
-      select: { status: true, date: true },
-    }),
-  ]);
+    const [grades, xp, attendance] = await Promise.all([
+      prisma.grade.findMany({
+        where: {
+          student: { user: { schoolId } },
+          createdAt: { gte: sixMonthsAgo },
+        },
+        select: { value: true, createdAt: true },
+      }),
+      prisma.xpTransaction.findMany({
+        where: {
+          student: { user: { schoolId } },
+          createdAt: { gte: sixMonthsAgo },
+        },
+        select: { amount: true, createdAt: true },
+      }),
+      prisma.attendance.findMany({
+        where: {
+          student: { user: { schoolId } },
+          date: { gte: sixMonthsAgo },
+        },
+        select: { status: true, date: true },
+      }),
+    ]);
 
-  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const result: Record<string, { nota: number; xp: number; frequencia: number; notaCount: number; freqCount: number }> = {};
+    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    const result: Record<string, { nota: number; xp: number; frequencia: number; notaCount: number; freqCount: number }> = {};
 
-  for (let i = 0; i < 6; i++) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - (5 - i));
-    const key = months[d.getMonth()];
-    result[key] = { nota: 0, xp: 0, frequencia: 0, notaCount: 0, freqCount: 0 };
+    for (let i = 0; i < 6; i++) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (5 - i));
+      const key = months[d.getMonth()];
+      result[key] = { nota: 0, xp: 0, frequencia: 0, notaCount: 0, freqCount: 0 };
+    }
+
+    grades.forEach((g) => {
+      const key = months[g.createdAt.getMonth()];
+      if (result[key]) {
+        result[key].nota += g.value ?? 0;
+        result[key].notaCount++;
+      }
+    });
+
+    xp.forEach((x) => {
+      const key = months[x.createdAt.getMonth()];
+      if (result[key]) result[key].xp += x.amount ?? 0;
+    });
+
+    attendance.forEach((a) => {
+      const key = months[a.date.getMonth()];
+      if (result[key]) {
+        result[key].freqCount++;
+        if (a.status === "present" || a.status === "late") result[key].frequencia++;
+      }
+    });
+
+    return Object.entries(result).map(([month, data]) => {
+      const nota = data.notaCount ? Math.round((data.nota / data.notaCount) * 10) / 10 : 0;
+      const freq = data.freqCount ? Math.round((data.frequencia / data.freqCount) * 100) : 0;
+      return {
+        month,
+        nota: isNaN(nota) ? 0 : nota,
+        xp: isNaN(data.xp) ? 0 : data.xp,
+        frequencia: isNaN(freq) ? 0 : freq,
+      };
+    });
+  } catch (err) {
+    console.error("[getMonthlyPerformance] Error:", err);
+    return [];
   }
-
-  grades.forEach((g) => {
-    const key = months[g.createdAt.getMonth()];
-    if (result[key]) {
-      result[key].nota += g.value;
-      result[key].notaCount++;
-    }
-  });
-
-  xp.forEach((x) => {
-    const key = months[x.createdAt.getMonth()];
-    if (result[key]) result[key].xp += x.amount;
-  });
-
-  attendance.forEach((a) => {
-    const key = months[a.date.getMonth()];
-    if (result[key]) {
-      result[key].freqCount++;
-      if (a.status === "present" || a.status === "late") result[key].frequencia++;
-    }
-  });
-
-  return Object.entries(result).map(([month, data]) => {
-    const nota = data.notaCount ? Math.round((data.nota / data.notaCount) * 10) / 10 : 0;
-    const freq = data.freqCount ? Math.round((data.frequencia / data.freqCount) * 100) : 0;
-    return {
-      month,
-      nota: isNaN(nota) ? 0 : nota,
-      xp: isNaN(data.xp) ? 0 : data.xp,
-      frequencia: isNaN(freq) ? 0 : freq,
-    };
-  });
 }
 
 export async function getClassComparison(schoolId: string | null) {
   if (!schoolId) return [];
 
-  const classes = await prisma.classGroup.findMany({
-    where: { schoolId },
-    include: {
-      students: {
-        include: {
-          grades: { select: { value: true } },
+  try {
+    const classes = await prisma.classGroup.findMany({
+      where: { schoolId },
+      include: {
+        students: {
+          include: {
+            grades: { select: { value: true } },
+          },
         },
       },
-    },
-  });
+    });
 
-  return classes.map((c) => {
-    const validGrades = c.students
-      .flatMap((s) => s.grades)
-      .map((g) => g?.value)
-      .filter((v): v is number => typeof v === "number" && !isNaN(v));
-    const media =
-      validGrades.length > 0
-        ? validGrades.reduce((sum, v) => sum + v, 0) / validGrades.length
-        : 0;
-    const avgXp =
-      c.students.length > 0
-        ? c.students.reduce((s, st) => s + (st.xpTotal ?? 0), 0) / c.students.length
-        : 0;
-    const engajamento = Math.min(100, Math.max(0, Math.round((avgXp / 3000) * 100)));
-    const roundedMedia = Math.round(media * 10);
-    return {
-      turma: c.name ?? "Turma",
-      media: isNaN(roundedMedia) ? 0 : roundedMedia,
-      engajamento: isNaN(engajamento) ? 0 : engajamento,
-    };
-  });
+    return classes.map((c) => {
+      const validGrades = c.students
+        .flatMap((s) => s.grades ?? [])
+        .map((g) => g?.value)
+        .filter((v): v is number => typeof v === "number" && !isNaN(v));
+      const media =
+        validGrades.length > 0
+          ? validGrades.reduce((sum, v) => sum + v, 0) / validGrades.length
+          : 0;
+      const avgXp =
+        c.students.length > 0
+          ? c.students.reduce((s, st) => s + (st.xpTotal ?? 0), 0) / c.students.length
+          : 0;
+      const engajamento = Math.min(100, Math.max(0, Math.round((avgXp / 3000) * 100)));
+      const roundedMedia = Math.round(media * 10);
+      return {
+        turma: c.name ?? "Turma",
+        media: isNaN(roundedMedia) ? 0 : roundedMedia,
+        engajamento: isNaN(engajamento) ? 0 : engajamento,
+      };
+    });
+  } catch (err) {
+    console.error("[getClassComparison] Error:", err);
+    return [];
+  }
 }
 
 export async function getStudents(schoolId: string | null) {
   if (!schoolId) return [];
-  return prisma.student.findMany({
-    where: { user: { schoolId } },
-    include: {
-      user: { select: { fullName: true, email: true, avatarUrl: true } },
-      classGroup: { select: { id: true, name: true } },
-      grades: { select: { value: true } },
-    },
-    orderBy: { user: { fullName: "asc" } },
-  });
+  try {
+    return await prisma.student.findMany({
+      where: { user: { schoolId } },
+      include: {
+        user: { select: { fullName: true, email: true, avatarUrl: true } },
+        classGroup: { select: { id: true, name: true } },
+        grades: { select: { value: true } },
+      },
+      orderBy: { user: { fullName: "asc" } },
+    });
+  } catch (err) {
+    console.error("[getStudents] Error:", err);
+    return [];
+  }
 }
 
 export async function getStudentById(id: string, schoolId: string | null) {
   if (!schoolId) return null;
-  return prisma.student.findFirst({
-    where: { id, user: { schoolId } },
-    include: {
-      user: true,
-      classGroup: true,
-      grades: { orderBy: { createdAt: "desc" } },
-      attendance: { orderBy: { date: "desc" }, take: 30 },
-      xpTransactions: { orderBy: { createdAt: "desc" }, take: 20 },
-      studentMissions: { include: { mission: true } },
-      studentBadges: { include: { badge: true } },
-    },
-  });
+  try {
+    return await prisma.student.findFirst({
+      where: { id, user: { schoolId } },
+      include: {
+        user: true,
+        classGroup: true,
+        grades: { orderBy: { createdAt: "desc" } },
+        attendance: { orderBy: { date: "desc" }, take: 30 },
+        xpTransactions: { orderBy: { createdAt: "desc" }, take: 20 },
+        studentMissions: { include: { mission: true } },
+        studentBadges: { include: { badge: true } },
+      },
+    });
+  } catch (err) {
+    console.error("[getStudentById] Error:", err);
+    return null;
+  }
 }
 
 export async function getClasses(schoolId: string | null, teacherId?: string) {
   if (!schoolId) return [];
-  return prisma.classGroup.findMany({
-    where: {
-      schoolId,
-      ...(teacherId ? teacherClassWhere(teacherId) : {}),
-    },
-    include: {
-      teacher: { select: { id: true, fullName: true, avatarUrl: true } },
-      coTeachers: {
-        include: { teacher: { select: { id: true, fullName: true, avatarUrl: true } } },
+  try {
+    return await prisma.classGroup.findMany({
+      where: {
+        schoolId,
+        ...(teacherId ? teacherClassWhere(teacherId) : {}),
       },
-      students: { include: { user: { select: { fullName: true, avatarUrl: true } } } },
-      _count: { select: { students: true } },
-    },
-    orderBy: { name: "asc" },
-  });
+      include: {
+        teacher: { select: { id: true, fullName: true, avatarUrl: true } },
+        coTeachers: {
+          include: { teacher: { select: { id: true, fullName: true, avatarUrl: true } } },
+        },
+        students: { include: { user: { select: { fullName: true, avatarUrl: true } } } },
+        _count: { select: { students: true } },
+      },
+      orderBy: { name: "asc" },
+    });
+  } catch (err) {
+    console.error("[getClasses] Error:", err);
+    return [];
+  }
 }
 
 export async function getGrades(schoolId: string | null) {
   if (!schoolId) return [];
-  return prisma.grade.findMany({
-    where: { student: { user: { schoolId } } },
-    include: {
-      student: { include: { user: { select: { fullName: true } } } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  try {
+    return await prisma.grade.findMany({
+      where: { student: { user: { schoolId } } },
+      include: {
+        student: { include: { user: { select: { fullName: true } } } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    console.error("[getGrades] Error:", err);
+    return [];
+  }
 }
 
 export async function getAttendance(schoolId: string | null, date?: Date) {
   if (!schoolId) return [];
-  const targetDate = date ?? new Date();
-  targetDate.setHours(0, 0, 0, 0);
-  const nextDay = new Date(targetDate);
-  nextDay.setDate(nextDay.getDate() + 1);
+  try {
+    const targetDate = date ?? new Date();
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
 
-  return prisma.attendance.findMany({
-    where: {
-      student: { user: { schoolId } },
-      date: { gte: targetDate, lt: nextDay },
-    },
-    include: {
-      student: { include: { user: { select: { fullName: true } } } },
-      classGroup: { select: { name: true } },
-      justifiedBy: { select: { fullName: true } },
-    },
-    orderBy: { student: { user: { fullName: "asc" } } },
-  });
+    return await prisma.attendance.findMany({
+      where: {
+        student: { user: { schoolId } },
+        date: { gte: targetDate, lt: nextDay },
+      },
+      include: {
+        student: { include: { user: { select: { fullName: true } } } },
+        classGroup: { select: { name: true } },
+        justifiedBy: { select: { fullName: true } },
+      },
+      orderBy: { student: { user: { fullName: "asc" } } },
+    });
+  } catch (err) {
+    console.error("[getAttendance] Error:", err);
+    return [];
+  }
 }
 
 export async function getMissions(schoolId: string | null) {
   if (!schoolId) return [];
-  return prisma.mission.findMany({
-    where: { schoolId },
-    include: {
-      classGroup: { select: { name: true } },
-      studentMissions: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  try {
+    return await prisma.mission.findMany({
+      where: { schoolId },
+      include: {
+        classGroup: { select: { name: true } },
+        studentMissions: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    console.error("[getMissions] Error:", err);
+    return [];
+  }
 }
 
 export async function getMissionsForStudent(schoolId: string | null, classId: string | null) {
   if (!schoolId) return [];
-  return prisma.mission.findMany({
-    where: {
-      schoolId,
-      isActive: true,
-      OR: [{ classId: null }, ...(classId ? [{ classId }] : [])],
-    },
-    include: {
-      classGroup: { select: { name: true } },
-      studentMissions: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  try {
+    return await prisma.mission.findMany({
+      where: {
+        schoolId,
+        isActive: true,
+        OR: [{ classId: null }, ...(classId ? [{ classId }] : [])],
+      },
+      include: {
+        classGroup: { select: { name: true } },
+        studentMissions: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    console.error("[getMissionsForStudent] Error:", err);
+    return [];
+  }
 }
 
 export async function getBadges(schoolId: string | null) {
   if (!schoolId) return [];
-  return prisma.badge.findMany({
-    where: { schoolId },
-    include: { _count: { select: { studentBadges: true } } },
-  });
+  try {
+    return await prisma.badge.findMany({
+      where: { schoolId },
+      include: { _count: { select: { studentBadges: true } } },
+    });
+  } catch (err) {
+    console.error("[getBadges] Error:", err);
+    return [];
+  }
 }
 
 export async function getRecentXp(schoolId: string | null, limit = 10) {
   if (!schoolId) return [];
-  return prisma.xpTransaction.findMany({
-    where: { student: { user: { schoolId } } },
-    include: { student: { include: { user: { select: { fullName: true } } } } },
-    orderBy: { createdAt: "desc" },
-    take: limit,
-  });
+  try {
+    return await prisma.xpTransaction.findMany({
+      where: { student: { user: { schoolId } } },
+      include: { student: { include: { user: { select: { fullName: true } } } } },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+  } catch (err) {
+    console.error("[getRecentXp] Error:", err);
+    return [];
+  }
 }
 
 export async function getTeachers(schoolId: string | null) {
   if (!schoolId) return [];
-  return prisma.user.findMany({
-    where: { schoolId, role: "teacher" },
-    select: { id: true, fullName: true, email: true, avatarUrl: true, city: true, state: true },
-  });
+  try {
+    return await prisma.user.findMany({
+      where: { schoolId, role: "teacher" },
+      select: { id: true, fullName: true, email: true, avatarUrl: true, city: true, state: true },
+    });
+  } catch (err) {
+    console.error("[getTeachers] Error:", err);
+    return [];
+  }
 }
 
 export async function getSchool(user: SessionUser) {
   if (!user.schoolId) return null;
-  return prisma.school.findUnique({ where: { id: user.schoolId } });
+  try {
+    return await prisma.school.findUnique({ where: { id: user.schoolId } });
+  } catch (err) {
+    console.error("[getSchool] Error:", err);
+    return null;
+  }
 }

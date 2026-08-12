@@ -26,8 +26,8 @@ export default async function TurmasPage() {
   const teacherFilter = isTeacher ? user.id : undefined;
 
   const [classes, teachers] = await Promise.all([
-    getClasses(user.schoolId, teacherFilter),
-    user.role === "admin" || user.role === "director" ? getTeachers(user.schoolId) : Promise.resolve([]),
+    getClasses(user.schoolId, teacherFilter).catch(() => []),
+    user.role === "admin" || user.role === "director" ? getTeachers(user.schoolId).catch(() => []) : Promise.resolve([]),
   ]);
 
   return (
@@ -76,9 +76,9 @@ export default async function TurmasPage() {
                     {!isTeacher && " · Prof. Não definido"}
                   </p>
                 )}
-                {turma.coTeachers.length > 0 && (
+                {turma.coTeachers && turma.coTeachers.length > 0 && (
                   <p className="mt-1 text-xs text-slate-500">
-                    Co-docentes: {turma.coTeachers.map((ct) => ct.teacher.fullName).join(", ")}
+                    Co-docentes: {turma.coTeachers.map((ct) => ct.teacher?.fullName ?? "Prof.").join(", ")}
                   </p>
                 )}
               </CardHeader>
