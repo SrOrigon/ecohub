@@ -27,7 +27,6 @@ export function RegisterParentForm({ initialSchoolSlug = "" }: { initialSchoolSl
         <CardTitle>Cadastro de responsável</CardTitle>
         <CardDescription>
           Acompanhe o desempenho dos filhos e crie tarefas de casa com recompensas.
-          Demo: escola <strong>escola-demo</strong>, matrícula <strong>2026001</strong> (Lucas).
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -38,13 +37,13 @@ export function RegisterParentForm({ initialSchoolSlug = "" }: { initialSchoolSl
               id="schoolSlug"
               name="schoolSlug"
               required
-              placeholder="escola-demo"
+              placeholder="codigo-da-escola"
               defaultValue={initialSchoolSlug}
             />
           </div>
           <div>
             <Label htmlFor="enrollmentCode">Matrícula do filho(a)</Label>
-            <Input id="enrollmentCode" name="enrollmentCode" required placeholder="Ex.: 2026001" />
+            <Input id="enrollmentCode" name="enrollmentCode" required placeholder="Matrícula do aluno" />
             <p className="mt-1 text-xs text-slate-500">Peça a matrícula na escola ou no boletim do aluno.</p>
           </div>
           <div>

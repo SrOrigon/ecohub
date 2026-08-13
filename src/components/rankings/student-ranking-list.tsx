@@ -44,7 +44,7 @@ export function StudentRankingList({
           <li
             key={item.id}
             className={cn(
-              "flex items-center gap-3 rounded-xl p-3 transition",
+              "grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 rounded-xl p-3 transition",
               isMe
                 ? "border-2 border-indigo-400 bg-indigo-50 shadow-sm"
                 : isTop3
@@ -58,7 +58,7 @@ export function StudentRankingList({
           >
             <span
               className={cn(
-                "flex shrink-0 items-center justify-center rounded-full font-bold text-white",
+                "row-span-2 flex shrink-0 items-center justify-center self-center rounded-full font-bold text-white",
                 isTop3 ? "bg-amber-500" : "bg-indigo-600",
                 kidFriendly ? "h-10 w-10 text-base" : "h-8 w-8 text-sm"
               )}
@@ -66,34 +66,42 @@ export function StudentRankingList({
             >
               {item.rank}
             </span>
-            <ProfileAvatar name={item.name} avatarUrl={item.avatarUrl} size={kidFriendly ? "md" : "sm"} />
-            <div className="min-w-0 flex-1">
+
+            <div className="row-span-2 shrink-0 self-center">
+              <ProfileAvatar name={item.name} avatarUrl={item.avatarUrl} size={kidFriendly ? "md" : "sm"} />
+            </div>
+
+            <div className="min-w-0 self-center">
               {linkStudents && !kidFriendly ? (
                 <Link
                   href={`/dashboard/alunos/${item.id}`}
-                  className="truncate font-medium text-indigo-600 hover:underline"
+                  className="block truncate font-medium text-indigo-600 hover:underline"
                 >
                   {item.displayName}
                 </Link>
               ) : (
-                <p className={cn("truncate font-medium", isMe ? "text-indigo-900" : "text-slate-900")}>
-                  {item.displayName}
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className={cn("truncate font-medium", isMe ? "text-indigo-900" : "text-slate-900")}>
+                    {item.displayName}
+                  </span>
                   {isMe && !kidFriendly && (
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge variant="secondary" className="shrink-0">
                       Você
                     </Badge>
                   )}
-                </p>
+                </div>
               )}
-              <p className="truncate text-xs text-slate-500">
-                {item.className} · Nv. {item.level}
-                {item.badgesCount > 0 && ` · ${item.badgesCount} badge(s)`}
-              </p>
             </div>
-            <div className="shrink-0 text-right">
-              <p className="font-bold text-indigo-600">{item.scoreLabel}</p>
-              <p className="text-xs text-slate-500">{metricUnit(metric)}</p>
+
+            <div className="shrink-0 self-center text-right">
+              <p className="whitespace-nowrap font-bold text-indigo-600">{item.scoreLabel}</p>
+              <p className="whitespace-nowrap text-xs text-slate-500">{metricUnit(metric)}</p>
             </div>
+
+            <p className="col-span-2 col-start-3 truncate text-xs text-slate-500">
+              {item.className} · Nv. {item.level}
+              {item.badgesCount > 0 && ` · ${item.badgesCount} badge(s)`}
+            </p>
           </li>
         );
       })}

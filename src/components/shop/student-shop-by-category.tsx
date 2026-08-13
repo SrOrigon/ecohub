@@ -57,7 +57,7 @@ function RewardCard({
       {isFrame && reward.cosmeticKey && (
         <div className="flex items-center justify-center bg-slate-100/80 py-6 border-b border-slate-100">
           <CosmeticFrame frameKey={reward.cosmeticKey} size="xl">
-            <ProfileAvatar name="Demo Aluno" size="xl" />
+            <ProfileAvatar name="Prévia" size="xl" />
           </CosmeticFrame>
         </div>
       )}

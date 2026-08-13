@@ -1,0 +1,34 @@
+---
+description: Usar o MCP Headroom para gerenciar e otimizar contexto em tarefas complexas
+alwaysApply: true
+---
+
+# Diretrizes de Contexto e Ferramentas — Headroom MCP
+
+Você tem acesso ao servidor MCP **headroom** com estas ferramentas:
+
+- `headroom_compress` — comprime conteúdo extenso antes de analisar ou responder
+- `headroom_retrieve` — recupera o original completo pelo hash, quando precisar de detalhes
+- `headroom_stats` — consulta estatísticas de compressão da sessão
+
+## Quando usar (obrigatório)
+
+Use o Headroom **proativamente** nestes casos:
+
+1. **Explorar estrutura do projeto** — múltiplos arquivos, pastas grandes ou codebase desconhecida
+2. **Analisar arquivos grandes** — schemas, logs, outputs de busca, diffs extensos ou listagens longas
+3. **Tarefas complexas no Agent/Composer** — refatorações, debugging multi-arquivo, revisões amplas
+4. **Antes de responder** — quando o contexto acumulado for grande, comprima primeiro para liberar janela de contexto
+
+## Fluxo recomendado
+
+1. Reúna o conteúdo relevante (buscas, leituras de arquivo, outputs de ferramentas)
+2. Chame `headroom_compress` com o conteúdo consolidado
+3. Trabalhe sobre o texto comprimido; use `headroom_retrieve` se precisar do original integral
+4. Em tarefas longas, consulte `headroom_stats` para acompanhar economia de tokens
+
+## Prioridade
+
+- **Sempre** priorize comprimir contextos extensos via Headroom antes de raciocinar sobre eles
+- **Não** carregue centenas de linhas brutas na resposta quando a compressão for suficiente
+- **Não** pule o Headroom por preguiça operacional — ele existe para otimizar cada sessão

@@ -1,6 +1,5 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import {
   Bar,
   BarChart,
@@ -13,11 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-const emptySubscribe = () => () => {};
-function useIsMounted() {
-  return useSyncExternalStore(emptySubscribe, () => true, () => false);
-}
+import { useIsMounted } from "@/hooks/use-is-mounted";
 
 interface SubjectChartProps {
   data: { subject: string; average: number; meta: number }[];

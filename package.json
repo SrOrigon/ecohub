@@ -2,7 +2,7 @@
   "name": "projeto-estudante",
   "version": "0.1.0",
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx scripts/seed-pilot-institution.ts"
   },
   "scripts": {
     "dev": "next dev",
@@ -16,7 +16,7 @@
     "db:backup": "node scripts/backup-db.mjs",
     "db:pilot": "npx tsx scripts/seed-pilot-institution.ts",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "tsx scripts/seed-pilot-institution.ts",
     "db:reset": "prisma migrate reset --force",
     "postinstall": "node scripts/prisma-generate.mjs"
   },

@@ -37,9 +37,9 @@ Boa para admin rápido, mas UI gamificada exige mais esforço front-end.
 
 | Módulo Sponte | Status EduHub | Prioridade |
 |---------------|---------------|------------|
-| Cadastro escola/turmas/alunos | Demo UI pronta | Fase 1 |
-| Lançamento de notas | Demo UI pronta | Fase 1 |
-| Controle de frequência | Demo UI pronta | Fase 1 |
+| Cadastro escola/turmas/alunos | UI pronta | Fase 1 |
+| Lançamento de notas | UI pronta | Fase 1 |
+| Controle de frequência | UI pronta | Fase 1 |
 | Boletim / relatórios PDF | Planejado | Fase 3 |
 | Financeiro (mensalidades) | Fora do escopo inicial | Fase 5+ |
 | Portal responsáveis | Planejado | Fase 4 |
@@ -49,10 +49,10 @@ Boa para admin rápido, mas UI gamificada exige mais esforço front-end.
 
 | Módulo Gamefik | Status EduHub | Prioridade |
 |----------------|---------------|------------|
-| Missões e desafios | Demo UI + schema DB | Fase 2 |
+| Missões e desafios | UI + schema DB | Fase 2 |
 | XP / Níveis / Moedas | Schema + trigger SQL | Fase 2 |
-| Badges / Conquistas | Demo UI + schema DB | Fase 2 |
-| Rankings por turma | Demo funcional | Fase 1 |
+| Badges / Conquistas | UI + schema DB | Fase 2 |
+| Rankings por turma | Funcional | Fase 1 |
 | App mobile aluno | PWA primeiro | Fase 4 |
 | Quiz com IA | Opcional (Ollama local) | Fase 5+ |
 

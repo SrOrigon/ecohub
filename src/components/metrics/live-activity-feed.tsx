@@ -169,28 +169,26 @@ function ActivityRow({
   return (
     <li
       className={cn(
-        "flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm transition",
+        "grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-1 rounded-lg border px-3 py-2 text-sm transition sm:items-center",
         kidFriendly ? "border-indigo-100 bg-white" : "border-slate-100 bg-slate-50/80"
       )}
     >
-      <div className="flex min-w-0 items-start gap-2">
-        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" aria-hidden="true" />
-        <div className="min-w-0">
-          <p className="font-medium text-slate-900">
-            {linkStudents && !kidFriendly ? (
-              <Link href={`/dashboard/alunos/${event.studentId}`} className="text-indigo-600 hover:underline">
-                {event.studentName}
-              </Link>
-            ) : (
-              firstName
-            )}
-            <span className="font-normal text-slate-600"> · {event.label}</span>
-          </p>
-          {event.detail && <p className="text-xs text-slate-500">{event.detail}</p>}
-          <p className="text-xs text-slate-400">{formatRelativeTime(event.createdAt)}</p>
-        </div>
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500 sm:mt-0" aria-hidden="true" />
+      <div className="min-w-0 overflow-hidden">
+        <p className="font-medium text-slate-900">
+          {linkStudents && !kidFriendly ? (
+            <Link href={`/dashboard/alunos/${event.studentId}`} className="text-indigo-600 hover:underline">
+              {event.studentName}
+            </Link>
+          ) : (
+            firstName
+          )}
+          <span className="font-normal text-slate-600"> · {event.label}</span>
+        </p>
+        {event.detail && <p className="truncate text-xs text-slate-500">{event.detail}</p>}
+        <p className="text-xs text-slate-400">{formatRelativeTime(event.createdAt)}</p>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 self-center">
         {event.amount != null && event.amount > 0 && (
           <Badge variant={config.variant}>+{event.amount} XP</Badge>
         )}

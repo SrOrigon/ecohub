@@ -1,8 +1,7 @@
 import { getSessionUser } from "@/lib/auth";
 import { fetchParentsForSchool } from "@/lib/reads/parent-reads";
 import { getStudents } from "@/lib/queries";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CreateParentForm } from "@/components/forms/create-parent-form";
 import { LinkParentForm } from "@/components/forms/link-parent-form";
 import { UnlinkParentButton } from "@/components/forms/unlink-parent-button";
@@ -84,16 +83,6 @@ export default async function ResponsaveisPage() {
           description='Use "+ Novo responsável" para começar.'
         />
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Conta demo de responsável</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-slate-600">
-          <p>Após rodar <code className="rounded bg-slate-100 px-1">npm run db:seed</code>:</p>
-          <p className="mt-1"><Badge>mariana@responsavel.local</Badge> / demo123 — vinculada a Lucas e Ana</p>
-        </CardContent>
-      </Card>
     </div>
   );
 }

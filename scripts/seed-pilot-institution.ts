@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { ensureDefaultBadges, ensureDefaultRewards } from "../src/lib/school-setup";
 import { hashStudentPin } from "../src/lib/student-pin";
 
-/** Escola piloto idempotente para validação institucional (não apaga demo). */
+/** Escola piloto idempotente para validação institucional local. */
 const prisma = new PrismaClient();
 
 const SLUG = "escola-piloto-validacao";

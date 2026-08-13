@@ -94,7 +94,7 @@ try {
       ...process.env,
       AUTH_SECRET: "validation-runtime-secret-min-32-chars",
       DATABASE_URL: "file:./dev.db",
-      EDUHUB_ENABLE_DEMO: "1",
+      EDUHUB_INSTITUTIONAL: "1",
     },
   });
 
@@ -196,7 +196,7 @@ ${JSON.stringify(report.production?.health ?? {}, null, 2)}
 
 ## Próximos passos manuais
 
-1. Railway: \`EDUHUB_ENABLE_DEMO=1\` + \`AUTH_SECRET\` + volume \`/data\`
+1. Railway: \`EDUHUB_INSTITUTIONAL=1\` + \`AUTH_SECRET\` + volume \`/data\`
 2. Checklist completo: \`docs/GUIA_INSTITUICOES.md\`
 3. Treinamento: \`docs/TREINAMENTO_INSTITUICOES.md\`
 `;

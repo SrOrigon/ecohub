@@ -1,17 +1,8 @@
 # EduHub — Deploy
 
-## Modos
-
-| Modo | Quando usar | Variáveis |
-|------|-------------|-----------|
-| **Demo / compat** | Demonstração pública | *(padrão se AUTH_SECRET ausente)* ou `EDUHUB_ENABLE_DEMO=1` |
-| **Institucional** | Escolas reais | `EDUHUB_INSTITUTIONAL=1` + `AUTH_SECRET` obrigatório |
-
----
-
 ## Variáveis de ambiente
 
-### Obrigatórias (institucional)
+### Obrigatórias (produção)
 
 ```env
 EDUHUB_INSTITUTIONAL=1
@@ -20,15 +11,7 @@ DATABASE_URL=file:/data/prod.db
 AUTH_SECRET=gere-um-segredo-longo-e-aleatorio-min-32-chars
 ```
 
-### Demo pública (Railway atual — padrão compatível)
-
-```env
-EDUHUB_ENABLE_DEMO=1
-DATABASE_URL=file:/data/prod.db
-AUTH_SECRET=recomendado-mesmo-no-demo
-```
-
-> Sem `EDUHUB_INSTITUTIONAL=1`, o boot usa modo demo se `AUTH_SECRET` faltar (compatibilidade).
+> Gere o `AUTH_SECRET` com: `openssl rand -base64 32`
 
 ### Recomendadas
 
@@ -47,7 +30,7 @@ PORT=3000
 
 1. Conecte o repositório GitHub
 2. **Volume** montado em `/data`
-3. Variables conforme modo (institucional ou demo)
+3. Configure as variáveis acima
 4. Build: `npm run build` · Start: `npm start`
 5. Health check: `GET /api/health`
 6. Smoke test: `npm run test:smoke -- https://seu-app.up.railway.app`
@@ -56,17 +39,11 @@ PORT=3000
 
 ---
 
-## Primeiro deploy institucional
+## Primeiro deploy
 
-1. Configure variáveis (sem `EDUHUB_ENABLE_DEMO`)
+1. Configure `EDUHUB_INSTITUTIONAL=1`, `AUTH_SECRET` e `DATABASE_URL`
 2. Após deploy, acesse `/registro/escola` e cadastre a instituição
 3. Siga o checklist em **`docs/GUIA_INSTITUICOES.md`**
-
-## Primeiro deploy demo
-
-1. Configure `EDUHUB_ENABLE_DEMO=1`
-2. Seed/ensure-demo roda automaticamente no boot
-3. Contas em `README.md`
 
 ---
 
@@ -84,7 +61,7 @@ npm run build          # build produção
 npm run lint           # ESLint
 npm run check          # lint + build
 npm run test:smoke -- https://url   # smoke pós-deploy
-npm run db:seed        # seed local (dev)
+npm run db:pilot       # escola piloto (apenas dev local)
 ```
 
 ---
@@ -110,17 +87,4 @@ Para atualizar o sistema sem afetar o login dos usuários nem perder registros d
    ```
    Isso criará uma cópia com timestamp no diretório `backups/`.
 
----
-
-## Contas demo (modo opcional EDUHUB_ENABLE_DEMO=1)
-
-| E-mail | Senha | Papel |
-|--------|-------|-------|
-| admin@eduhub.local | demo123 | Diretor |
-| secretaria@eduhub.local | demo123 | Secretaria |
-| professor@eduhub.local | demo123 | Professor |
-| mariana@responsavel.local | demo123 | Responsável |
-| Matrícula `2026001` | PIN `123456` | Aluno |
-
 Guia completo de testes: **`docs/GUIA_INSTITUICOES.md`**
-

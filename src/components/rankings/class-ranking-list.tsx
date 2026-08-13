@@ -58,16 +58,16 @@ export function ClassRankingList({
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100">
                 <GraduationCap className="h-5 w-5 text-indigo-600" aria-hidden="true" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1 overflow-hidden">
                 {linkClasses ? (
                   <Link
                     href="/dashboard/turmas"
-                    className="truncate font-semibold text-indigo-600 hover:underline"
+                    className="block truncate font-semibold text-indigo-600 hover:underline"
                   >
                     {item.className}
                   </Link>
                 ) : (
-                  <p className="truncate font-semibold text-slate-900">{item.className}</p>
+                  <p className="block truncate font-semibold text-slate-900">{item.className}</p>
                 )}
                 <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span className="inline-flex items-center gap-1">
@@ -82,7 +82,7 @@ export function ClassRankingList({
               </div>
             </div>
 
-            <div className="shrink-0 text-right">
+            <div className="shrink-0 text-right whitespace-nowrap">
               <p className="text-lg font-bold text-indigo-700">{score}</p>
               <p className="text-xs text-slate-500">{getClassMetricLabel(metric)}</p>
             </div>

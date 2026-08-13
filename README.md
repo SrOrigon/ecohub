@@ -21,20 +21,20 @@ Sistema unificado de **gestão escolar** + **gamificação educacional**, totalm
 ```bash
 cd "c:\Users\DeadW\Desktop\Projeto-estudante"
 npm install
-npm run db:seed    # primeira vez ou para repopular demo
 npm run dev
 ```
 
 Acesse **http://localhost:3000**
 
-### Contas demo (senha: `demo123`)
+### Desenvolvimento local (opcional)
 
-| E-mail | Papel | Destaque |
-|--------|-------|----------|
-| admin@eduhub.local | Diretor | Gerencia loja, responsáveis, turmas |
-| professor@eduhub.local | Professor | Lança notas, frequência e missões |
-| mariana@responsavel.local | Responsável | Filhos: Lucas e Ana |
-| lucas@aluno.local | Aluno | ~320 moedas na loja |
+Para testes com uma escola piloto de validação:
+
+```bash
+npm run db:pilot
+```
+
+Isso cria a escola `escola-piloto-validacao` com contas de teste locais (ver saída do comando). **Não use essas credenciais em produção.**
 
 ## Fluxos principais
 
@@ -56,8 +56,8 @@ Acesse **http://localhost:3000**
 npm run dev          # servidor de desenvolvimento
 npm run build        # compilar produção
 npm run db:migrate   # aplicar migrations
-npm run db:seed      # popular banco demo
-npm run db:reset     # resetar banco + seed
+npm run db:pilot     # escola piloto para testes locais
+npm run db:reset     # resetar banco + migrations
 npm run check        # lint + build
 npm run test:smoke -- https://sua-url   # smoke pós-deploy
 ```
@@ -68,10 +68,8 @@ Para colocar o EduHub numa escola real:
 
 1. Leia **`DEPLOY.md`** (variáveis e Railway)
 2. Siga **`docs/GUIA_INSTITUICOES.md`** (checklist completo de testes)
-3. Cadastre a escola em **`/registro/escola`** (modo institucional — sem demo automático)
+3. Cadastre a escola em **`/registro/escola`**
 4. Verifique **`GET /api/health`** após o deploy
-
-**Demo pública:** configure `EDUHUB_ENABLE_DEMO=1` no servidor (ver `DEPLOY.md`).
 
 
 ```
@@ -82,7 +80,6 @@ src/
   lib/              # db, auth, queries, gamification, school-setup
 prisma/
   schema.prisma     # Modelo de dados
-  seed.ts           # Dados iniciais
   dev.db            # Banco SQLite (gerado localmente)
 ```
 

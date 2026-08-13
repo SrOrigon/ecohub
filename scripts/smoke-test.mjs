@@ -2,7 +2,7 @@
 /**
  * Smoke test pós-deploy — verifica health e rotas públicas.
  * Uso: node scripts/smoke-test.mjs [baseUrl]
- * Ex.: node scripts/smoke-test.mjs https://eduhub-production-b513.up.railway.app
+ * Ex.: node scripts/smoke-test.mjs https://seu-app.up.railway.app
  */
 
 const base = (process.argv[2] ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(
@@ -15,7 +15,7 @@ const checks = [
   { name: "Página inicial", path: "/", expectStatus: [200] },
   { name: "Login escola", path: "/login/escola", expectStatus: [200] },
   { name: "Registro escola", path: "/registro/escola", expectStatus: [200] },
-  { name: "Demo auto-login", path: "/demo/director", expectStatus: [200, 307, 308] },
+  { name: "Rotas demo removidas", path: "/demo/director", expectStatus: [307, 308] },
 ];
 
 let failed = 0;
@@ -25,7 +25,7 @@ console.log(`[smoke] Testando ${base}\n`);
 for (const check of checks) {
   const url = `${base}${check.path}`;
   try {
-    const res = await fetch(url, { redirect: "follow" });
+    const res = await fetch(url, { redirect: "manual" });
     const ok = check.expectStatus.includes(res.status);
 
     if (check.json && res.status === 200) {

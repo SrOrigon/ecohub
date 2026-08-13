@@ -6,8 +6,6 @@ import { getAuthSecret } from "@/lib/auth-secret";
 import { loginHubPath } from "@/lib/login-paths";
 import { resolveTenantSlug, TENANT_HEADER } from "@/lib/tenant";
 
-import { isDemoLoginEnabled } from "@/lib/demo-mode";
-
 function authSecret() {
   return getAuthSecret();
 }
@@ -22,14 +20,13 @@ function isPublicPath(pathname: string) {
   if (pathname.startsWith("/e/")) return true;
   if (pathname.startsWith("/inscricao/")) return true;
   if (pathname.startsWith("/entrar")) return true;
-  if (pathname.startsWith("/demo") && isDemoLoginEnabled()) return true;
   return false;
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/demo") && !isDemoLoginEnabled()) {
+  if (pathname.startsWith("/demo")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

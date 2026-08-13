@@ -24,6 +24,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useIsMounted } from "@/hooks/use-is-mounted";
 import type { InstitutionalHistory, HistoryGranularity, StudentHistory } from "@/lib/institutional-history";
 import { getGranularityLabel } from "@/lib/institutional-history";
 import type { MetricTrend, PeriodComparison, PeriodSnapshot } from "@/lib/institutional-trends";
@@ -41,6 +42,7 @@ export function HistoricalAnalyticsPanel({
   title?: string;
   description?: string;
 }) {
+  const mounted = useIsMounted();
   const defaultGranularity =
     history.availableGranularities[history.availableGranularities.length - 1] ?? "month";
   const [granularity, setGranularity] = useState<HistoryGranularity>(defaultGranularity);
@@ -173,6 +175,8 @@ export function HistoricalAnalyticsPanel({
             <p className="text-sm text-slate-500">
               Sem buckets nesta granularidade. Lance dados acadêmicos para preencher o histórico.
             </p>
+          ) : !mounted ? (
+            <div className="h-72 w-full animate-pulse rounded-lg bg-slate-100" />
           ) : (
             <>
               <div className="h-72 w-full min-w-0">

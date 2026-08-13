@@ -77,7 +77,9 @@ export function RankingPodium({
             >
               {entry.displayName}
             </p>
-            <p className="text-xs font-semibold text-indigo-600">{score}</p>
+            <p className="max-w-full truncate text-center text-xs font-semibold whitespace-nowrap text-indigo-600 sm:text-sm">
+              {score}
+            </p>
             <div
               className={cn(
                 "mt-2 flex w-full items-end justify-center rounded-t-xl text-xs font-bold text-white",

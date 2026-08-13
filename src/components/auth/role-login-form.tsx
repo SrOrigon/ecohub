@@ -26,16 +26,12 @@ const portalConfig: Record<
   {
     title: string;
     description: string;
-    demoEmail: string;
-    demoLabel: string;
     otherPortals: { portal: Portal; label: string }[];
   }
 > = {
   escola: {
     title: "Instituição",
     description: "Acesso para direção e gestão escolar",
-    demoEmail: "admin@eduhub.local",
-    demoLabel: "Entrar como diretor (demo)",
     otherPortals: [
       { portal: "professor", label: "Sou professor" },
       { portal: "aluno", label: "Sou aluno" },
@@ -44,8 +40,6 @@ const portalConfig: Record<
   professor: {
     title: "Professor",
     description: "Publique tarefas e gerencie suas turmas",
-    demoEmail: "professor@eduhub.local",
-    demoLabel: "Entrar como professor (demo)",
     otherPortals: [
       { portal: "escola", label: "Sou instituição" },
       { portal: "aluno", label: "Sou aluno" },
@@ -54,8 +48,6 @@ const portalConfig: Record<
   aluno: {
     title: "Aluno",
     description: "Faça exercícios, missões e acompanhe seu progresso",
-    demoEmail: "lucas@aluno.local",
-    demoLabel: "Entrar como aluno (demo)",
     otherPortals: [
       { portal: "professor", label: "Sou professor" },
       { portal: "responsavel", label: "Sou responsável" },
@@ -65,8 +57,6 @@ const portalConfig: Record<
   responsavel: {
     title: "Responsável",
     description: "Acompanhe filhos, notas e crie tarefas de casa",
-    demoEmail: "mariana@responsavel.local",
-    demoLabel: "Entrar como responsável (demo)",
     otherPortals: [
       { portal: "aluno", label: "Sou aluno" },
       { portal: "professor", label: "Sou professor" },
@@ -80,13 +70,11 @@ export function RoleLoginForm({
   defaultEmail,
   defaultRememberEmail = false,
   tenantSlug,
-  showDemoPrompt = false,
 }: {
   portal: Portal;
   defaultEmail?: string;
   defaultRememberEmail?: boolean;
   tenantSlug?: string;
-  showDemoPrompt?: boolean;
 }) {
   const cfg = portalConfig[portal];
   const Icon = portalIcons[portal];
@@ -174,22 +162,6 @@ export function RoleLoginForm({
             {pending ? "Entrando..." : "Entrar"}
           </Button>
         </form>
-
-        {showDemoPrompt && (
-          <div className="mt-5 space-y-2">
-            <p className="text-sm font-medium text-[var(--foreground)]">Demo rápido:</p>
-            <form action={formAction}>
-              <input type="hidden" name="portal" value={portal} />
-              {tenantSlug && <input type="hidden" name="tenantSlug" value={tenantSlug} />}
-              <input type="hidden" name="email" value={cfg.demoEmail} />
-              <input type="hidden" name="password" value="demo123" />
-              <Button type="submit" variant="outline" className="w-full" disabled={pending}>
-                {cfg.demoLabel}
-              </Button>
-            </form>
-            <p className="text-xs text-[var(--muted-foreground)]">Senha demo: demo123</p>
-          </div>
-        )}
 
         {portal === "aluno" && (
           <p className="mt-4 text-sm text-[var(--muted-foreground)]">

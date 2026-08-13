@@ -1,6 +1,5 @@
 import { RoleLoginForm } from "@/components/auth/role-login-form";
 import { getPreferenceCookies } from "@/actions/preferences";
-import { isDemoLoginEnabled } from "@/lib/demo-mode";
 import type { LoginPortal } from "@/lib/preference-cookies";
 
 export async function RoleLoginPage({
@@ -13,7 +12,6 @@ export async function RoleLoginPage({
   embedded?: boolean;
 }) {
   const prefs = await getPreferenceCookies();
-  const showDemoPrompt = isDemoLoginEnabled();
 
   const form = (
     <RoleLoginForm
@@ -21,7 +19,6 @@ export async function RoleLoginPage({
       defaultEmail={prefs.rememberEmail ?? undefined}
       defaultRememberEmail={!!prefs.rememberEmail}
       tenantSlug={tenantSlug}
-      showDemoPrompt={showDemoPrompt}
     />
   );
 

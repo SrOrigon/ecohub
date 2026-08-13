@@ -91,7 +91,7 @@ export default async function ConfiguracoesPage() {
         <CardContent>
           <p className="font-mono text-lg font-bold text-indigo-900 dark:text-indigo-200">{school.slug}</p>
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-            Compartilhe com professores e famílias após a verificação. Demo: <strong>escola-demo</strong>
+            Compartilhe com professores e famílias após a verificação da instituição.
           </p>
         </CardContent>
       </Card>

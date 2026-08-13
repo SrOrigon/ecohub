@@ -15,6 +15,7 @@ import { TrendingDown, TrendingUp, Minus, CalendarRange } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useIsMounted } from "@/hooks/use-is-mounted";
 import type { PeriodComparison, TemporalAnalysis, MetricTrend } from "@/lib/institutional-trends";
 
 type PeriodKey = "monthly" | "semester" | "annual";
@@ -26,6 +27,7 @@ const PERIOD_TABS: { key: PeriodKey; label: string; short: string }[] = [
 ];
 
 export function TemporalAnalysisPanel({ analysis }: { analysis: TemporalAnalysis }) {
+  const mounted = useIsMounted();
   const [period, setPeriod] = useState<PeriodKey>("monthly");
   const comparison = analysis[period];
 
@@ -84,6 +86,8 @@ export function TemporalAnalysisPanel({ analysis }: { analysis: TemporalAnalysis
         <CardContent className="min-w-0">
           {analysis.timeline.length === 0 ? (
             <p className="text-sm text-slate-500">Sem histórico mensal disponível.</p>
+          ) : !mounted ? (
+            <div className="h-72 w-full animate-pulse rounded-lg bg-slate-100" />
           ) : (
             <div className="h-72 w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
@@ -157,7 +161,7 @@ function PeriodCard({
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
       <p className="mt-1 text-lg font-bold text-slate-900">{snapshot.label}</p>
       <div className="stat-grid gap-2 text-sm">
-        <Stat label="Média" value={snapshot.averageGrade.toFixed(1)} />
+        <Stat label="Média" value={safeFixed(snapshot.averageGrade)} />
         <Stat label="Frequência" value={`${snapshot.attendanceRate}%`} />
         <Stat label="Aprovação" value={`${snapshot.passRate}%`} />
         <Stat label="Saúde" value={`${snapshot.healthScore}`} />
@@ -175,6 +179,10 @@ function Stat({ label, value }: { label: string; value: string }) {
       <p className="font-semibold text-slate-800">{value}</p>
     </div>
   );
+}
+
+function safeFixed(value: number, digits = 1) {
+  return Number.isFinite(value) ? value.toFixed(digits) : "0.0";
 }
 
 function TrendCard({ trend }: { trend: MetricTrend }) {

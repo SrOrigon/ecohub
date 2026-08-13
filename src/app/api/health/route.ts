@@ -14,13 +14,11 @@ export async function GET() {
     dbOk = false;
   }
 
-  const demoMode =
-    process.env.EDUHUB_ENABLE_DEMO === "1" ||
-    process.env.EDUHUB_ENABLE_DEMO === "true" ||
-    (!process.env.EDUHUB_INSTITUTIONAL &&
-      (!process.env.AUTH_SECRET?.trim() || process.env.AUTH_SECRET.trim().length < 32));
   const authConfigured =
     !!process.env.AUTH_SECRET?.trim() && process.env.AUTH_SECRET.trim().length >= 32;
+  const institutional =
+    process.env.EDUHUB_INSTITUTIONAL === "1" ||
+    process.env.EDUHUB_INSTITUTIONAL === "true";
 
   const status = dbOk ? "ok" : "degraded";
   const httpStatus = dbOk ? 200 : 503;
@@ -33,9 +31,9 @@ export async function GET() {
       uptime: process.uptime(),
       checks: {
         database: dbOk ? "ok" : "error",
-        authSecret: authConfigured || demoMode ? "ok" : "missing",
+        authSecret: authConfigured ? "ok" : "missing",
       },
-      mode: demoMode ? "demo" : "institutional",
+      mode: institutional ? "institutional" : "production",
       responseMs: Date.now() - started,
     },
     { status: httpStatus }

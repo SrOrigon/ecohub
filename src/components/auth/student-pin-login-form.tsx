@@ -64,14 +64,14 @@ export function StudentPinLoginForm({
                 id="schoolSlug"
                 name="schoolSlug"
                 required
-                placeholder="ex.: escola-demo"
+                placeholder="ex.: minha-escola"
                 defaultValue={schoolSlug}
                 readOnly={!!schoolSlug}
               />
             </div>
             <div>
               <Label htmlFor="enrollmentCode">Matrícula</Label>
-              <Input id="enrollmentCode" name="enrollmentCode" required placeholder="ex.: 2026001" />
+              <Input id="enrollmentCode" name="enrollmentCode" required placeholder="Número de matrícula" />
             </div>
             <div>
               <Label htmlFor="pin">PIN (6 dígitos)</Label>
@@ -104,10 +104,6 @@ export function StudentPinLoginForm({
             <Link href={emailLoginHref} className="font-semibold text-[color:var(--school-primary)] hover:underline">
               Login com e-mail
             </Link>
-          </p>
-
-          <p className="mt-2 text-center text-xs text-[var(--muted-foreground)]">
-            Demo: escola <strong>escola-demo</strong> · matrícula <strong>2026001</strong> · PIN <strong>123456</strong>
           </p>
         </CardContent>
       </Card>

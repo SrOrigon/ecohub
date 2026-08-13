@@ -25,6 +25,12 @@ export default function DashboardError({
       <p className="mt-2 max-w-md text-sm text-amber-800 dark:text-amber-300">
         Ocorreu uma falha temporária no carregamento de dados. Clique em &quot;Tentar novamente&quot; para recarregar a visualização.
       </p>
+      {process.env.NODE_ENV === "development" && (
+        <p className="mt-3 max-w-lg break-all text-left text-xs text-amber-900/80 dark:text-amber-200/80">
+          {error.message}
+          {error.digest ? ` (digest: ${error.digest})` : null}
+        </p>
+      )}
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Button onClick={() => reset()} className="gap-2">
           <RefreshCw className="h-4 w-4" aria-hidden="true" />

@@ -4,12 +4,9 @@ Este guia cobre deploy, configuração inicial e **checklist de testes** antes d
 
 ---
 
-## 1. Modos de operação
+## 1. Modo de operação
 
-| Modo | Variável | Uso |
-|------|----------|-----|
-| **Institucional** | `EDUHUB_INSTITUTIONAL=1` + `AUTH_SECRET` | Escolas reais — sem contas demo automáticas |
-| **Demo** | `EDUHUB_ENABLE_DEMO=1` ou AUTH ausente | Ambiente público de demonstração |
+O EduHub em produção opera em **modo institucional**: cada escola se cadastra em `/registro/escola` e gerencia seus próprios usuários. Não há contas ou rotas de demonstração automáticas.
 
 ---
 
@@ -34,12 +31,6 @@ PLATFORM_ADMIN_EMAILS=admin@suaempresa.com.br
 RESEND_API_KEY=re_...
 EMAIL_FROM=EduHub <noreply@suaescola.com.br>
 NEXT_PUBLIC_ROOT_DOMAIN=eduhub.app.br
-```
-
-### Apenas para demo pública
-
-```env
-EDUHUB_ENABLE_DEMO=1
 ```
 
 ---
@@ -99,7 +90,7 @@ Marque cada item antes de liberar para a comunidade escolar.
 ### Infraestrutura
 
 - [ ] `/api/health` retorna `200` com `database: ok`
-- [ ] `AUTH_SECRET` configurado (não usar fallback demo)
+- [ ] `AUTH_SECRET` configurado (mínimo 32 caracteres)
 - [ ] Volume `/data` persistente (dados sobrevivem redeploy)
 - [ ] `npm run test:smoke` passa no URL de produção
 - [ ] Backup do `prod.db` testado (restore em ambiente de staging)
@@ -161,7 +152,7 @@ Marque cada item antes de liberar para a comunidade escolar.
 
 ## 7. Go-live
 
-1. Definir `EDUHUB_INSTITUTIONAL=1` (não usar demo em produção real)
+1. Definir `EDUHUB_INSTITUTIONAL=1` e `AUTH_SECRET` no ambiente de produção
 2. Trocar senhas padrão de qualquer conta de teste
 3. Treinar direção, secretaria e 1–2 professores piloto
 4. Semana piloto com uma turma antes de escola toda
@@ -177,18 +168,3 @@ Marque cada item antes de liberar para a comunidade escolar.
 | Dados sumiram após deploy | Volume `/data` montado? |
 | E-mail de convite não chega | `RESEND_API_KEY` e `EMAIL_FROM` |
 | IA desativada | Configurações → EduHub IA |
-
----
-
-## 9. Ambiente demo (referência)
-
-URL demo: https://eduhub-production-b513.up.railway.app
-
-Variáveis no Railway demo:
-```env
-EDUHUB_ENABLE_DEMO=1
-AUTH_SECRET=<recomendado mesmo no demo>
-DATABASE_URL=file:/data/prod.db
-```
-
-Contas demo: ver `README.md`.

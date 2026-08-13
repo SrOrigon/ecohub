@@ -94,10 +94,8 @@ async function validateTenantForUser(user: SessionUser): Promise<boolean> {
   if (!user.schoolId) return true;
 
   const school = await findSchoolBySlug(tenantSlug);
-  if (!school) {
-    cookieStore.delete(TENANT_COOKIE);
-    return true;
-  }
+  if (!school) return true;
+
   return school.id === user.schoolId;
 }
 
