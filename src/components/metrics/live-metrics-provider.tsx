@@ -74,7 +74,7 @@ export function LiveMetricsProvider({ children }: { children: ReactNode }) {
       if (pollRef.current) return;
       setStatus("polling");
       void refresh();
-      pollRef.current = setInterval(() => void refresh(), 15_000);
+      pollRef.current = setInterval(() => void refresh(), 45_000);
     };
 
     const connectSSE = () => {

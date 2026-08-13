@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 import type { UserRole } from "@/lib/constants";
 import { findSchoolBySlug } from "@/lib/school-lookup";
@@ -100,7 +101,7 @@ async function validateTenantForUser(user: SessionUser): Promise<boolean> {
   return school.id === user.schoolId;
 }
 
-export async function getSessionUser(): Promise<SessionUser | null> {
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -128,7 +129,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   if (!tenantOk) return null;
 
   return sessionUser;
-}
+});
 
 export async function requireSession(allowedRoles?: UserRole[]) {
   const user = await getSessionUser();

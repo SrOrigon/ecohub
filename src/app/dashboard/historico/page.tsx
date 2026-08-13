@@ -1,11 +1,20 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowRight } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getInstitutionalHistory } from "@/lib/institutional-history";
 import { PageHeader } from "@/components/layout/page-header";
-import { HistoricalAnalyticsPanel } from "@/components/institutional/historical-analytics-panel";
+import { ChartSkeleton } from "@/components/ui/chart-skeleton";
 import { Button } from "@/components/ui/button";
+
+const HistoricalAnalyticsPanel = dynamic(
+  () =>
+    import("@/components/institutional/historical-analytics-panel").then(
+      (mod) => mod.HistoricalAnalyticsPanel
+    ),
+  { loading: () => <ChartSkeleton className="h-96" /> }
+);
 
 export default async function HistoricoPage() {
   const user = await getSessionUser();

@@ -89,7 +89,30 @@ npm run db:seed        # seed local (dev)
 
 ---
 
-## Contas demo (modo EDUHUB_ENABLE_DEMO=1)
+## Atualizações sem Perda de Dados
+
+Para atualizar o sistema sem afetar o login dos usuários nem perder registros do banco:
+
+1. **Manter o mesmo `AUTH_SECRET`**:
+   O segredo `AUTH_SECRET` é utilizado para assinar os tokens de sessão. Mantenha o mesmo valor no seu arquivo `.env` ou variáveis de ambiente a cada deploy. Se o `AUTH_SECRET` for alterado, as sessões ativas serão invalidadas e os usuários precisarão relogar.
+
+2. **Migrações Não-Destrutivas**:
+   Ao atualizar a versão do sistema com novas tabelas ou colunas, utilize sempre:
+   ```bash
+   npx prisma migrate deploy
+   ```
+   > ⚠️ **NUNCA** execute `prisma migrate reset` ou `prisma db push --force-reset` em produção, pois esses comandos apagam as tabelas.
+
+3. **Backup antes da atualização**:
+   Utilize a ferramenta integrada de backup:
+   ```bash
+   npm run db:backup
+   ```
+   Isso criará uma cópia com timestamp no diretório `backups/`.
+
+---
+
+## Contas demo (modo opcional EDUHUB_ENABLE_DEMO=1)
 
 | E-mail | Senha | Papel |
 |--------|-------|-------|
@@ -100,3 +123,4 @@ npm run db:seed        # seed local (dev)
 | Matrícula `2026001` | PIN `123456` | Aluno |
 
 Guia completo de testes: **`docs/GUIA_INSTITUICOES.md`**
+

@@ -6,11 +6,13 @@ import { getAuthSecret } from "@/lib/auth-secret";
 import { loginHubPath } from "@/lib/login-paths";
 import { resolveTenantSlug, TENANT_HEADER } from "@/lib/tenant";
 
+import { isDemoLoginEnabled } from "@/lib/demo-mode";
+
 function authSecret() {
   return getAuthSecret();
 }
 
-const publicPaths = ["/", "/login", "/registro", "/entrar", "/convite", "/demo"];
+const publicPaths = ["/", "/login", "/registro", "/entrar", "/convite"];
 
 function isPublicPath(pathname: string) {
   if (publicPaths.includes(pathname)) return true;
@@ -20,12 +22,17 @@ function isPublicPath(pathname: string) {
   if (pathname.startsWith("/e/")) return true;
   if (pathname.startsWith("/inscricao/")) return true;
   if (pathname.startsWith("/entrar")) return true;
-  if (pathname.startsWith("/demo")) return true;
+  if (pathname.startsWith("/demo") && isDemoLoginEnabled()) return true;
   return false;
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith("/demo") && !isDemoLoginEnabled()) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
   const hostname = request.headers.get("host") ?? "localhost";
   const tenantSlug = resolveTenantSlug(hostname, pathname);
 

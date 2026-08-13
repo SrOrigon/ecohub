@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { cache } from "react";
 import type { SessionUser } from "@/lib/auth";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 
@@ -14,18 +15,19 @@ export async function getDashboardStats(schoolId: string | null) {
   if (!schoolId) return empty;
 
   try {
-    const [students, classes, grades, attendance, activeMissions, xpSum] = await Promise.all([
+    const [students, classes, gradeAgg, attendanceGroups, activeMissions, xpSum] = await Promise.all([
       prisma.student.count({
         where: { user: { schoolId } },
       }),
       prisma.classGroup.count({ where: { schoolId } }),
-      prisma.grade.findMany({
+      prisma.grade.aggregate({
         where: { student: { user: { schoolId } } },
-        select: { value: true },
+        _avg: { value: true },
       }),
-      prisma.attendance.findMany({
+      prisma.attendance.groupBy({
+        by: ["status"],
         where: { student: { user: { schoolId } } },
-        select: { status: true },
+        _count: true,
       }),
       prisma.mission.count({ where: { schoolId, isActive: true } }),
       prisma.student.aggregate({
@@ -34,14 +36,13 @@ export async function getDashboardStats(schoolId: string | null) {
       }),
     ]);
 
-    const validGrades = grades.map((g) => g.value).filter((v): v is number => typeof v === "number" && !isNaN(v));
-    const averageGrade =
-      validGrades.length > 0 ? validGrades.reduce((s, v) => s + v, 0) / validGrades.length : 0;
+    const averageGrade = gradeAgg._avg.value ?? 0;
 
-    const presentCount = attendance.filter(
-      (a) => a.status === "present" || a.status === "late"
-    ).length;
-    const attendanceRate = attendance.length > 0 ? (presentCount / attendance.length) * 100 : 0;
+    const totalAttendance = attendanceGroups.reduce((sum, group) => sum + group._count, 0);
+    const presentCount = attendanceGroups
+      .filter((group) => group.status === "present" || group.status === "late")
+      .reduce((sum, group) => sum + group._count, 0);
+    const attendanceRate = totalAttendance > 0 ? (presentCount / totalAttendance) * 100 : 0;
 
     return {
       totalStudents: students ?? 0,
@@ -394,7 +395,7 @@ export async function getTeachers(schoolId: string | null) {
   }
 }
 
-export async function getSchool(user: SessionUser) {
+export const getSchool = cache(async (user: SessionUser) => {
   if (!user.schoolId) return null;
   try {
     return await prisma.school.findUnique({ where: { id: user.schoolId } });
@@ -402,4 +403,4 @@ export async function getSchool(user: SessionUser) {
     console.error("[getSchool] Error:", err);
     return null;
   }
-}
+});

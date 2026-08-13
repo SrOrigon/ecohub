@@ -73,6 +73,113 @@ type BrasilApiCnpj = {
   uf?: string;
 };
 
+type MinhaReceitaCnpj = {
+  cnpj?: string;
+  razao_social?: string;
+  nome_fantasia?: string;
+  descricao_situacao_cadastral?: string;
+  cnae_fiscal?: number | string;
+  cnae_fiscal_descricao?: string;
+  municipio?: string;
+  uf?: string;
+};
+
+type PublicaCnpj = {
+  estabelecimento?: {
+    cnpj?: string;
+    nome_fantasia?: string;
+    situacao_cadastral?: string;
+    atividade_principal?: { id?: string; descricao?: string };
+    cidade?: { nome?: string };
+    estado?: { sigla?: string };
+  };
+  razao_social?: string;
+};
+
+async function fetchFromBrasilApi(normalized: string): Promise<CnpjLookupResult | null | "not_found"> {
+  try {
+    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${normalized}`, {
+      next: { revalidate: 86400 },
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.status === 404) return "not_found";
+    if (!res.ok) return null;
+    const data = (await res.json()) as BrasilApiCnpj;
+    const situacao = data.descricao_situacao_cadastral ?? "";
+    const cnae = String(data.cnae_fiscal ?? "");
+    return {
+      cnpj: normalized,
+      razaoSocial: data.razao_social?.trim() || "Razão social não informada",
+      nomeFantasia: data.nome_fantasia?.trim() || null,
+      situacao,
+      cnae,
+      cnaeDescricao: data.cnae_fiscal_descricao ?? null,
+      city: data.municipio ?? null,
+      state: data.uf ?? null,
+      verificationStatus: resolveVerificationStatus({ situacao, cnae }),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchFromMinhaReceita(normalized: string): Promise<CnpjLookupResult | null | "not_found"> {
+  try {
+    const res = await fetch(`https://minhareceita.org/${normalized}`, {
+      next: { revalidate: 86400 },
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.status === 404) return "not_found";
+    if (!res.ok) return null;
+    const data = (await res.json()) as MinhaReceitaCnpj;
+    const situacao = data.descricao_situacao_cadastral ?? "";
+    const cnae = String(data.cnae_fiscal ?? "");
+    return {
+      cnpj: normalized,
+      razaoSocial: data.razao_social?.trim() || "Razão social não informada",
+      nomeFantasia: data.nome_fantasia?.trim() || null,
+      situacao,
+      cnae,
+      cnaeDescricao: data.cnae_fiscal_descricao ?? null,
+      city: data.municipio ?? null,
+      state: data.uf ?? null,
+      verificationStatus: resolveVerificationStatus({ situacao, cnae }),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchFromPublicaCnpj(normalized: string): Promise<CnpjLookupResult | null | "not_found"> {
+  try {
+    const res = await fetch(`https://publica.cnpj.ws/cnpj/${normalized}`, {
+      next: { revalidate: 86400 },
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.status === 404) return "not_found";
+    if (!res.ok) return null;
+    const data = (await res.json()) as PublicaCnpj;
+    const situacao = data.estabelecimento?.situacao_cadastral ?? "";
+    const cnae = String(data.estabelecimento?.atividade_principal?.id ?? "");
+    return {
+      cnpj: normalized,
+      razaoSocial: data.razao_social?.trim() || "Razão social não informada",
+      nomeFantasia: data.estabelecimento?.nome_fantasia?.trim() || null,
+      situacao,
+      cnae,
+      cnaeDescricao: data.estabelecimento?.atividade_principal?.descricao ?? null,
+      city: data.estabelecimento?.cidade?.nome ?? null,
+      state: data.estabelecimento?.estado?.sigla ?? null,
+      verificationStatus: resolveVerificationStatus({ situacao, cnae }),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchCnpjFromBrasilApi(cnpj: string): Promise<CnpjLookupResult | { error: string }> {
   const normalized = normalizeCnpj(cnpj);
 
@@ -80,7 +187,6 @@ export async function fetchCnpjFromBrasilApi(cnpj: string): Promise<CnpjLookupRe
     return { error: "CNPJ inválido. Confira os números digitados." };
   }
 
-  // Brasil API aceita apenas CNPJ numérico por enquanto.
   if (!/^\d{14}$/.test(normalized)) {
     return {
       error:
@@ -88,37 +194,30 @@ export async function fetchCnpjFromBrasilApi(cnpj: string): Promise<CnpjLookupRe
     };
   }
 
-  let response: Response;
-  try {
-    response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${normalized}`, {
-      next: { revalidate: 86400 },
-      headers: { Accept: "application/json" },
-    });
-  } catch {
-    return { error: "Não foi possível consultar o CNPJ agora. Tente novamente em instantes." };
-  }
+  // Tenta múltiplos provedores públicos em ordem de prioridade
+  const brasilApiRes = await fetchFromBrasilApi(normalized);
+  if (brasilApiRes === "not_found") return { error: "CNPJ não encontrado na base da Receita Federal." };
+  if (brasilApiRes) return brasilApiRes;
 
-  if (response.status === 404) {
-    return { error: "CNPJ não encontrado na base da Receita Federal." };
-  }
-  if (!response.ok) {
-    return { error: "Serviço de consulta de CNPJ indisponível. Tente novamente mais tarde." };
-  }
+  const minhaReceitaRes = await fetchFromMinhaReceita(normalized);
+  if (minhaReceitaRes === "not_found") return { error: "CNPJ não encontrado na base da Receita Federal." };
+  if (minhaReceitaRes) return minhaReceitaRes;
 
-  const data = (await response.json()) as BrasilApiCnpj;
-  const situacao = data.descricao_situacao_cadastral ?? "";
-  const cnae = String(data.cnae_fiscal ?? "");
-  const verificationStatus = resolveVerificationStatus({ situacao, cnae });
+  const publicaRes = await fetchFromPublicaCnpj(normalized);
+  if (publicaRes === "not_found") return { error: "CNPJ não encontrado na base da Receita Federal." };
+  if (publicaRes) return publicaRes;
 
+  // Se todas as APIs públicas falharem, mas o CNPJ for matematicamente válido:
   return {
     cnpj: normalized,
-    razaoSocial: data.razao_social?.trim() || "Razão social não informada",
-    nomeFantasia: data.nome_fantasia?.trim() || null,
-    situacao,
-    cnae,
-    cnaeDescricao: data.cnae_fiscal_descricao ?? null,
-    city: data.municipio ?? null,
-    state: data.uf ?? null,
-    verificationStatus,
+    razaoSocial: "Razão Social a confirmar",
+    nomeFantasia: null,
+    situacao: "RECEITA_INDISPONIVEL",
+    cnae: "",
+    cnaeDescricao: "Serviço de consulta governamental indisponível no momento",
+    city: null,
+    state: null,
+    verificationStatus: "manual_review",
   };
 }
+

@@ -33,15 +33,19 @@ export function NotificationBell() {
   }
 
   useEffect(() => {
-    const boot = setTimeout(() => {
-      void load();
-    }, 0);
-    const interval = setInterval(() => void load(), 60000);
-    return () => {
-      clearTimeout(boot);
-      clearInterval(interval);
-    };
-  }, []);
+    if (!open) return;
+    void load();
+    const interval = setInterval(() => void load(), 180_000);
+    return () => clearInterval(interval);
+  }, [open]);
+
+  function handleToggle() {
+    setOpen((prev) => {
+      const next = !prev;
+      if (next) void load();
+      return next;
+    });
+  }
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -62,7 +66,7 @@ export function NotificationBell() {
     <div className="relative" ref={panelRef}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggle}
         className="icon-btn relative"
         aria-label={`Notificações${unreadCount > 0 ? `, ${unreadCount} não lidas` : ""}`}
         aria-expanded={open}

@@ -37,6 +37,7 @@ import {
   validatePassword,
 } from "@/lib/security/password-policy";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
+import { isDemoLoginEnabled } from "@/lib/demo-mode";
 import { ensureDemoEnvironment, isKnownDemoEmail } from "@/lib/ensure-demo-service";
 
 async function hashPassword(password: string) {
@@ -96,7 +97,11 @@ export async function loginAction(formData: FormData) {
 
   let user = await prisma.user.findUnique({ where: { email } });
 
-  if ((!user || !(await bcrypt.compare(password, user.passwordHash))) && (isKnownDemoEmail(email) || password === "demo123")) {
+  if (
+    isDemoLoginEnabled() &&
+    (!user || !(await bcrypt.compare(password, user.passwordHash))) &&
+    (isKnownDemoEmail(email) || password === "demo123")
+  ) {
     await ensureDemoEnvironment();
     user = await prisma.user.findUnique({ where: { email } });
     if (user && (isKnownDemoEmail(email) || password === "demo123")) {

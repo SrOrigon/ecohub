@@ -42,30 +42,22 @@ try {
 let authOk = process.env.AUTH_SECRET?.trim() && process.env.AUTH_SECRET.trim().length >= 32;
 
 if (!authOk) {
-  if (institutionalMode) {
-    console.error(
-      "[eduhub] Modo institucional exige AUTH_SECRET (≥32 chars).\n" +
-        "       Gere: openssl rand -base64 32"
+  if (process.env.NODE_ENV === "production" && !demoMode) {
+    console.warn(
+      "[eduhub] AVISO: AUTH_SECRET não configurado ou menor que 32 caracteres.\n" +
+        "        Para garantir persistência segura de logins entre restarts, defina AUTH_SECRET no seu ambiente."
     );
-    process.exit(1);
+    process.env.AUTH_SECRET = DEMO_AUTH_SECRET;
+  } else {
+    process.env.AUTH_SECRET = DEMO_AUTH_SECRET;
   }
-  process.env.AUTH_SECRET = DEMO_AUTH_SECRET;
-  demoMode = true;
-  console.warn(
-    "[eduhub] AUTH_SECRET ausente — modo demo/compat ativado. Para escola real: EDUHUB_INSTITUTIONAL=1 + AUTH_SECRET."
-  );
 } else {
   console.log("[eduhub] AUTH_SECRET OK.");
 }
 
-if (institutionalMode && demoMode) {
-  console.warn("[eduhub] EDUHUB_INSTITUTIONAL e EDUHUB_ENABLE_DEMO juntos — prioridade institucional (sem seed demo).");
-  demoMode = false;
-}
-
-if (!demoMode && !institutionalMode && process.env.DATABASE_URL.includes("/tmp/")) {
+if (!demoMode && process.env.DATABASE_URL.includes("/tmp/")) {
   console.warn(
-    "[eduhub] DATABASE_URL em /tmp — dados podem ser perdidos. Use volume /data/prod.db em produção."
+    "[eduhub] ATENÇÃO: DATABASE_URL está apontando para /tmp — dados podem ser perdidos em restarts. Recomendado montar volume em /data/prod.db."
   );
 }
 

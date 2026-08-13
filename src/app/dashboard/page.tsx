@@ -1,4 +1,5 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   BookOpen,
   GraduationCap,
@@ -9,7 +10,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ClassComparisonChart, PerformanceChart } from "@/components/charts/performance-charts";
+import { ChartSkeleton } from "@/components/ui/chart-skeleton";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
@@ -25,6 +26,15 @@ import { formatPercent } from "@/lib/utils";
 import { RankingTableRows } from "@/components/profile/ranking-list";
 import { LiveActivityFeed, LiveStatsStrip } from "@/components/metrics/live-activity-feed";
 import { redirect } from "next/navigation";
+
+const PerformanceChart = dynamic(
+  () => import("@/components/charts/performance-charts").then((mod) => mod.PerformanceChart),
+  { loading: () => <ChartSkeleton /> }
+);
+const ClassComparisonChart = dynamic(
+  () => import("@/components/charts/performance-charts").then((mod) => mod.ClassComparisonChart),
+  { loading: () => <ChartSkeleton /> }
+);
 
 export default async function DashboardPage() {
   const user = await getSessionUser();

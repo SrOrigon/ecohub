@@ -66,28 +66,50 @@ function buildVersion(stats: LiveStats, activityIds: string[]) {
   ].join("|");
 }
 
-async function getStudentRanks(schoolId: string, studentId: string, classId: string | null) {
-  const students = await prisma.student.findMany({
-    where: { user: { schoolId } },
-    select: { id: true, classId: true, xpTotal: true },
-    orderBy: { xpTotal: "desc" },
-  });
+const SNAPSHOT_CACHE_TTL_MS = 30_000;
+const snapshotCache = new Map<string, { expires: number; snapshot: LiveMetricsSnapshot }>();
 
-  const schoolRank = students.findIndex((s) => s.id === studentId) + 1;
-  let classRank: number | null = null;
-  if (classId) {
-    const inClass = students.filter((s) => s.classId === classId);
-    classRank = inClass.findIndex((s) => s.id === studentId) + 1;
-    if (classRank === 0) classRank = null;
-  }
+function snapshotCacheKey(user: SessionUser) {
+  return `${user.id}:${user.role}:${user.schoolId ?? ""}`;
+}
+
+async function getStudentRanks(schoolId: string, studentId: string, classId: string | null) {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { xpTotal: true },
+  });
+  if (!student) return { schoolRank: null, classRank: null };
+
+  const [higherInSchool, higherInClass] = await Promise.all([
+    prisma.student.count({
+      where: { user: { schoolId }, xpTotal: { gt: student.xpTotal } },
+    }),
+    classId
+      ? prisma.student.count({
+          where: { user: { schoolId }, classId, xpTotal: { gt: student.xpTotal } },
+        })
+      : Promise.resolve(-1),
+  ]);
 
   return {
-    schoolRank: schoolRank > 0 ? schoolRank : null,
-    classRank,
+    schoolRank: higherInSchool + 1,
+    classRank: classId && higherInClass >= 0 ? higherInClass + 1 : null,
   };
 }
 
 export async function getLiveMetricsSnapshot(user: SessionUser): Promise<LiveMetricsSnapshot> {
+  const cacheKey = snapshotCacheKey(user);
+  const cached = snapshotCache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) {
+    return cached.snapshot;
+  }
+
+  const snapshot = await computeLiveMetricsSnapshot(user);
+  snapshotCache.set(cacheKey, { expires: Date.now() + SNAPSHOT_CACHE_TTL_MS, snapshot });
+  return snapshot;
+}
+
+async function computeLiveMetricsSnapshot(user: SessionUser): Promise<LiveMetricsSnapshot> {
   const schoolId = user.schoolId;
   const empty: LiveMetricsSnapshot = {
     version: "0",
@@ -131,7 +153,7 @@ export async function getLiveMetricsSnapshot(user: SessionUser): Promise<LiveMet
       submissionsToday,
       studentCount,
       gradeAgg,
-      attendanceAgg,
+      attendanceGroups,
       recentXp,
       recentSubmissions,
       recentMissions,
@@ -171,11 +193,10 @@ export async function getLiveMetricsSnapshot(user: SessionUser): Promise<LiveMet
         where: { student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) } },
         _avg: { value: true },
       }),
-      prisma.attendance.findMany({
+      prisma.attendance.groupBy({
+        by: ["status"],
         where: { student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) } },
-        select: { status: true },
-        take: 500,
-        orderBy: { date: "desc" },
+        _count: true,
       }),
       prisma.xpTransaction.findMany({
         where: { student: { user: { schoolId }, ...(teacherStudentFilter ?? {}) } },
@@ -222,9 +243,12 @@ export async function getLiveMetricsSnapshot(user: SessionUser): Promise<LiveMet
         : Promise.resolve(null),
     ]);
 
-    const present = attendanceAgg.filter((a) => a.status === "present" || a.status === "late").length;
+    const totalAttendance = attendanceGroups.reduce((sum, group) => sum + group._count, 0);
+    const present = attendanceGroups
+      .filter((group) => group.status === "present" || group.status === "late")
+      .reduce((sum, group) => sum + group._count, 0);
     const attendanceRate =
-      attendanceAgg.length > 0 ? Math.round((present / attendanceAgg.length) * 100) : 0;
+      totalAttendance > 0 ? Math.round((present / totalAttendance) * 100) : 0;
 
     const stats: LiveStats = {
       xpThisWeek: xpWeekAgg._sum.amount ?? 0,

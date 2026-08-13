@@ -1,4 +1,5 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   AlertTriangle,
   BookOpen,
@@ -17,17 +18,33 @@ import { getSessionUser } from "@/lib/auth";
 import { getInstitutionalOverview } from "@/lib/institutional-overview";
 import { getTemporalAnalysis } from "@/lib/institutional-trends";
 import { getSubjectPrecisionOverview } from "@/lib/subject-precision";
-import { TemporalAnalysisPanel } from "@/components/institutional/temporal-analysis-panel";
 import { SubjectPrecisionSummaryStrip } from "@/components/institutional/subject-precision-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PerformanceChart, ClassComparisonChart } from "@/components/charts/performance-charts";
-import {
-  InstitutionalHealthGauge,
-  SubjectPerformanceChart,
-} from "@/components/institutional/leitura-geral-charts";
+import { ChartSkeleton } from "@/components/ui/chart-skeleton";
 import { redirect } from "next/navigation";
+
+const PerformanceChart = dynamic(
+  () => import("@/components/charts/performance-charts").then((mod) => mod.PerformanceChart),
+  { loading: () => <ChartSkeleton /> }
+);
+const ClassComparisonChart = dynamic(
+  () => import("@/components/charts/performance-charts").then((mod) => mod.ClassComparisonChart),
+  { loading: () => <ChartSkeleton /> }
+);
+const TemporalAnalysisPanel = dynamic(
+  () => import("@/components/institutional/temporal-analysis-panel").then((mod) => mod.TemporalAnalysisPanel),
+  { loading: () => <ChartSkeleton className="h-96" /> }
+);
+const InstitutionalHealthGauge = dynamic(
+  () => import("@/components/institutional/leitura-geral-charts").then((mod) => mod.InstitutionalHealthGauge),
+  { loading: () => <ChartSkeleton className="h-64" /> }
+);
+const SubjectPerformanceChart = dynamic(
+  () => import("@/components/institutional/leitura-geral-charts").then((mod) => mod.SubjectPerformanceChart),
+  { loading: () => <ChartSkeleton /> }
+);
 
 export default async function LeituraGeralPage() {
   const user = await getSessionUser();

@@ -6,10 +6,12 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { SchoolThemeProvider } from "@/components/school/school-theme-provider";
 import { LiveMetricsProvider } from "@/components/metrics/live-metrics-provider";
-import { LivePageSync } from "@/components/metrics/live-page-sync";
 import { AttentionAlertsProvider } from "@/components/alerts/attention-alerts-provider";
 import { isKidFriendlyRole, type UserRole } from "@/lib/constants";
 import type { SchoolSettings } from "@/lib/school-settings";
+
+const LIVE_METRICS_ROLES: UserRole[] = ["admin", "director", "teacher", "student", "secretary"];
+const ATTENTION_ALERTS_ROLES: UserRole[] = ["parent"];
 
 export function DashboardShell({
   children,
@@ -37,12 +39,10 @@ export function DashboardShell({
   const pathname = usePathname();
   const kidFriendly = isKidFriendlyRole(role);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const needsLiveMetrics = LIVE_METRICS_ROLES.includes(role);
+  const needsAttentionAlerts = ATTENTION_ALERTS_ROLES.includes(role);
 
-  return (
-    <SchoolThemeProvider branding={branding}>
-      <LiveMetricsProvider>
-        <AttentionAlertsProvider>
-        <LivePageSync />
+  const shell = (
         <div
           className="app-shell"
           data-audience={kidFriendly ? "student" : "staff"}
@@ -85,8 +85,23 @@ export function DashboardShell({
           </main>
         </div>
         </div>
-        </AttentionAlertsProvider>
-      </LiveMetricsProvider>
+  );
+
+  return (
+    <SchoolThemeProvider branding={branding}>
+      {needsLiveMetrics ? (
+        needsAttentionAlerts ? (
+          <LiveMetricsProvider>
+            <AttentionAlertsProvider>{shell}</AttentionAlertsProvider>
+          </LiveMetricsProvider>
+        ) : (
+          <LiveMetricsProvider>{shell}</LiveMetricsProvider>
+        )
+      ) : needsAttentionAlerts ? (
+        <AttentionAlertsProvider>{shell}</AttentionAlertsProvider>
+      ) : (
+        shell
+      )}
     </SchoolThemeProvider>
   );
 }

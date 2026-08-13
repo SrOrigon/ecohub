@@ -163,6 +163,12 @@ export function RegisterSchoolForm() {
                     Pronto para cadastro
                   </p>
                 )}
+                {preview.verificationStatus === "manual_review" && (
+                  <p className="mt-2 flex items-center gap-1 text-amber-700 dark:text-amber-300">
+                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                    CNPJ validado algoritmicamente. Pronto para prosseguir com o cadastro.
+                  </p>
+                )}
               </div>
             )}
 
