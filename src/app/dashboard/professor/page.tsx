@@ -42,7 +42,7 @@ export default async function TeacherDashboardPage() {
   const [ranking, exercises, settings, agenda, teacherClasses, dayOverview, pendingMissions] = await Promise.all([
     getRanking(user.schoolId).catch(() => []),
     getExercisesForUser(user).catch(() => []),
-    getSchoolSettings(user.schoolId).catch(() => ({ academic: { subjects: [] }, xp: {}, exercises: {}, missions: {} } as any)),
+    getSchoolSettings(user.schoolId).catch(() => ({ academic: { subjects: [] }, xp: {}, exercises: {}, missions: {} } as unknown as Awaited<ReturnType<typeof getSchoolSettings>>)),
     getTodayAgendaForTeacher(user, user.schoolId).catch(() => ({ items: [], dayStatus: null, classCount: 0 })),
     getTeacherClasses(user).catch(() => []),
     user.schoolId ? getTeacherDayOverview(user.schoolId, user.id).catch(() => []) : Promise.resolve([]),

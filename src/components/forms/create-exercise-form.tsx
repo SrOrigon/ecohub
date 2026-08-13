@@ -20,14 +20,16 @@ type DraftQuestion = {
   prompt: string;
   type: QuestionType;
   points: number;
+  xpReward: number;
   options: { id: string; text: string; isCorrect: boolean }[];
 };
 
-function newQuestion(type: QuestionType = "choice"): DraftQuestion {
+function newQuestion(type: QuestionType = "choice", points = 2, xpReward = 20): DraftQuestion {
   return {
     prompt: "",
     type,
-    points: 1,
+    points,
+    xpReward,
     options: [
       { id: "a", text: "", isCorrect: true },
       { id: "b", text: "", isCorrect: false },
@@ -43,6 +45,12 @@ const DEFAULT_PRESETS: Preset[] = [
   { label: "Prova", xp: 150, coins: 40, points: 10 },
 ];
 
+const EXAM_PRESETS: Preset[] = [
+  { label: "Avaliação Parcial", xp: 100, coins: 30, points: 5 },
+  { label: "Prova Bimestral", xp: 200, coins: 50, points: 10 },
+  { label: "Simulado Oficial", xp: 250, coins: 60, points: 10 },
+];
+
 export function CreateExerciseForm({
   classes,
   presets = DEFAULT_PRESETS,
@@ -54,6 +62,7 @@ export function CreateExerciseForm({
 }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
+  const [kind, setKind] = useState<"homework" | "exam">("homework");
   const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion()]);
   const mid = presets[1] ?? presets[0] ?? DEFAULT_PRESETS[1];
   const [rewards, setRewards] = useState({
@@ -67,6 +76,9 @@ export function CreateExerciseForm({
   const [aiPending, startAiTransition] = useTransition();
 
   const effectiveAiSubject = aiSubject && subjects.includes(aiSubject) ? aiSubject : (subjects[0] ?? "");
+
+  const totalQuestionPoints = questions.reduce((s, q) => s + (Number(q.points) || 0), 0);
+  const totalQuestionXp = questions.reduce((s, q) => s + (Number(q.xpReward) || 0), 0);
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
@@ -95,6 +107,20 @@ export function CreateExerciseForm({
     setStep(1);
   }
 
+  function distributeXpEvenly() {
+    if (questions.length === 0) return;
+    const perQuestion = Math.max(1, Math.round(rewards.xp / questions.length));
+    setQuestions((qs) => qs.map((q) => ({ ...q, xpReward: perQuestion })));
+  }
+
+  function syncPointsFromQuestions() {
+    setRewards((r) => ({ ...r, maxPoints: totalQuestionPoints }));
+  }
+
+  function syncXpFromQuestions() {
+    setRewards((r) => ({ ...r, xp: totalQuestionXp }));
+  }
+
   function generateWithAi() {
     if (!aiTopic.trim()) {
       setAiError("Informe o tema das questões.");
@@ -112,11 +138,14 @@ export function CreateExerciseForm({
         return;
       }
       if (result.questions?.length) {
+        const count = result.questions.length;
+        const defaultXpPerQ = Math.max(5, Math.round(rewards.xp / count));
         setQuestions(
           result.questions.map((q) => ({
             prompt: q.prompt,
             type: q.type,
-            points: q.points,
+            points: q.points ?? 2,
+            xpReward: defaultXpPerQ,
             options: q.options.length ? q.options : newQuestion("choice").options,
           }))
         );
@@ -130,19 +159,19 @@ export function CreateExerciseForm({
         <PenLine className="h-4 w-4" aria-hidden="true" />
         Publicar para a turma
       </Button>
-      <Modal open={open} onClose={closeModal} title="Nova atividade">
+      <Modal open={open} onClose={closeModal} title="Nova atividade pedagógica">
         <div className="mb-4 flex gap-2">
           {[1, 2, 3].map((s) => (
             <div
               key={s}
-              className={`h-2 flex-1 rounded-full ${s <= step ? "bg-indigo-600" : "bg-slate-200"}`}
+              className={`h-2 flex-1 rounded-full transition-all ${s <= step ? "bg-indigo-600" : "bg-slate-200"}`}
               aria-hidden="true"
             />
           ))}
         </div>
-        <p className="mb-4 text-sm text-slate-600">
+        <p className="mb-4 text-sm font-medium text-slate-600">
           Passo {step} de 3 —{" "}
-          {step === 1 ? "Informações básicas" : step === 2 ? "Recompensas" : "Questões"}
+          {step === 1 ? "Informações básicas" : step === 2 ? "Configurar Pontuação & Gamificação" : "Elaboração de Questões"}
         </p>
 
         <form action={formAction} className="space-y-4">
@@ -150,14 +179,25 @@ export function CreateExerciseForm({
             <>
               <div>
                 <Label htmlFor="title">Título da atividade</Label>
-                <Input id="title" name="title" required placeholder="Ex.: Frações — exercício da semana" />
+                <Input id="title" name="title" required placeholder="Ex.: Frações Equivalentes — Exercício Semanal" />
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <Label htmlFor="kind">Tipo</Label>
-                  <Select id="kind" name="kind" defaultValue="homework">
+                  <Label htmlFor="kind">Tipo de Atividade</Label>
+                  <Select
+                    id="kind"
+                    name="kind"
+                    value={kind}
+                    onChange={(e) => {
+                      const newKind = e.target.value as "homework" | "exam";
+                      setKind(newKind);
+                      if (newKind === "exam") {
+                        setRewards({ xp: EXAM_PRESETS[1].xp, coins: EXAM_PRESETS[1].coins, maxPoints: EXAM_PRESETS[1].points });
+                      }
+                    }}
+                  >
                     <option value="homework">Exercício de casa</option>
-                    <option value="exam">Prova</option>
+                    <option value="exam">Prova / Avaliação Oficial</option>
                   </Select>
                 </div>
                 <div>
@@ -171,11 +211,11 @@ export function CreateExerciseForm({
                 </div>
               </div>
               <div>
-                <Label htmlFor="description">Instruções para os alunos</Label>
+                <Label htmlFor="description">Instruções para os Alunos</Label>
                 <Textarea
                   id="description"
                   name="description"
-                  placeholder="Explique o que fazer, materiais necessários, etc."
+                  placeholder="Explique o objetivo, critérios de correção ou materiais de apoio necessários..."
                   rows={3}
                 />
               </div>
@@ -188,23 +228,34 @@ export function CreateExerciseForm({
 
           {step === 2 && (
             <>
-              <p className="text-sm text-slate-600">Escolha um preset ou ajuste manualmente:</p>
+              {kind === "exam" && (
+                <div className="rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-900 font-medium flex items-center gap-2">
+                  <span>📝</span>
+                  <span>
+                    <strong>Modo Prova / Avaliação Oficial:</strong> As notas desta avaliação compõem o boletim oficial dos alunos no período letivo.
+                  </span>
+                </div>
+              )}
+              <p className="text-sm font-medium text-slate-700">
+                Presets {kind === "exam" ? "de Prova Oficial" : "de Recompensa"} (ou personalize abaixo):
+              </p>
               <div className="flex flex-wrap gap-2">
-                {presets.map((p) => (
+                {(kind === "exam" ? EXAM_PRESETS : presets).map((p) => (
                   <Button
                     key={p.label}
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="gap-1 border-indigo-200 hover:bg-indigo-50"
                     onClick={() => setRewards({ xp: p.xp, coins: p.coins, maxPoints: p.points })}
                   >
-                    {p.label}: {p.xp} XP · {p.coins} moedas
+                    🎯 {p.label}: ⚡ {p.xp} XP · 🪙 {p.coins} moedas ({p.points} pts)
                   </Button>
                 ))}
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
-                  <Label htmlFor="maxPoints">Pontuação máxima</Label>
+                  <Label htmlFor="maxPoints">Pontuação Máxima (Conjunto)</Label>
                   <Input
                     id="maxPoints"
                     name="maxPoints"
@@ -216,7 +267,7 @@ export function CreateExerciseForm({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="xpReward">XP ao concluir</Label>
+                  <Label htmlFor="xpReward">XP Total (Conjunto)</Label>
                   <Input
                     id="xpReward"
                     name="xpReward"
@@ -226,7 +277,7 @@ export function CreateExerciseForm({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="coinReward">Moedas</Label>
+                  <Label htmlFor="coinReward">Moedas (Conjunto)</Label>
                   <Input
                     id="coinReward"
                     name="coinReward"
@@ -236,25 +287,33 @@ export function CreateExerciseForm({
                   />
                 </div>
               </div>
-              <p className="rounded-lg bg-indigo-50 px-3 py-2 text-sm text-indigo-900">
-                Quiz só com múltipla escolha = correção automática e XP na hora.
-                Com respostas abertas, você corrige e os alunos ganham XP proporcional à nota.
-              </p>
+
+              <div className="rounded-xl border border-indigo-100 bg-indigo-50/80 p-3 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-indigo-900">Sincronização Rápida de Valores</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="secondary" size="sm" onClick={syncPointsFromQuestions}>
+                    🎯 Usar Soma das Questões ({totalQuestionPoints} pts)
+                  </Button>
+                  <Button type="button" variant="secondary" size="sm" onClick={syncXpFromQuestions}>
+                    ⚡ Usar Soma de XP das Questões ({totalQuestionXp} XP)
+                  </Button>
+                </div>
+              </div>
             </>
           )}
 
           {step === 3 && (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 p-3">
                 <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-indigo-900">
-                  <Sparkles className="h-4 w-4" aria-hidden="true" />
-                  Gerar com EduHub IA (local, sem API)
+                  <Sparkles className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+                  Gerador Automático de Questões (EduHub IA)
                 </p>
                 <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
                   <Input
                     value={aiTopic}
                     onChange={(e) => setAiTopic(e.target.value)}
-                    placeholder="Tema, ex.: frações equivalentes"
+                    placeholder="Tema pedagógico (ex.: frações equivalentes)"
                     aria-label="Tema para gerar questões"
                   />
                   <Select
@@ -281,7 +340,7 @@ export function CreateExerciseForm({
                     disabled={aiPending || subjects.length === 0 || !effectiveAiSubject}
                     onClick={generateWithAi}
                   >
-                    {aiPending ? "Gerando…" : "Gerar questões"}
+                    {aiPending ? "Gerando…" : "Gerar 3 Questões"}
                   </Button>
                 </div>
                 {aiError && (
@@ -290,90 +349,135 @@ export function CreateExerciseForm({
                   </p>
                 )}
               </div>
+
+              {/* Live Summary Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-100 p-3 text-xs sm:text-sm font-medium">
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-700">🎯 Questões: <strong>{questions.length}</strong></span>
+                  <span className="text-indigo-700">Pontos Soma: <strong>{totalQuestionPoints}</strong> / {rewards.maxPoints} pts</span>
+                  <span className="text-amber-700">XP Soma: <strong>{totalQuestionXp}</strong> / {rewards.xp} XP</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={distributeXpEvenly} className="h-7 text-xs">
+                    ⚡ Distribuir {rewards.xp} XP igualmente
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={syncPointsFromQuestions} className="h-7 text-xs">
+                    🎯 Ajustar Pontos Máx.
+                  </Button>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
-                <p className="font-semibold text-slate-800">Questões ({questions.length})</p>
+                <p className="font-semibold text-slate-800">Editor de Questões</p>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setQuestions((qs) => [...qs, newQuestion()])}
+                  onClick={() => setQuestions((qs) => [...qs, newQuestion("choice", 2, Math.max(10, Math.round(rewards.xp / (qs.length + 1))))])}
                 >
-                  + Adicionar
+                  + Adicionar Questão
                 </Button>
               </div>
+
               {questions.map((q, i) => (
-                <div key={i} className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-bold text-indigo-700">Q{i + 1}</span>
-                    <Select
-                      value={q.type}
-                      onChange={(e) =>
-                        updateQuestion(i, {
-                          type: e.target.value as QuestionType,
-                          options: e.target.value === "choice" ? newQuestion("choice").options : [],
-                        })
-                      }
-                      className="w-full min-w-0 sm:w-auto sm:min-w-[10rem]"
-                    >
-                      <option value="choice">Múltipla escolha</option>
-                      <option value="text">Resposta aberta</option>
-                    </Select>
-                    <Input
-                      type="number"
-                      step="0.5"
-                      className="w-20"
-                      value={q.points}
-                      onChange={(e) => updateQuestion(i, { points: parseFloat(e.target.value) || 1 })}
-                      aria-label="Pontos"
-                    />
-                    <span className="text-xs text-slate-500">pts</span>
-                    {questions.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setQuestions((qs) => qs.filter((_, idx) => idx !== i))}
+                <div key={i} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+                        Q{i + 1}
+                      </span>
+                      <Select
+                        value={q.type}
+                        onChange={(e) =>
+                          updateQuestion(i, {
+                            type: e.target.value as QuestionType,
+                            options: e.target.value === "choice" ? newQuestion("choice").options : [],
+                          })
+                        }
+                        className="w-full min-w-0 sm:w-auto sm:min-w-[10rem]"
                       >
-                        Remover
-                      </Button>
-                    )}
+                        <option value="choice">Múltipla escolha (Auto-correção)</option>
+                        <option value="text">Resposta aberta (Correção manual)</option>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded-lg">
+                        <span className="text-xs font-semibold text-indigo-700">Pontos:</span>
+                        <Input
+                          type="number"
+                          step="0.5"
+                          className="h-7 w-16 text-center text-xs font-bold"
+                          value={q.points}
+                          onChange={(e) => updateQuestion(i, { points: parseFloat(e.target.value) || 0 })}
+                          aria-label="Pontos da questão"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg">
+                        <span className="text-xs font-semibold text-amber-700">⚡ XP:</span>
+                        <Input
+                          type="number"
+                          className="h-7 w-16 text-center text-xs font-bold"
+                          value={q.xpReward}
+                          onChange={(e) => updateQuestion(i, { xpReward: parseInt(e.target.value, 10) || 0 })}
+                          aria-label="XP da questão"
+                        />
+                      </div>
+                      {questions.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:bg-red-50 hover:text-red-700"
+                          onClick={() => setQuestions((qs) => qs.filter((_, idx) => idx !== i))}
+                        >
+                          Remover
+                        </Button>
+                      )}
+                    </div>
                   </div>
+
                   <Input
                     value={q.prompt}
                     onChange={(e) => updateQuestion(i, { prompt: e.target.value })}
-                    placeholder="Digite o enunciado..."
+                    placeholder="Digite o enunciado da questão..."
                     required
                   />
-                  {q.type === "choice" &&
-                    q.options.map((opt, oi) => (
-                      <div key={opt.id} className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name={`correct-${i}`}
-                          checked={opt.isCorrect}
-                          onChange={() =>
-                            updateQuestion(i, {
-                              options: q.options.map((o, j) => ({ ...o, isCorrect: j === oi })),
-                            })
-                          }
-                          aria-label={`Gabarito alternativa ${oi + 1}`}
-                        />
-                        <span className="w-6 text-sm font-medium text-slate-500">
-                          {String.fromCharCode(65 + oi)}
-                        </span>
-                        <Input
-                          value={opt.text}
-                          onChange={(e) =>
-                            updateQuestion(i, {
-                              options: q.options.map((o, j) =>
-                                j === oi ? { ...o, text: e.target.value } : o
-                              ),
-                            })
-                          }
-                          placeholder="Texto da alternativa"
-                        />
-                      </div>
-                    ))}
+                  {q.type === "choice" && (
+                    <div className="space-y-2 pl-2 border-l-2 border-indigo-100">
+                      <p className="text-xs font-medium text-slate-500">Alternativas (Selecione a resposta correta):</p>
+                      {q.options.map((opt, oi) => (
+                        <div key={opt.id} className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name={`correct-${i}`}
+                            checked={opt.isCorrect}
+                            onChange={() =>
+                              updateQuestion(i, {
+                                options: q.options.map((o, j) => ({ ...o, isCorrect: j === oi })),
+                              })
+                            }
+                            aria-label={`Gabarito alternativa ${oi + 1}`}
+                          />
+                          <span className="w-5 text-xs font-bold text-slate-600">
+                            {String.fromCharCode(65 + oi)}
+                          </span>
+                          <Input
+                            value={opt.text}
+                            onChange={(e) =>
+                              updateQuestion(i, {
+                                options: q.options.map((o, j) =>
+                                  j === oi ? { ...o, text: e.target.value } : o
+                                ),
+                              })
+                            }
+                            placeholder={`Alternativa ${String.fromCharCode(65 + oi)}...`}
+                            required
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -393,7 +497,7 @@ export function CreateExerciseForm({
               </Button>
             ) : (
               <Button type="submit" disabled={pending} className="w-full sm:ml-auto sm:w-auto">
-                {pending ? "Publicando..." : "Publicar para a turma"}
+                {pending ? "Publicando..." : "Publicar para a Turma"}
               </Button>
             )}
           </div>

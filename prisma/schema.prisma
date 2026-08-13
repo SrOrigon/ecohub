@@ -393,6 +393,7 @@ model ExerciseQuestion {
   type       String  @default("choice")
   options    String?
   points     Float   @default(1)
+  xpReward   Int     @default(0)
   sortOrder  Int     @default(0)
 
   exercise Exercise         @relation(fields: [exerciseId], references: [id], onDelete: Cascade)

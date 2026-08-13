@@ -30,6 +30,7 @@ type QuestionInput = {
   prompt: string;
   type: QuestionType;
   points: number;
+  xpReward?: number;
   options?: ChoiceOption[];
 };
 
@@ -101,6 +102,7 @@ export async function createExerciseAction(formData: FormData) {
             prompt: q.prompt,
             type: q.type,
             points: q.points,
+            xpReward: Math.max(0, q.xpReward ?? 0),
             sortOrder: i,
             options: q.type === "choice" ? JSON.stringify(q.options ?? []) : null,
           })),
@@ -186,6 +188,7 @@ export async function updateExerciseAction(formData: FormData) {
             prompt: q.prompt,
             type: q.type,
             points: q.points,
+            xpReward: Math.max(0, q.xpReward ?? 0),
             sortOrder: i,
             options: q.type === "choice" ? JSON.stringify(q.options ?? []) : null,
           })),
@@ -337,8 +340,14 @@ export async function submitExerciseAction(formData: FormData) {
   const studentName = user.fullName;
 
   if (allChoice && autoScore != null) {
+    const sumQuestionXp = exercise.questions.reduce((s, q) => s + (q.xpReward ?? 0), 0);
     const ratio = maxScore > 0 ? autoScore / maxScore : 0;
-    const xp = Math.round(exercise.xpReward * ratio);
+    const xp = sumQuestionXp > 0
+      ? answerRows.reduce((acc, r) => {
+          const q = exercise.questions.find((item) => item.id === r.questionId);
+          return acc + (r.isCorrect && q ? (q.xpReward ?? 0) : 0);
+        }, 0)
+      : Math.round(exercise.xpReward * ratio);
     const coins = Math.round(exercise.coinReward * ratio);
     if (xp > 0 || coins > 0) {
       await awardXp(
@@ -485,8 +494,21 @@ export async function gradeSubmissionAction(formData: FormData) {
     }
   });
 
+  const sumQuestionXp = submission.exercise.questions.reduce((s, q) => s + (q.xpReward ?? 0), 0);
   const ratio = maxScore > 0 ? totalScore / maxScore : 0;
-  const xp = Math.round(submission.exercise.xpReward * ratio);
+  let xp = 0;
+  if (sumQuestionXp > 0) {
+    for (const answer of submission.answers) {
+      const q = submission.exercise.questions.find((item) => item.id === answer.questionId);
+      const g = grades[answer.questionId];
+      const pts = g ? Math.max(0, Math.min(g.points, q?.points ?? 0)) : 0;
+      const qMaxPts = q?.points ?? 1;
+      const qRatio = qMaxPts > 0 ? pts / qMaxPts : 0;
+      xp += Math.round((q?.xpReward ?? 0) * qRatio);
+    }
+  } else {
+    xp = Math.round(submission.exercise.xpReward * ratio);
+  }
   const coins = Math.round(submission.exercise.coinReward * ratio);
 
   if (xp > 0 || coins > 0) {

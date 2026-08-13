@@ -80,11 +80,13 @@ export function RoleLoginForm({
   defaultEmail,
   defaultRememberEmail = false,
   tenantSlug,
+  showDemoPrompt = false,
 }: {
   portal: Portal;
   defaultEmail?: string;
   defaultRememberEmail?: boolean;
   tenantSlug?: string;
+  showDemoPrompt?: boolean;
 }) {
   const cfg = portalConfig[portal];
   const Icon = portalIcons[portal];
@@ -173,19 +175,21 @@ export function RoleLoginForm({
           </Button>
         </form>
 
-        <div className="mt-5 space-y-2">
-          <p className="text-sm font-medium text-[var(--foreground)]">Demo rápido:</p>
-          <form action={formAction}>
-            <input type="hidden" name="portal" value={portal} />
-            {tenantSlug && <input type="hidden" name="tenantSlug" value={tenantSlug} />}
-            <input type="hidden" name="email" value={cfg.demoEmail} />
-            <input type="hidden" name="password" value="demo123" />
-            <Button type="submit" variant="outline" className="w-full" disabled={pending}>
-              {cfg.demoLabel}
-            </Button>
-          </form>
-          <p className="text-xs text-[var(--muted-foreground)]">Senha demo: demo123</p>
-        </div>
+        {showDemoPrompt && (
+          <div className="mt-5 space-y-2">
+            <p className="text-sm font-medium text-[var(--foreground)]">Demo rápido:</p>
+            <form action={formAction}>
+              <input type="hidden" name="portal" value={portal} />
+              {tenantSlug && <input type="hidden" name="tenantSlug" value={tenantSlug} />}
+              <input type="hidden" name="email" value={cfg.demoEmail} />
+              <input type="hidden" name="password" value="demo123" />
+              <Button type="submit" variant="outline" className="w-full" disabled={pending}>
+                {cfg.demoLabel}
+              </Button>
+            </form>
+            <p className="text-xs text-[var(--muted-foreground)]">Senha demo: demo123</p>
+          </div>
+        )}
 
         {portal === "aluno" && (
           <p className="mt-4 text-sm text-[var(--muted-foreground)]">

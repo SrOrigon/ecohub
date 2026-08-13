@@ -96,7 +96,7 @@ export async function ensureDemoEnvironment() {
     try { await ensureUser(school.id, passwordHash, "secretaria@eduhub.local", "Paula Secretaria", "secretary"); } catch (e) { console.error("[ensureDemoEnvironment] Secretary notice:", e); }
 
     // Ensure Teacher
-    let teacher: any = null;
+    let teacher: Awaited<ReturnType<typeof ensureUser>> | null = null;
     try {
       teacher = await ensureUser(
         school.id,
@@ -108,7 +108,7 @@ export async function ensureDemoEnvironment() {
     } catch (e) { console.error("[ensureDemoEnvironment] Teacher notice:", e); }
 
     // Ensure Class 8A
-    let class8A: any = null;
+    let class8A: Awaited<ReturnType<typeof prisma.classGroup.findFirst>> | null = null;
     try {
       class8A = await prisma.classGroup.findFirst({
         where: { schoolId: school.id, name: "8º Ano A" },
@@ -127,7 +127,7 @@ export async function ensureDemoEnvironment() {
     } catch (e) { console.error("[ensureDemoEnvironment] Class8A notice:", e); }
 
     // Ensure Lucas Student
-    let lucasStudent: any = null;
+    let lucasStudent: Awaited<ReturnType<typeof prisma.student.findUnique>> | null = null;
     try {
       const lucasUser = await ensureUser(
         school.id,

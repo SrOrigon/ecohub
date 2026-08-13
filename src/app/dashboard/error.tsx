@@ -23,7 +23,7 @@ export default function DashboardError({
       </div>
       <h2 className="text-xl font-bold text-amber-900 dark:text-amber-100">Algo deu errado ao carregar este painel</h2>
       <p className="mt-2 max-w-md text-sm text-amber-800 dark:text-amber-300">
-        Ocorreu uma falha temporária no carregamento de dados. Clique em "Tentar novamente" para recarregar a visualização.
+        Ocorreu uma falha temporária no carregamento de dados. Clique em &quot;Tentar novamente&quot; para recarregar a visualização.
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Button onClick={() => reset()} className="gap-2">

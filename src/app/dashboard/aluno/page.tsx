@@ -54,7 +54,7 @@ export default async function AlunoPortalPage() {
     getRanking(user.schoolId, student.classId).catch(() => []),
     getMissionsForStudent(user.schoolId, student.classId).catch(() => []),
     getExercisesForUser(user).catch(() => []),
-    getSchoolSettings(user.schoolId).catch(() => ({ xp: { xpPerLevel: 1000 } } as any)),
+    getSchoolSettings(user.schoolId).catch(() => ({ xp: { xpPerLevel: 1000 } } as unknown as Awaited<ReturnType<typeof getSchoolSettings>>)),
     getTodayAgendaForStudent(student.id, student.classId, user.schoolId, user).catch(() => ({ items: [], dayStatus: null })),
     getHomeTasksForStudent(student.id).catch(() => []),
   ]);

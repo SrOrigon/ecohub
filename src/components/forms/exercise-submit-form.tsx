@@ -15,6 +15,7 @@ type Question = {
   type: string;
   options: string | null;
   points: number;
+  xpReward?: number;
 };
 
 export function ExerciseSubmitForm({
@@ -149,9 +150,21 @@ export function ExerciseSubmitForm({
             kidFriendly ? "border-indigo-200 bg-white shadow-sm" : "border-slate-200"
           )}
         >
-          <p className="text-sm font-medium text-indigo-600">
-            Questão {step + 1} de {questions.length} · {q.points} pt{q.points !== 1 ? "s" : ""}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+            <p className="text-sm font-semibold text-indigo-600">
+              Questão {step + 1} de {questions.length}
+            </p>
+            <div className="flex items-center gap-2 text-xs font-bold">
+              <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-indigo-800">
+                🎯 {q.points} {q.points === 1 ? "ponto" : "pontos"}
+              </span>
+              {q.xpReward != null && q.xpReward > 0 && (
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">
+                  ⚡ +{q.xpReward} XP
+                </span>
+              )}
+            </div>
+          </div>
           <Label className={cn("mt-2 block", kidFriendly ? "text-xl font-bold" : "text-base font-medium")}>
             {q.prompt}
           </Label>

@@ -82,6 +82,18 @@ export default async function ExerciseDetailPage({
         />
       </PageHeader>
 
+      {exercise.kind === "exam" && (
+        <div className="rounded-2xl border-2 border-purple-200 bg-purple-50/80 p-4 text-purple-950 dark:border-purple-900/40 dark:bg-purple-950/40 dark:text-purple-100 flex items-center gap-3">
+          <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
+          <div>
+            <p className="font-bold text-base">📝 Prova / Avaliação Oficial</p>
+            <p className="text-sm opacity-90">
+              Esta atividade vale <strong>{exercise.maxPoints} pontos</strong> e compõe a nota oficial do período letivo.
+            </p>
+          </div>
+        </div>
+      )}
+
       {user.role === "student" && studentStatus && (
         <div
           className={`rounded-2xl border-2 px-5 py-4 ${

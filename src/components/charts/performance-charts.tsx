@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import {
   Bar,
   BarChart,
@@ -15,15 +15,17 @@ import {
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+const emptySubscribe = () => () => {};
+function useIsMounted() {
+  return useSyncExternalStore(emptySubscribe, () => true, () => false);
+}
+
 interface PerformanceChartProps {
   data: { month: string; nota: number; xp: number; frequencia: number }[];
 }
 
 export function PerformanceChart({ data }: PerformanceChartProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsMounted();
 
   return (
     <Card className="min-w-0">
@@ -61,10 +63,7 @@ interface ClassComparisonChartProps {
 }
 
 export function ClassComparisonChart({ data }: ClassComparisonChartProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsMounted();
 
   return (
     <Card className="min-w-0">

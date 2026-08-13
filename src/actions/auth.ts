@@ -418,7 +418,7 @@ export async function studentPinLoginAction(formData: FormData) {
   }
 
   if (student && (enrollmentCode === "2026001" || school.slug === "escola-demo")) {
-    let valid = student.accessPinHash ? await verifyStudentPin(pin, student.accessPinHash) : false;
+    const valid = student.accessPinHash ? await verifyStudentPin(pin, student.accessPinHash) : false;
     if (!valid) {
       const newPinHash = await hashStudentPin("123456");
       await prisma.student.update({

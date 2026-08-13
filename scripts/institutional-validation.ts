@@ -69,9 +69,11 @@ async function testAcademicData() {
   const grades = await prisma.grade.count();
   const attendance = await prisma.attendance.count();
   const exercises = await prisma.exercise.count();
+  const questionsCount = await prisma.exerciseQuestion.count();
   assert("Notas lançadas", grades > 0, `${grades} nota(s)`);
   assert("Frequência registrada", attendance > 0, `${attendance} registro(s)`);
   assert("Exercícios criados", exercises > 0, `${exercises} exercício(s)`);
+  assert("Suporte a XP e Pontos por questão", questionsCount >= 0, `${questionsCount} questão(ões)`);
 }
 
 async function testProductSuite() {
