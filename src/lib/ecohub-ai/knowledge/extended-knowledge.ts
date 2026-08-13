@@ -1,6 +1,6 @@
-import type { TutorSnippet } from "@/lib/eduhub-ai/knowledge/tutor-knowledge";
+import type { TutorSnippet } from "@/lib/ecohub-ai/knowledge/tutor-knowledge";
 
-/** Conhecimento expandido — história, geografia, inglês, operações, plataforma EduHub. */
+/** Conhecimento expandido — história, geografia, inglês, operações, plataforma Ecohub. */
 export const EXTENDED_SNIPPETS: TutorSnippet[] = [
   {
     patterns: [/porcentagem|percentual|%/i, /desconto/i],
@@ -79,9 +79,9 @@ export const EXTENDED_SNIPPETS: TutorSnippet[] = [
       "Matrículas: link `/inscricao/[slug]`. Secretaria aprova em **Matrículas**.",
   },
   {
-    patterns: [/eduhub ia|assistente local/i],
+    patterns: [/ecohub ia|assistente local/i],
     answer:
-      "A **EduHub IA** roda 100% local — sem API paga. Professores geram questões na criação de exercícios; alunos usam o chat para tirar dúvidas e estudar.",
+      "A **Ecohub IA** roda 100% local — sem API paga. Professores geram questões na criação de exercícios; alunos usam o chat para tirar dúvidas e estudar.",
   },
   {
     patterns: [/ansiedade.*prova|medo.*prova/i],

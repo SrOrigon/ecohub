@@ -1,4 +1,4 @@
-const CACHE = "eduhub-shell-v2";
+const CACHE = "ecohub-shell-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());

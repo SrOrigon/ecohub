@@ -15,7 +15,7 @@ export async function GET() {
     prisma.school.findUnique({ where: { id: user.schoolId }, select: { name: true } }),
   ]);
 
-  const ics = buildSchoolCalendarIcs(settings, school?.name ?? "EduHub");
+  const ics = buildSchoolCalendarIcs(settings, school?.name ?? "Ecohub");
 
   return new NextResponse(ics, {
     headers: {

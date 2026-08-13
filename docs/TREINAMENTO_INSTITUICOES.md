@@ -1,4 +1,4 @@
-# EduHub — Treinamento rápido para instituições
+# Ecohub — Treinamento rápido para instituições
 
 Guia de **2 horas** para direção, secretaria e professores piloto.
 
@@ -28,7 +28,7 @@ Guia de **2 horas** para direção, secretaria e professores piloto.
 | Relatórios | Panorama acadêmico |
 | Agenda compartilhada | Feriados e eventos escolares |
 | Comunicados | Avisos para toda comunidade |
-| EduHub IA | Planos de aula, comunicados (equipe) |
+| Ecohub IA | Planos de aula, comunicados (equipe) |
 
 ---
 
@@ -51,7 +51,7 @@ Guia de **2 horas** para direção, secretaria e professores piloto.
 
 ### Avaliação
 1. **Exercícios** — criar atividade
-2. **Gerar com EduHub IA** — questões (só equipe escolar)
+2. **Gerar com Ecohub IA** — questões (só equipe escolar)
 3. Corrigir entregas — quiz automático + dissertativas manuais
 
 ### Engajamento
@@ -67,7 +67,7 @@ Guia de **2 horas** para direção, secretaria e professores piloto.
 |--------|--------|-----------|
 | Responsável | `/login/responsavel` | Boletim, faltas, mensagens, tarefas de casa |
 | Aluno | PIN + matrícula | Exercícios, XP, loja, trilhas |
-| EduHub IA (aluno) | `/dashboard/assistente` | Dúvidas e dicas — **sem gabarito** |
+| Ecohub IA (aluno) | `/dashboard/assistente` | Dúvidas e dicas — **sem gabarito** |
 
 ---
 
@@ -88,7 +88,7 @@ Guia de **2 horas** para direção, secretaria e professores piloto.
 | Problema | Solução |
 |----------|---------|
 | Não consigo logar | Verificar e-mail/senha; aluno usa PIN |
-| IA não responde | Configurações → EduHub IA ativada |
+| IA não responde | Configurações → Ecohub IA ativada |
 | Dados sumiram | Verificar backup `/data/prod.db` |
 | E-mail convite não chega | Configurar Resend no servidor |
 

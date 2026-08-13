@@ -48,7 +48,7 @@ export default async function AlunoHistoricoPage() {
       <HistoricalAnalyticsPanel
         history={history}
         title="Histórico pessoal"
-        description="Métricas calculadas desde a data da sua matrícula no EduHub"
+        description="Métricas calculadas desde a data da sua matrícula no Ecohub"
       />
     </div>
   );

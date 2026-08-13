@@ -74,7 +74,7 @@ export async function createTeacherInviteAction(formData: FormData) {
       subject: `Convite para professor — ${school.name}`,
       html: `
         <p>Olá,</p>
-        <p>Você foi convidado(a) para lecionar em <strong>${school.name}</strong> no EduHub.</p>
+        <p>Você foi convidado(a) para lecionar em <strong>${school.name}</strong> no Ecohub.</p>
         <p><a href="${fullUrl}">Clique aqui para aceitar o convite</a> (válido por ${INVITE_TTL_DAYS} dias).</p>
         <p>Se o link não abrir, copie e cole no navegador:<br/><code>${fullUrl}</code></p>
       `,

@@ -1,4 +1,4 @@
-import { scoreKeywords } from "@/lib/eduhub-ai/matcher";
+import { scoreKeywords } from "@/lib/ecohub-ai/matcher";
 
 export type BnccEntry = {
   code: string;

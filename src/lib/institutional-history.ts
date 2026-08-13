@@ -355,7 +355,7 @@ function buildInsights(
 ): string[] {
   const notes: string[] = [];
   notes.push(
-    `Histórico calculado desde ${meta.originLabel} — ${meta.accountAgeLabel} de uso do EduHub (${meta.accountAgeDays} dias).`
+    `Histórico calculado desde ${meta.originLabel} — ${meta.accountAgeLabel} de uso do Ecohub (${meta.accountAgeDays} dias).`
   );
 
   if (lifetime.dataPoints === 0) {

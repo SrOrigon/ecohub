@@ -1,8 +1,8 @@
-# Relatório de Validação EduHub
+# Relatório de Validação Ecohub
 
 **Data:** 2026-08-10  
 **Ambiente local:** validado  
-**Produção:** https://eduhub-production-b513.up.railway.app
+**Produção:** https://ecohub-production-b513.up.railway.app
 
 ---
 
@@ -29,7 +29,7 @@
 ### Suite institucional
 - Matrículas, autorizações, comunicados OK
 
-### EduHub IA
+### Ecohub IA
 - Aluno **bloqueado** de gerar questões ✅
 - Aluno **bloqueado** de gabarito ✅
 - Professor **pode** gerar questões ✅
@@ -74,14 +74,14 @@ npm run db:backup       # backup SQLite
 GET /api/health → 200
 status: ok, database: ok, authSecret: ok
 Smoke: /, /login/escola, /registro/escola → 200
-URL: https://eduhub-production-b513.up.railway.app
+URL: https://ecohub-production-b513.up.railway.app
 ```
 
 ---
 
 ## Próximos passos (manual)
 
-1. **Instituição real:** `EDUHUB_INSTITUTIONAL=1` + `AUTH_SECRET` forte + volume `/data`
+1. **Instituição real:** `ECOHUB_INSTITUTIONAL=1` + `AUTH_SECRET` forte + volume `/data`
 2. Checklist manual: `docs/GUIA_INSTITUICOES.md` seção 6
 3. Treinamento presencial: `docs/TREINAMENTO_INSTITUICOES.md`
 

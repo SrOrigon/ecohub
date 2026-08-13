@@ -56,7 +56,7 @@ export function TenantUrlCard({ slug, schoolName }: { slug: string; schoolName: 
             <QrCode className="h-3.5 w-3.5" aria-hidden="true" />
             Subdomínio (produção)
           </p>
-          <p className="mt-1 font-mono text-sm">{slug}.eduhub.app</p>
+          <p className="mt-1 font-mono text-sm">{slug}.ecohub.app</p>
           <p className="mt-1 text-xs text-[var(--muted-foreground)]">
             Em desenvolvimento use <strong>{pathUrl}</strong>
           </p>

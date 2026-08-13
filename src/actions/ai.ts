@@ -3,9 +3,9 @@
 import { requireSession } from "@/lib/auth";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { generateQuestionsWithAi } from "@/lib/ai-questions";
-import { eduhubAiChat } from "@/lib/eduhub-ai";
+import { ecohubAiChat } from "@/lib/ecohub-ai";
 import { prisma } from "@/lib/db";
-import type { EduHubAiRole } from "@/lib/eduhub-ai";
+import type { EcohubAiRole } from "@/lib/ecohub-ai";
 
 async function buildAiContext(user: Awaited<ReturnType<typeof requireSession>>) {
   const settings = user.schoolId ? await getSchoolSettings(user.schoolId) : null;
@@ -73,7 +73,7 @@ async function buildAiContext(user: Awaited<ReturnType<typeof requireSession>>) 
   }
 
   return {
-    role: user.role as EduHubAiRole,
+    role: user.role as EcohubAiRole,
     userName: user.fullName,
     schoolName: school?.name,
     stats,
@@ -86,7 +86,7 @@ export async function generateExerciseQuestionsAction(formData: FormData) {
   if (!user.schoolId) return { error: "Escola não configurada." };
 
   const settings = await getSchoolSettings(user.schoolId);
-  if (!settings.ai.enabled) return { error: "EduHub IA desativada nas configurações." };
+  if (!settings.ai.enabled) return { error: "Ecohub IA desativada nas configurações." };
 
   const topic = formData.get("topic")?.toString().trim();
   const subject = formData.get("subject")?.toString().trim() ?? "";
@@ -104,16 +104,16 @@ export async function generateExerciseQuestionsAction(formData: FormData) {
   if (!subjectCheck.ok) return { error: subjectCheck.error };
 
   const questions = await generateQuestionsWithAi(topic, subject, count, bncc);
-  return { success: true, questions, source: "eduhub-ia-local" };
+  return { success: true, questions, source: "ecohub-ia-local" };
 }
 
-export async function eduhubAiChatAction(formData: FormData) {
+export async function ecohubAiChatAction(formData: FormData) {
   const user = await requireSession(["admin", "director", "secretary", "teacher", "student", "parent"]);
   const message = String(formData.get("message") ?? "").trim();
   if (!message) return { error: "Digite uma mensagem." };
 
   const settings = user.schoolId ? await getSchoolSettings(user.schoolId) : null;
-  if (settings && !settings.ai.enabled) return { error: "EduHub IA desativada." };
+  if (settings && !settings.ai.enabled) return { error: "Ecohub IA desativada." };
 
   const staffOnlyGen = /gerar quest|criar quest|questões sobre|exercícios sobre|monte quest|montar quest|fazer quest|lista de quest/i;
   if (staffOnlyGen.test(message) && !["admin", "director", "secretary", "teacher"].includes(user.role)) {
@@ -125,7 +125,7 @@ export async function eduhubAiChatAction(formData: FormData) {
   }
 
   const context = await buildAiContext(user);
-  const reply = eduhubAiChat(message, context);
+  const reply = ecohubAiChat(message, context);
 
   await prisma.aiChatLog.createMany({
     data: [

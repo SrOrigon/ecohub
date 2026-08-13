@@ -1,4 +1,4 @@
-# Script para publicar o EduHub no GitHub
+# Script para publicar o Ecohub no GitHub
 # Pré-requisitos: Git instalado (https://git-scm.com/download/win)
 #                 GitHub CLI opcional (winget install GitHub.cli)
 
@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$GitHubUsername,
 
-    [string]$RepoName = "eduhub",
+    [string]$RepoName = "ecohub",
     [switch]$Private
 )
 
@@ -31,7 +31,7 @@ git status
 
 $hasChanges = git diff --cached --quiet 2>$null; $staged = $LASTEXITCODE -ne 0
 if ($staged -or (git status --porcelain)) {
-    git commit -m "EduHub: plataforma educacional completa com gamificacao e notificacoes"
+    git commit -m "Ecohub: plataforma educacional completa com gamificacao e notificacoes"
 }
 
 # Criar repo no GitHub (via gh CLI se disponivel)

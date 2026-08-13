@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
-import { eduhubAiParentTips } from "@/lib/eduhub-ai";
+import { ecohubAiParentTips } from "@/lib/ecohub-ai";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -15,7 +15,7 @@ type ChildSummary = {
 export function ParentAiTipsPanel({
   childSummaries,
   passGrade,
-  assistantName = "EduHub IA",
+  assistantName = "Ecohub IA",
 }: {
   childSummaries: ChildSummary[];
   passGrade: number;
@@ -33,7 +33,7 @@ export function ParentAiTipsPanel({
       </CardHeader>
       <CardContent className="space-y-4">
         {childSummaries.map((child) => {
-          const tips = eduhubAiParentTips({
+          const tips = ecohubAiParentTips({
             childName: child.name,
             avgGrade: child.avgGrade,
             passGrade,

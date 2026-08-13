@@ -88,7 +88,7 @@ export default function HomePage() {
       <header className="landing-header sticky top-0 z-20 mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 border-b px-4 py-4 sm:px-6 sm:py-6">
         <div className="flex min-w-0 items-center gap-2">
           <Medal className="h-8 w-8 shrink-0 text-[color:var(--school-primary)]" aria-hidden="true" />
-          <span className="truncate text-xl font-bold text-[var(--foreground)]">EduHub</span>
+          <span className="truncate text-xl font-bold text-[var(--foreground)]">Ecohub</span>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           <ThemeToggle compact className="sm:mr-1" />

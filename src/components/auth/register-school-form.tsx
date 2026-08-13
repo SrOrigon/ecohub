@@ -173,7 +173,7 @@ export function RegisterSchoolForm() {
             )}
 
             <div>
-              <Label htmlFor="schoolName">Nome de exibição no EduHub</Label>
+              <Label htmlFor="schoolName">Nome de exibição no Ecohub</Label>
               <Input
                 id="schoolName"
                 name="schoolName"

@@ -22,7 +22,7 @@ export function InstitutionalSetupHint({
             {canManageSettings && <ProvisionSchoolButton />}
           </div>
           <p className="mt-1">
-            O EduHub auxilia depois que você cadastra turmas, cursos e disciplinas. Cadastre primeiro;
+            O Ecohub auxilia depois que você cadastra turmas, cursos e disciplinas. Cadastre primeiro;
             em seguida vincule cada aluno à turma ou curso correspondente.
           </p>
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">

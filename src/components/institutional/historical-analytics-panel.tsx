@@ -36,7 +36,7 @@ const ALL_GRANULARITIES: HistoryGranularity[] = ["day", "week", "month", "semest
 export function HistoricalAnalyticsPanel({
   history,
   title = "Histórico temporal",
-  description = "Compare métricas do dia ao ano — calculado desde a criação da conta no EduHub",
+  description = "Compare métricas do dia ao ano — calculado desde a criação da conta no Ecohub",
 }: {
   history: HistoryData;
   title?: string;

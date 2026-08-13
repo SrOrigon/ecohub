@@ -1,12 +1,12 @@
-import { findQuestionsFromBank } from "@/lib/eduhub-ai/knowledge/question-bank";
-import { findBnccSkills } from "@/lib/eduhub-ai/knowledge/bncc-reference";
+import { findQuestionsFromBank } from "@/lib/ecohub-ai/knowledge/question-bank";
+import { findBnccSkills } from "@/lib/ecohub-ai/knowledge/bncc-reference";
 import {
   TUTOR_SNIPPETS,
   TUTOR_GREETING,
   TUTOR_FALLBACK,
   type TutorSnippet,
-} from "@/lib/eduhub-ai/knowledge/tutor-knowledge";
-import { EXTENDED_SNIPPETS, ROLE_GREETINGS, SUGGESTED_TOPICS } from "@/lib/eduhub-ai/knowledge/extended-knowledge";
+} from "@/lib/ecohub-ai/knowledge/tutor-knowledge";
+import { EXTENDED_SNIPPETS, ROLE_GREETINGS, SUGGESTED_TOPICS } from "@/lib/ecohub-ai/knowledge/extended-knowledge";
 import {
   draftAnnouncement,
   detectAnnouncementKind,
@@ -14,16 +14,16 @@ import {
   rubricTemplate,
   studyPlan,
   feedbackTemplate,
-} from "@/lib/eduhub-ai/knowledge/pedagogical-templates";
-import { scorePatterns, topMatches } from "@/lib/eduhub-ai/matcher";
+} from "@/lib/ecohub-ai/knowledge/pedagogical-templates";
+import { scorePatterns, topMatches } from "@/lib/ecohub-ai/matcher";
 import {
   formatQuestionsForChat,
   personalizeQuestion,
   synthesizeQuestions,
-} from "@/lib/eduhub-ai/question-synth";
+} from "@/lib/ecohub-ai/question-synth";
 import type { GeneratedQuestion } from "@/lib/ai-questions";
 
-export type EduHubAiRole = "teacher" | "director" | "student" | "parent" | "secretary" | "admin";
+export type EcohubAiRole = "teacher" | "director" | "student" | "parent" | "secretary" | "admin";
 
 export type ParentContext = {
   childName: string;
@@ -34,7 +34,7 @@ export type ParentContext = {
 };
 
 export type AiContext = {
-  role: EduHubAiRole;
+  role: EcohubAiRole;
   userName?: string;
   schoolName?: string;
   stats?: {
@@ -50,9 +50,9 @@ export type AiContext = {
 
 const ALL_SNIPPETS: TutorSnippet[] = [...TUTOR_SNIPPETS, ...EXTENDED_SNIPPETS];
 
-const QUESTION_GEN_STAFF: EduHubAiRole[] = ["teacher", "director", "secretary", "admin"];
+const QUESTION_GEN_STAFF: EcohubAiRole[] = ["teacher", "director", "secretary", "admin"];
 
-function canGenerateQuestions(role: EduHubAiRole): boolean {
+function canGenerateQuestions(role: EcohubAiRole): boolean {
   return QUESTION_GEN_STAFF.includes(role);
 }
 
@@ -100,7 +100,7 @@ function matchSnippets(text: string): TutorSnippet | null {
   return ranked[0]?.item ?? null;
 }
 
-export function eduhubAiGenerateQuestions(
+export function ecohubAiGenerateQuestions(
   topic: string,
   subject: string,
   count: number,
@@ -118,7 +118,7 @@ export function eduhubAiGenerateQuestions(
   return synthesizeQuestions(topic, subject, count, code);
 }
 
-export function eduhubAiChat(message: string, context: AiContext): string {
+export function ecohubAiChat(message: string, context: AiContext): string {
   const trimmed = message.trim();
   if (!trimmed) return "Digite sua pergunta para eu ajudar.";
 
@@ -139,7 +139,7 @@ export function eduhubAiChat(message: string, context: AiContext): string {
     }
     const topic = extractTopic(trimmed);
     const subject = detectSubject(trimmed);
-    const qs = eduhubAiGenerateQuestions(topic, subject, 3);
+    const qs = ecohubAiGenerateQuestions(topic, subject, 3);
     return formatQuestionsForChat(qs);
   }
 
@@ -188,7 +188,7 @@ export function eduhubAiChat(message: string, context: AiContext): string {
   }
 
   if (/alerta|risco|evas|desempenho|panorama/i.test(trimmed) && ["director", "secretary", "admin"].includes(context.role)) {
-    return eduhubAiDirectorInsight(context);
+    return ecohubAiDirectorInsight(context);
   }
 
   if (/fechar bimestre|periodo fechado|nota.*bloque/i.test(trimmed) && ["director", "admin"].includes(context.role)) {
@@ -198,7 +198,7 @@ export function eduhubAiChat(message: string, context: AiContext): string {
   if (context.role === "parent" && context.parentContext) {
     const pc = context.parentContext;
     if (/filho|filha|nota|falta|desempenho/i.test(trimmed)) {
-      const tips = eduhubAiParentTips({
+      const tips = ecohubAiParentTips({
         childName: pc.childName,
         avgGrade: pc.avgGrade,
         passGrade: pc.passGrade,
@@ -241,9 +241,9 @@ export function eduhubAiChat(message: string, context: AiContext): string {
   return `${fallbackForRole(context.role)}\n\n**Sugestões:** ${suggestionsForRole(context.role).map((t) => `"${t}"`).join(", ")}.`;
 }
 
-function fallbackForRole(role: EduHubAiRole): string {
+function fallbackForRole(role: EcohubAiRole): string {
   if (role === "student") {
-    return "Posso ajudar com **dúvidas de matérias**, **dicas de estudo**, **BNCC** e uso do EduHub. Não gero exercícios nem gabaritos — pergunte sobre o tema (ex.: *\"O que é fotossíntese?\"*).";
+    return "Posso ajudar com **dúvidas de matérias**, **dicas de estudo**, **BNCC** e uso do Ecohub. Não gero exercícios nem gabaritos — pergunte sobre o tema (ex.: *\"O que é fotossíntese?\"*).";
   }
   if (role === "parent") {
     return "Posso orientar sobre **notas, faltas e hábitos de estudo** do seu filho. A geração de exercícios fica com a equipe escolar.";
@@ -251,7 +251,7 @@ function fallbackForRole(role: EduHubAiRole): string {
   return TUTOR_FALLBACK;
 }
 
-function suggestionsForRole(role: EduHubAiRole): string[] {
+function suggestionsForRole(role: EcohubAiRole): string[] {
   if (role === "student") {
     return ["Como estudar para prova?", "O que é fotossíntese?", "Explicar frações", "Como ganhar mais XP?"];
   }
@@ -261,7 +261,7 @@ function suggestionsForRole(role: EduHubAiRole): string[] {
   return SUGGESTED_TOPICS.slice(0, 4);
 }
 
-function eduhubAiDirectorInsight(context: AiContext): string {
+function ecohubAiDirectorInsight(context: AiContext): string {
   const s = context.stats;
   if (!s) {
     return "Acesse **Alertas de risco** no menu. Com dados carregados, resumo médias, frequência e alunos em atenção.";
@@ -292,7 +292,7 @@ function eduhubAiDirectorInsight(context: AiContext): string {
   return parts.join("\n");
 }
 
-export function eduhubAiParentTips(input: {
+export function ecohubAiParentTips(input: {
   childName: string;
   avgGrade: number;
   passGrade: number;
@@ -323,8 +323,8 @@ export function eduhubAiParentTips(input: {
   return tips;
 }
 
-export function eduhubAiSuggestionsForRole(role: EduHubAiRole): string[] {
-  const byRole: Record<EduHubAiRole, string[]> = {
+export function ecohubAiSuggestionsForRole(role: EcohubAiRole): string[] {
+  const byRole: Record<EcohubAiRole, string[]> = {
     teacher: [
       "Plano de aula sobre frações",
       "Gerar 3 questões sobre verbos",

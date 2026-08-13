@@ -17,8 +17,8 @@ export async function GET() {
   const authConfigured =
     !!process.env.AUTH_SECRET?.trim() && process.env.AUTH_SECRET.trim().length >= 32;
   const institutional =
-    process.env.EDUHUB_INSTITUTIONAL === "1" ||
-    process.env.EDUHUB_INSTITUTIONAL === "true";
+    process.env.ECOHUB_INSTITUTIONAL === "1" ||
+    process.env.ECOHUB_INSTITUTIONAL === "true";
 
   const status = dbOk ? "ok" : "degraded";
   const httpStatus = dbOk ? 200 : 503;
@@ -26,7 +26,7 @@ export async function GET() {
   return NextResponse.json(
     {
       status,
-      service: "eduhub",
+      service: "ecohub",
       version: process.env.npm_package_version ?? "0.1.0",
       uptime: process.uptime(),
       checks: {

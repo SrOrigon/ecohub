@@ -6,8 +6,8 @@
 import { PrismaClient } from "@prisma/client";
 import { SignJWT } from "jose";
 
-const SESSION_COOKIE = "eduhub_session";
-const TENANT_COOKIE = "eduhub_tenant";
+const SESSION_COOKIE = "ecohub_session";
+const TENANT_COOKIE = "ecohub_tenant";
 
 function getAuthSecretBytes() {
   const secret = process.env.AUTH_SECRET?.trim();
@@ -15,9 +15,9 @@ function getAuthSecretBytes() {
     return new TextEncoder().encode(secret);
   }
   if (process.env.NODE_ENV === "production") {
-    return new TextEncoder().encode("eduhub-build-placeholder-secret-do-not-use-at-runtime-32");
+    return new TextEncoder().encode("ecohub-build-placeholder-secret-do-not-use-at-runtime-32");
   }
-  return new TextEncoder().encode("eduhub-dev-secret-change-in-production");
+  return new TextEncoder().encode("ecohub-dev-secret-change-in-production");
 }
 
 export async function createScanSessionCookies(options = {}) {

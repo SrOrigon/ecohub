@@ -1,10 +1,10 @@
 /** Cookies não sensíveis para melhorar UX (preferências, não autenticação). */
 
 export const PREF_COOKIES = {
-  lastPortal: "eduhub_last_portal",
-  lastSchoolSlug: "eduhub_last_school_slug",
-  rememberEmail: "eduhub_remember_email",
-  onboardingDone: "eduhub_onboarding_done",
+  lastPortal: "ecohub_last_portal",
+  lastSchoolSlug: "ecohub_last_school_slug",
+  rememberEmail: "ecohub_remember_email",
+  onboardingDone: "ecohub_onboarding_done",
 } as const;
 
 export type LoginPortal = "escola" | "professor" | "aluno" | "responsavel";

@@ -9,7 +9,7 @@ restartPolicyMaxRetries = 10
 
 # Variáveis no painel Railway (Variables):
 # AUTH_SECRET          — JWT, mínimo 32 caracteres (obrigatório em produção)
-# EDUHUB_INSTITUTIONAL — 1 para modo institucional
+# ECOHUB_INSTITUTIONAL — 1 para modo institucional
 # DATABASE_URL         — file:/data/prod.db (monte Volume em /data)
 # NEXT_PUBLIC_APP_URL  — URL pública do app
 # PLATFORM_ADMIN_EMAILS — admins da plataforma (aprovar escolas)

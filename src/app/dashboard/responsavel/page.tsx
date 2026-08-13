@@ -47,7 +47,7 @@ export default async function ResponsavelPortalPage() {
   ]);
 
   const passGrade = settings?.academic.passGrade ?? 6;
-  const assistantName = settings?.ai.assistantName ?? "EduHub IA";
+  const assistantName = settings?.ai.assistantName ?? "Ecohub IA";
   const aiEnabled = settings?.ai.enabled !== false;
 
   const pendingByStudent =

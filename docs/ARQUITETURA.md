@@ -1,4 +1,4 @@
-# Arquitetura EduHub — Revisão Técnica
+# Arquitetura Ecohub — Revisão Técnica
 
 ## Comparativo das opções (revisão da conversa com Gemini)
 
@@ -35,7 +35,7 @@ Boa para admin rápido, mas UI gamificada exige mais esforço front-end.
 
 ### Do Sponte (ERP Escolar)
 
-| Módulo Sponte | Status EduHub | Prioridade |
+| Módulo Sponte | Status Ecohub | Prioridade |
 |---------------|---------------|------------|
 | Cadastro escola/turmas/alunos | UI pronta | Fase 1 |
 | Lançamento de notas | UI pronta | Fase 1 |
@@ -47,7 +47,7 @@ Boa para admin rápido, mas UI gamificada exige mais esforço front-end.
 
 ### Do Gamefik (Gamificação)
 
-| Módulo Gamefik | Status EduHub | Prioridade |
+| Módulo Gamefik | Status Ecohub | Prioridade |
 |----------------|---------------|------------|
 | Missões e desafios | UI + schema DB | Fase 2 |
 | XP / Níveis / Moedas | Schema + trigger SQL | Fase 2 |

@@ -40,7 +40,7 @@ export function buildReportCsv(report: InstitutionalReport, kind: ReportExportKi
   switch (kind) {
     case "summary":
       return {
-        filename: `eduhub-resumo-${slug}-${dateStamp}.csv`,
+        filename: `ecohub-resumo-${slug}-${dateStamp}.csv`,
         mime: "text/csv;charset=utf-8",
         content: rowsToCsv(["Campo", "Valor"], [
           ["Instituição", report.schoolName],
@@ -65,7 +65,7 @@ export function buildReportCsv(report: InstitutionalReport, kind: ReportExportKi
 
     case "subjects":
       return {
-        filename: `eduhub-disciplinas-${slug}-${dateStamp}.csv`,
+        filename: `ecohub-disciplinas-${slug}-${dateStamp}.csv`,
         mime: "text/csv;charset=utf-8",
         content: rowsToCsv(
           [
@@ -93,7 +93,7 @@ export function buildReportCsv(report: InstitutionalReport, kind: ReportExportKi
 
     case "students":
       return {
-        filename: `eduhub-alunos-${slug}-${dateStamp}.csv`,
+        filename: `ecohub-alunos-${slug}-${dateStamp}.csv`,
         mime: "text/csv;charset=utf-8",
         content: rowsToCsv(
           [
@@ -125,7 +125,7 @@ export function buildReportCsv(report: InstitutionalReport, kind: ReportExportKi
 
     case "student-subjects":
       return {
-        filename: `eduhub-aluno-disciplinas-${slug}-${dateStamp}.csv`,
+        filename: `ecohub-aluno-disciplinas-${slug}-${dateStamp}.csv`,
         mime: "text/csv;charset=utf-8",
         content: rowsToCsv(
           [
@@ -153,7 +153,7 @@ export function buildReportCsv(report: InstitutionalReport, kind: ReportExportKi
 
     case "classes":
       return {
-        filename: `eduhub-turmas-${slug}-${dateStamp}.csv`,
+        filename: `ecohub-turmas-${slug}-${dateStamp}.csv`,
         mime: "text/csv;charset=utf-8",
         content: rowsToCsv(
           ["Turma", "Alunos", "Média", "Aprovação %", "Frequência %"],
@@ -185,7 +185,7 @@ export function buildReportCsv(report: InstitutionalReport, kind: ReportExportKi
         buildReportCsv(report, "classes").content.replace(UTF8_BOM, ""),
       ];
       return {
-        filename: `eduhub-relatorio-completo-${slug}-${dateStamp}.csv`,
+        filename: `ecohub-relatorio-completo-${slug}-${dateStamp}.csv`,
         mime: "text/csv;charset=utf-8",
         content: UTF8_BOM + sections.join("\r\n"),
       };

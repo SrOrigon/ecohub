@@ -16,13 +16,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EduHub — Gestão Escolar + Gamificação",
+  title: "Ecohub — Gestão Escolar + Gamificação",
   description: "Plataforma educacional gratuita unindo gestão acadêmica e gamificação para escolas e cursos.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "EduHub",
+    title: "Ecohub",
   },
   formatDetection: {
     telephone: false,

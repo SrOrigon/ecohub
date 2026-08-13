@@ -72,7 +72,7 @@ const allNavItems: NavItem[] = [
   { href: "/dashboard/aluno/historico", label: "Meu histórico", icon: History, roles: ["student"] },
   { href: "/dashboard/responsavel", label: "Meus Filhos", icon: Heart, roles: ["parent"] },
   { href: "/dashboard/responsavel/alertas", label: "Alertas de atenção", icon: AlertTriangle, roles: ["parent"] },
-  { href: "/dashboard/assistente", label: "EduHub IA", icon: Bot, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
+  { href: "/dashboard/assistente", label: "Ecohub IA", icon: Bot, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/calendario", label: "Agenda compartilhada", icon: CalendarDays, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/agenda", label: "Minha agenda", icon: NotebookPen, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/alunos", label: "Alunos", icon: Users, roles: ["admin", "director", "secretary", "teacher"] },
@@ -355,7 +355,7 @@ function SidebarContent({
       <div className="flex h-16 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-gradient-to-r from-[color:var(--school-primary-soft)] to-transparent px-4 sm:px-6">
         <Medal className="h-8 w-8 shrink-0 text-[color:var(--school-primary)]" aria-hidden="true" />
         <div className="min-w-0">
-          <p className="truncate text-lg font-bold text-[var(--foreground)]">EduHub</p>
+          <p className="truncate text-lg font-bold text-[var(--foreground)]">Ecohub</p>
           <p className="truncate text-sm text-[var(--muted-foreground)]">{ROLE_LABELS[role]}</p>
         </div>
       </div>

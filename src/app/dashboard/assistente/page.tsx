@@ -1,10 +1,10 @@
 import { getSessionUser } from "@/lib/auth";
 import { getSchoolSettings } from "@/lib/school-settings";
-import { eduhubAiSuggestionsForRole } from "@/lib/eduhub-ai";
+import { ecohubAiSuggestionsForRole } from "@/lib/ecohub-ai";
 import { PageHeader } from "@/components/layout/page-header";
-import { EduHubAiChat } from "@/components/ai/eduhub-ai-chat";
+import { EcohubAiChat } from "@/components/ai/ecohub-ai-chat";
 import { redirect } from "next/navigation";
-import type { EduHubAiRole } from "@/lib/eduhub-ai";
+import type { EcohubAiRole } from "@/lib/ecohub-ai";
 
 export default async function AssistentePage() {
   const user = await getSessionUser();
@@ -14,17 +14,17 @@ export default async function AssistentePage() {
   if (settings && !settings.ai.enabled) {
     return (
       <div className="space-y-6">
-        <PageHeader title="EduHub IA" description="Assistente pedagógica local" />
+        <PageHeader title="Ecohub IA" description="Assistente pedagógica local" />
         <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-          A EduHub IA está desativada nas configurações da escola.
+          A Ecohub IA está desativada nas configurações da escola.
         </p>
       </div>
     );
   }
 
-  const assistantName = settings?.ai.assistantName ?? "EduHub IA";
-  const suggestions = eduhubAiSuggestionsForRole(user.role as EduHubAiRole);
-  const role = user.role as EduHubAiRole;
+  const assistantName = settings?.ai.assistantName ?? "Ecohub IA";
+  const suggestions = ecohubAiSuggestionsForRole(user.role as EcohubAiRole);
+  const role = user.role as EcohubAiRole;
 
   const isLearner = role === "student" || role === "parent";
   const pageDescription = isLearner
@@ -42,7 +42,7 @@ export default async function AssistentePage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader title={assistantName} description={pageDescription} />
-      <EduHubAiChat
+      <EcohubAiChat
         assistantName={assistantName}
         suggestions={suggestions}
         introMessage={introMessage}

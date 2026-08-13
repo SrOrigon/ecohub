@@ -7,7 +7,7 @@ import { findSchoolBySlug } from "@/lib/school-lookup";
 import { getAuthSecret } from "@/lib/auth-secret";
 import { TENANT_COOKIE } from "@/lib/tenant";
 
-const SESSION_COOKIE = "eduhub_session";
+const SESSION_COOKIE = "ecohub_session";
 
 function authSecret() {
   return getAuthSecret();

@@ -58,7 +58,7 @@ export default async function BoletimPage({ params }: { params: Promise<{ id: st
     enrollmentCode: student.enrollmentCode,
     email: student.user.email,
     className: student.classGroup?.name ?? null,
-    schoolName: school?.name ?? "EduHub",
+    schoolName: school?.name ?? "Ecohub",
     year: new Date().getFullYear(),
     passGrade: settings.academic.passGrade,
     maxGrade: settings.academic.maxGrade,
@@ -102,7 +102,7 @@ export default async function BoletimPage({ params }: { params: Promise<{ id: st
       <BoletimView data={payload} />
 
       <footer className="border-t pt-4 text-center text-xs text-slate-500">
-        Emitido em {formatDate(new Date())} · EduHub — Gestão + Gamificação
+        Emitido em {formatDate(new Date())} · Ecohub — Gestão + Gamificação
       </footer>
     </div>
   );

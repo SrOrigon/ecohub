@@ -1,5 +1,5 @@
 import type { GeneratedQuestion } from "@/lib/ai-questions";
-import { normalizeText } from "@/lib/eduhub-ai/matcher";
+import { normalizeText } from "@/lib/ecohub-ai/matcher";
 
 const CHOICE_TEMPLATES = [
   (topic: string, i: number) => ({
@@ -74,5 +74,5 @@ export function formatQuestionsForChat(questions: GeneratedQuestion[]): string {
     }
     return block;
   });
-  return `**Questões geradas (EduHub IA local):**\n\n${lines.join("\n\n")}\n\n💡 Use **Gerar com EduHub IA** no passo 3 dos exercícios para importar automaticamente.`;
+  return `**Questões geradas (Ecohub IA local):**\n\n${lines.join("\n\n")}\n\n💡 Use **Gerar com Ecohub IA** no passo 3 dos exercícios para importar automaticamente.`;
 }

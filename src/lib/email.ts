@@ -15,7 +15,7 @@ export type SendEmailResult = {
 /** Envia e-mail via Resend quando RESEND_API_KEY está configurado; senão registra no log. */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.EMAIL_FROM?.trim() ?? "EduHub <onboarding@resend.dev>";
+  const from = process.env.EMAIL_FROM?.trim() ?? "Ecohub <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.info("[email:skipped]", { to: input.to, subject: input.subject });

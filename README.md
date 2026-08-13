@@ -1,4 +1,4 @@
-# EduHub — Plataforma Educacional Funcional
+# Ecohub — Plataforma Educacional Funcional
 
 Sistema unificado de **gestão escolar** + **gamificação educacional**, totalmente funcional com banco de dados local.
 
@@ -64,7 +64,7 @@ npm run test:smoke -- https://sua-url   # smoke pós-deploy
 
 ## Implantação em instituições
 
-Para colocar o EduHub numa escola real:
+Para colocar o Ecohub numa escola real:
 
 1. Leia **`DEPLOY.md`** (variáveis e Railway)
 2. Siga **`docs/GUIA_INSTITUICOES.md`** (checklist completo de testes)

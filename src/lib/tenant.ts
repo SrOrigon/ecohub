@@ -1,8 +1,8 @@
-export const TENANT_COOKIE = "eduhub_tenant";
-export const TENANT_HEADER = "x-eduhub-tenant";
+export const TENANT_COOKIE = "ecohub_tenant";
+export const TENANT_HEADER = "x-ecohub-tenant";
 
 export function getRootDomain(): string {
-  return process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "eduhub.app";
+  return process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "ecohub.app";
 }
 
 /** Extrai slug do tenant a partir do host (subdomínio) ou path /e/[slug]. */

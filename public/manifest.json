@@ -1,6 +1,6 @@
 {
-  "name": "EduHub — Gestão Escolar + Gamificação",
-  "short_name": "EduHub",
+  "name": "Ecohub — Gestão Escolar + Gamificação",
+  "short_name": "Ecohub",
   "description": "Gestão acadêmica e gamificação unificadas para escolas",
   "start_url": "/dashboard",
   "display": "standalone",

@@ -1,6 +1,6 @@
 [variables]
 NIXPACKS_NODE_VERSION = "20"
-# Runtime: defina DATABASE_URL no Railway (ex.: file:/data/eduhub.db com volume)
+# Runtime: defina DATABASE_URL no Railway (ex.: file:/data/ecohub.db com volume)
 # e AUTH_SECRET com pelo menos 32 caracteres.
 
 [phases.install]

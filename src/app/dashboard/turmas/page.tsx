@@ -37,7 +37,7 @@ export default async function TurmasPage() {
         description={
           isTeacher
             ? "Cadastre turmas ou cursos e publique exercícios para todos os alunos de uma vez."
-            : "Cadastre manualmente turmas, cursos e grupos — o EduHub auxilia a partir daí."
+            : "Cadastre manualmente turmas, cursos e grupos — o Ecohub auxilia a partir daí."
         }
       >
         {canCreateClass && (

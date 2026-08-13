@@ -1,4 +1,4 @@
--- EduHub: Schema inicial (Fase 1 + base gamificação Fase 2)
+-- Ecohub: Schema inicial (Fase 1 + base gamificação Fase 2)
 -- Execute no SQL Editor do Supabase: https://supabase.com/dashboard
 
 -- Extensões

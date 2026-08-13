@@ -37,7 +37,7 @@ export default async function ConfiguracoesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Configurações"
-        description="Dados da instituição e regras que movem todo o EduHub"
+        description="Dados da instituição e regras que movem todo o Ecohub"
       />
 
       <div className="flex flex-wrap items-center gap-2">
@@ -160,7 +160,7 @@ export default async function ConfiguracoesPage() {
           <p>
             <strong>Loja</strong> → resgate pendente → entrega (professor se permitido).
           </p>
-          <p className="pt-2 text-xs text-slate-400">EduHub 0.3.0 · regras por escola em JSON</p>
+          <p className="pt-2 text-xs text-slate-400">Ecohub 0.3.0 · regras por escola em JSON</p>
         </CardContent>
       </Card>
     </div>

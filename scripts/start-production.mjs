@@ -2,11 +2,11 @@ import { execSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 
 const institutionalMode =
-  process.env.EDUHUB_INSTITUTIONAL === "1" || process.env.EDUHUB_INSTITUTIONAL === "true";
+  process.env.ECOHUB_INSTITUTIONAL === "1" || process.env.ECOHUB_INSTITUTIONAL === "true";
 
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = "file:/data/prod.db";
-  console.warn("[eduhub] DATABASE_URL ausente — usando", process.env.DATABASE_URL);
+  console.warn("[ecohub] DATABASE_URL ausente — usando", process.env.DATABASE_URL);
 }
 
 function run(cmd, optional = false) {
@@ -16,7 +16,7 @@ function run(cmd, optional = false) {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     if (optional) {
-      console.warn(`[eduhub] Comando opcional falhou (${cmd}):`, msg);
+      console.warn(`[ecohub] Comando opcional falhou (${cmd}):`, msg);
       return false;
     }
     throw error;
@@ -24,7 +24,7 @@ function run(cmd, optional = false) {
 }
 
 console.log(
-  `[eduhub] Iniciando produção (modo: ${institutionalMode ? "institucional" : "produção"})...`
+  `[ecohub] Iniciando produção (modo: ${institutionalMode ? "institucional" : "produção"})...`
 );
 
 try {
@@ -37,11 +37,11 @@ const authOk = process.env.AUTH_SECRET?.trim() && process.env.AUTH_SECRET.trim()
 
 if (!authOk) {
   console.warn(
-    "[eduhub] AVISO: AUTH_SECRET não configurado ou menor que 32 caracteres.\n" +
+    "[ecohub] AVISO: AUTH_SECRET não configurado ou menor que 32 caracteres.\n" +
       "        Defina AUTH_SECRET nas variáveis de ambiente antes do go-live."
   );
 } else {
-  console.log("[eduhub] AUTH_SECRET OK.");
+  console.log("[ecohub] AUTH_SECRET OK.");
 }
 
 const prisma = new PrismaClient();
@@ -49,16 +49,16 @@ try {
   const users = await prisma.user.count();
 
   if (users === 0) {
-    console.log("[eduhub] Banco vazio — cadastre a escola em /registro/escola");
+    console.log("[ecohub] Banco vazio — cadastre a escola em /registro/escola");
   } else {
-    console.log(`[eduhub] ${users} usuário(s) no banco.`);
+    console.log(`[ecohub] ${users} usuário(s) no banco.`);
   }
 } catch (error) {
-  console.warn("[eduhub] Verificação do banco falhou:", error instanceof Error ? error.message : error);
+  console.warn("[ecohub] Verificação do banco falhou:", error instanceof Error ? error.message : error);
 } finally {
   await prisma.$disconnect();
 }
 
 const port = process.env.PORT || "3000";
-console.log(`[eduhub] Subindo Next.js na porta ${port}...`);
+console.log(`[ecohub] Subindo Next.js na porta ${port}...`);
 execSync(`npx next start -p ${port}`, { stdio: "inherit" });

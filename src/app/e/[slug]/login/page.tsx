@@ -29,7 +29,7 @@ export default async function TenantLoginHubPage({
       <Card className="w-full max-w-lg rounded-2xl border-2">
         <CardHeader>
           <CardTitle className="text-xl">{school.name}</CardTitle>
-          <CardDescription>Escolha como deseja entrar no EduHub</CardDescription>
+          <CardDescription>Escolha como deseja entrar no Ecohub</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
           {portals.map(({ href, label, icon: Icon, desc }) => (

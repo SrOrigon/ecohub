@@ -58,7 +58,7 @@ export function AuthPortalPicker({ mode }: { mode: "login" | "register" }) {
           <Medal className="h-7 w-7 text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
         </div>
         <h1 className="text-2xl font-bold text-[var(--foreground)]">
-          {mode === "login" ? "Entrar no EduHub" : "Criar conta no EduHub"}
+          {mode === "login" ? "Entrar no Ecohub" : "Criar conta no Ecohub"}
         </h1>
         <p className="mt-2 text-[var(--muted-foreground)]">Escolha seu tipo de acesso</p>
       </div>

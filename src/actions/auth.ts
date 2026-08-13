@@ -158,7 +158,7 @@ export async function registerSchoolAction(formData: FormData) {
   const cnpj = normalizeCnpj(cnpjLookup.cnpj);
   const existingCnpj = await prisma.school.findUnique({ where: { cnpj } });
   if (existingCnpj) {
-    return { error: "Este CNPJ já está cadastrado no EduHub." };
+    return { error: "Este CNPJ já está cadastrado no Ecohub." };
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });

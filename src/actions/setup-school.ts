@@ -68,8 +68,8 @@ const STARTER_REWARDS = [
     stock: 10,
   },
   {
-    name: "Adesivo EduHub Exclusivo",
-    description: "Adesivo físico da comunidade EduHub.",
+    name: "Adesivo Ecohub Exclusivo",
+    description: "Adesivo físico da comunidade Ecohub.",
     coinCost: 150,
     stock: 50,
   },

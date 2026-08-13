@@ -1,12 +1,12 @@
-# EduHub — Guia para implantação em instituições
+# Ecohub — Guia para implantação em instituições
 
-Este guia cobre deploy, configuração inicial e **checklist de testes** antes de colocar o EduHub em uso real numa escola.
+Este guia cobre deploy, configuração inicial e **checklist de testes** antes de colocar o Ecohub em uso real numa escola.
 
 ---
 
 ## 1. Modo de operação
 
-O EduHub em produção opera em **modo institucional**: cada escola se cadastra em `/registro/escola` e gerencia seus próprios usuários. Não há contas ou rotas de demonstração automáticas.
+O Ecohub em produção opera em **modo institucional**: cada escola se cadastra em `/registro/escola` e gerencia seus próprios usuários. Não há contas ou rotas de demonstração automáticas.
 
 ---
 
@@ -16,7 +16,7 @@ O EduHub em produção opera em **modo institucional**: cada escola se cadastra 
 
 ```env
 NODE_ENV=production
-EDUHUB_INSTITUTIONAL=1
+ECOHUB_INSTITUTIONAL=1
 DATABASE_URL=file:/data/prod.db
 AUTH_SECRET=<segredo-aleatorio-minimo-32-caracteres>
 ```
@@ -26,11 +26,11 @@ AUTH_SECRET=<segredo-aleatorio-minimo-32-caracteres>
 ### Recomendadas
 
 ```env
-NEXT_PUBLIC_APP_URL=https://sua-instituicao.eduhub.app.br
+NEXT_PUBLIC_APP_URL=https://sua-instituicao.ecohub.app.br
 PLATFORM_ADMIN_EMAILS=admin@suaempresa.com.br
 RESEND_API_KEY=re_...
-EMAIL_FROM=EduHub <noreply@suaescola.com.br>
-NEXT_PUBLIC_ROOT_DOMAIN=eduhub.app.br
+EMAIL_FROM=Ecohub <noreply@suaescola.com.br>
+NEXT_PUBLIC_ROOT_DOMAIN=ecohub.app.br
 ```
 
 ---
@@ -130,12 +130,12 @@ Marque cada item antes de liberar para a comunidade escolar.
 ### Exercícios e gamificação
 
 - [ ] Criar exercício (professor)
-- [ ] Gerar questões com EduHub IA *(apenas equipe escolar)*
+- [ ] Gerar questões com Ecohub IA *(apenas equipe escolar)*
 - [ ] Aluno entrega exercício
 - [ ] Correção automática (múltipla escolha) e manual (dissertativa)
 - [ ] XP, níveis e loja de recompensas
 
-### EduHub IA
+### Ecohub IA
 
 - [ ] Assistente acessível por perfil (`/dashboard/assistente`)
 - [ ] **Aluno NÃO consegue** gerar exercícios ou gabarito no chat
@@ -152,7 +152,7 @@ Marque cada item antes de liberar para a comunidade escolar.
 
 ## 7. Go-live
 
-1. Definir `EDUHUB_INSTITUTIONAL=1` e `AUTH_SECRET` no ambiente de produção
+1. Definir `ECOHUB_INSTITUTIONAL=1` e `AUTH_SECRET` no ambiente de produção
 2. Trocar senhas padrão de qualquer conta de teste
 3. Treinar direção, secretaria e 1–2 professores piloto
 4. Semana piloto com uma turma antes de escola toda
@@ -167,4 +167,4 @@ Marque cada item antes de liberar para a comunidade escolar.
 | Login "Servidor mal configurado" | `AUTH_SECRET` ≥ 32 chars |
 | Dados sumiram após deploy | Volume `/data` montado? |
 | E-mail de convite não chega | `RESEND_API_KEY` e `EMAIL_FROM` |
-| IA desativada | Configurações → EduHub IA |
+| IA desativada | Configurações → Ecohub IA |

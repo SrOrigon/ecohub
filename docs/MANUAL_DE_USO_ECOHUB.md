@@ -1,6 +1,6 @@
-# 📚 EduHub — Manual de Operação e Guia Rápido de Implantação
+# 📚 Ecohub — Manual de Operação e Guia Rápido de Implantação
 
-Bem-vindo ao **EduHub**, a plataforma unificada de gestão escolar, gamificação e apoio pedagógico inteligente. Este documento é o guia oficial para Direção, Secretaria, Professores, Alunos e Responsáveis.
+Bem-vindo ao **Ecohub**, a plataforma unificada de gestão escolar, gamificação e apoio pedagógico inteligente. Este documento é o guia oficial para Direção, Secretaria, Professores, Alunos e Responsáveis.
 
 ---
 

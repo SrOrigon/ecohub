@@ -7,7 +7,7 @@ import { execSync, spawn } from "node:child_process";
 import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const prodUrl = process.argv[2] ?? "https://eduhub-production-b513.up.railway.app";
+const prodUrl = process.argv[2] ?? "https://ecohub-production-b513.up.railway.app";
 const localPort = process.env.VALIDATION_PORT ?? "3099";
 const localUrl = `http://localhost:${localPort}`;
 const reportPath = join("docs", "RELATORIO_VALIDACAO.md");
@@ -94,7 +94,7 @@ try {
       ...process.env,
       AUTH_SECRET: "validation-runtime-secret-min-32-chars",
       DATABASE_URL: "file:./dev.db",
-      EDUHUB_INSTITUTIONAL: "1",
+      ECOHUB_INSTITUTIONAL: "1",
     },
   });
 
@@ -166,7 +166,7 @@ const totalFail = report.phases.filter((p) => !p.ok).length;
 
 mkdirSync("docs", { recursive: true });
 
-const md = `# Relatório de Validação EduHub
+const md = `# Relatório de Validação Ecohub
 
 Gerado em: ${report.finishedAt}
 
@@ -196,7 +196,7 @@ ${JSON.stringify(report.production?.health ?? {}, null, 2)}
 
 ## Próximos passos manuais
 
-1. Railway: \`EDUHUB_INSTITUTIONAL=1\` + \`AUTH_SECRET\` + volume \`/data\`
+1. Railway: \`ECOHUB_INSTITUTIONAL=1\` + \`AUTH_SECRET\` + volume \`/data\`
 2. Checklist completo: \`docs/GUIA_INSTITUICOES.md\`
 3. Treinamento: \`docs/TREINAMENTO_INSTITUICOES.md\`
 `;

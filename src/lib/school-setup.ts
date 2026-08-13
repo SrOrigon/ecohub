@@ -41,7 +41,7 @@ export async function ensureDefaultRewards(schoolId: string) {
       {
         schoolId,
         categoryId: byName["Material escolar"],
-        name: "Caneta EduHub",
+        name: "Caneta Ecohub",
         description: "Caneta personalizada da escola",
         coinCost: 50,
         stock: 20,

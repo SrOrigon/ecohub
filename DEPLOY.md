@@ -1,11 +1,11 @@
-# EduHub — Deploy
+# Ecohub — Deploy
 
 ## Variáveis de ambiente
 
 ### Obrigatórias (produção)
 
 ```env
-EDUHUB_INSTITUTIONAL=1
+ECOHUB_INSTITUTIONAL=1
 NODE_ENV=production
 DATABASE_URL=file:/data/prod.db
 AUTH_SECRET=gere-um-segredo-longo-e-aleatorio-min-32-chars
@@ -19,8 +19,8 @@ AUTH_SECRET=gere-um-segredo-longo-e-aleatorio-min-32-chars
 NEXT_PUBLIC_APP_URL=https://seu-dominio.com
 PLATFORM_ADMIN_EMAILS=admin@suaempresa.com.br
 RESEND_API_KEY=re_...
-EMAIL_FROM=EduHub <noreply@suaescola.com.br>
-NEXT_PUBLIC_ROOT_DOMAIN=eduhub.app.br
+EMAIL_FROM=Ecohub <noreply@suaescola.com.br>
+NEXT_PUBLIC_ROOT_DOMAIN=ecohub.app.br
 PORT=3000
 ```
 
@@ -41,7 +41,7 @@ PORT=3000
 
 ## Primeiro deploy
 
-1. Configure `EDUHUB_INSTITUTIONAL=1`, `AUTH_SECRET` e `DATABASE_URL`
+1. Configure `ECOHUB_INSTITUTIONAL=1`, `AUTH_SECRET` e `DATABASE_URL`
 2. Após deploy, acesse `/registro/escola` e cadastre a instituição
 3. Siga o checklist em **`docs/GUIA_INSTITUICOES.md`**
 

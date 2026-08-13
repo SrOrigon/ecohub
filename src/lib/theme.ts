@@ -1,4 +1,4 @@
-export const THEME_STORAGE_KEY = "eduhub-theme";
+export const THEME_STORAGE_KEY = "ecohub-theme";
 
 export type Theme = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";

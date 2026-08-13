@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect } from "react";
-import { eduhubAiChatAction } from "@/actions/ai";
+import { ecohubAiChatAction } from "@/actions/ai";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/form-fields";
 import { Bot, Send, Sparkles } from "lucide-react";
 
 type Message = { role: "user" | "assistant"; content: string };
 
-export function EduHubAiChat({
+export function EcohubAiChat({
   assistantName,
   suggestions,
   introMessage,
@@ -24,7 +24,7 @@ export function EduHubAiChat({
       role: "assistant",
       content:
         introMessage ??
-        `Olá! Sou a **${assistantName}**, assistente pedagógica local da EduHub — treinada para BNCC, sem uso de APIs externas. Como posso ajudar?`,
+        `Olá! Sou a **${assistantName}**, assistente pedagógica local da Ecohub — treinada para BNCC, sem uso de APIs externas. Como posso ajudar?`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -46,7 +46,7 @@ export function EduHubAiChat({
     const fd = new FormData();
     fd.set("message", trimmed);
     startTransition(async () => {
-      const result = await eduhubAiChatAction(fd);
+      const result = await ecohubAiChatAction(fd);
       if (result.error) {
         setError(result.error);
         return;
@@ -125,7 +125,7 @@ export function EduHubAiChat({
           placeholder={inputPlaceholder}
           rows={2}
           className="min-h-0 flex-1 resize-none"
-          aria-label="Mensagem para a EduHub IA"
+          aria-label="Mensagem para a Ecohub IA"
         />
         <Button type="submit" disabled={pending || !input.trim()} className="shrink-0 self-end">
           <Send className="h-4 w-4" aria-hidden="true" />

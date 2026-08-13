@@ -27,7 +27,7 @@ export default async function HistoricoPage() {
     <div className="space-y-6">
       <PageHeader
         title="Histórico temporal"
-        description="Linha do tempo completa da instituição — compare métricas do dia ao ano, desde a criação da conta no EduHub"
+        description="Linha do tempo completa da instituição — compare métricas do dia ao ano, desde a criação da conta no Ecohub"
       >
         <Link href="/dashboard/leitura-geral">
           <Button variant="outline" className="gap-2">

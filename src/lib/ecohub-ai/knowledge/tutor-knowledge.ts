@@ -4,7 +4,7 @@ export type TutorSnippet = {
   followUp?: string;
 };
 
-/** Base de conhecimento pedagógico da EduHub IA — especialista em educação básica (BNCC). */
+/** Base de conhecimento pedagógico da Ecohub IA — especialista em educação básica (BNCC). */
 export const TUTOR_SNIPPETS: TutorSnippet[] = [
   {
     patterns: [/fraç/i, /numerador/i, /denominador/i],
@@ -30,12 +30,12 @@ export const TUTOR_SNIPPETS: TutorSnippet[] = [
   {
     patterns: [/presença|falta|frequência/i, /justific/i],
     answer:
-      "Frequência escolar é importante para seu aprendizado e para a escola cumprir a lei. Se faltar, peça ao responsável para justificar no portal EduHub com o motivo (consulta médica, etc.).",
+      "Frequência escolar é importante para seu aprendizado e para a escola cumprir a lei. Se faltar, peça ao responsável para justificar no portal Ecohub com o motivo (consulta médica, etc.).",
   },
   {
     patterns: [/xp|moeda|missão|gamifica/i, /nível/i],
     answer:
-      "No EduHub você ganha XP com notas, presença, missões e exercícios. Moedas servem para resgatar prêmios na loja. Missões precisam de confirmação do professor após você concluir a tarefa.",
+      "No Ecohub você ganha XP com notas, presença, missões e exercícios. Moedas servem para resgatar prêmios na loja. Missões precisam de confirmação do professor após você concluir a tarefa.",
   },
   {
     patterns: [/como estudar/i, /dica.*estud/i, /prova/i, /vestibul/i],
@@ -55,7 +55,7 @@ export const TUTOR_SNIPPETS: TutorSnippet[] = [
 ];
 
 export const TUTOR_GREETING =
-  "Olá! Sou a **EduHub IA**, especialista em educação básica (BNCC). Posso ajudar com dúvidas de matérias, dicas de estudo, gamificação e uso do portal. O que você gostaria de saber?";
+  "Olá! Sou a **Ecohub IA**, especialista em educação básica (BNCC). Posso ajudar com dúvidas de matérias, dicas de estudo, gamificação e uso do portal. O que você gostaria de saber?";
 
 export const TUTOR_FALLBACK =
-  "Posso ajudar com **matérias**, **BNCC**, **planos de aula**, **comunicados**, **agenda compartilhada** e uso do EduHub. Professores podem pedir geração de questões no passo de criação de exercícios.";
+  "Posso ajudar com **matérias**, **BNCC**, **planos de aula**, **comunicados**, **agenda compartilhada** e uso do Ecohub. Professores podem pedir geração de questões no passo de criação de exercícios.";

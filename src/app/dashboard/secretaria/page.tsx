@@ -62,7 +62,7 @@ export default async function SecretariaPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-indigo-600" aria-hidden="true" />
-            EduHub IA para secretaria
+            Ecohub IA para secretaria
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-slate-600">
@@ -71,7 +71,7 @@ export default async function SecretariaPage() {
             operacionais — tudo local, sem API paga.
           </p>
           <Link href="/dashboard/assistente" className="mt-3 inline-block text-indigo-600 hover:underline">
-            Abrir EduHub IA →
+            Abrir Ecohub IA →
           </Link>
         </CardContent>
       </Card>

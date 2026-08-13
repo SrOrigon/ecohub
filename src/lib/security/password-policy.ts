@@ -6,7 +6,7 @@ const BLOCKED_PASSWORDS = new Set([
   "senha123",
   "admin123",
   "qwerty123",
-  "eduhub123",
+  "ecohub123",
 ]);
 
 export function validatePassword(password: string): { ok: true } | { ok: false; error: string } {

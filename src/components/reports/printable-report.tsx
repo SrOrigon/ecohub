@@ -151,7 +151,7 @@ export function PrintableReport({ report }: { report: InstitutionalReport }) {
       </section>
 
       <footer className="border-t pt-4 text-xs text-slate-500">
-        EduHub — Relatório gerado automaticamente. Disciplinas configuradas:{" "}
+        Ecohub — Relatório gerado automaticamente. Disciplinas configuradas:{" "}
         {report.configuredSubjects.join(", ")}.
       </footer>
     </div>

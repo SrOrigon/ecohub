@@ -19,7 +19,7 @@ export default async function DisciplinasPage() {
     <div className="space-y-6">
       <PageHeader
         title="Disciplinas"
-        description="Cadastre manualmente as matérias da instituição. O EduHub usa somente esta lista em notas, horários, diário, boletim e exercícios."
+        description="Cadastre manualmente as matérias da instituição. O Ecohub usa somente esta lista em notas, horários, diário, boletim e exercícios."
       />
 
       <Card>

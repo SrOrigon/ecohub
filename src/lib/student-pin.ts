@@ -18,5 +18,5 @@ export async function verifyStudentPin(pin: string, hash: string | null | undefi
 export function syntheticStudentEmail(schoolSlug: string, enrollmentCode: string): string {
   const safeSlug = schoolSlug.replace(/[^a-z0-9-]/g, "");
   const safeCode = enrollmentCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-  return `aluno.${safeCode}@${safeSlug}.eduhub.local`;
+  return `aluno.${safeCode}@${safeSlug}.ecohub.local`;
 }

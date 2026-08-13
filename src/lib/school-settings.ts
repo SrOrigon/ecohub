@@ -221,7 +221,7 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
   },
   ai: {
     enabled: true,
-    assistantName: "EduHub IA",
+    assistantName: "Ecohub IA",
   },
   gradeRules: {
     subjectWeights: {},

@@ -313,7 +313,7 @@ export function CreateExerciseForm({
               <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 p-3">
                 <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-indigo-900">
                   <Sparkles className="h-4 w-4 text-indigo-600" aria-hidden="true" />
-                  Gerador Automático de Questões (EduHub IA)
+                  Gerador Automático de Questões (Ecohub IA)
                 </p>
                 <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
                   <Input

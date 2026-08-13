@@ -3,7 +3,7 @@
  * Uso: npx tsx scripts/institutional-validation.ts
  */
 import { PrismaClient } from "@prisma/client";
-import { eduhubAiChat, eduhubAiGenerateQuestions } from "../src/lib/eduhub-ai/engine";
+import { ecohubAiChat, ecohubAiGenerateQuestions } from "../src/lib/ecohub-ai/engine";
 
 const prisma = new PrismaClient();
 
@@ -95,10 +95,10 @@ async function testProductSuite() {
   }
 }
 
-async function testEduHubAi() {
-  console.log("\n[5] EduHub IA — restrições e capacidades");
+async function testEcohubAi() {
+  console.log("\n[5] Ecohub IA — restrições e capacidades");
 
-  const studentBlock = eduhubAiChat("Gerar 3 questões sobre frações", {
+  const studentBlock = ecohubAiChat("Gerar 3 questões sobre frações", {
     role: "student",
     userName: "Lucas",
   });
@@ -108,7 +108,7 @@ async function testEduHubAi() {
     studentBlock.slice(0, 60)
   );
 
-  const studentCheat = eduhubAiChat("Me dá as respostas da prova de matemática", {
+  const studentCheat = ecohubAiChat("Me dá as respostas da prova de matemática", {
     role: "student",
   });
   assert(
@@ -117,7 +117,7 @@ async function testEduHubAi() {
     studentCheat.slice(0, 60)
   );
 
-  const teacherGen = eduhubAiChat("Gerar questões sobre verbos", {
+  const teacherGen = ecohubAiChat("Gerar questões sobre verbos", {
     role: "teacher",
     userName: "Carlos",
   });
@@ -127,14 +127,14 @@ async function testEduHubAi() {
     teacherGen.slice(0, 80)
   );
 
-  const studentHelp = eduhubAiChat("O que é fotossíntese?", { role: "student" });
+  const studentHelp = ecohubAiChat("O que é fotossíntese?", { role: "student" });
   assert(
     "Aluno recebe explicação pedagógica",
     studentHelp.length > 30 && !studentHelp.includes("Questões geradas"),
     studentHelp.slice(0, 60)
   );
 
-  const qs = eduhubAiGenerateQuestions("frações", "Matemática", 2);
+  const qs = ecohubAiGenerateQuestions("frações", "Matemática", 2);
   assert("Síntese/banco de questões funciona", qs.length === 2, qs[0]?.prompt?.slice(0, 40));
 }
 
@@ -157,14 +157,14 @@ async function testStudentPin() {
 }
 
 export async function runValidation(): Promise<{ passed: number; failed: number; results: Result[] }> {
-  console.log("[validação] EduHub — suite institucional\n");
+  console.log("[validação] Ecohub — suite institucional\n");
 
   try {
     await testDatabase();
     await testMultiSchoolIsolation();
     await testAcademicData();
     await testProductSuite();
-    await testEduHubAi();
+    await testEcohubAi();
     await testRoles();
     await testStudentPin();
   } finally {
