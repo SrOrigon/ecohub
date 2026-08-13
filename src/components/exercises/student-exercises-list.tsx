@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,20 +41,30 @@ const tabs = [
 export function StudentExercisesList({ exercises }: { exercises: ExerciseItem[] }) {
   const [tab, setTab] = useState<(typeof tabs)[number]["id"]>("pending");
 
-  const enriched = exercises.map((ex) => {
-    const sub = ex.submissions[0];
-    const status = getStudentExerciseStatus(sub, ex.dueDate, !!sub);
-    return { ...ex, sub, status };
-  });
+  const enriched = useMemo(
+    () =>
+      exercises.map((ex) => {
+        const sub = ex.submissions[0];
+        const status = getStudentExerciseStatus(sub, ex.dueDate, !!sub);
+        return { ...ex, sub, status };
+      }),
+    [exercises]
+  );
 
-  const filtered = enriched.filter((ex) => ex.status === tab);
+  const counts = useMemo(
+    () => ({
+      pending: enriched.filter((e) => e.status === "pending").length,
+      overdue: enriched.filter((e) => e.status === "overdue").length,
+      submitted: enriched.filter((e) => e.status === "submitted").length,
+      graded: enriched.filter((e) => e.status === "graded").length,
+    }),
+    [enriched]
+  );
 
-  const counts = {
-    pending: enriched.filter((e) => e.status === "pending").length,
-    overdue: enriched.filter((e) => e.status === "overdue").length,
-    submitted: enriched.filter((e) => e.status === "submitted").length,
-    graded: enriched.filter((e) => e.status === "graded").length,
-  };
+  const filtered = useMemo(
+    () => enriched.filter((ex) => ex.status === tab),
+    [enriched, tab]
+  );
 
   const emptyMessages: Record<(typeof tabs)[number]["id"], string> = {
     pending: "Nada pendente — você está em dia!",

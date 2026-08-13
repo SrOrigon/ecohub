@@ -1,44 +1,41 @@
 import { prisma } from "@/lib/db";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 
-export type ClassEngagement = {
-  classId: string;
-  className: string;
-  studentCount: number;
-  missionRate: number;
-  exerciseRate: number;
-  attendanceRate: number;
-  avgXp: number;
-  engagementScore: number;
-};
-
-export type EngagementOverview = {
-  totalStudents: number;
-  activeMissions: number;
-  pendingSubmissions: number;
-  avgMissionRate: number;
-  avgExerciseRate: number;
-  avgAttendanceRate: number;
-  xpThisWeek: number;
-  classes: ClassEngagement[];
-  topStudents: { id: string; name: string; xp: number; level: number }[];
-};
-
 export async function getEngagementOverview(schoolId: string | null, teacherId?: string) {
   if (!schoolId) {
     return emptyOverview();
   }
 
   const classFilter = teacherId ? { schoolId, ...teacherClassWhere(teacherId) } : { schoolId };
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
   const classes = await prisma.classGroup.findMany({
     where: classFilter,
-    include: {
+    select: {
+      id: true,
+      name: true,
       students: {
-        include: {
-          studentMissions: { include: { mission: true } },
-          exerciseSubmissions: true,
-          attendance: true,
+        select: {
+          id: true,
+          xpTotal: true,
+          studentMissions: {
+            where: { mission: { isActive: true } },
+            select: { completedAt: true },
+          },
+          _count: {
+            select: { exerciseSubmissions: true },
+          },
+          exerciseSubmissions: {
+            where: {
+              OR: [{ status: { not: "submitted" } }, { gradedAt: { not: null } }],
+            },
+            select: { id: true },
+          },
+          attendance: {
+            where: { date: { gte: ninetyDaysAgo } },
+            select: { status: true },
+          },
         },
       },
     },
@@ -80,12 +77,11 @@ export async function getEngagementOverview(schoolId: string | null, teacherId?:
 
     for (const s of students) {
       xpSum += s.xpTotal;
-      const missions = s.studentMissions.filter((sm) => sm.mission.isActive);
-      missionTotal += missions.length;
-      missionDone += missions.filter((m) => m.completedAt).length;
+      missionTotal += s.studentMissions.length;
+      missionDone += s.studentMissions.filter((m) => m.completedAt).length;
 
-      exerciseDone += s.exerciseSubmissions.filter((sub) => sub.status !== "submitted" || sub.gradedAt).length;
-      exerciseTotal += s.exerciseSubmissions.length + 2;
+      exerciseDone += s.exerciseSubmissions.length;
+      exerciseTotal += s._count.exerciseSubmissions + 2;
 
       attendanceTotal += s.attendance.length || 1;
       attendancePresent += s.attendance.filter((a) => a.status === "present" || a.status === "late").length;
@@ -139,6 +135,29 @@ export async function getEngagementOverview(schoolId: string | null, teacherId?:
     })),
   } satisfies EngagementOverview;
 }
+
+export type ClassEngagement = {
+  classId: string;
+  className: string;
+  studentCount: number;
+  missionRate: number;
+  exerciseRate: number;
+  attendanceRate: number;
+  avgXp: number;
+  engagementScore: number;
+};
+
+export type EngagementOverview = {
+  totalStudents: number;
+  activeMissions: number;
+  pendingSubmissions: number;
+  avgMissionRate: number;
+  avgExerciseRate: number;
+  avgAttendanceRate: number;
+  xpThisWeek: number;
+  classes: ClassEngagement[];
+  topStudents: { id: string; name: string; xp: number; level: number }[];
+};
 
 function emptyOverview(): EngagementOverview {
   return {

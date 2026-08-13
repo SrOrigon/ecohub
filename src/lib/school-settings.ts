@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { cache } from "react";
 import { PERIODS as DEFAULT_PERIODS } from "@/lib/constants";
 
 export type ExercisePreset = {
@@ -306,14 +307,14 @@ export function parseSchoolSettings(raw: string | null | undefined): SchoolSetti
   }
 }
 
-export async function getSchoolSettings(schoolId: string | null | undefined): Promise<SchoolSettings> {
+export const getSchoolSettings = cache(async (schoolId: string | null | undefined): Promise<SchoolSettings> => {
   if (!schoolId) return structuredClone(DEFAULT_SCHOOL_SETTINGS);
   const school = await prisma.school.findUnique({
     where: { id: schoolId },
     select: { settings: true },
   });
   return parseSchoolSettings(school?.settings);
-}
+});
 
 export async function getSchoolSettingsForStudent(studentId: string): Promise<SchoolSettings> {
   const student = await prisma.student.findUnique({

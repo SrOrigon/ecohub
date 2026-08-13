@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,9 +28,18 @@ type ExerciseItem = {
 export function TeacherExercisesList({ exercises }: { exercises: ExerciseItem[] }) {
   const [showPendingOnly, setShowPendingOnly] = useState(false);
 
-  const list = showPendingOnly
-    ? exercises.filter((ex) => ex.submissions.some((s) => s.status === "submitted"))
-    : exercises;
+  const pendingCount = useMemo(
+    () => exercises.filter((ex) => ex.submissions.some((s) => s.status === "submitted")).length,
+    [exercises]
+  );
+
+  const list = useMemo(
+    () =>
+      showPendingOnly
+        ? exercises.filter((ex) => ex.submissions.some((s) => s.status === "submitted"))
+        : exercises,
+    [exercises, showPendingOnly]
+  );
 
   return (
     <div className="space-y-4">
@@ -51,8 +60,7 @@ export function TeacherExercisesList({ exercises }: { exercises: ExerciseItem[] 
           className="gap-1"
         >
           <AlertCircle className="h-4 w-4" aria-hidden="true" />
-          Precisam correção (
-          {exercises.filter((e) => e.submissions.some((s) => s.status === "submitted")).length})
+          Precisam correção ({pendingCount})
         </Button>
       </div>
 

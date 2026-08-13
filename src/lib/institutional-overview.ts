@@ -199,7 +199,7 @@ export async function getInstitutionalOverview(schoolId: string | null): Promise
       getMonthlyPerformance(schoolId).catch(() => []),
       prisma.student.findMany({
         where: { user: { schoolId } },
-        include: { grades: { select: { value: true } } },
+        select: { id: true, grades: { select: { value: true } } },
       }).catch(() => []),
       Promise.all([
         prisma.exercise.count({ where: { schoolId } }),
@@ -257,46 +257,57 @@ export async function getInstitutionalOverview(schoolId: string | null): Promise
       }))
       .sort((a, b) => a.average - b.average);
 
-    const classGradeData = await prisma.classGroup.findMany({
-      where: { schoolId },
-      include: {
-        students: {
-          include: {
-            grades: { select: { value: true } },
-            attendance: { select: { status: true } },
-          },
-        },
-      },
-    }).catch(() => []);
+    const [classList, gradesWithStudent, studentClassRows] = await Promise.all([
+      prisma.classGroup.findMany({
+        where: { schoolId },
+        select: { id: true, name: true, _count: { select: { students: true } } },
+      }).catch(() => []),
+      prisma.grade.findMany({
+        where: { student: { user: { schoolId } } },
+        select: { value: true, studentId: true },
+      }).catch(() => []),
+      prisma.student.findMany({
+        where: { user: { schoolId }, classId: { not: null } },
+        select: { id: true, classId: true },
+      }).catch(() => []),
+    ]);
+
+    const classIdByStudent = new Map(studentClassRows.map((s) => [s.id, s.classId!]));
+    const gradesByStudent = new Map<string, number[]>();
+    for (const grade of gradesWithStudent) {
+      const list = gradesByStudent.get(grade.studentId) ?? [];
+      list.push(grade.value ?? 0);
+      gradesByStudent.set(grade.studentId, list);
+    }
 
     const engagementByClass = new Map(engagement.classes.map((c) => [c.classId, c]));
 
-    const classes: ClassOverview[] = classGradeData.map((c) => {
+    const classes: ClassOverview[] = classList.map((c) => {
       const eng = engagementByClass.get(c.id);
-      const grades = c.students.flatMap((s) => s.grades ?? []);
-      const avgGrade =
-        grades.length > 0 ? grades.reduce((a, g) => a + (g.value ?? 0), 0) / grades.length : 0;
-
+      const classGrades: number[] = [];
       let withGrades = 0;
       let passing = 0;
-      for (const s of c.students) {
-        if (!s.grades || s.grades.length === 0) continue;
+
+      for (const [studentId, classId] of classIdByStudent) {
+        if (classId !== c.id) continue;
+        const studentGrades = gradesByStudent.get(studentId);
+        if (!studentGrades?.length) continue;
         withGrades++;
-        const avg = s.grades.reduce((a, g) => a + (g.value ?? 0), 0) / s.grades.length;
+        const avg = studentGrades.reduce((a, g) => a + g, 0) / studentGrades.length;
         if (avg >= passGrade) passing++;
+        classGrades.push(...studentGrades);
       }
 
-      const att = c.students.flatMap((s) => s.attendance ?? []);
-      const attPresent = att.filter((a) => a.status === "present" || a.status === "late").length;
-      const attendanceRate = att.length > 0 ? Math.round((attPresent / att.length) * 100) : 0;
+      const avgGrade =
+        classGrades.length > 0 ? classGrades.reduce((a, g) => a + g, 0) / classGrades.length : 0;
 
       return {
         classId: c.id,
         className: c.name,
-        studentCount: c.students.length,
+        studentCount: c._count.students,
         averageGrade: Math.round(avgGrade * 10) / 10,
         passRate: withGrades > 0 ? Math.round((passing / withGrades) * 100) : 0,
-        attendanceRate,
+        attendanceRate: eng?.attendanceRate ?? 0,
         engagementScore: eng?.engagementScore ?? 0,
         missionRate: eng?.missionRate ?? 0,
         exerciseRate: eng?.exerciseRate ?? 0,

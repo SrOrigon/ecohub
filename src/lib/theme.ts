@@ -1,7 +1,9 @@
 export const THEME_STORAGE_KEY = "eduhub-theme";
 
-export type Theme = "light" | "dark";
+export type Theme = "system" | "light" | "dark";
+export type ResolvedTheme = "light" | "dark";
 
 export function isTheme(value: string | null | undefined): value is Theme {
-  return value === "light" || value === "dark";
+  return value === "system" || value === "light" || value === "dark";
 }
+

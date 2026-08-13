@@ -35,29 +35,33 @@ import {
   syntheticStudentEmail,
 } from "@/lib/student-pin";
 
-function revalidateAll() {
-  [
-    "/dashboard",
-    "/dashboard/alunos",
-    "/dashboard/turmas",
-    "/dashboard/notas",
-    "/dashboard/frequencia",
-    "/dashboard/gamificacao",
-    "/dashboard/relatorios",
-    "/dashboard/notificacoes",
-    "/dashboard/aluno",
-    "/dashboard/professor",
-    "/dashboard/engajamento",
-    "/dashboard/rankings",
+function revalidatePaths(paths: string[]) {
+  for (const p of paths) revalidatePath(p);
+}
+
+const REVALIDATE = {
+  core: ["/dashboard", "/dashboard/aluno", "/dashboard/professor", "/dashboard/secretaria", "/dashboard/responsavel"],
+  people: ["/dashboard/alunos", "/dashboard/turmas", "/dashboard/professores", "/dashboard/responsaveis"],
+  academic: ["/dashboard/notas", "/dashboard/frequencia", "/dashboard/boletim", "/dashboard/diario"],
+  gamification: ["/dashboard/gamificacao", "/dashboard/rankings", "/dashboard/engajamento", "/dashboard/metas-coletivas"],
+  analytics: [
     "/dashboard/leitura-geral",
-    "/dashboard/exercicios",
     "/dashboard/historico",
     "/dashboard/aluno/historico",
     "/dashboard/precisao-disciplinas",
-    "/dashboard/alertas",
-    "/dashboard/responsavel",
-    "/dashboard/responsavel/alertas",
-  ].forEach((p) => revalidatePath(p));
+    "/dashboard/relatorios",
+  ],
+  exercises: ["/dashboard/exercicios"],
+  alerts: ["/dashboard/alertas", "/dashboard/responsavel/alertas"],
+  notifications: ["/dashboard/notificacoes"],
+};
+
+function revalidateGroups(...groups: (keyof typeof REVALIDATE)[]) {
+  const seen = new Set<string>();
+  for (const group of groups) {
+    for (const path of REVALIDATE[group]) seen.add(path);
+  }
+  revalidatePaths([...seen]);
 }
 
 export async function createStudentAction(formData: FormData) {
@@ -137,7 +141,7 @@ export async function createStudentAction(formData: FormData) {
     },
   });
 
-  revalidateAll();
+  revalidateGroups("core", "people", "gamification", "analytics", "alerts");
   return {
     success: true,
     pin: pin ?? undefined,
@@ -184,7 +188,7 @@ export async function createClassAction(formData: FormData) {
     }
   }
 
-  revalidateAll();
+  revalidateGroups("core", "people", "exercises");
   revalidatePath("/dashboard/professor");
   revalidatePath("/dashboard/exercicios");
   return { success: true };
@@ -252,7 +256,7 @@ export async function createGradeAction(formData: FormData) {
     "grade"
   );
 
-  revalidateAll();
+  revalidateGroups("core", "academic", "gamification", "analytics", "alerts");
   return { success: true };
 }
 
@@ -299,7 +303,8 @@ export async function updateGradeAction(formData: FormData) {
     "grade"
   );
 
-  revalidateAll();
+  revalidateGroups("core", "academic", "gamification", "analytics", "alerts");
+  if (user.schoolId) invalidateSchoolRawData(user.schoolId);
   return { success: true };
 }
 
@@ -324,7 +329,8 @@ export async function deleteGradeAction(formData: FormData) {
   }
 
   await prisma.grade.delete({ where: { id: gradeId } });
-  revalidateAll();
+  revalidateGroups("core", "academic", "gamification", "analytics", "alerts");
+  if (user.schoolId) invalidateSchoolRawData(user.schoolId);
   return { success: true };
 }
 
@@ -350,7 +356,7 @@ export async function updateClassCoTeachersAction(formData: FormData) {
     await prisma.classGroupCoTeacher.create({ data: { classId, teacherId } });
   }
 
-  revalidateAll();
+  revalidateGroups("core", "people");
   revalidatePath("/dashboard/turmas");
   revalidatePath("/dashboard/professor");
   return { success: true };
@@ -428,7 +434,7 @@ export async function bulkCompleteMissionsAction(formData: FormData) {
     }
   }
 
-  revalidateAll();
+  revalidateGroups("core", "gamification", "analytics", "alerts");
   revalidatePath("/dashboard/gamificacao");
   revalidatePath("/dashboard/professor");
 
@@ -516,7 +522,8 @@ export async function recordAttendanceAction(formData: FormData) {
     }
   }
 
-  revalidateAll();
+  revalidateGroups("core", "academic", "gamification", "analytics", "alerts");
+  if (user.schoolId) invalidateSchoolRawData(user.schoolId);
   return { success: true };
 }
 
@@ -572,7 +579,7 @@ export async function createMissionAction(formData: FormData) {
     }
   }
 
-  revalidateAll();
+  revalidateGroups("core", "gamification", "analytics", "notifications");
   return { success: true };
 }
 
@@ -607,7 +614,7 @@ export async function updateMissionAction(formData: FormData) {
     },
   });
 
-  revalidateAll();
+  revalidateGroups("gamification", "analytics");
   return { success: true };
 }
 
@@ -626,7 +633,7 @@ export async function toggleMissionAction(formData: FormData) {
     data: { isActive: !mission.isActive },
   });
 
-  revalidateAll();
+  revalidateGroups("gamification", "analytics");
   return { success: true };
 }
 
@@ -674,7 +681,7 @@ export async function completeMissionAction(formData: FormData) {
     await syncTrailAfterAction(studentId, "mission", missionId);
     if (student.classId) await checkAndAwardClassGoals(student.classId);
 
-    revalidateAll();
+    revalidateGroups("core", "gamification", "analytics", "alerts");
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Erro ao concluir missão." };
@@ -748,7 +755,7 @@ export async function bulkAttendanceAction(formData: FormData) {
 
   await checkAndAwardClassGoals(classId);
 
-  revalidateAll();
+  revalidateGroups("core", "academic", "gamification", "analytics", "alerts");
   return { success: true, message: `Chamada registrada para ${students.length} alunos (${registered} novos).` };
 }
 
@@ -802,7 +809,7 @@ export async function requestMissionCompletionAction(formData: FormData) {
     await notifyClassTeacher(student.classId, "Confirmar missão", msg, href);
   }
 
-  revalidateAll();
+  revalidateGroups("gamification");
   revalidatePath("/dashboard/gamificacao");
   return { success: true };
 }
@@ -820,7 +827,7 @@ export async function updateStudentAction(formData: FormData) {
   if (!student) return { error: "Aluno não encontrado." };
 
   await prisma.student.update({ where: { id: studentId }, data: { classId } });
-  revalidateAll();
+  revalidateGroups("core", "people", "gamification", "analytics");
   revalidatePath("/dashboard/alunos");
   revalidatePath(`/dashboard/alunos/${studentId}`);
   return { success: true };
@@ -879,7 +886,7 @@ export async function deleteStudentAction(formData: FormData) {
   if (!student) return { error: "Aluno não encontrado." };
 
   await prisma.user.delete({ where: { id: student.userId } });
-  revalidateAll();
+  revalidateGroups("core", "people", "academic", "gamification", "analytics", "alerts", "exercises");
   return { success: true };
 }
 

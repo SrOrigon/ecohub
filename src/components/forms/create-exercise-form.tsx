@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useMemo, useState, useTransition } from "react";
 import { createExerciseAction } from "@/actions/exercises";
 import { generateExerciseQuestionsAction } from "@/actions/ai";
 import { Button } from "@/components/ui/button";
@@ -77,8 +77,14 @@ export function CreateExerciseForm({
 
   const effectiveAiSubject = aiSubject && subjects.includes(aiSubject) ? aiSubject : (subjects[0] ?? "");
 
-  const totalQuestionPoints = questions.reduce((s, q) => s + (Number(q.points) || 0), 0);
-  const totalQuestionXp = questions.reduce((s, q) => s + (Number(q.xpReward) || 0), 0);
+  const totalQuestionPoints = useMemo(
+    () => questions.reduce((s, q) => s + (Number(q.points) || 0), 0),
+    [questions]
+  );
+  const totalQuestionXp = useMemo(
+    () => questions.reduce((s, q) => s + (Number(q.xpReward) || 0), 0),
+    [questions]
+  );
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {

@@ -231,6 +231,8 @@ export async function getRankingsOverview(
 
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
   const studentWhere = options?.teacherId
     ? { user: { schoolId }, ...studentInTeacherClassWhere(options.teacherId) }
@@ -240,19 +242,25 @@ export async function getRankingsOverview(
     ? { schoolId, ...teacherClassWhere(options.teacherId) }
     : { schoolId };
 
-  const [students, classes, xpWeekRows] = await Promise.all([
+  const [students, classes, xpWeekRows, gradeAvgs] = await Promise.all([
     prisma.student.findMany({
       where: studentWhere,
-      include: {
+      select: {
+        id: true,
+        xpTotal: true,
+        level: true,
         user: { select: { fullName: true, avatarUrl: true } },
         classGroup: { select: { id: true, name: true, gradeLevel: true } },
-        grades: { select: { value: true } },
         studentMissions: {
-          include: { mission: { select: { isActive: true } } },
+          where: { mission: { isActive: true } },
+          select: { completedAt: true, mission: { select: { isActive: true } } },
         },
         studentBadges: { select: { id: true } },
         exerciseSubmissions: { select: { status: true, gradedAt: true } },
-        attendance: { select: { status: true } },
+        attendance: {
+          where: { date: { gte: ninetyDaysAgo } },
+          select: { status: true },
+        },
       },
     }),
     prisma.classGroup.findMany({
@@ -268,13 +276,18 @@ export async function getRankingsOverview(
       },
       _sum: { amount: true },
     }),
+    prisma.grade.groupBy({
+      by: ["studentId"],
+      where: { student: studentWhere },
+      _avg: { value: true },
+    }),
   ]);
 
   const xpWeekByStudent = new Map(xpWeekRows.map((r) => [r.studentId, r._sum.amount ?? 0]));
+  const gradeAvgByStudent = new Map(gradeAvgs.map((r) => [r.studentId, r._avg.value ?? 0]));
 
   const studentRows: StudentRow[] = students.map((s) => {
-    const avgGrade =
-      s.grades.length > 0 ? round1(s.grades.reduce((sum, g) => sum + g.value, 0) / s.grades.length) : 0;
+    const avgGrade = round1(gradeAvgByStudent.get(s.id) ?? 0);
     return {
       id: s.id,
       name: s.user.fullName,
@@ -354,8 +367,9 @@ export async function getRankingsOverview(
 
     bucket.xpSum += s.xpTotal;
     bucket.xpWeekSum += xpWeekByStudent.get(s.id) ?? 0;
-    for (const g of s.grades) {
-      bucket.gradeSum += g.value;
+    const studentAvg = gradeAvgByStudent.get(s.id) ?? 0;
+    if (studentAvg > 0) {
+      bucket.gradeSum += studentAvg;
       bucket.gradeCount++;
     }
 

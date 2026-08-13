@@ -3,7 +3,7 @@ import { cache } from "react";
 import type { SessionUser } from "@/lib/auth";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 
-export async function getDashboardStats(schoolId: string | null) {
+export const getDashboardStats = cache(async (schoolId: string | null) => {
   const empty = {
     totalStudents: 0,
     totalClasses: 0,
@@ -56,9 +56,9 @@ export async function getDashboardStats(schoolId: string | null) {
     console.error("[getDashboardStats] Error:", err);
     return empty;
   }
-}
+});
 
-export async function getRanking(schoolId: string | null, classId?: string | null) {
+export async function getRanking(schoolId: string | null, classId?: string | null, take?: number) {
   if (!schoolId) return [];
 
   try {
@@ -72,7 +72,7 @@ export async function getRanking(schoolId: string | null, classId?: string | nul
         classGroup: { select: { name: true } },
       },
       orderBy: { xpTotal: "desc" },
-      take: classId ? 50 : 20,
+      take: take ?? (classId ? 50 : 20),
     });
 
     return students.map((s, i) => ({
@@ -91,7 +91,7 @@ export async function getRanking(schoolId: string | null, classId?: string | nul
   }
 }
 
-export async function getMonthlyPerformance(schoolId: string | null) {
+export const getMonthlyPerformance = cache(async (schoolId: string | null) => {
   if (!schoolId) return [];
 
   try {
@@ -167,36 +167,41 @@ export async function getMonthlyPerformance(schoolId: string | null) {
     console.error("[getMonthlyPerformance] Error:", err);
     return [];
   }
-}
+});
 
-export async function getClassComparison(schoolId: string | null) {
+export const getClassComparison = cache(async (schoolId: string | null) => {
   if (!schoolId) return [];
 
   try {
-    const classes = await prisma.classGroup.findMany({
-      where: { schoolId },
-      include: {
-        students: {
-          include: {
-            grades: { select: { value: true } },
-          },
-        },
-      },
-    });
+    const [classes, grades, xpByClass] = await Promise.all([
+      prisma.classGroup.findMany({
+        where: { schoolId },
+        select: { id: true, name: true },
+      }),
+      prisma.grade.findMany({
+        where: { student: { user: { schoolId }, classId: { not: null } } },
+        select: { value: true, student: { select: { classId: true } } },
+      }),
+      prisma.student.groupBy({
+        by: ["classId"],
+        where: { user: { schoolId }, classId: { not: null } },
+        _avg: { xpTotal: true },
+        _count: true,
+      }),
+    ]);
+
+    const xpMap = new Map(
+      xpByClass.filter((row) => row.classId).map((row) => [row.classId!, row._avg.xpTotal ?? 0])
+    );
 
     return classes.map((c) => {
-      const validGrades = c.students
-        .flatMap((s) => s.grades ?? [])
-        .map((g) => g?.value)
+      const classGrades = grades
+        .filter((g) => g.student.classId === c.id)
+        .map((g) => g.value)
         .filter((v): v is number => typeof v === "number" && !isNaN(v));
       const media =
-        validGrades.length > 0
-          ? validGrades.reduce((sum, v) => sum + v, 0) / validGrades.length
-          : 0;
-      const avgXp =
-        c.students.length > 0
-          ? c.students.reduce((s, st) => s + (st.xpTotal ?? 0), 0) / c.students.length
-          : 0;
+        classGrades.length > 0 ? classGrades.reduce((sum, v) => sum + v, 0) / classGrades.length : 0;
+      const avgXp = xpMap.get(c.id) ?? 0;
       const engajamento = Math.min(100, Math.max(0, Math.round((avgXp / 3000) * 100)));
       const roundedMedia = Math.round(media * 10);
       return {
@@ -209,20 +214,33 @@ export async function getClassComparison(schoolId: string | null) {
     console.error("[getClassComparison] Error:", err);
     return [];
   }
-}
+});
 
 export async function getStudents(schoolId: string | null) {
   if (!schoolId) return [];
   try {
-    return await prisma.student.findMany({
-      where: { user: { schoolId } },
-      include: {
-        user: { select: { fullName: true, email: true, avatarUrl: true } },
-        classGroup: { select: { id: true, name: true } },
-        grades: { select: { value: true } },
-      },
-      orderBy: { user: { fullName: "asc" } },
-    });
+    const [students, gradeAvgs] = await Promise.all([
+      prisma.student.findMany({
+        where: { user: { schoolId } },
+        include: {
+          user: { select: { fullName: true, email: true, avatarUrl: true } },
+          classGroup: { select: { id: true, name: true } },
+        },
+        orderBy: { user: { fullName: "asc" } },
+      }),
+      prisma.grade.groupBy({
+        by: ["studentId"],
+        where: { student: { user: { schoolId } } },
+        _avg: { value: true },
+      }),
+    ]);
+
+    const avgMap = new Map(gradeAvgs.map((row) => [row.studentId, row._avg.value ?? 0]));
+
+    return students.map((student) => ({
+      ...student,
+      grades: avgMap.has(student.id) ? [{ value: avgMap.get(student.id)! }] : [],
+    }));
   } catch (err) {
     console.error("[getStudents] Error:", err);
     return [];
@@ -263,7 +281,12 @@ export async function getClasses(schoolId: string | null, teacherId?: string) {
         coTeachers: {
           include: { teacher: { select: { id: true, fullName: true, avatarUrl: true } } },
         },
-        students: { include: { user: { select: { fullName: true, avatarUrl: true } } } },
+        students: {
+          select: {
+            id: true,
+            user: { select: { fullName: true, avatarUrl: true } },
+          },
+        },
         _count: { select: { students: true } },
       },
       orderBy: { name: "asc" },
@@ -283,6 +306,7 @@ export async function getGrades(schoolId: string | null) {
         student: { include: { user: { select: { fullName: true } } } },
       },
       orderBy: { createdAt: "desc" },
+      take: 500,
     });
   } catch (err) {
     console.error("[getGrades] Error:", err);
@@ -323,7 +347,7 @@ export async function getMissions(schoolId: string | null) {
       where: { schoolId },
       include: {
         classGroup: { select: { name: true } },
-        studentMissions: true,
+        studentMissions: { select: { studentId: true, completedAt: true } },
       },
       orderBy: { createdAt: "desc" },
     });

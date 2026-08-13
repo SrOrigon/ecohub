@@ -1,7 +1,7 @@
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getRanking } from "@/lib/queries";
-import { getExercisesForUser, getTeacherClasses } from "@/lib/exercises";
+import { getExerciseSummariesForTeacher, getTeacherClasses } from "@/lib/exercises";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
 import { SchoolCalendarWidget } from "@/components/school/school-calendar-widget";
@@ -32,16 +32,45 @@ export default async function TeacherDashboardPage() {
 
   const myClasses = await prisma.classGroup.findMany({
     where: { schoolId: user.schoolId ?? undefined, ...teacherClassWhere(user.id) },
-    include: {
-      students: { include: { user: { select: { fullName: true, avatarUrl: true } }, grades: { select: { value: true } } } },
+    select: {
+      id: true,
+      name: true,
+      students: {
+        select: {
+          id: true,
+          level: true,
+          user: { select: { fullName: true, avatarUrl: true } },
+        },
+      },
       _count: { select: { students: true } },
     },
   });
 
+  const classIds = myClasses.map((c) => c.id);
+  const classGradeAvgs =
+    classIds.length > 0
+      ? await prisma.grade.findMany({
+          where: { student: { classId: { in: classIds } } },
+          select: { value: true, student: { select: { classId: true } } },
+        })
+      : [];
+
+  const mediaByClass = new Map<string, number>();
+  for (const classId of classIds) {
+    const values = classGradeAvgs
+      .filter((g) => g.student.classId === classId)
+      .map((g) => g.value)
+      .filter((v): v is number => typeof v === "number" && !isNaN(v));
+    mediaByClass.set(
+      classId,
+      values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : 0
+    );
+  }
+
   const totalStudents = myClasses.reduce((s, c) => s + c._count.students, 0);
   const [ranking, exercises, settings, agenda, teacherClasses, dayOverview, pendingMissions] = await Promise.all([
-    getRanking(user.schoolId).catch(() => []),
-    getExercisesForUser(user).catch(() => []),
+    getRanking(user.schoolId, undefined, 5).catch(() => []),
+    getExerciseSummariesForTeacher(user).catch(() => []),
     getSchoolSettings(user.schoolId).catch(() => ({ academic: { subjects: [] }, xp: {}, exercises: {}, missions: {} } as unknown as Awaited<ReturnType<typeof getSchoolSettings>>)),
     getTodayAgendaForTeacher(user, user.schoolId).catch(() => ({ items: [], dayStatus: null, classCount: 0 })),
     getTeacherClasses(user).catch(() => []),
@@ -192,10 +221,7 @@ export default async function TeacherDashboardPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {myClasses.map((turma) => {
-          const allGrades = turma.students.flatMap((s) => s.grades);
-          const media = allGrades.length > 0
-            ? allGrades.reduce((sum, g) => sum + g.value, 0) / allGrades.length
-            : 0;
+          const media = mediaByClass.get(turma.id) ?? 0;
           return (
             <Card key={turma.id}>
               <CardHeader>
@@ -241,7 +267,7 @@ export default async function TeacherDashboardPage() {
               className="py-6"
             />
           ) : (
-            <RankingList items={ranking.slice(0, 5)} showClass={false} />
+            <RankingList items={ranking} showClass={false} />
           )}
         </CardContent>
       </Card>

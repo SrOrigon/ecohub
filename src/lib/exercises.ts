@@ -88,6 +88,36 @@ export async function getExercisesForUser(user: SessionUser) {
   });
 }
 
+/** Listagem leve para o painel do professor (sem joins pesados). */
+export async function getExerciseSummariesForTeacher(user: SessionUser) {
+  if (!user.schoolId || user.role !== "teacher") return [];
+
+  return prisma.exercise.findMany({
+    where: {
+      schoolId: user.schoolId,
+      OR: [{ teacherId: user.id }, { classGroup: teacherClassWhere(user.id) }],
+    },
+    select: {
+      id: true,
+      title: true,
+      kind: true,
+      maxPoints: true,
+      xpReward: true,
+      coinReward: true,
+      dueDate: true,
+      isActive: true,
+      classGroup: { select: { name: true } },
+      teacher: { select: { fullName: true } },
+      _count: { select: { questions: true } },
+      submissions: {
+        where: { status: "submitted" },
+        select: { status: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export async function getExercisesForStudentId(studentId: string, schoolId: string | null) {
   if (!schoolId) return [];
   const student = await prisma.student.findUnique({ where: { id: studentId } });

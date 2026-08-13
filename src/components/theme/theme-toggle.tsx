@@ -1,6 +1,6 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
+import { Laptop, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme/theme-provider";
 
@@ -12,8 +12,19 @@ export function ThemeToggle({
   /** Apenas ícone, sem texto visível */
   compact?: boolean;
 }) {
-  const { theme, toggleTheme, mounted } = useTheme();
-  const isDark = theme === "dark";
+  const { theme, resolvedTheme, toggleTheme, mounted } = useTheme();
+
+  const labelMap = {
+    system: `Auto (${resolvedTheme === "dark" ? "Escuro" : "Claro"})`,
+    light: "Claro",
+    dark: "Escuro",
+  };
+
+  const titleMap = {
+    system: "Tema automático (sincronizado com seu dispositivo)",
+    light: "Tema claro (manual)",
+    dark: "Tema escuro (manual)",
+  };
 
   return (
     <button
@@ -24,23 +35,26 @@ export function ThemeToggle({
         compact ? "px-0" : "px-3",
         className
       )}
-      aria-label={isDark ? "Ativar modo claro" : "Ativar modo escuro"}
-      title={isDark ? "Modo claro" : "Modo escuro"}
+      aria-label={titleMap[theme]}
+      title={titleMap[theme]}
     >
       {mounted ? (
-        isDark ? (
-          <Sun className="h-5 w-5 shrink-0" aria-hidden="true" />
-        ) : (
+        theme === "system" ? (
+          <Laptop className="h-5 w-5 shrink-0" aria-hidden="true" />
+        ) : theme === "dark" ? (
           <Moon className="h-5 w-5 shrink-0" aria-hidden="true" />
+        ) : (
+          <Sun className="h-5 w-5 shrink-0" aria-hidden="true" />
         )
       ) : (
-        <Moon className="h-5 w-5 shrink-0 opacity-50" aria-hidden="true" />
+        <Laptop className="h-5 w-5 shrink-0 opacity-50" aria-hidden="true" />
       )}
       {!compact && (
         <span className="hidden text-sm font-medium sm:inline">
-          {isDark ? "Claro" : "Escuro"}
+          {labelMap[theme]}
         </span>
       )}
     </button>
   );
 }
+
