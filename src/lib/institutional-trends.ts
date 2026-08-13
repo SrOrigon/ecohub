@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db";
 import { getSchoolSettings } from "@/lib/school-settings";
-import { getSchoolRawData } from "@/lib/school-data-cache";
 
 export type TrendDirection = "up" | "down" | "stable";
 export type TrendSentiment = "positive" | "negative" | "neutral";
@@ -349,16 +348,33 @@ export async function getTemporalAnalysis(schoolId: string | null): Promise<Temp
     const passGrade = settings.academic?.passGrade ?? 7;
     const now = new Date();
 
-    const schoolData = await getSchoolRawData(schoolId);
+    const [grades, attendance, xp, submissions] = await Promise.all([
+      prisma.grade.findMany({
+        where: { student: { user: { schoolId } } },
+        select: { value: true, createdAt: true, studentId: true },
+      }).catch(() => []),
+      prisma.attendance.findMany({
+        where: { student: { user: { schoolId } } },
+        select: { status: true, date: true },
+      }).catch(() => []),
+      prisma.xpTransaction.findMany({
+        where: { student: { user: { schoolId } } },
+        select: { amount: true, createdAt: true },
+      }).catch(() => []),
+      prisma.exerciseSubmission.findMany({
+        where: { exercise: { schoolId } },
+        select: { submittedAt: true },
+      }).catch(() => []),
+    ]);
 
-    const rawGrades: RawGrade[] = schoolData.rawGrades.map((g) => ({
+    const rawGrades: RawGrade[] = grades.map((g) => ({
       value: g.value ?? 0,
       createdAt: g.createdAt,
       studentId: g.studentId,
     }));
-    const rawAtt: RawAttendance[] = schoolData.rawAtt.map((a) => ({ status: a.status, date: a.date }));
-    const rawXp: RawXp[] = schoolData.rawXp.map((x) => ({ amount: x.amount ?? 0, createdAt: x.createdAt }));
-    const rawSubs: RawSubmission[] = schoolData.rawSubs.map((s) => ({ createdAt: s.createdAt }));
+    const rawAtt: RawAttendance[] = attendance.map((a) => ({ status: a.status, date: a.date }));
+    const rawXp: RawXp[] = xp.map((x) => ({ amount: x.amount ?? 0, createdAt: x.createdAt }));
+    const rawSubs: RawSubmission[] = submissions.map((s) => ({ createdAt: s.submittedAt }));
 
     const curMonthStart = startOfMonth(now);
     const prevMonthEnd = endOfMonth(addMonths(now, -1));

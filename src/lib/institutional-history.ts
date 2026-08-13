@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db";
 import { getSchoolSettings } from "@/lib/school-settings";
-import { getSchoolRawData } from "@/lib/school-data-cache";
 import type { MetricTrend, PeriodComparison, PeriodSnapshot } from "@/lib/institutional-trends";
 
 export type HistoryGranularity = "day" | "week" | "month" | "semester" | "year";
@@ -392,17 +391,32 @@ function buildInsights(
 }
 
 async function loadSchoolRawData(schoolId: string) {
-  const data = await getSchoolRawData(schoolId);
+  const [school, grades, attendance, xp, submissions] = await Promise.all([
+    prisma.school.findUnique({ where: { id: schoolId }, select: { createdAt: true, name: true } }),
+    prisma.grade.findMany({
+      where: { student: { user: { schoolId } } },
+      select: { value: true, createdAt: true, studentId: true },
+    }),
+    prisma.attendance.findMany({
+      where: { student: { user: { schoolId } } },
+      select: { status: true, date: true },
+    }),
+    prisma.xpTransaction.findMany({
+      where: { student: { user: { schoolId } } },
+      select: { amount: true, createdAt: true },
+    }),
+    prisma.exerciseSubmission.findMany({
+      where: { exercise: { schoolId } },
+      select: { submittedAt: true },
+    }),
+  ]);
+
   return {
-    school: data.school,
-    rawGrades: data.rawGrades.map((g) => ({
-      value: g.value,
-      createdAt: g.createdAt,
-      studentId: g.studentId,
-    })),
-    rawAtt: data.rawAtt,
-    rawXp: data.rawXp,
-    rawSubs: data.rawSubs,
+    school,
+    rawGrades: grades.map((g) => ({ value: g.value, createdAt: g.createdAt, studentId: g.studentId })),
+    rawAtt: attendance.map((a) => ({ status: a.status, date: a.date })),
+    rawXp: xp.map((x) => ({ amount: x.amount, createdAt: x.createdAt })),
+    rawSubs: submissions.map((s) => ({ createdAt: s.submittedAt })),
   };
 }
 

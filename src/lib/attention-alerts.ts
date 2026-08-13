@@ -125,13 +125,6 @@ function buildVersion(alerts: AttentionAlert[]) {
     .join("|");
 }
 
-const ALERTS_CACHE_TTL_MS = 45_000;
-const alertsCache = new Map<string, { expires: number; snapshot: AttentionAlertsSnapshot }>();
-
-function alertsCacheKey(user: SessionUser) {
-  return `${user.id}:${user.role}:${user.schoolId ?? ""}`;
-}
-
 function sortAlerts(alerts: AttentionAlert[]) {
   return alerts.sort((a, b) => {
     const sev = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
@@ -447,18 +440,6 @@ export async function computeAttentionAlerts(
 }
 
 export async function getAttentionAlertsSnapshot(user: SessionUser): Promise<AttentionAlertsSnapshot> {
-  const cacheKey = alertsCacheKey(user);
-  const cached = alertsCache.get(cacheKey);
-  if (cached && cached.expires > Date.now()) {
-    return cached.snapshot;
-  }
-
-  const snapshot = await computeAttentionAlertsSnapshot(user);
-  alertsCache.set(cacheKey, { expires: Date.now() + ALERTS_CACHE_TTL_MS, snapshot });
-  return snapshot;
-}
-
-async function computeAttentionAlertsSnapshot(user: SessionUser): Promise<AttentionAlertsSnapshot> {
   const empty: AttentionAlertsSnapshot = {
     version: "0",
     updatedAt: new Date().toISOString(),

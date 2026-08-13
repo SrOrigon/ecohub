@@ -304,7 +304,6 @@ export async function updateGradeAction(formData: FormData) {
   );
 
   revalidateGroups("core", "academic", "gamification", "analytics", "alerts");
-  if (user.schoolId) invalidateSchoolRawData(user.schoolId);
   return { success: true };
 }
 
@@ -330,7 +329,6 @@ export async function deleteGradeAction(formData: FormData) {
 
   await prisma.grade.delete({ where: { id: gradeId } });
   revalidateGroups("core", "academic", "gamification", "analytics", "alerts");
-  if (user.schoolId) invalidateSchoolRawData(user.schoolId);
   return { success: true };
 }
 
@@ -523,7 +521,6 @@ export async function recordAttendanceAction(formData: FormData) {
   }
 
   revalidateGroups("core", "academic", "gamification", "analytics", "alerts");
-  if (user.schoolId) invalidateSchoolRawData(user.schoolId);
   return { success: true };
 }
 

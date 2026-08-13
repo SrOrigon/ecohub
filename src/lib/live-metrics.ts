@@ -66,13 +66,6 @@ function buildVersion(stats: LiveStats, activityIds: string[]) {
   ].join("|");
 }
 
-const SNAPSHOT_CACHE_TTL_MS = 30_000;
-const snapshotCache = new Map<string, { expires: number; snapshot: LiveMetricsSnapshot }>();
-
-function snapshotCacheKey(user: SessionUser) {
-  return `${user.id}:${user.role}:${user.schoolId ?? ""}`;
-}
-
 async function getStudentRanks(schoolId: string, studentId: string, classId: string | null) {
   const student = await prisma.student.findUnique({
     where: { id: studentId },
@@ -98,18 +91,6 @@ async function getStudentRanks(schoolId: string, studentId: string, classId: str
 }
 
 export async function getLiveMetricsSnapshot(user: SessionUser): Promise<LiveMetricsSnapshot> {
-  const cacheKey = snapshotCacheKey(user);
-  const cached = snapshotCache.get(cacheKey);
-  if (cached && cached.expires > Date.now()) {
-    return cached.snapshot;
-  }
-
-  const snapshot = await computeLiveMetricsSnapshot(user);
-  snapshotCache.set(cacheKey, { expires: Date.now() + SNAPSHOT_CACHE_TTL_MS, snapshot });
-  return snapshot;
-}
-
-async function computeLiveMetricsSnapshot(user: SessionUser): Promise<LiveMetricsSnapshot> {
   const schoolId = user.schoolId;
   const empty: LiveMetricsSnapshot = {
     version: "0",
