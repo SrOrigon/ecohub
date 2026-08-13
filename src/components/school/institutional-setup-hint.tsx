@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Settings2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ProvisionSchoolButton } from "@/components/school/provision-school-button";
 
 export function InstitutionalSetupHint({
   canManageSettings,
@@ -16,7 +17,10 @@ export function InstitutionalSetupHint({
       <CardContent className="flex flex-wrap items-start gap-3 py-4">
         <Settings2 className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" aria-hidden="true" />
         <div className="min-w-0 flex-1 text-sm text-slate-700">
-          <p className="font-semibold text-slate-900">Cadastro manual da instituição</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-semibold text-slate-900">Cadastro manual da instituição</p>
+            {canManageSettings && <ProvisionSchoolButton />}
+          </div>
           <p className="mt-1">
             O EduHub auxilia depois que você cadastra turmas, cursos e disciplinas. Cadastre primeiro;
             em seguida vincule cada aluno à turma ou curso correspondente.
