@@ -36,13 +36,23 @@ export function resolveVerificationStatus(input: {
   cnae: string | number | null | undefined;
 }): SchoolVerificationStatus {
   const situacao = (input.situacao ?? "").toUpperCase();
+
+  if (situacao.includes("INDISPONIVEL") || !situacao.trim()) {
+    return SCHOOL_VERIFICATION_STATUS.pending;
+  }
+
   if (!situacao.includes("ATIV")) {
     return SCHOOL_VERIFICATION_STATUS.rejected;
   }
-  if (isEducationCnae(input.cnae)) {
-    return SCHOOL_VERIFICATION_STATUS.verified;
-  }
-  return SCHOOL_VERIFICATION_STATUS.manual_review;
+
+  // CNPJ ativo na Receita Federal: verificação automática.
+  // CNAE de ensino (grupo 85) é informativo; não bloqueia operação nem cadastros públicos.
+  return SCHOOL_VERIFICATION_STATUS.verified;
+}
+
+/** Indica se o CNAE principal é do setor de educação (grupo 85). */
+export function hasEducationCnae(cnae: string | number | null | undefined): boolean {
+  return isEducationCnae(cnae);
 }
 
 export function verificationStatusMessage(status: SchoolVerificationStatus): string {
@@ -50,12 +60,21 @@ export function verificationStatusMessage(status: SchoolVerificationStatus): str
     case SCHOOL_VERIFICATION_STATUS.verified:
       return "Instituição verificada na Receita Federal. Professores e famílias já podem se cadastrar com o código da escola.";
     case SCHOOL_VERIFICATION_STATUS.manual_review:
-      return "CNPJ ativo, mas o CNAE não é de ensino. Nossa equipe pode revisar manualmente  -  enquanto isso, cadastros públicos ficam pausados.";
+      return "Cadastro recebido. A verificação automática do CNPJ será concluída em instantes.";
     case SCHOOL_VERIFICATION_STATUS.pending:
-      return "Aguardando validação do CNPJ.";
+      return "Consultando o CNPJ na Receita Federal. A verificação é automática e costuma concluir em segundos.";
     case SCHOOL_VERIFICATION_STATUS.rejected:
       return "CNPJ inativo ou inválido na Receita Federal.";
     default:
       return "";
   }
+}
+
+/** Banner persistente só para status que ainda exigem ação ou bloqueiam cadastros públicos. */
+export function shouldShowVerificationBanner(status: string): boolean {
+  return (
+    status === SCHOOL_VERIFICATION_STATUS.pending ||
+    status === SCHOOL_VERIFICATION_STATUS.manual_review ||
+    status === SCHOOL_VERIFICATION_STATUS.rejected
+  );
 }

@@ -217,7 +217,7 @@ export async function fetchCnpjFromBrasilApi(cnpj: string): Promise<CnpjLookupRe
     cnaeDescricao: "Serviço de consulta governamental indisponível no momento",
     city: null,
     state: null,
-    verificationStatus: "manual_review",
+    verificationStatus: "pending",
   };
 }
 

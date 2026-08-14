@@ -49,14 +49,14 @@ export function SchoolVerificationBanner({
           )}
           {s === "manual_review" && (
             <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-              Você já pode configurar turmas e usar o painel. Cadastros públicos de professores e alunos
-              serão liberados após aprovação.
+              Estamos finalizando a consulta automática do CNPJ. Atualize a página em alguns segundos se
+              este aviso continuar.
             </p>
           )}
           {s === "pending" && (
             <p className="mt-2 flex items-center gap-1 text-sm text-[var(--muted-foreground)]">
               <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-              Conclua a validação do CNPJ em Configurações se ainda não fez.
+              A verificação ocorre automaticamente ao abrir o painel - não é necessário contato com suporte.
             </p>
           )}
         </div>

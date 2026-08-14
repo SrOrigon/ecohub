@@ -4,6 +4,8 @@ import { parseSchoolSettings } from "@/lib/school-settings";
 import { isPlatformAdmin } from "@/lib/platform-admin";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { SchoolVerificationBanner } from "@/components/school/school-verification-banner";
+import { syncSchoolVerificationIfNeeded } from "@/lib/sync-school-verification";
+import { shouldShowVerificationBanner } from "@/lib/school-verification";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -12,6 +14,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const school = await getSchool(user);
   const settings = parseSchoolSettings(school?.settings);
+
+  let verificationStatus = school?.verificationStatus;
+  if (school && shouldShowVerificationBanner(school.verificationStatus)) {
+    verificationStatus = await syncSchoolVerificationIfNeeded(school);
+  }
 
   return (
     <DashboardShell
@@ -25,9 +32,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
       features={{ trailsEnabled: settings.trails.enabled }}
       showPlatformAdmin={isPlatformAdmin(user.email)}
     >
-      {(user.role === "admin" || user.role === "director") && school && (
+      {(user.role === "admin" || user.role === "director") &&
+        school &&
+        verificationStatus &&
+        shouldShowVerificationBanner(verificationStatus) && (
         <SchoolVerificationBanner
-          status={school.verificationStatus}
+          status={verificationStatus}
           legalName={school.legalName}
           cnpj={school.cnpj}
         />

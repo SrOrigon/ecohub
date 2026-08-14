@@ -15,6 +15,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { formatCnpj, normalizeCnpj } from "@/lib/cnpj";
 import {
   SCHOOL_VERIFICATION_LABELS,
+  hasEducationCnae,
   verificationStatusMessage,
   type SchoolVerificationStatus,
 } from "@/lib/school-verification";
@@ -25,6 +26,7 @@ type CnpjPreview = {
   razaoSocial: string;
   nomeFantasia: string | null;
   situacao: string;
+  cnae: string;
   cnaeDescricao: string | null;
   city: string | null;
   state: string | null;
@@ -168,10 +170,10 @@ export function RegisterSchoolForm() {
                     Pronto para cadastro
                   </p>
                 )}
-                {preview.verificationStatus === "manual_review" && (
-                  <p className="mt-2 flex items-center gap-1 text-amber-700 dark:text-amber-300">
-                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                    CNPJ validado algoritmicamente. Pronto para prosseguir com o cadastro.
+                {preview.verificationStatus === "verified" && !hasEducationCnae(preview.cnae) && (
+                  <p className="mt-2 text-xs text-[var(--muted-foreground)]">
+                    CNAE principal fora do grupo de ensino - cadastro liberado com CNPJ ativo na Receita
+                    Federal.
                   </p>
                 )}
               </div>

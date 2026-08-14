@@ -17,7 +17,7 @@ export default async function PlataformaPage() {
     <div className="space-y-6">
       <PageHeader
         title="Administração da plataforma"
-        description="Aprove ou rejeite escolas com CNPJ em análise manual."
+        description="Escolas com verificação pendente ou consulta à Receita indisponível."
       />
       <PlatformResetUserForm />
       <PlatformSchoolsPanel schools={schools} />
