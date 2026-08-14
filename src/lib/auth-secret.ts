@@ -6,8 +6,8 @@ function isNextBuildPhase(): boolean {
 }
 
 /**
- * Segredo JWT. Em produção AUTH_SECRET é obrigatório: sem ele, o fallback público
- * deste arquivo permitiria a qualquer pessoa forjar cookies de sessão.
+ * Segredo JWT. Em produção, `scripts/start-production.mjs` garante AUTH_SECRET
+ * (variável de ambiente ou arquivo /data/.auth_secret) antes de subir o Next.js.
  */
 export function getAuthSecret(): Uint8Array {
   const secret = process.env.AUTH_SECRET?.trim();
@@ -16,15 +16,13 @@ export function getAuthSecret(): Uint8Array {
     return new TextEncoder().encode(secret);
   }
 
-  // Durante o build não há requisições reais; o placeholder só evita quebrar a
-  // pré-renderização de páginas que importam o módulo de sessão.
   if (isNextBuildPhase()) {
     return new TextEncoder().encode(BUILD_FALLBACK);
   }
 
   if (process.env.NODE_ENV === "production") {
     throw new Error(
-      "AUTH_SECRET ausente ou muito curto. Defina uma chave com pelo menos 32 caracteres nas variáveis de ambiente de produção."
+      "AUTH_SECRET ausente. Reinicie o serviço — o startup deve gerar o segredo automaticamente."
     );
   }
 

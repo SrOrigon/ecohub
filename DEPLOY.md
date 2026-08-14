@@ -12,6 +12,8 @@ AUTH_SECRET=gere-um-segredo-longo-e-aleatorio-min-32-chars
 ```
 
 > Gere o `AUTH_SECRET` com: `openssl rand -base64 32`
+>
+> **Se não definir `AUTH_SECRET`**, o startup (`npm start`) gera automaticamente e salva em `/data/.auth_secret` — por isso o **volume em `/data` é obrigatório** para login funcionar após reinícios.
 
 ### Recomendadas
 

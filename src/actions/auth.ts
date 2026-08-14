@@ -136,7 +136,7 @@ export async function loginAction(formData: FormData) {
     if (reason.includes("AUTH_SECRET")) {
       return {
         error:
-          "Servidor em configuração incompleta (AUTH_SECRET). A senha pode estar correta — contate o suporte técnico.",
+          "Sessão temporariamente indisponível. Aguarde o servidor reiniciar (deploy em andamento) e tente novamente.",
       };
     }
     return {

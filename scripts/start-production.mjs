@@ -1,5 +1,6 @@
 import { execSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
+import { ensureAuthSecret } from "./ensure-auth-secret.mjs";
 
 const institutionalMode =
   process.env.ECOHUB_INSTITUTIONAL === "1" || process.env.ECOHUB_INSTITUTIONAL === "true";
@@ -33,16 +34,13 @@ try {
   /* já logado */
 }
 
-const authOk = process.env.AUTH_SECRET?.trim() && process.env.AUTH_SECRET.trim().length >= 32;
+const authSecret = ensureAuthSecret();
+const authOk = authSecret.length >= 32;
 
 if (!authOk) {
-  console.error(
-    "[ecohub] ERRO CRÍTICO: AUTH_SECRET não configurado ou menor que 32 caracteres.\n" +
-      "        Cadastro e login vão falhar até definir AUTH_SECRET nas variáveis do Railway.\n" +
-      "        Gere com: openssl rand -base64 32"
-  );
+  console.error("[ecohub] ERRO CRÍTICO: não foi possível obter AUTH_SECRET válido.");
 } else {
-  console.log("[ecohub] AUTH_SECRET OK.");
+  console.log("[ecohub] AUTH_SECRET OK (login e sessões habilitados).");
 }
 
 const prisma = new PrismaClient();
