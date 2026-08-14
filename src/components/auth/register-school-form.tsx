@@ -2,7 +2,11 @@
 
 import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
-import { registerSchoolAction, type RegisterSchoolResult } from "@/actions/auth";
+import {
+  registerSchoolAction,
+  type RegisterSchoolResult,
+  type RegisterSchoolSuccess as RegisterSchoolSuccessData,
+} from "@/actions/auth";
 import { RegisterSchoolSuccess } from "@/components/auth/register-school-success";
 import { runServerAction } from "@/lib/run-server-action";
 import { lookupCnpjAction } from "@/actions/cnpj";
@@ -40,6 +44,10 @@ function statusBadgeVariant(status: SchoolVerificationStatus) {
   return "secondary" as const;
 }
 
+function isRegisterSchoolSuccess(state: RegisterSchoolResult): state is RegisterSchoolSuccessData {
+  return state != null && "success" in state && state.success === true;
+}
+
 export function RegisterSchoolForm() {
   const [cnpjInput, setCnpjInput] = useState("");
   const [preview, setPreview] = useState<CnpjPreview | null>(null);
@@ -52,7 +60,7 @@ export function RegisterSchoolForm() {
     null
   );
 
-  if (state?.success) {
+  if (isRegisterSchoolSuccess(state)) {
     return <RegisterSchoolSuccess result={state} />;
   }
 

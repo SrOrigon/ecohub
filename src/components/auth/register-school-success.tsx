@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -76,12 +77,13 @@ export function RegisterSchoolSuccess({ result }: { result: RegisterSchoolSucces
               <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
               Acessar painel
             </Button>
-            <Button type="button" variant="secondary" className="flex-1 gap-2" size="lg" asChild>
-              <Link href={loginPath}>
-                <LogIn className="h-4 w-4" aria-hidden="true" />
-                Ver página de login
-              </Link>
-            </Button>
+            <Link
+              href={loginPath}
+              className={cn(buttonVariants({ variant: "secondary", size: "lg" }), "flex-1 gap-2")}
+            >
+              <LogIn className="h-4 w-4" aria-hidden="true" />
+              Ver página de login
+            </Link>
           </div>
         </CardContent>
       </Card>
