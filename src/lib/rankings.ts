@@ -377,12 +377,12 @@ export async function getRankingsOverview(
     bucket.missionTotal += activeMissions.length;
     bucket.missionDone += activeMissions.filter((sm) => sm.completedAt).length;
 
-    bucket.exerciseTotal += s.exerciseSubmissions.length + 2;
+    bucket.exerciseTotal += s.exerciseSubmissions.length;
     bucket.exerciseDone += s.exerciseSubmissions.filter(
       (sub) => sub.status !== "submitted" || sub.gradedAt
     ).length;
 
-    bucket.attendanceTotal += s.attendance.length || 1;
+    bucket.attendanceTotal += s.attendance.length;
     bucket.attendancePresent += s.attendance.filter(
       (a) => a.status === "present" || a.status === "late"
     ).length;

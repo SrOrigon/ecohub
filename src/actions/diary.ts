@@ -8,6 +8,7 @@ import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
 import { notifyStudentParents } from "@/lib/notifications";
 import { OCCURRENCE_KINDS } from "@/lib/constants";
+import { assertClassInScope } from "@/lib/tenant-guards";
 
 function revalidateDiary() {
   revalidatePath("/dashboard/diario");
@@ -15,13 +16,6 @@ function revalidateDiary() {
   revalidatePath("/dashboard/responsavel");
 }
 
-async function assertTeacherClass(userId: string, classId: string, schoolId: string) {
-  const turma = await prisma.classGroup.findFirst({
-    where: { id: classId, schoolId, teacherId: userId },
-  });
-  if (!turma) throw new Error("Turma não encontrada ou sem permissão.");
-  return turma;
-}
 
 export async function createDiaryEntryAction(formData: FormData) {
   const session = await requireSessionResult(["admin", "director", "teacher"]);
@@ -46,13 +40,8 @@ export async function createDiaryEntryAction(formData: FormData) {
     if (!subjectCheck.ok) return { error: subjectCheck.error };
   }
 
-  if (user.role === "teacher") {
-    try {
-      await assertTeacherClass(user.id, classId, user.schoolId);
-    } catch (e) {
-      return { error: e instanceof Error ? e.message : "Sem permissão nesta turma." };
-    }
-  }
+  const scope = await assertClassInScope(user, classId);
+  if (!scope.ok) return { error: scope.error };
 
   await prisma.classDiaryEntry.create({
     data: {
@@ -90,12 +79,16 @@ export async function createOccurrenceAction(formData: FormData) {
     return { error: "Tipo de ocorrência inválido." };
   }
 
-  if (user.role === "teacher") {
-    try {
-      await assertTeacherClass(user.id, classId, user.schoolId);
-    } catch (e) {
-      return { error: e instanceof Error ? e.message : "Sem permissão nesta turma." };
-    }
+  const scope = await assertClassInScope(user, classId);
+  if (!scope.ok) return { error: scope.error };
+
+  if (studentId) {
+    // O aluno precisa estar matriculado na turma informada.
+    const enrolled = await prisma.student.findFirst({
+      where: { id: studentId, classId, user: { schoolId: user.schoolId } },
+      select: { id: true },
+    });
+    if (!enrolled) return { error: "Aluno não pertence a esta turma." };
   }
 
   const occurrence = await prisma.occurrence.create({
@@ -150,9 +143,9 @@ export async function getOccurrencesForClass(classId: string, schoolId: string) 
   });
 }
 
-export async function getOccurrencesForStudent(studentId: string) {
+export async function getOccurrencesForStudent(studentId: string, schoolId: string) {
   return prisma.occurrence.findMany({
-    where: { studentId },
+    where: { studentId, classGroup: { schoolId } },
     include: {
       teacher: { select: { fullName: true } },
       classGroup: { select: { name: true } },

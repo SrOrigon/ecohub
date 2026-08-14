@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { registerStudentAction, listClassesForSignupAction } from "@/actions/auth";
 import { runServerAction } from "@/lib/run-server-action";
@@ -23,13 +23,20 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
     null
   );
 
+  const lookupSeq = useRef(0);
+
   useEffect(() => {
     if (schoolSlug.length < 3) return;
+
+    // O debounce cancela o timer, mas não a consulta já em voo: sem o contador,
+    // a resposta de um código antigo poderia sobrescrever as turmas atuais.
+    const seq = ++lookupSeq.current;
     const t = setTimeout(() => {
       startLoad(async () => {
         const fd = new FormData();
         fd.set("schoolSlug", schoolSlug);
         const result = await listClassesForSignupAction(fd);
+        if (seq !== lookupSeq.current) return;
         setClasses(result.classes ?? []);
         setSchoolName(result.schoolName ?? null);
         setSchoolError(result.error ?? null);

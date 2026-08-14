@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import type { UserRole } from "@/lib/constants";
 import { assertInstitutionSubject } from "@/lib/institution-subjects";
 import { getSchoolSettings, parseSchoolSettings, stringifySchoolSettings } from "@/lib/school-settings";
+import { assertClassInScope } from "@/lib/tenant-guards";
 
 const STAFF_ROLES: UserRole[] = ["admin", "director", "secretary", "teacher"];
 
@@ -71,6 +72,11 @@ export async function createAuthorizationFormAction(formData: FormData): Promise
 
   if (!title || !body) return;
 
+  if (classId) {
+    const scope = await assertClassInScope(user, classId);
+    if (!scope.ok) return;
+  }
+
   await prisma.authorizationForm.create({
     data: {
       schoolId: user.schoolId,
@@ -91,8 +97,10 @@ export async function signAuthorizationAction(formData: FormData): Promise<void>
   const studentId = String(formData.get("studentId") ?? "") || null;
   const note = String(formData.get("note") ?? "").trim() || null;
 
+  if (!user.schoolId) return;
+
   const form = await prisma.authorizationForm.findFirst({
-    where: { id: formId, schoolId: user.schoolId ?? undefined },
+    where: { id: formId, schoolId: user.schoolId },
   });
   if (!form) return;
 
@@ -131,13 +139,38 @@ export async function sendChatMessageAction(formData: FormData): Promise<void> {
   if (!body) return;
 
   let thread = threadId
-    ? await prisma.chatThread.findFirst({ where: { id: threadId, schoolId: user.schoolId } })
+    ? await prisma.chatThread.findFirst({
+        where: {
+          id: threadId,
+          schoolId: user.schoolId,
+          // Responsável só acessa as próprias conversas.
+          ...(user.role === "parent" ? { parentId: user.id } : {}),
+        },
+      })
     : null;
 
   if (!thread && studentId && parentId) {
+    // Responsável só abre conversa sobre filho vinculado a ele.
+    const resolvedParentId = user.role === "parent" ? user.id : parentId;
+    const link = await prisma.parentStudent.findFirst({
+      where: {
+        parentId: resolvedParentId,
+        studentId,
+        student: { user: { schoolId: user.schoolId } },
+      },
+      select: { id: true },
+    });
+    if (!link) return;
+
     thread = await prisma.chatThread.upsert({
-      where: { schoolId_studentId_parentId: { schoolId: user.schoolId, studentId, parentId } },
-      create: { schoolId: user.schoolId, studentId, parentId },
+      where: {
+        schoolId_studentId_parentId: {
+          schoolId: user.schoolId,
+          studentId,
+          parentId: resolvedParentId,
+        },
+      },
+      create: { schoolId: user.schoolId, studentId, parentId: resolvedParentId },
       update: { updatedAt: new Date() },
     });
   }
@@ -180,7 +213,18 @@ export async function votePollAction(formData: FormData): Promise<void> {
   const user = await requireSession(["admin", "director", "teacher", "student", "parent", "secretary"]);
   const pollId = String(formData.get("pollId") ?? "");
   const optionId = String(formData.get("optionId") ?? "");
-  if (!pollId || !optionId) return;
+  if (!pollId || !optionId || !user.schoolId) return;
+
+  // A enquete e a opção precisam pertencer a um comunicado da mesma escola.
+  const poll = await prisma.announcementPoll.findFirst({
+    where: {
+      id: pollId,
+      announcement: { schoolId: user.schoolId },
+      options: { some: { id: optionId } },
+    },
+    select: { id: true },
+  });
+  if (!poll) return;
 
   await prisma.announcementPollVote.upsert({
     where: { pollId_userId: { pollId, userId: user.id } },
@@ -233,6 +277,9 @@ export async function saveScheduleSlotAction(formData: FormData): Promise<{ erro
 
   const subjectCheck = assertInstitutionSubject(subject, settings.academic.subjects);
   if (!subjectCheck.ok) return { error: subjectCheck.error };
+
+  const scope = await assertClassInScope(user, classId);
+  if (!scope.ok) return { error: scope.error };
 
   await prisma.classScheduleSlot.create({
     data: { schoolId: user.schoolId, classId, weekday, startTime, endTime, subject, room },

@@ -51,6 +51,14 @@ export function LiveMetricsProvider({ children }: { children: ReactNode }) {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const applySnapshot = useCallback((data: LiveMetricsSnapshot) => {
     setSnapshot(data);
@@ -59,6 +67,8 @@ export function LiveMetricsProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     const data = await fetchSnapshot();
+    // A requisição pode terminar depois que o provider saiu da árvore.
+    if (!mountedRef.current) return;
     if (data) {
       applySnapshot(data);
       setStatus((s) => (s === "offline" ? "polling" : s));

@@ -11,7 +11,7 @@ export default async function PlataformaPage() {
   if (!user) redirect("/login");
   if (!isPlatformAdmin(user.email)) redirect("/dashboard");
 
-  const schools = await fetchPendingSchoolsForPlatform(user.email);
+  const schools = await fetchPendingSchoolsForPlatform();
 
   return (
     <div className="space-y-6">

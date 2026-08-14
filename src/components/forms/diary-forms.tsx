@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import { FormMessage } from "@/components/ui/form-utils";
 import { Modal } from "@/components/ui/modal";
+import { useToday } from "@/hooks/use-today";
 import { OCCURRENCE_KINDS, OCCURRENCE_LABELS } from "@/lib/constants";
 
 interface ClassOption {
@@ -25,7 +26,7 @@ export function DiaryForms({
   const [diaryOpen, setDiaryOpen] = useState(false);
   const [occOpen, setOccOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState("");
-  const today = new Date().toISOString().split("T")[0];
+  const today = useToday();
 
   const classData = classes.find((c) => c.id === selectedClass);
 

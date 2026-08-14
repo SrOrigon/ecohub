@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +39,7 @@ export function StudentInventory({
   redemptions: OwnedRedemption[];
 }) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   // Filtrar apenas resgates de cosméticos entregues/disponíveis
   const ownedFrames = redemptions
@@ -66,6 +68,9 @@ export function StudentInventory({
       formData.set("cosmeticType", cosmeticType);
       formData.set("cosmeticKey", cosmeticKey);
       await equipStudentCosmeticAction(formData);
+      // A action revalida no servidor, mas esta chamada não vem de <form action>,
+      // então as props só chegam atualizadas com um refresh explícito.
+      router.refresh();
     });
   };
 

@@ -1,14 +1,11 @@
-import { getSessionUser } from "@/lib/auth";
 import { getSchool } from "@/lib/queries";
 import { getInstitutionalReport } from "@/lib/institutional-report";
 import { PageHeader } from "@/components/layout/page-header";
 import { InstitutionalReportDashboard } from "@/components/reports/institutional-report-dashboard";
-import { redirect } from "next/navigation";
+import { requirePageAccess, STAFF_ROLES } from "@/lib/access-control";
 
 export default async function RelatoriosPage() {
-  const user = await getSessionUser();
-  if (!user) redirect("/login");
-  if (user.role === "student") redirect("/dashboard/aluno");
+  const user = await requirePageAccess(STAFF_ROLES);
 
   const school = await getSchool(user);
   const teacherId = user.role === "teacher" ? user.id : undefined;

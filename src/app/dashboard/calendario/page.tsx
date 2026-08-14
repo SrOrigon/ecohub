@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SchoolCalendarWidget } from "@/components/school/school-calendar-widget";
 import { formatSchoolDays, getTodaySchoolStatus } from "@/lib/school-calendar";
+import { todayKey } from "@/lib/date-only";
 import { formatDate } from "@/lib/utils";
 import { redirect } from "next/navigation";
 import { NotebookPen } from "lucide-react";
@@ -24,7 +25,7 @@ export default async function CalendarioPage() {
   const canManageItems = ["admin", "director", "secretary", "teacher"].includes(user.role);
   const canManageMeta = ["admin", "director", "secretary"].includes(user.role);
   const today = getTodaySchoolStatus(settings);
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = todayKey();
   const todayPersonalNotes = notes.filter((n) => n.date === todayStr);
 
   const allItems = [

@@ -167,7 +167,16 @@ export async function processAttendanceXp(
 }
 
 export async function completeMission(studentId: string, missionId: string) {
-  const mission = await prisma.mission.findUnique({ where: { id: missionId } });
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { user: { select: { schoolId: true } } },
+  });
+  if (!student?.user.schoolId) throw new Error("Aluno não encontrado");
+
+  // Missão e aluno precisam pertencer à mesma instituição.
+  const mission = await prisma.mission.findFirst({
+    where: { id: missionId, schoolId: student.user.schoolId },
+  });
   if (!mission) throw new Error("Missão não encontrada");
 
   const existing = await prisma.studentMission.findUnique({
@@ -175,11 +184,22 @@ export async function completeMission(studentId: string, missionId: string) {
   });
   if (existing?.completedAt) throw new Error("Missão já concluída");
 
-  await prisma.studentMission.upsert({
-    where: { studentId_missionId: { studentId, missionId } },
-    create: { studentId, missionId, completedAt: new Date() },
-    update: { completedAt: new Date() },
-  });
+  if (existing) {
+    // updateMany condicional garante que só uma requisição concorrente credita XP.
+    const claimed = await prisma.studentMission.updateMany({
+      where: { studentId, missionId, completedAt: null },
+      data: { completedAt: new Date() },
+    });
+    if (claimed.count === 0) throw new Error("Missão já concluída");
+  } else {
+    try {
+      await prisma.studentMission.create({
+        data: { studentId, missionId, completedAt: new Date() },
+      });
+    } catch {
+      throw new Error("Missão já concluída");
+    }
+  }
 
   await awardXp(
     studentId,

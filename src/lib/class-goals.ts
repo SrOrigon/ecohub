@@ -16,6 +16,17 @@ export async function getClassGoalProgress(classId: string, metric: ClassGoalMet
 
   if (students.length === 0) return { percent: 0, completed: 0, total: 0 };
 
+  // A meta de exercícios considera apenas os exercícios ativos da própria turma.
+  const activeExerciseIds =
+    metric === "exercise"
+      ? (
+          await prisma.exercise.findMany({
+            where: { classId, isActive: true },
+            select: { id: true },
+          })
+        ).map((e) => e.id)
+      : [];
+
   let completed = 0;
 
   for (const s of students) {
@@ -24,8 +35,15 @@ export async function getClassGoalProgress(classId: string, metric: ClassGoalMet
       const active = s.studentMissions.filter((sm) => sm.mission.isActive);
       done = active.length > 0 && active.every((m) => m.completedAt);
     } else if (metric === "exercise") {
-      const subs = s.exerciseSubmissions;
-      done = subs.length > 0 && subs.every((sub) => sub.status === "graded" || sub.status === "submitted");
+      done =
+        activeExerciseIds.length > 0 &&
+        activeExerciseIds.every((exerciseId) =>
+          s.exerciseSubmissions.some(
+            (sub) =>
+              sub.exerciseId === exerciseId &&
+              (sub.status === "graded" || sub.status === "submitted")
+          )
+        );
     } else if (metric === "attendance") {
       const recent = s.attendance.slice(-5);
       done =
@@ -54,6 +72,13 @@ export async function checkAndAwardClassGoals(classId: string) {
     const settings = await getSchoolSettings(goal.classGroup.schoolId);
     if (!settings.classGoals.autoAward) continue;
 
+    // Marca a meta antes de premiar: evita bônus duplicado em chamadas concorrentes.
+    const claimed = await prisma.classGoal.updateMany({
+      where: { id: goal.id, awardedAt: null },
+      data: { awardedAt: new Date() },
+    });
+    if (claimed.count === 0) continue;
+
     const students = await prisma.student.findMany({ where: { classId } });
 
     for (const student of students) {
@@ -73,11 +98,6 @@ export async function checkAndAwardClassGoals(classId: string) {
         "mission"
       );
     }
-
-    await prisma.classGoal.update({
-      where: { id: goal.id },
-      data: { awardedAt: new Date() },
-    });
 
     if (goal.classGroup.teacherId) {
       await notifyUser(

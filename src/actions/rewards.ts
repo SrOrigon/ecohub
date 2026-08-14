@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { notifyStudent, notifyStudentParents } from "@/lib/notifications";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
+import { assertStudentInScope, canReadStudentData } from "@/lib/tenant-guards";
 
 function revalidateLoja() {
   ["/dashboard/loja", "/dashboard/aluno", "/dashboard/gamificacao", "/dashboard/notificacoes"].forEach((p) =>
@@ -186,6 +187,7 @@ export async function redeemRewardAction(formData: FormData) {
   const session = await requireSessionResult(["admin", "director", "teacher", "student"]);
   if (!session.ok) return { error: session.error };
   const user = session.user;
+  if (!user.schoolId) return { error: "Escola não configurada." };
   const rewardId = String(formData.get("rewardId") ?? "");
   let studentId = String(formData.get("studentId") ?? "");
 
@@ -197,13 +199,21 @@ export async function redeemRewardAction(formData: FormData) {
     if (!hasPermission(user.role, settings, "student.redeemShop")) {
       return { error: "Resgates na loja estão desativados." };
     }
+  } else {
+    // Staff resgatando em nome do aluno: exigir permissão de loja e escopo da turma.
+    const settings = await getSchoolSettings(user.schoolId);
+    if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.accessShop")) {
+      return { error: "Sem permissão para resgatar na loja." };
+    }
+    const scope = await assertStudentInScope(user, studentId);
+    if (!scope.ok) return { error: scope.error };
   }
 
   if (!rewardId || !studentId) return { error: "Dados inválidos." };
 
   const [reward, student] = await Promise.all([
     prisma.reward.findFirst({
-      where: { id: rewardId, isActive: true, schoolId: user.schoolId ?? undefined },
+      where: { id: rewardId, isActive: true, schoolId: user.schoolId },
     }),
     prisma.student.findFirst({
       where: { id: studentId, user: { schoolId: user.schoolId } },
@@ -457,6 +467,9 @@ export async function fulfillRedemptionAction(formData: FormData) {
 
 export async function getRewardsForSchool(schoolId: string | null) {
   if (!schoolId) return [];
+  const session = await requireSessionResult();
+  if (!session.ok || session.user.schoolId !== schoolId) return [];
+
   return prisma.reward.findMany({
     where: { schoolId },
     include: {
@@ -468,6 +481,10 @@ export async function getRewardsForSchool(schoolId: string | null) {
 }
 
 export async function getStudentRedemptions(studentId: string) {
+  const session = await requireSessionResult();
+  if (!session.ok) return [];
+  if (!(await canReadStudentData(session.user, studentId))) return [];
+
   return prisma.rewardRedemption.findMany({
     where: { studentId },
     include: { reward: true },

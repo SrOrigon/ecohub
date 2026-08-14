@@ -293,24 +293,27 @@ export async function registerStudentAction(formData: FormData) {
   if (existingCode) return { error: "Matrícula já em uso. Escolha outra." };
 
   const passwordHash = await hashPassword(password);
-  await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      fullName,
-      role: "student",
-      schoolId: school.id,
-      student: {
-        create: { enrollmentCode, classId: turma.id, birthDate, accountType: "standard" },
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        fullName,
+        role: "student",
+        schoolId: school.id,
+        student: {
+          create: { enrollmentCode, classId: turma.id, birthDate, accountType: "standard" },
+        },
       },
-    },
-  });
+    });
+  } catch {
+    // Cadastros simultâneos podem colidir em email/matrícula apesar da checagem acima.
+    return { error: "E-mail ou matrícula já cadastrados. Tente novamente." };
+  }
 
   revalidatePath("/dashboard/alunos");
   revalidatePath("/dashboard/turmas");
-
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return { error: "Erro ao criar conta." };
 
   await establishSession(user, { tenantSlug: school.slug });
   redirect("/dashboard/aluno");
@@ -363,18 +366,22 @@ export async function registerParentAction(formData: FormData) {
   if (existing) return { error: GENERIC_REGISTER_ERROR };
 
   const passwordHash = await hashPassword(password);
-  const parent = await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      fullName,
-      role: "parent",
-      schoolId: school.id,
-    },
-  });
-
-  await prisma.parentStudent.create({
-    data: { parentId: parent.id, studentId: student.id, relation },
+  // Conta e vínculo criados juntos: sem transação, uma falha deixaria o
+  // responsável sem nenhum filho associado.
+  const parent = await prisma.$transaction(async (tx) => {
+    const created = await tx.user.create({
+      data: {
+        email,
+        passwordHash,
+        fullName,
+        role: "parent",
+        schoolId: school.id,
+      },
+    });
+    await tx.parentStudent.create({
+      data: { parentId: created.id, studentId: student.id, relation },
+    });
+    return created;
   });
 
   await establishSession(parent, { tenantSlug: school.slug });

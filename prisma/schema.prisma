@@ -76,6 +76,9 @@ model User {
   documentsIssued IssuedDocument[] @relation("DocIssuer")
   enrollmentReviews EnrollmentApplication[] @relation("EnrollmentReviewer")
   chatThreadsAsParent ChatThread[] @relation("ChatParent")
+
+  @@index([schoolId])
+  @@index([schoolId, role])
 }
 
 model Notification {

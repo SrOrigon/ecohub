@@ -140,8 +140,10 @@ export async function getExercisesForStudentId(studentId: string, schoolId: stri
 }
 
 export async function getExerciseById(id: string, user: SessionUser) {
+  if (!user.schoolId) return null;
+
   const exercise = await prisma.exercise.findFirst({
-    where: { id, schoolId: user.schoolId ?? undefined },
+    where: { id, schoolId: user.schoolId },
     include: {
       classGroup: { select: { name: true, id: true } },
       teacher: { select: { fullName: true, id: true } },
@@ -162,18 +164,24 @@ export async function getExerciseById(id: string, user: SessionUser) {
     if (!student || exercise.classId !== student.classId) return null;
   } else if (user.role === "teacher") {
     if (exercise.teacherId !== user.id) {
+      // Co-docentes também devem enxergar o exercício da turma que lecionam.
       const teaches = exercise.classId
         ? await prisma.classGroup.findFirst({
-            where: { id: exercise.classId, teacherId: user.id },
+            where: {
+              id: exercise.classId,
+              schoolId: user.schoolId,
+              ...teacherClassWhere(user.id),
+            },
           })
         : null;
       if (!teaches) return null;
     }
   } else if (user.role === "parent") {
+    if (!exercise.classId) return null;
     const link = await prisma.parentStudent.findFirst({
       where: {
         parentId: user.id,
-        student: { classId: exercise.classId ?? undefined },
+        student: { classId: exercise.classId },
       },
     });
     if (!link) return null;

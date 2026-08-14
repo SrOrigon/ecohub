@@ -14,7 +14,9 @@ import {
   notifyClassTeacher,
   notifyUser,
 } from "@/lib/notifications";
-import { ATTENDANCE_LABELS, type AttendanceStatus } from "@/lib/constants";
+import { ATTENDANCE_LABELS, ATTENDANCE_STATUSES, type AttendanceStatus } from "@/lib/constants";
+import { parseDateOnlyOrToday } from "@/lib/date-only";
+import { assertClassInScope, assertStudentInScope, assertTeachersInSchool } from "@/lib/tenant-guards";
 import { assertInstitutionSubject, dedupeSubjects, normalizeSubjectName } from "@/lib/institution-subjects";
 import {
   getSchoolSettings,
@@ -83,6 +85,11 @@ export async function createStudentAction(formData: FormData) {
 
   const birthDate = parseBirthDate(birthDateStr);
   if (!birthDate) return { error: "Data de nascimento inválida." };
+
+  if (classId) {
+    const scope = await assertClassInScope(user, classId);
+    if (!scope.ok) return { error: scope.error };
+  }
 
   const school = await prisma.school.findUnique({
     where: { id: user.schoolId },
@@ -175,17 +182,23 @@ export async function createClassAction(formData: FormData) {
     .map((v) => String(v))
     .filter(Boolean);
 
+  const uniqueCoTeachers = [...new Set(coTeacherIds)].filter((id) => id !== teacherId);
+
+  // Titular e co-docentes precisam pertencer à mesma escola.
+  const staffOk = await assertTeachersInSchool(
+    user.schoolId,
+    [teacherId, ...uniqueCoTeachers].filter((id): id is string => !!id)
+  );
+  if (!staffOk) return { error: "Professor inválido para esta instituição." };
+
   const created = await prisma.classGroup.create({
     data: { schoolId: user.schoolId, name, gradeLevel, year, teacherId },
   });
 
-  const uniqueCoTeachers = [...new Set(coTeacherIds)].filter((id) => id !== teacherId);
   if (uniqueCoTeachers.length > 0) {
-    for (const tid of uniqueCoTeachers) {
-      await prisma.classGroupCoTeacher.create({
-        data: { classId: created.id, teacherId: tid },
-      }).catch(() => undefined);
-    }
+    await prisma.classGroupCoTeacher.createMany({
+      data: uniqueCoTeachers.map((tid) => ({ classId: created.id, teacherId: tid })),
+    });
   }
 
   revalidateGroups("core", "people", "exercises");
@@ -349,9 +362,14 @@ export async function updateClassCoTeachersAction(formData: FormData) {
 
   const unique = [...new Set(coTeacherIds)].filter((id) => id !== turma.teacherId);
 
+  const staffOk = await assertTeachersInSchool(user.schoolId, unique);
+  if (!staffOk) return { error: "Professor inválido para esta instituição." };
+
   await prisma.classGroupCoTeacher.deleteMany({ where: { classId } });
-  for (const teacherId of unique) {
-    await prisma.classGroupCoTeacher.create({ data: { classId, teacherId } });
+  if (unique.length > 0) {
+    await prisma.classGroupCoTeacher.createMany({
+      data: unique.map((teacherId) => ({ classId, teacherId })),
+    });
   }
 
   revalidateGroups("core", "people");
@@ -450,11 +468,20 @@ export async function recordAttendanceAction(formData: FormData) {
   const studentId = String(formData.get("studentId") ?? "");
   const classId = String(formData.get("classId") ?? "");
   const status = String(formData.get("status") ?? "present");
-  const dateStr = String(formData.get("date") ?? new Date().toISOString().split("T")[0]);
-  const date = new Date(dateStr);
-  date.setHours(0, 0, 0, 0);
+  const date = parseDateOnlyOrToday(formData.get("date")?.toString());
 
   if (!studentId || !classId) return { error: "Aluno e turma são obrigatórios." };
+  if (!ATTENDANCE_STATUSES.includes(status as AttendanceStatus)) {
+    return { error: "Situação de frequência inválida." };
+  }
+
+  const settings = await getSchoolSettings(user.schoolId);
+  if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.recordAttendance")) {
+    return { error: "Sem permissão para registrar frequência." };
+  }
+
+  const scope = await assertClassInScope(user, classId);
+  if (!scope.ok) return { error: scope.error };
 
   const student = await prisma.student.findFirst({
     where: {
@@ -464,11 +491,6 @@ export async function recordAttendanceAction(formData: FormData) {
     },
   });
   if (!student) return { error: "Aluno não encontrado nesta turma." };
-
-  const settings = await getSchoolSettings(user.schoolId);
-  if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.recordAttendance")) {
-    return { error: "Sem permissão para registrar frequência." };
-  }
 
   const existing = await prisma.attendance.findUnique({
     where: { studentId_date: { studentId, date } },
@@ -642,15 +664,18 @@ export async function completeMissionAction(formData: FormData) {
 
   if (!studentId || !missionId) return { error: "Dados inválidos." };
 
-  const student = await prisma.student.findFirst({
-    where: { id: studentId, user: { schoolId: user.schoolId } },
-  });
-  if (!student) return { error: "Aluno não encontrado." };
-
   const settings = await getSchoolSettings(user.schoolId);
   if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.completeMissions")) {
     return { error: "Sem permissão para concluir missões." };
   }
+
+  const scope = await assertStudentInScope(user, studentId);
+  if (!scope.ok) return { error: scope.error };
+
+  const student = await prisma.student.findFirst({
+    where: { id: studentId, user: { schoolId: user.schoolId } },
+  });
+  if (!student) return { error: "Aluno não encontrado." };
 
   try {
     const mission = await prisma.mission.findFirst({
@@ -690,9 +715,7 @@ export async function bulkAttendanceAction(formData: FormData) {
   if (!user.schoolId) return { error: "Escola não configurada." };
 
   const classId = String(formData.get("classId") ?? "");
-  const dateStr = String(formData.get("date") ?? new Date().toISOString().split("T")[0]);
-  const date = new Date(dateStr);
-  date.setHours(0, 0, 0, 0);
+  const date = parseDateOnlyOrToday(formData.get("date")?.toString());
 
   if (!classId) return { error: "Selecione uma turma." };
 
@@ -701,52 +724,68 @@ export async function bulkAttendanceAction(formData: FormData) {
     return { error: "Sem permissão para registrar frequência." };
   }
 
+  const scope = await assertClassInScope(user, classId);
+  if (!scope.ok) return { error: scope.error };
+
   const students = await prisma.student.findMany({
     where: { classId, user: { schoolId: user.schoolId } },
+    include: { user: { select: { fullName: true } } },
   });
 
   if (students.length === 0) return { error: "Nenhum aluno nesta turma." };
 
-  let registered = 0;
-  for (const student of students) {
-    const status = String(formData.get(`status_${student.id}`) ?? "present");
-    const existing = await prisma.attendance.findUnique({
-      where: { studentId_date: { studentId: student.id, date } },
-    });
+  // Uma única leitura dos registros do dia evita N+1 em turmas grandes.
+  const existingRows = await prisma.attendance.findMany({
+    where: { date, studentId: { in: students.map((s) => s.id) } },
+    select: { id: true, studentId: true, status: true },
+  });
+  const existingByStudent = new Map(existingRows.map((row) => [row.studentId, row]));
 
+  const when = date.toLocaleDateString("pt-BR");
+  const toCreate: { studentId: string; classId: string; date: Date; status: string }[] = [];
+  const changed: { studentId: string; fullName: string; status: string; previous: string | null }[] = [];
+
+  for (const student of students) {
+    const raw = String(formData.get(`status_${student.id}`) ?? "present");
+    const status = ATTENDANCE_STATUSES.includes(raw as AttendanceStatus) ? raw : "present";
+    const existing = existingByStudent.get(student.id);
     const previousStatus = existing?.status ?? null;
+
     if (existing) {
-      await prisma.attendance.update({ where: { id: existing.id }, data: { status } });
+      if (existing.status !== status) {
+        await prisma.attendance.update({ where: { id: existing.id }, data: { status } });
+      }
     } else {
-      await prisma.attendance.create({
-        data: { studentId: student.id, classId, date, status },
-      });
-      registered++;
+      toCreate.push({ studentId: student.id, classId, date, status });
     }
 
     if (previousStatus !== status) {
-      await processAttendanceXp(student.id, status, previousStatus);
-    }
-
-    if (
-      (status === "absent" || status === "late") &&
-      previousStatus !== status
-    ) {
-      const st = await prisma.student.findUnique({
-        where: { id: student.id },
-        include: { user: { select: { fullName: true } } },
+      changed.push({
+        studentId: student.id,
+        fullName: student.user.fullName,
+        status,
+        previous: previousStatus,
       });
-      const label = ATTENDANCE_LABELS[status as AttendanceStatus] ?? status;
-      const when = date.toLocaleDateString("pt-BR");
-      if (st) {
-        await notifyStudentParents(
-          student.id,
-          status === "absent" ? "Falta registrada" : "Atraso registrado",
-          `${st.user.fullName}: ${label} em ${when}`,
-          `/dashboard/responsavel/filho/${student.id}`,
-          "absence"
-        );
-      }
+    }
+  }
+
+  if (toCreate.length > 0) {
+    await prisma.attendance.createMany({ data: toCreate });
+  }
+  const registered = toCreate.length;
+
+  for (const item of changed) {
+    await processAttendanceXp(item.studentId, item.status, item.previous);
+
+    if (item.status === "absent" || item.status === "late") {
+      const label = ATTENDANCE_LABELS[item.status as AttendanceStatus] ?? item.status;
+      await notifyStudentParents(
+        item.studentId,
+        item.status === "absent" ? "Falta registrada" : "Atraso registrado",
+        `${item.fullName}: ${label} em ${when}`,
+        `/dashboard/responsavel/filho/${item.studentId}`,
+        "absence"
+      );
     }
   }
 
@@ -774,10 +813,12 @@ export async function requestMissionCompletionAction(formData: FormData) {
     return { error: "Pedido de confirmação de missão desativado." };
   }
 
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
   const mission = await prisma.mission.findFirst({
     where: {
       id: missionId,
-      schoolId: user.schoolId ?? undefined,
+      schoolId: user.schoolId,
       isActive: true,
       OR: [{ classId: null }, { classId: student.classId }],
     },
@@ -822,6 +863,11 @@ export async function updateStudentAction(formData: FormData) {
     where: { id: studentId, user: { schoolId: user.schoolId } },
   });
   if (!student) return { error: "Aluno não encontrado." };
+
+  if (classId) {
+    const scope = await assertClassInScope(user, classId);
+    if (!scope.ok) return { error: scope.error };
+  }
 
   await prisma.student.update({ where: { id: studentId }, data: { classId } });
   revalidateGroups("core", "people", "gamification", "analytics");

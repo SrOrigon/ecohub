@@ -1,16 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, ExternalLink, QrCode } from "lucide-react";
 
+function subscribeToOrigin() {
+  return () => {};
+}
+
+function getOrigin() {
+  return window.location.origin;
+}
+
+function getServerOrigin() {
+  return "";
+}
+
 export function TenantUrlCard({ slug, schoolName }: { slug: string; schoolName: string }) {
   const [copied, setCopied] = useState<string | null>(null);
+  // O origin só existe no navegador; ler no render causaria divergência de hidratação.
+  const origin = useSyncExternalStore(subscribeToOrigin, getOrigin, getServerOrigin);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const pathUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/e/${slug}`
-      : `/e/${slug}`;
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    },
+    []
+  );
+
+  const pathUrl = origin ? `${origin}/e/${slug}` : `/e/${slug}`;
   const pinUrl = `/e/${slug}/entrar`;
   const loginUrl = `/e/${slug}/login`;
 
@@ -18,7 +37,8 @@ export function TenantUrlCard({ slug, schoolName }: { slug: string; schoolName: 
     const full = text.startsWith("http") ? text : `${window.location.origin}${text}`;
     await navigator.clipboard.writeText(full);
     setCopied(key);
-    setTimeout(() => setCopied(null), 2000);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopied(null), 2000);
   }
 
   return (

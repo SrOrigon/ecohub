@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   registerSchoolAction,
@@ -53,6 +53,7 @@ export function RegisterSchoolForm() {
   const [preview, setPreview] = useState<CnpjPreview | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [isLookingUp, startLookup] = useTransition();
+  const lookupSeq = useRef(0);
 
   const [state, formAction, pending] = useActionState(
     async (_prev: RegisterSchoolResult, formData: FormData) =>
@@ -65,12 +66,18 @@ export function RegisterSchoolForm() {
   }
 
   function handleLookup() {
+    const cnpj = cnpjInput;
+    // Consultas seguidas podem responder fora de ordem e mostrar a razão social
+    // de um CNPJ enquanto o campo já contém outro.
+    const seq = ++lookupSeq.current;
+
     setLookupError(null);
     setPreview(null);
     startLookup(async () => {
       const fd = new FormData();
-      fd.set("cnpj", cnpjInput);
+      fd.set("cnpj", cnpj);
       const result = await lookupCnpjAction(fd);
+      if (seq !== lookupSeq.current) return;
       if ("error" in result) {
         setLookupError(result.error ?? "Erro ao consultar CNPJ.");
         return;

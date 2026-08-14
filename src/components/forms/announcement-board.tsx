@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createAnnouncementAction, markAnnouncementReadAction } from "@/actions/announcements";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { formatDate } from "@/lib/utils";
 
 function MarkReadButton({ announcementId }: { announcementId: string }) {
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   return (
     <Button
@@ -26,6 +28,7 @@ function MarkReadButton({ announcementId }: { announcementId: string }) {
           const fd = new FormData();
           fd.set("announcementId", announcementId);
           await markAnnouncementReadAction(fd);
+          router.refresh();
         });
       }}
     >

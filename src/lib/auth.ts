@@ -94,7 +94,7 @@ async function validateTenantForUser(user: SessionUser): Promise<boolean> {
   if (!user.schoolId) return true;
 
   const school = await findSchoolBySlug(tenantSlug);
-  if (!school) return true;
+  if (!school) return false;
 
   return school.id === user.schoolId;
 }

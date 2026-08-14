@@ -35,7 +35,11 @@ export default async function MensagensPage({
 
   const activeThread = threadId
     ? await prisma.chatThread.findFirst({
-        where: { id: threadId, schoolId: user.schoolId },
+        where: {
+          id: threadId,
+          schoolId: user.schoolId,
+          ...(user.role === "parent" ? { parentId: user.id } : {}),
+        },
         include: {
           student: { include: { user: { select: { fullName: true } } } },
           parent: { select: { fullName: true, id: true } },

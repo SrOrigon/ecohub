@@ -304,14 +304,22 @@ export async function getLiveMetricsSnapshot(user: SessionUser): Promise<LiveMet
       };
     }
 
+    // Alunos e responsáveis não podem ver estatísticas institucionais nem o
+    // feed com nomes e notas de outros alunos.
+    const isStaff = user.role !== "student" && user.role !== "parent";
+    const visibleStats = isStaff ? stats : empty.stats;
+    const visibleActivities = isStaff
+      ? activities
+      : activities.filter((a) => a.studentId === studentRecord?.id);
+
     return {
       version: buildVersion(
-        stats,
-        activities.map((a) => a.id)
+        visibleStats,
+        visibleActivities.map((a) => a.id)
       ),
       updatedAt: new Date().toISOString(),
-      stats,
-      activities,
+      stats: visibleStats,
+      activities: visibleActivities,
       student,
     };
   } catch (err) {

@@ -37,6 +37,7 @@ import {
   History,
 } from "lucide-react";
 import { useEffect, useRef, useCallback, type ReactNode } from "react";
+import { lockBodyScroll, unlockBodyScroll } from "@/lib/body-scroll-lock";
 import { cn } from "@/lib/utils";
 import { ROLE_LABELS, type UserRole } from "@/lib/constants";
 import {
@@ -277,11 +278,34 @@ export function Sidebar({
   onMobileOpenChange: (open: boolean) => void;
   showPlatformAdmin?: boolean;
 }) {
+  const mobilePanelRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
     if (!mobileOpen) return;
 
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onMobileOpenChange(false);
+      if (e.key === "Escape") {
+        onMobileOpenChange(false);
+        return;
+      }
+      // Sem o trap, o Tab escaparia para o conteúdo atrás do overlay.
+      if (e.key !== "Tab" || !mobilePanelRef.current) return;
+
+      const focusable = mobilePanelRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
 
     document.addEventListener("keydown", onKeyDown);
@@ -289,14 +313,9 @@ export function Sidebar({
   }, [mobileOpen, onMobileOpenChange]);
 
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    if (!mobileOpen) return;
+    lockBodyScroll();
+    return () => unlockBodyScroll();
   }, [mobileOpen]);
 
   return (
@@ -310,6 +329,7 @@ export function Sidebar({
           />
           <aside
             id="mobile-sidebar"
+            ref={mobilePanelRef}
             className="relative flex h-full w-[min(20rem,92vw)] flex-col overflow-hidden sidebar-panel shadow-[var(--shadow-md)] safe-area-bottom safe-area-top"
             aria-label="Menu lateral"
             role="dialog"

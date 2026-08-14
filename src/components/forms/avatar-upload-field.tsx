@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Camera, Upload } from "lucide-react";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,9 @@ export function AvatarUploadField({
       previewObjectUrlRef.current = null;
     }
   };
+
+  // Libera o object URL da prévia se o campo sair da tela sem envio.
+  useEffect(() => revokePreviewUrl, []);
 
   const trimmedUrl = avatarUrl.trim();
   const displayAvatar =

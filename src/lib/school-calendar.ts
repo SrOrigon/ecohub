@@ -1,4 +1,5 @@
 import type { SchoolSettings } from "@/lib/school-settings";
+import { parseDateOnly as parseLocalDateOnly, startOfToday, toDateKey } from "@/lib/date-only";
 
 const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -15,9 +16,7 @@ export function isSchoolDay(date: Date, settings: SchoolSettings) {
 }
 
 export function parseDateOnly(iso: string) {
-  const d = new Date(iso);
-  d.setHours(0, 0, 0, 0);
-  return d;
+  return parseLocalDateOnly(iso) ?? startOfToday();
 }
 
 export function isWithinSchoolYear(date: Date, settings: SchoolSettings) {
@@ -28,12 +27,12 @@ export function isWithinSchoolYear(date: Date, settings: SchoolSettings) {
 }
 
 export function getHolidayOn(date: Date, settings: SchoolSettings) {
-  const key = date.toISOString().slice(0, 10);
+  const key = toDateKey(date);
   return settings.calendar.holidays.find((h) => h.date.slice(0, 10) === key);
 }
 
 export function getEventsOn(date: Date, settings: SchoolSettings) {
-  const key = date.toISOString().slice(0, 10);
+  const key = toDateKey(date);
   return settings.calendar.events.filter((e) => e.date.slice(0, 10) === key);
 }
 

@@ -107,8 +107,9 @@ export async function resetPlatformUserAction(formData: FormData) {
   };
 }
 
-export async function fetchPendingSchoolsForPlatform(actorEmail: string) {
-  if (!isPlatformAdmin(actorEmail)) return [];
+export async function fetchPendingSchoolsForPlatform() {
+  const gate = await requirePlatformAdmin();
+  if (!gate.ok) return [];
 
   return prisma.school.findMany({
     where: {

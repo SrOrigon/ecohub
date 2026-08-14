@@ -1,4 +1,3 @@
-import { getSessionUser } from "@/lib/auth";
 import { getClasses, getTeachers } from "@/lib/queries";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
@@ -8,13 +7,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { UserIdentity } from "@/components/profile/user-identity";
 import { GraduationCap } from "lucide-react";
-import { redirect } from "next/navigation";
 import { ClassCoTeachersForm } from "@/components/forms/class-co-teachers-form";
+import { requirePageAccess, STAFF_ROLES } from "@/lib/access-control";
 
 export default async function TurmasPage() {
-  const user = await getSessionUser();
-  if (!user) redirect("/login");
-  if (user.role === "student") redirect("/dashboard/aluno");
+  const user = await requirePageAccess(STAFF_ROLES);
 
   const settings = await getSchoolSettings(user.schoolId);
   const isTeacher = user.role === "teacher";

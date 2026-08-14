@@ -51,7 +51,7 @@ export default async function FilhoDetailPage({ params }: { params: Promise<{ id
   });
   const pendingExercises = exerciseItems.filter((e) => e.status === "pending").length;
   const [occurrences, homeTasks, alertsSnapshot] = await Promise.all([
-    getOccurrencesForStudent(student.id),
+    getOccurrencesForStudent(student.id, user.schoolId ?? ""),
     getHomeTasksForStudent(student.id),
     getAttentionAlertsSnapshot(user),
   ]);

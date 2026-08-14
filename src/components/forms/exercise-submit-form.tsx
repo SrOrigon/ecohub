@@ -18,6 +18,14 @@ type Question = {
   xpReward?: number;
 };
 
+type Answer = { textAnswer?: string; selectedOptionId?: string };
+
+function isAnswered(question: Question, answer: Answer | undefined) {
+  return question.type === "choice"
+    ? !!answer?.selectedOptionId
+    : !!answer?.textAnswer?.trim();
+}
+
 export function ExerciseSubmitForm({
   exerciseId,
   questions,
@@ -64,10 +72,7 @@ export function ExerciseSubmitForm({
     null
   );
 
-  const answeredCount = questions.filter((q) => {
-    const a = answers[q.id];
-    return q.type === "choice" ? !!a?.selectedOptionId : !!a?.textAnswer?.trim();
-  }).length;
+  const answeredCount = questions.filter((q) => isAnswered(q, answers[q.id])).length;
   const progress = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
 
   if (readOnly) {
@@ -254,8 +259,8 @@ export function ExerciseSubmitForm({
       </div>
 
       <div className="touch-scroll-x flex gap-2 pb-1">
-        {questions.map((_, i) => {
-          const done = i < answeredCount;
+        {questions.map((question, i) => {
+          const done = isAnswered(question, answers[question.id]);
           const active = i === step;
           return (
             <button

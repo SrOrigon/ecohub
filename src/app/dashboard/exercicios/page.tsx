@@ -1,4 +1,3 @@
-import { getSessionUser } from "@/lib/auth";
 import { getExercisesForUser, getTeacherClasses } from "@/lib/exercises";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { PageHeader } from "@/components/layout/page-header";
@@ -9,13 +8,11 @@ import { StudentExercisesList } from "@/components/exercises/student-exercises-l
 import { TeacherExercisesList } from "@/components/exercises/teacher-exercises-list";
 import { TeacherExerciseStats } from "@/components/exercises/teacher-exercise-stats";
 import { ConfigureSubjectsPrompt } from "@/components/school/configure-subjects-prompt";
-import { redirect } from "next/navigation";
 import { ClipboardCheck, PenLine } from "lucide-react";
+import { requirePageAccess } from "@/lib/access-control";
 
 export default async function ExerciciosPage() {
-  const user = await getSessionUser();
-  if (!user) redirect("/login");
-  if (user.role === "parent") redirect("/dashboard/responsavel");
+  const user = await requirePageAccess(["admin", "director", "teacher", "student"]);
 
   const isStaff = user.role === "admin" || user.role === "director" || user.role === "teacher";
   const canManageSettings = user.role === "admin" || user.role === "director";

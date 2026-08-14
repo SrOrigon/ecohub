@@ -8,6 +8,7 @@ import { hasPermission } from "@/lib/permissions";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { HOME_TASK_DEFAULT_COINS, HOME_TASK_DEFAULT_XP } from "@/lib/constants";
 import { notifyStudent, notifyUser } from "@/lib/notifications";
+import { canReadStudentData } from "@/lib/tenant-guards";
 
 function revalidateHomeTasks() {
   revalidatePath("/dashboard/responsavel");
@@ -86,10 +87,12 @@ export async function completeHomeTaskAction(formData: FormData) {
   });
   if (!task) return { error: "Tarefa não encontrada ou já concluída." };
 
-  await prisma.homeTask.update({
-    where: { id: taskId },
+  // updateMany condicional evita creditar XP duas vezes em cliques simultâneos.
+  const claimed = await prisma.homeTask.updateMany({
+    where: { id: taskId, studentId: student.id, status: "pending" },
     data: { status: "completed", completedAt: new Date() },
   });
+  if (claimed.count === 0) return { error: "Tarefa já concluída." };
 
   await awardXp(
     student.id,
@@ -128,6 +131,10 @@ export async function deleteHomeTaskAction(formData: FormData) {
 }
 
 export async function getHomeTasksForStudent(studentId: string) {
+  const session = await requireSessionResult();
+  if (!session.ok) return [];
+  if (!(await canReadStudentData(session.user, studentId))) return [];
+
   return prisma.homeTask.findMany({
     where: { studentId },
     include: { parent: { select: { fullName: true } } },
@@ -136,6 +143,10 @@ export async function getHomeTasksForStudent(studentId: string) {
 }
 
 export async function getPendingHomeTasksForStudent(studentId: string) {
+  const session = await requireSessionResult();
+  if (!session.ok) return [];
+  if (!(await canReadStudentData(session.user, studentId))) return [];
+
   return prisma.homeTask.findMany({
     where: { studentId, status: "pending" },
     orderBy: { createdAt: "desc" },
@@ -143,6 +154,11 @@ export async function getPendingHomeTasksForStudent(studentId: string) {
 }
 
 export async function getHomeTasksForParent(parentId: string) {
+  const session = await requireSessionResult(["parent"]);
+  if (!session.ok) return [];
+  // Responsável só enxerga a própria lista.
+  if (session.user.id !== parentId) return [];
+
   return prisma.homeTask.findMany({
     where: { parentId },
     include: {

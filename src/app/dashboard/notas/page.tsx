@@ -1,4 +1,3 @@
-import { getSessionUser } from "@/lib/auth";
 import { getGrades, getStudents } from "@/lib/queries";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,13 +7,11 @@ import { ConfigureSubjectsPrompt } from "@/components/school/configure-subjects-
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
-import { redirect } from "next/navigation";
 import { BookOpen } from "lucide-react";
+import { requirePageAccess, STAFF_ROLES } from "@/lib/access-control";
 
 export default async function NotasPage() {
-  const user = await getSessionUser();
-  if (!user) redirect("/login");
-  if (user.role === "student") redirect("/dashboard/aluno");
+  const user = await requirePageAccess(STAFF_ROLES);
 
   const canManage = user.role === "admin" || user.role === "director" || user.role === "teacher";
   const canManageSettings = user.role === "admin" || user.role === "director";

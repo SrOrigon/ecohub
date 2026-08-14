@@ -1,4 +1,3 @@
-import { getSessionUser } from "@/lib/auth";
 import { getClasses } from "@/lib/queries";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,7 @@ import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { formatDate } from "@/lib/utils";
 import { getAttendance, getStudents } from "@/lib/queries";
 import { fetchJustifiedAttendance } from "@/lib/reads/attendance-reads";
-import { redirect } from "next/navigation";
+import { requirePageAccess, STAFF_ROLES } from "@/lib/access-control";
 
 const statusLabels: Record<string, { label: string; variant: "success" | "danger" | "warning" | "secondary" }> = {
   present: { label: "Presente", variant: "success" },
@@ -20,9 +19,7 @@ const statusLabels: Record<string, { label: string; variant: "success" | "danger
 };
 
 export default async function FrequenciaPage() {
-  const user = await getSessionUser();
-  if (!user) redirect("/login");
-  if (user.role === "student") redirect("/dashboard/aluno");
+  const user = await requirePageAccess(STAFF_ROLES);
 
   const teacherFilter = user.role === "teacher" ? user.id : undefined;
 

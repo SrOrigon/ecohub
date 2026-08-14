@@ -1,4 +1,3 @@
-import { getSessionUser } from "@/lib/auth";
 import { getStudents, getClasses } from "@/lib/queries";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { Badge } from "@/components/ui/badge";
@@ -11,12 +10,10 @@ import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { UserIdentity } from "@/components/profile/user-identity";
 import { InstitutionalSetupHint } from "@/components/school/institutional-setup-hint";
 import { Users } from "lucide-react";
-import { redirect } from "next/navigation";
+import { requirePageAccess, STAFF_ROLES } from "@/lib/access-control";
 
 export default async function AlunosPage() {
-  const user = await getSessionUser();
-  if (!user) redirect("/login");
-  if (user.role === "student") redirect("/dashboard/aluno");
+  const user = await requirePageAccess(STAFF_ROLES);
 
   const canManage =
     user.role === "admin" ||

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
@@ -24,19 +25,29 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [markingAll, setMarkingAll] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(true);
 
-  async function load() {
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const load = useCallback(async () => {
     const data = await getNotifications(8);
+    if (!mountedRef.current) return;
     setItems(data.items);
     setUnreadCount(data.unreadCount);
-  }
+  }, []);
 
   useEffect(() => {
     if (!open) return;
     const interval = setInterval(() => void load(), 180_000);
     return () => clearInterval(interval);
-  }, [open]);
+  }, [open, load]);
 
   function handleToggle() {
     setOpen((prev) => {
@@ -57,8 +68,14 @@ export function NotificationBell() {
   }, [open]);
 
   async function handleMarkAll() {
-    await markAllNotificationsReadAction();
-    await load();
+    if (markingAll) return;
+    setMarkingAll(true);
+    try {
+      await markAllNotificationsReadAction();
+      await load();
+    } finally {
+      if (mountedRef.current) setMarkingAll(false);
+    }
   }
 
   return (
@@ -86,9 +103,10 @@ export function NotificationBell() {
               <button
                 type="button"
                 onClick={handleMarkAll}
-                className="text-xs font-medium text-[color:var(--school-primary)] hover:underline"
+                disabled={markingAll}
+                className="text-xs font-medium text-[color:var(--school-primary)] hover:underline disabled:opacity-50"
               >
-                Marcar todas como lidas
+                {markingAll ? "Marcando..." : "Marcar todas como lidas"}
               </button>
             )}
           </div>
@@ -126,6 +144,8 @@ function NotificationRow({
   item: NotificationItem;
   onRead: () => void;
 }) {
+  const router = useRouter();
+
   async function markRead() {
     const fd = new FormData();
     fd.set("id", item.id);
@@ -145,8 +165,18 @@ function NotificationRow({
   );
 
   if (item.href) {
+    const href = item.href;
     return (
-      <Link href={item.href} onClick={markRead} className="block hover:bg-[var(--hover)]">
+      <Link
+        href={href}
+        // A navegação do Link pode cancelar a server action antes de concluir,
+        // então marcamos como lida e só então trocamos de rota.
+        onClick={(event) => {
+          event.preventDefault();
+          void markRead().finally(() => router.push(href));
+        }}
+        className="block hover:bg-[var(--hover)]"
+      >
         {content}
       </Link>
     );

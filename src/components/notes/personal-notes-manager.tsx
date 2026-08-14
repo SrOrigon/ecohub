@@ -18,6 +18,7 @@ import {
 } from "@/lib/personal-notes";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { todayKey } from "@/lib/date-only";
 import {
   CalendarDays,
   Clock,
@@ -39,7 +40,7 @@ export function PersonalNotesManager({
   initialDate?: string;
 }) {
   const [tab, setTab] = useState<Tab>(initialDate ? "dated" : "quick");
-  const [selectedDate, setSelectedDate] = useState(initialDate ?? new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(initialDate ?? todayKey());
   const [createOpen, setCreateOpen] = useState(false);
   const [editNote, setEditNote] = useState<PersonalNoteDTO | null>(null);
   const [createMode, setCreateMode] = useState<"quick" | "dated">("quick");

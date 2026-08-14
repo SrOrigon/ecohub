@@ -1,5 +1,4 @@
 import { Clock, Star, Target } from "lucide-react";
-import { getSessionUser } from "@/lib/auth";
 import { getMissions, getBadges, getRanking, getStudents } from "@/lib/queries";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,14 +17,12 @@ import { LiveStatsStrip, LiveActivityFeed } from "@/components/metrics/live-acti
 import { BulkCompleteMissionsForm } from "@/components/forms/bulk-complete-missions-form";
 import { getPendingMissionConfirmations } from "@/lib/mission-requests";
 
-import { redirect } from "next/navigation";
+import { requirePageAccess } from "@/lib/access-control";
 
 const iconMap = { clock: Clock, star: Star, target: Target };
 
 export default async function GamificacaoPage() {
-  const user = await getSessionUser();
-  if (!user) redirect("/login");
-  if (user.role === "student") redirect("/dashboard/aluno");
+  const user = await requirePageAccess(["admin", "director", "teacher"]);
 
   const teacherFilter = user.role === "teacher" ? user.id : undefined;
 

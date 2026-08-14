@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSession } from "@/lib/auth";
+import { requireSession, type SessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { assertClassInScope } from "@/lib/tenant-guards";
 import { awardXp } from "@/lib/gamification";
 import {
   canNotifyTeacherSubmission,
@@ -49,13 +50,10 @@ function parseQuestionsJson(raw: string): QuestionInput[] {
   }
 }
 
-async function assertTeacherCanManageClass(userId: string, role: string, classId: string | null) {
+async function assertTeacherCanManageClass(user: SessionUser, classId: string | null) {
   if (!classId) return;
-  if (role === "admin" || role === "director") return;
-  const turma = await prisma.classGroup.findFirst({
-    where: { id: classId, teacherId: userId },
-  });
-  if (!turma) throw new Error("FORBIDDEN");
+  const scope = await assertClassInScope(user, classId);
+  if (!scope.ok) throw new Error(scope.error);
 }
 
 export async function createExerciseAction(formData: FormData) {
@@ -82,7 +80,7 @@ export async function createExerciseAction(formData: FormData) {
   }
 
   try {
-    await assertTeacherCanManageClass(user.id, user.role, classId);
+    await assertTeacherCanManageClass(user, classId);
     const questions = parseQuestionsJson(questionsJson);
 
     const exercise = await prisma.exercise.create({
@@ -141,9 +139,10 @@ export async function createExerciseAction(formData: FormData) {
 
 export async function updateExerciseAction(formData: FormData) {
   const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
   const id = String(formData.get("id") ?? "");
   const exercise = await prisma.exercise.findFirst({
-    where: { id, schoolId: user.schoolId ?? undefined },
+    where: { id, schoolId: user.schoolId },
   });
   if (!exercise) return { error: "Exercício não encontrado." };
   if (user.role === "teacher" && exercise.teacherId !== user.id) {
@@ -209,14 +208,18 @@ export async function submitExerciseAction(formData: FormData) {
   const exerciseId = String(formData.get("exerciseId") ?? "");
   const answersJson = String(formData.get("answersJson") ?? "");
 
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
   const student = await prisma.student.findUnique({ where: { userId: user.id } });
   if (!student) return { error: "Perfil de aluno não encontrado." };
+  if (!student.classId) return { error: "Aluno sem turma atribuída." };
 
   const exercise = await prisma.exercise.findFirst({
     where: {
       id: exerciseId,
       isActive: true,
-      classId: student.classId ?? undefined,
+      schoolId: user.schoolId,
+      classId: student.classId,
     },
     include: {
       questions: { orderBy: { sortOrder: "asc" } },
@@ -548,9 +551,10 @@ export async function gradeSubmissionAction(formData: FormData) {
 
 export async function toggleExerciseAction(formData: FormData) {
   const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
   const id = String(formData.get("id") ?? "");
   const exercise = await prisma.exercise.findFirst({
-    where: { id, schoolId: user.schoolId ?? undefined },
+    where: { id, schoolId: user.schoolId },
   });
   if (!exercise) return { error: "Não encontrado." };
   if (user.role === "teacher" && exercise.teacherId !== user.id) {

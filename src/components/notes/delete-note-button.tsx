@@ -1,11 +1,13 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { deletePersonalNoteAction } from "@/actions/personal-notes";
 import { Trash2 } from "lucide-react";
 
 export function DeleteNoteButton({ id }: { id: string }) {
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   function handleDelete() {
     if (!confirm("Excluir esta anotação?")) return;
@@ -13,6 +15,7 @@ export function DeleteNoteButton({ id }: { id: string }) {
     fd.set("id", id);
     startTransition(async () => {
       await deletePersonalNoteAction(fd);
+      router.refresh();
     });
   }
 

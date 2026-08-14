@@ -1,18 +1,27 @@
 "use client";
 
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { markAllNotificationsReadAction } from "@/actions/notifications";
 import { Button } from "@/components/ui/button";
 
 export function MarkAllReadButton() {
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
   return (
-    <form
-      action={async () => {
-        await markAllNotificationsReadAction();
+    <Button
+      type="button"
+      variant="outline"
+      disabled={pending}
+      onClick={() => {
+        startTransition(async () => {
+          await markAllNotificationsReadAction();
+          router.refresh();
+        });
       }}
     >
-      <Button type="submit" variant="outline">
-        Marcar todas como lidas
-      </Button>
-    </form>
+      {pending ? "Marcando..." : "Marcar todas como lidas"}
+    </Button>
   );
 }

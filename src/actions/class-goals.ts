@@ -8,6 +8,7 @@ import { hasPermission } from "@/lib/permissions";
 import { checkAndAwardClassGoals } from "@/lib/class-goals";
 import { CLASS_GOAL_METRICS } from "@/lib/constants";
 import { teacherClassWhere } from "@/lib/teacher-classes";
+import { assertClassInScope } from "@/lib/tenant-guards";
 
 function revalidateGoals() {
   revalidatePath("/dashboard/metas-coletivas");
@@ -37,12 +38,8 @@ export async function createClassGoalAction(formData: FormData) {
     return { error: "Métrica inválida." };
   }
 
-  if (user.role === "teacher") {
-    const turma = await prisma.classGroup.findFirst({
-      where: { id: classId, schoolId: user.schoolId, teacherId: user.id },
-    });
-    if (!turma) return { error: "Turma não encontrada." };
-  }
+  const scope = await assertClassInScope(user, classId);
+  if (!scope.ok) return { error: scope.error };
 
   await prisma.classGoal.create({
     data: {
@@ -61,9 +58,12 @@ export async function createClassGoalAction(formData: FormData) {
 }
 
 export async function checkClassGoalsAction(formData: FormData) {
-  await requireSession(["admin", "director", "teacher"]);
+  const user = await requireSession(["admin", "director", "teacher"]);
   const classId = formData.get("classId")?.toString();
   if (!classId) return { error: "Turma inválida." };
+
+  const scope = await assertClassInScope(user, classId);
+  if (!scope.ok) return { error: scope.error };
 
   await checkAndAwardClassGoals(classId);
   revalidateGoals();

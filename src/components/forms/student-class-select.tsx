@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useRef, useTransition } from "react";
 import { updateStudentAction } from "@/actions/crud";
 import { Select } from "@/components/ui/form-fields";
 
@@ -21,6 +21,7 @@ export function StudentClassSelect({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const requestSeq = useRef(0);
 
   function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const classId = event.target.value;
@@ -28,8 +29,12 @@ export function StudentClassSelect({
     formData.set("studentId", studentId);
     formData.set("classId", classId);
 
+    // Trocas rápidas podem responder fora de ordem; só a última vale.
+    const seq = ++requestSeq.current;
+
     startTransition(async () => {
       await updateStudentAction(formData);
+      if (seq !== requestSeq.current) return;
       router.refresh();
     });
   }

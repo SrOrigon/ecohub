@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/modal";
+import { useToday } from "@/hooks/use-today";
 import { ATTENDANCE_STATUSES } from "@/lib/constants";
 
 interface ClassWithStudents {
@@ -33,7 +34,7 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
     null
   );
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = useToday();
   const classData = classes.find((c) => c.id === selectedClass);
 
   return (

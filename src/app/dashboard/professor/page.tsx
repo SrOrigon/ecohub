@@ -1,4 +1,3 @@
-import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getRanking } from "@/lib/queries";
 import { getExerciseSummariesForTeacher, getTeacherClasses } from "@/lib/exercises";
@@ -23,15 +22,13 @@ import { getTeacherDayOverview } from "@/lib/teacher-day";
 import { getPendingMissionConfirmations } from "@/lib/mission-requests";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 import { BookOpen, ClipboardList, Users, Medal, PenLine, AlertCircle, Settings2 } from "lucide-react";
-import { redirect } from "next/navigation";
+import { requireSchoolPageAccess } from "@/lib/access-control";
 
 export default async function TeacherDashboardPage() {
-  const user = await getSessionUser();
-  if (!user) redirect("/login");
-  if (user.role !== "teacher") redirect("/dashboard");
+  const user = await requireSchoolPageAccess(["teacher"]);
 
   const myClasses = await prisma.classGroup.findMany({
-    where: { schoolId: user.schoolId ?? undefined, ...teacherClassWhere(user.id) },
+    where: { schoolId: user.schoolId, ...teacherClassWhere(user.id) },
     select: {
       id: true,
       name: true,

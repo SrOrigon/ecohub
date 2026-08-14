@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useActionState } from "react";
 import { Camera, Trash2, Upload } from "lucide-react";
 import { updateProfileAction } from "@/actions/profile";
@@ -42,6 +42,9 @@ export function UpdateProfileForm({
       previewObjectUrlRef.current = null;
     }
   };
+
+  // Libera o object URL da prévia se o formulário sair da tela sem envio.
+  useEffect(() => revokePreviewUrl, []);
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean; message?: string } | null, formData: FormData) =>
