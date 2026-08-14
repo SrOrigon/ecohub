@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { OCCURRENCE_LABELS, type OccurrenceKind } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { redirect } from "next/navigation";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
+import { deleteDiaryEntryAction, deleteOccurrenceAction } from "@/actions/diary";
 
 export default async function DiarioPage() {
   const user = await getSessionUser();
@@ -78,9 +80,18 @@ export default async function DiarioPage() {
               ) : (
                 diary.map((d) => (
                   <div key={d.id} className="rounded-lg border border-slate-100 p-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary">{formatDate(d.date)}</Badge>
-                      {d.subject && <Badge>{d.subject}</Badge>}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary">{formatDate(d.date)}</Badge>
+                        {d.subject && <Badge>{d.subject}</Badge>}
+                      </div>
+                      <DeleteConfirmButton
+                        label="Excluir registro"
+                        iconOnly
+                        confirmMessage="Excluir este registro do diário? Esta ação não pode ser desfeita."
+                        hiddenFields={{ entryId: d.id }}
+                        action={deleteDiaryEntryAction}
+                      />
                     </div>
                     <p className="mt-2 text-sm text-slate-800">{d.content}</p>
                     <p className="mt-1 text-xs text-slate-500">{d.teacher.fullName}</p>
@@ -100,11 +111,20 @@ export default async function DiarioPage() {
               ) : (
                 occurrences.map((o) => (
                   <div key={o.id} className="rounded-lg border border-slate-100 p-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={o.kind === "positive" ? "success" : o.kind === "warning" ? "warning" : "secondary"}>
-                        {OCCURRENCE_LABELS[o.kind as OccurrenceKind] ?? o.kind}
-                      </Badge>
-                      <span className="text-xs text-slate-500">{formatDate(o.date)}</span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={o.kind === "positive" ? "success" : o.kind === "warning" ? "warning" : "secondary"}>
+                          {OCCURRENCE_LABELS[o.kind as OccurrenceKind] ?? o.kind}
+                        </Badge>
+                        <span className="text-xs text-slate-500">{formatDate(o.date)}</span>
+                      </div>
+                      <DeleteConfirmButton
+                        label="Excluir ocorrência"
+                        iconOnly
+                        confirmMessage="Excluir esta ocorrência? Esta ação não pode ser desfeita."
+                        hiddenFields={{ occurrenceId: o.id }}
+                        action={deleteOccurrenceAction}
+                      />
                     </div>
                     <p className="mt-2 text-sm text-slate-800">{o.description}</p>
                     {o.student && (

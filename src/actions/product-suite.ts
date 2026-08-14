@@ -61,6 +61,23 @@ export async function reviewEnrollmentAction(formData: FormData): Promise<void> 
   revalidatePath("/dashboard/matriculas");
 }
 
+export async function deleteEnrollmentApplicationAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "secretary"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const id = String(formData.get("applicationId") ?? "");
+  if (!id) return { error: "Inscrição inválida." };
+
+  const app = await prisma.enrollmentApplication.findFirst({
+    where: { id, schoolId: user.schoolId },
+  });
+  if (!app) return { error: "Inscrição não encontrada." };
+
+  await prisma.enrollmentApplication.delete({ where: { id } });
+  revalidatePath("/dashboard/matriculas");
+  return { success: true };
+}
+
 export async function createAuthorizationFormAction(formData: FormData): Promise<void> {
   const user = await requireSession(STAFF_ROLES);
   if (!user.schoolId) return;

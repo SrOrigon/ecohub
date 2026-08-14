@@ -11,6 +11,8 @@ import { CLASS_GOAL_LABELS, type ClassGoalMetric } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { redirect } from "next/navigation";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
+import { deleteClassGoalAction } from "@/actions/class-goals";
 
 export default async function MetasColetivasPage() {
   const user = await getSessionUser();
@@ -63,10 +65,19 @@ export default async function MetasColetivasPage() {
           goalsWithProgress.map((g) => (
             <Card key={g.id}>
               <CardHeader>
-                <div className="flex flex-wrap items-center gap-2">
-                  <CardTitle>{g.title}</CardTitle>
-                  <Badge variant="secondary">{g.classGroup.name}</Badge>
-                  {g.awardedAt && <Badge variant="success">Bônus concedido</Badge>}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <CardTitle>{g.title}</CardTitle>
+                    <Badge variant="secondary">{g.classGroup.name}</Badge>
+                    {g.awardedAt && <Badge variant="success">Bônus concedido</Badge>}
+                  </div>
+                  <DeleteConfirmButton
+                    label="Excluir meta"
+                    iconOnly
+                    confirmMessage={`Excluir a meta "${g.title}"? Esta ação não pode ser desfeita.`}
+                    hiddenFields={{ goalId: g.id }}
+                    action={deleteClassGoalAction}
+                  />
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">

@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { updateMissionAction, toggleMissionAction } from "@/actions/crud";
+import { updateMissionAction, toggleMissionAction, deleteMissionAction } from "@/actions/crud";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/modal";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 
 interface ClassOption {
   id: string;
@@ -62,6 +63,12 @@ export function EditMissionForm({
           {mission.isActive ? "Desativar" : "Ativar"}
         </Button>
       </form>
+      <DeleteConfirmButton
+        label="Excluir"
+        confirmMessage={`Excluir a missão "${mission.title}"? Progresso dos alunos será perdido. Esta ação não pode ser desfeita.`}
+        hiddenFields={{ missionId: mission.id }}
+        action={deleteMissionAction}
+      />
       {toggleState?.error && <p className="w-full text-xs text-red-600">{toggleState.error}</p>}
 
       <Modal open={open} onClose={() => setOpen(false)} title="Editar missão">

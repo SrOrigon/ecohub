@@ -10,6 +10,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { UserIdentity } from "@/components/profile/user-identity";
 import { Heart } from "lucide-react";
 import { redirect } from "next/navigation";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
+import { deleteParentAction } from "@/actions/parents";
 
 const relationLabels: Record<string, string> = {
   mae: "Mãe",
@@ -42,12 +44,20 @@ export default async function ResponsaveisPage() {
         {parents.map((parent) => (
           <Card key={parent.id}>
             <CardHeader>
-              <UserIdentity
-                name={parent.fullName}
-                avatarUrl={parent.avatarUrl}
-                subtitle={parent.email}
-                size="md"
-              />
+              <div className="flex items-start justify-between gap-3">
+                <UserIdentity
+                  name={parent.fullName}
+                  avatarUrl={parent.avatarUrl}
+                  subtitle={parent.email}
+                  size="md"
+                />
+                <DeleteConfirmButton
+                  label="Excluir responsável"
+                  confirmMessage={`Excluir a conta de ${parent.fullName}? Vínculos com alunos serão removidos. Esta ação não pode ser desfeita.`}
+                  hiddenFields={{ parentId: parent.id }}
+                  action={deleteParentAction}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               {parent.parentLinks.length === 0 ? (

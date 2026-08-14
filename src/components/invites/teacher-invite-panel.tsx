@@ -1,13 +1,14 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { createTeacherInviteAction } from "@/actions/invites";
+import { createTeacherInviteAction, deleteTeacherInviteAction } from "@/actions/invites";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form-fields";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Copy, Link2, Mail } from "lucide-react";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 
 type InviteRow = {
   id: string;
@@ -153,6 +154,15 @@ export function TeacherInvitePanel({ invites }: { invites: InviteRow[] }) {
                         {inv.usedBy && ` · ${inv.usedBy.fullName}`}
                       </p>
                     </div>
+                    {!inv.usedAt && (
+                      <DeleteConfirmButton
+                        label="Revogar convite"
+                        iconOnly
+                        confirmMessage="Revogar este convite? O link deixará de funcionar."
+                        hiddenFields={{ inviteId: inv.id }}
+                        action={deleteTeacherInviteAction}
+                      />
+                    )}
                   </li>
                 );
               })}

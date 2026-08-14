@@ -11,6 +11,7 @@ import { UserIdentity } from "@/components/profile/user-identity";
 import { InstitutionalSetupHint } from "@/components/school/institutional-setup-hint";
 import { Users } from "lucide-react";
 import { requirePageAccess, STAFF_ROLES } from "@/lib/access-control";
+import { DeleteStudentButton } from "@/components/forms/delete-student-button";
 
 export default async function AlunosPage() {
   const user = await requirePageAccess(STAFF_ROLES);
@@ -21,6 +22,8 @@ export default async function AlunosPage() {
     user.role === "secretary" ||
     user.role === "teacher";
   const canManageSettings = user.role === "admin" || user.role === "director";
+  const canDeleteStudents =
+    user.role === "admin" || user.role === "director" || user.role === "secretary";
 
   const [students, classes, settings] = await Promise.all([
     getStudents(user.schoolId).catch(() => []),
@@ -69,7 +72,8 @@ export default async function AlunosPage() {
                   <th className="pb-3 pr-4">Média</th>
                   <th className="pb-3 pr-4">Nível</th>
                   <th className="hidden pb-3 pr-4 lg:table-cell">XP</th>
-                  <th className="pb-3">Moedas</th>
+                  <th className="pb-3 pr-4">Moedas</th>
+                  {canDeleteStudents && <th className="pb-3">Ações</th>}
                 </tr>
               </thead>
               <tbody>
@@ -113,6 +117,14 @@ export default async function AlunosPage() {
                         {(student.xpTotal ?? 0).toLocaleString("pt-BR")}
                       </td>
                       <td className="py-3 text-amber-600">{student.coins ?? 0}</td>
+                      {canDeleteStudents && (
+                        <td className="py-3">
+                          <DeleteStudentButton
+                            studentId={student.id}
+                            studentName={student.user?.fullName ?? "Aluno"}
+                          />
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

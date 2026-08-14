@@ -12,6 +12,8 @@ import { UserCog, MapPin } from "lucide-react";
 import { redirect } from "next/navigation";
 import { CreateTeacherForm } from "@/components/forms/create-teacher-form";
 import { teacherClassWhere } from "@/lib/teacher-classes";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
+import { deleteTeacherAction } from "@/actions/crud";
 
 export default async function ProfessoresPage() {
   const user = await getSessionUser();
@@ -54,12 +56,21 @@ export default async function ProfessoresPage() {
           {teachersWithClasses.map((teacher) => (
             <Card key={teacher.id}>
               <CardHeader>
-                <UserIdentity
-                  name={teacher.fullName}
-                  avatarUrl={teacher.avatarUrl}
-                  subtitle={teacher.email}
-                  size="md"
-                />
+                <div className="flex items-start justify-between gap-3">
+                  <UserIdentity
+                    name={teacher.fullName}
+                    avatarUrl={teacher.avatarUrl}
+                    subtitle={teacher.email}
+                    size="md"
+                  />
+                  <DeleteConfirmButton
+                    label="Excluir"
+                    iconOnly
+                    confirmMessage={`Excluir o professor ${teacher.fullName}? Turmas ficarão sem titular e exercícios dele serão removidos. Esta ação não pode ser desfeita.`}
+                    hiddenFields={{ teacherId: teacher.id }}
+                    action={deleteTeacherAction}
+                  />
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {teacher.location && (

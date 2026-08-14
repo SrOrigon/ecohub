@@ -19,6 +19,8 @@ import { getSchoolSettings } from "@/lib/school-settings";
 import { AlertCircle, CheckCircle2, PartyPopper, FileText } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
+import { deleteExerciseAction } from "@/actions/exercises";
 
 export default async function ExerciseDetailPage({
   params,
@@ -219,19 +221,31 @@ export default async function ExerciseDetailPage({
           )}
 
           {canEdit && (
-            <EditExerciseForm
-              exercise={{
-                id: exercise.id,
-                title: exercise.title,
-                description: exercise.description,
-                kind: exercise.kind,
-                maxPoints: exercise.maxPoints,
-                xpReward: exercise.xpReward,
-                coinReward: exercise.coinReward,
-                dueDate: exercise.dueDate?.toISOString().slice(0, 16) ?? "",
-                isActive: exercise.isActive,
-              }}
-            />
+            <>
+              <EditExerciseForm
+                exercise={{
+                  id: exercise.id,
+                  title: exercise.title,
+                  description: exercise.description,
+                  kind: exercise.kind,
+                  maxPoints: exercise.maxPoints,
+                  xpReward: exercise.xpReward,
+                  coinReward: exercise.coinReward,
+                  dueDate: exercise.dueDate?.toISOString().slice(0, 16) ?? "",
+                  isActive: exercise.isActive,
+                }}
+              />
+              <div className="flex justify-end">
+                <DeleteConfirmButton
+                  label="Excluir exercício"
+                  variant="destructive"
+                  confirmMessage={`Excluir "${exercise.title}" e todas as entregas? Esta ação não pode ser desfeita.`}
+                  hiddenFields={{ id: exercise.id }}
+                  action={deleteExerciseAction}
+                  redirectTo="/dashboard/exercicios"
+                />
+              </div>
+            </>
           )}
 
           {pendingSubs.length > 0 && (

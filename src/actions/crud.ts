@@ -919,7 +919,7 @@ export async function createTeacherAction(formData: FormData) {
 
 export async function deleteStudentAction(formData: FormData) {
   const studentId = String(formData.get("studentId") ?? "");
-  const user = await requireSession(["admin", "director"]);
+  const user = await requireSession(["admin", "director", "secretary"]);
   if (!user.schoolId) return { error: "Escola não configurada." };
 
   const student = await prisma.student.findFirst({
@@ -930,6 +930,82 @@ export async function deleteStudentAction(formData: FormData) {
 
   await prisma.user.delete({ where: { id: student.userId } });
   revalidateGroups("core", "people", "academic", "gamification", "analytics", "alerts", "exercises");
+  return { success: true };
+}
+
+export async function deleteTeacherAction(formData: FormData) {
+  const teacherId = String(formData.get("teacherId") ?? "");
+  const user = await requireSession(["admin", "director"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+  if (!teacherId) return { error: "Professor inválido." };
+  if (teacherId === user.id) {
+    return { error: "Use Configurações → Perfil para encerrar sua própria conta." };
+  }
+
+  const teacher = await prisma.user.findFirst({
+    where: { id: teacherId, schoolId: user.schoolId, role: "teacher" },
+  });
+  if (!teacher) return { error: "Professor não encontrado." };
+
+  await prisma.$transaction(async (tx) => {
+    await tx.classGroup.updateMany({ where: { teacherId }, data: { teacherId: null } });
+    await tx.classGroupCoTeacher.deleteMany({ where: { teacherId } });
+    await tx.user.delete({ where: { id: teacherId } });
+  });
+
+  revalidatePath("/dashboard/professores");
+  revalidatePath("/dashboard/turmas");
+  revalidatePath("/dashboard/exercicios");
+  revalidatePath("/dashboard/diario");
+  return { success: true };
+}
+
+export async function deleteClassAction(formData: FormData) {
+  const classId = String(formData.get("classId") ?? "");
+  const user = await requireSession(["admin", "director"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+  if (!classId) return { error: "Turma inválida." };
+
+  const turma = await prisma.classGroup.findFirst({
+    where: { id: classId, schoolId: user.schoolId },
+    select: { id: true, name: true },
+  });
+  if (!turma) return { error: "Turma não encontrada." };
+
+  await prisma.classGroup.delete({ where: { id: classId } });
+
+  revalidateGroups("core", "people", "exercises", "academic", "gamification", "analytics");
+  revalidatePath("/dashboard/turmas");
+  revalidatePath("/dashboard/alunos");
+  revalidatePath("/dashboard/professor");
+  return { success: true };
+}
+
+export async function deleteMissionAction(formData: FormData) {
+  const missionId = String(formData.get("missionId") ?? "");
+  const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+  if (!missionId) return { error: "Missão inválida." };
+
+  const settings = await getSchoolSettings(user.schoolId);
+  if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.createMissions")) {
+    return { error: "Sem permissão para excluir missões." };
+  }
+
+  const mission = await prisma.mission.findFirst({
+    where: { id: missionId, schoolId: user.schoolId },
+  });
+  if (!mission) return { error: "Missão não encontrada." };
+
+  if (mission.classId && user.role === "teacher") {
+    const scope = await assertClassInScope(user, mission.classId);
+    if (!scope.ok) return { error: scope.error };
+  }
+
+  await prisma.mission.delete({ where: { id: missionId } });
+
+  revalidateGroups("gamification", "analytics");
+  revalidatePath("/dashboard/gamificacao");
   return { success: true };
 }
 

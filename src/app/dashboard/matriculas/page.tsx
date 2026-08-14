@@ -3,9 +3,10 @@ import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { reviewEnrollmentAction } from "@/actions/product-suite";
+import { reviewEnrollmentAction, deleteEnrollmentApplicationAction } from "@/actions/product-suite";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 
 export default async function MatriculasPage() {
   const user = await getSessionUser();
@@ -71,8 +72,9 @@ export default async function MatriculasPage() {
                     </p>
                   )}
                 </div>
+                <div className="flex shrink-0 flex-wrap items-start gap-2">
                 {app.status === "pending" && (
-                  <div className="flex shrink-0 gap-2">
+                  <>
                     <form action={reviewEnrollmentAction}>
                       <input type="hidden" name="applicationId" value={app.id} />
                       <input type="hidden" name="action" value="approve" />
@@ -87,8 +89,16 @@ export default async function MatriculasPage() {
                         Recusar
                       </Button>
                     </form>
-                  </div>
+                  </>
                 )}
+                <DeleteConfirmButton
+                  label="Excluir"
+                  iconOnly
+                  confirmMessage={`Excluir a inscrição de ${app.studentName}? Esta ação não pode ser desfeita.`}
+                  hiddenFields={{ applicationId: app.id }}
+                  action={deleteEnrollmentApplicationAction}
+                />
+                </div>
               </CardContent>
             </Card>
           ))}

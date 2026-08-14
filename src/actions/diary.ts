@@ -154,3 +154,55 @@ export async function getOccurrencesForStudent(studentId: string, schoolId: stri
     take: 20,
   });
 }
+
+export async function deleteDiaryEntryAction(formData: FormData) {
+  const session = await requireSessionResult(["admin", "director", "teacher"]);
+  if (!session.ok) return { error: session.error };
+  const user = session.user;
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const entryId = String(formData.get("entryId") ?? "");
+  if (!entryId) return { error: "Registro inválido." };
+
+  const entry = await prisma.classDiaryEntry.findFirst({
+    where: { id: entryId, classGroup: { schoolId: user.schoolId } },
+    select: { id: true, classId: true, teacherId: true },
+  });
+  if (!entry) return { error: "Registro não encontrado." };
+
+  const scope = await assertClassInScope(user, entry.classId);
+  if (!scope.ok) return { error: scope.error };
+  if (user.role === "teacher" && entry.teacherId !== user.id) {
+    return { error: "Sem permissão para excluir este registro." };
+  }
+
+  await prisma.classDiaryEntry.delete({ where: { id: entryId } });
+  revalidateDiary();
+  return { success: true };
+}
+
+export async function deleteOccurrenceAction(formData: FormData) {
+  const session = await requireSessionResult(["admin", "director", "teacher"]);
+  if (!session.ok) return { error: session.error };
+  const user = session.user;
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const occurrenceId = String(formData.get("occurrenceId") ?? "");
+  if (!occurrenceId) return { error: "Ocorrência inválida." };
+
+  const occurrence = await prisma.occurrence.findFirst({
+    where: { id: occurrenceId, classGroup: { schoolId: user.schoolId } },
+    select: { id: true, classId: true, teacherId: true },
+  });
+  if (!occurrence) return { error: "Ocorrência não encontrada." };
+
+  const scope = await assertClassInScope(user, occurrence.classId);
+  if (!scope.ok) return { error: scope.error };
+  if (user.role === "teacher" && occurrence.teacherId !== user.id) {
+    return { error: "Sem permissão para excluir esta ocorrência." };
+  }
+
+  await prisma.occurrence.delete({ where: { id: occurrenceId } });
+  revalidateDiary();
+  return { success: true };
+}

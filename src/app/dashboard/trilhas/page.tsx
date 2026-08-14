@@ -6,6 +6,8 @@ import { hasPermission } from "@/lib/permissions";
 import { getTrailsForStudent } from "@/lib/trails";
 import { PageHeader } from "@/components/layout/page-header";
 import { CreateTrailForm } from "@/components/forms/create-trail-form";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
+import { deleteTrailAction } from "@/actions/trails";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -150,12 +152,21 @@ export default async function TrilhasPage() {
         {trails.map((trail) => (
           <Card key={trail.id}>
             <CardHeader>
-              <div className="flex flex-wrap items-center gap-2">
-                <CardTitle>{trail.title}</CardTitle>
-                <Badge variant={trail.isActive ? "success" : "secondary"}>
-                  {trail.isActive ? "Ativa" : "Inativa"}
-                </Badge>
-                {trail.classGroup && <Badge variant="secondary">{trail.classGroup.name}</Badge>}
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <CardTitle>{trail.title}</CardTitle>
+                  <Badge variant={trail.isActive ? "success" : "secondary"}>
+                    {trail.isActive ? "Ativa" : "Inativa"}
+                  </Badge>
+                  {trail.classGroup && <Badge variant="secondary">{trail.classGroup.name}</Badge>}
+                </div>
+                <DeleteConfirmButton
+                  label="Excluir trilha"
+                  iconOnly
+                  confirmMessage={`Excluir a trilha "${trail.title}"? Progresso dos alunos será perdido. Esta ação não pode ser desfeita.`}
+                  hiddenFields={{ id: trail.id }}
+                  action={deleteTrailAction}
+                />
               </div>
             </CardHeader>
             <CardContent>

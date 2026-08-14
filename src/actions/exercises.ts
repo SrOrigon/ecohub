@@ -569,3 +569,23 @@ export async function toggleExerciseAction(formData: FormData) {
   revalidateExercises();
   return { success: true };
 }
+
+export async function deleteExerciseAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { error: "Exercício inválido." };
+
+  const exercise = await prisma.exercise.findFirst({
+    where: { id, schoolId: user.schoolId },
+  });
+  if (!exercise) return { error: "Exercício não encontrado." };
+  if (user.role === "teacher" && exercise.teacherId !== user.id) {
+    return { error: "Sem permissão para excluir este exercício." };
+  }
+
+  await prisma.exercise.delete({ where: { id } });
+
+  revalidateExercises();
+  return { success: true };
+}

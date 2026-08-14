@@ -94,6 +94,28 @@ export async function markAnnouncementReadAction(formData: FormData) {
   return { success: true };
 }
 
+export async function deleteAnnouncementAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const id = String(formData.get("announcementId") ?? "");
+  if (!id) return { error: "Comunicado inválido." };
+
+  const announcement = await prisma.announcement.findFirst({
+    where: { id, schoolId: user.schoolId },
+  });
+  if (!announcement) return { error: "Comunicado não encontrado." };
+
+  const canModerate = user.role === "admin" || user.role === "director";
+  if (!canModerate && announcement.authorId !== user.id) {
+    return { error: "Sem permissão para excluir este comunicado." };
+  }
+
+  await prisma.announcement.delete({ where: { id } });
+  revalidateAnnouncements();
+  return { success: true };
+}
+
 export async function getAnnouncementsForUser(
   actor: { id: string; schoolId: string | null },
   userId: string,

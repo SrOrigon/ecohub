@@ -89,3 +89,20 @@ export async function toggleTrailAction(formData: FormData) {
   revalidateTrails();
   return { success: true };
 }
+
+export async function deleteTrailAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { error: "Trilha inválida." };
+
+  const trail = await prisma.learningTrail.findFirst({
+    where: { id, schoolId: user.schoolId },
+  });
+  if (!trail) return { error: "Trilha não encontrada." };
+
+  await prisma.learningTrail.delete({ where: { id } });
+  revalidateTrails();
+  return { success: true };
+}

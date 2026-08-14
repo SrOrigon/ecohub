@@ -70,6 +70,32 @@ export async function checkClassGoalsAction(formData: FormData) {
   return { success: true };
 }
 
+export async function deleteClassGoalAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const goalId = String(formData.get("goalId") ?? "");
+  if (!goalId) return { error: "Meta inválida." };
+
+  const settings = await getSchoolSettings(user.schoolId);
+  if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.createClassGoals")) {
+    return { error: "Sem permissão para excluir metas coletivas." };
+  }
+
+  const goal = await prisma.classGoal.findFirst({
+    where: { id: goalId, classGroup: { schoolId: user.schoolId } },
+    select: { id: true, classId: true },
+  });
+  if (!goal) return { error: "Meta não encontrada." };
+
+  const scope = await assertClassInScope(user, goal.classId);
+  if (!scope.ok) return { error: scope.error };
+
+  await prisma.classGoal.delete({ where: { id: goalId } });
+  revalidateGoals();
+  return { success: true };
+}
+
 export async function getClassGoalsForSchool(schoolId: string, teacherId?: string) {
   return prisma.classGoal.findMany({
     where: {

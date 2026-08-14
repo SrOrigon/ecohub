@@ -53,7 +53,13 @@ export default async function ComunicadosPage() {
         title="Comunicados"
         description="Avisos da escola e da turma  -  todos recebem notificação automaticamente."
       />
-      <AnnouncementBoard announcements={announcements} canCreate={canCreate} classes={classes} />
+      <AnnouncementBoard
+        announcements={announcements}
+        canCreate={canCreate}
+        canModerate={user.role === "admin" || user.role === "director"}
+        currentUserId={user.id}
+        classes={classes}
+      />
     </div>
   );
 }

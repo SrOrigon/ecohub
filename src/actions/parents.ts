@@ -92,6 +92,23 @@ export async function unlinkParentStudentAction(formData: FormData) {
   return { success: true };
 }
 
+export async function deleteParentAction(formData: FormData) {
+  const user = await requireSession(["admin", "director"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const parentId = String(formData.get("parentId") ?? "");
+  if (!parentId) return { error: "Responsável inválido." };
+
+  const parent = await prisma.user.findFirst({
+    where: { id: parentId, schoolId: user.schoolId, role: "parent" },
+  });
+  if (!parent) return { error: "Responsável não encontrado." };
+
+  await prisma.user.delete({ where: { id: parentId } });
+  revalidateParentPaths();
+  return { success: true };
+}
+
 function revalidateParentPaths() {
   ["/dashboard/responsaveis", "/dashboard/responsavel", "/dashboard/alunos", "/dashboard/comunicados"].forEach((p) =>
     revalidatePath(p)

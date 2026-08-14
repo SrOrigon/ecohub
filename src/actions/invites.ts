@@ -92,6 +92,33 @@ export async function createTeacherInviteAction(formData: FormData) {
   };
 }
 
+export async function deleteTeacherInviteAction(formData: FormData) {
+  const session = await requireSessionResult(["admin", "director"]);
+  if (!session.ok) return { error: session.error };
+  const user = session.user;
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const settings = await getSchoolSettings(user.schoolId);
+  if (user.role === "director" && !hasPermission(user.role, settings, "director.manageTeachers")) {
+    return { error: "Sem permissão para gerenciar convites." };
+  }
+
+  const inviteId = String(formData.get("inviteId") ?? "");
+  if (!inviteId) return { error: "Convite inválido." };
+
+  const invite = await prisma.teacherInvite.findFirst({
+    where: { id: inviteId, schoolId: user.schoolId },
+  });
+  if (!invite) return { error: "Convite não encontrado." };
+  if (invite.usedAt) {
+    return { error: "Convites já utilizados não podem ser excluídos." };
+  }
+
+  await prisma.teacherInvite.delete({ where: { id: inviteId } });
+  revalidateInvites();
+  return { success: true };
+}
+
 export async function acceptTeacherInviteAction(formData: FormData) {
   const token = formData.get("token")?.toString();
   const fullName = formData.get("fullName")?.toString().trim();

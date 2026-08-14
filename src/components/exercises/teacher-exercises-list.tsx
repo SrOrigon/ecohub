@@ -9,6 +9,8 @@ import { formatDate } from "@/lib/utils";
 import { EXERCISE_KIND_LABELS } from "@/lib/exercises";
 import { ExerciseRewardPills } from "@/components/exercises/exercise-status-badge";
 import { ChevronRight, AlertCircle } from "lucide-react";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
+import { deleteExerciseAction } from "@/actions/exercises";
 
 type ExerciseItem = {
   id: string;
@@ -92,12 +94,20 @@ export function TeacherExercisesList({ exercises }: { exercises: ExerciseItem[] 
                     <span className="text-slate-500">Prazo: {formatDate(ex.dueDate)}</span>
                   )}
                 </div>
-                <Link href={`/dashboard/exercicios/${ex.id}`}>
-                  <Button variant={pending > 0 ? "default" : "outline"} size="sm" className="gap-1">
-                    {pending > 0 ? "Corrigir agora" : "Gerenciar"}
-                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link href={`/dashboard/exercicios/${ex.id}`}>
+                    <Button variant={pending > 0 ? "default" : "outline"} size="sm" className="gap-1">
+                      {pending > 0 ? "Corrigir agora" : "Gerenciar"}
+                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </Link>
+                  <DeleteConfirmButton
+                    label="Excluir"
+                    confirmMessage={`Excluir o exercício "${ex.title}" e todas as entregas? Esta ação não pode ser desfeita.`}
+                    hiddenFields={{ id: ex.id }}
+                    action={deleteExerciseAction}
+                  />
+                </div>
               </CardContent>
             </Card>
           );

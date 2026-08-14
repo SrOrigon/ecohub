@@ -9,6 +9,8 @@ import { UserIdentity } from "@/components/profile/user-identity";
 import { GraduationCap } from "lucide-react";
 import { ClassCoTeachersForm } from "@/components/forms/class-co-teachers-form";
 import { requirePageAccess, STAFF_ROLES } from "@/lib/access-control";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
+import { deleteClassAction } from "@/actions/crud";
 
 export default async function TurmasPage() {
   const user = await requirePageAccess(STAFF_ROLES);
@@ -19,6 +21,7 @@ export default async function TurmasPage() {
     user.role === "admin" ||
     user.role === "director" ||
     (isTeacher && hasPermission(user.role, settings, "teacher.createClasses"));
+  const canDeleteClass = user.role === "admin" || user.role === "director";
 
   const teacherFilter = isTeacher ? user.id : undefined;
 
@@ -57,27 +60,40 @@ export default async function TurmasPage() {
           {classes.map((turma) => (
             <Card key={turma.id}>
               <CardHeader>
-                <CardTitle>{turma.name}</CardTitle>
-                {turma.teacher && (
-                  <UserIdentity
-                    name={turma.teacher.fullName}
-                    avatarUrl={turma.teacher.avatarUrl}
-                    subtitle={`${turma.gradeLevel}º ano · ${turma.year}`}
-                    size="xs"
-                    className="mt-2"
-                  />
-                )}
-                {!turma.teacher && (
-                  <p className="text-sm text-slate-500">
-                    {turma.gradeLevel}º ano · {turma.year}
-                    {!isTeacher && " · Prof. Não definido"}
-                  </p>
-                )}
-                {turma.coTeachers && turma.coTeachers.length > 0 && (
-                  <p className="mt-1 text-xs text-slate-500">
-                    Co-docentes: {turma.coTeachers.map((ct) => ct.teacher?.fullName ?? "Prof.").join(", ")}
-                  </p>
-                )}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle>{turma.name}</CardTitle>
+                    {turma.teacher && (
+                      <UserIdentity
+                        name={turma.teacher.fullName}
+                        avatarUrl={turma.teacher.avatarUrl}
+                        subtitle={`${turma.gradeLevel}º ano · ${turma.year}`}
+                        size="xs"
+                        className="mt-2"
+                      />
+                    )}
+                    {!turma.teacher && (
+                      <p className="text-sm text-slate-500">
+                        {turma.gradeLevel}º ano · {turma.year}
+                        {!isTeacher && " · Prof. Não definido"}
+                      </p>
+                    )}
+                    {turma.coTeachers && turma.coTeachers.length > 0 && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        Co-docentes: {turma.coTeachers.map((ct) => ct.teacher?.fullName ?? "Prof.").join(", ")}
+                      </p>
+                    )}
+                  </div>
+                  {canDeleteClass && (
+                    <DeleteConfirmButton
+                      label="Excluir turma"
+                      iconOnly
+                      confirmMessage={`Excluir a turma "${turma.name}"? Os ${turma._count.students} aluno(s) serão desvinculados, mas não apagados. Esta ação não pode ser desfeita.`}
+                      hiddenFields={{ classId: turma.id }}
+                      action={deleteClassAction}
+                    />
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <p className="mb-3 text-sm font-medium">{turma._count.students} alunos matriculados</p>
