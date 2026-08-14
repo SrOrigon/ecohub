@@ -19,6 +19,7 @@ import { fetchCnpjFromBrasilApi, normalizeCnpj } from "@/lib/cnpj";
 import {
   canAcceptPublicSignup,
   SCHOOL_VERIFICATION_STATUS,
+  type SchoolVerificationStatus,
 } from "@/lib/school-verification";
 import { DEFAULT_SCHOOL_SETTINGS, getSchoolSettings, stringifySchoolSettings } from "@/lib/school-settings";
 import { canSelfRegisterStudent, parseBirthDate } from "@/lib/student-age";
@@ -120,7 +121,17 @@ export async function loginAction(formData: FormData) {
   redirect(dashboardForRole(user.role as UserRole));
 }
 
-export async function registerSchoolAction(formData: FormData) {
+export type RegisterSchoolSuccess = {
+  success: true;
+  schoolName: string;
+  email: string;
+  slug: string;
+  verificationStatus: SchoolVerificationStatus;
+};
+
+export type RegisterSchoolResult = { error: string } | RegisterSchoolSuccess | null;
+
+export async function registerSchoolAction(formData: FormData): Promise<RegisterSchoolResult> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = normalizePassword(String(formData.get("password") ?? ""));
   const fullName = String(formData.get("fullName") ?? "").trim();
@@ -196,7 +207,14 @@ export async function registerSchoolAction(formData: FormData) {
   await ensureDefaultRewards(school.id);
 
   await establishSession(user, { tenantSlug: school.slug });
-  redirect("/dashboard");
+
+  return {
+    success: true,
+    schoolName: school.name,
+    email,
+    slug: school.slug,
+    verificationStatus: school.verificationStatus as SchoolVerificationStatus,
+  };
 }
 
 export async function registerTeacherAction() {

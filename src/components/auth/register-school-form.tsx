@@ -2,7 +2,8 @@
 
 import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
-import { registerSchoolAction } from "@/actions/auth";
+import { registerSchoolAction, type RegisterSchoolResult } from "@/actions/auth";
+import { RegisterSchoolSuccess } from "@/components/auth/register-school-success";
 import { runServerAction } from "@/lib/run-server-action";
 import { lookupCnpjAction } from "@/actions/cnpj";
 import { Button } from "@/components/ui/button";
@@ -44,10 +45,14 @@ export function RegisterSchoolForm() {
   const [isLookingUp, startLookup] = useTransition();
 
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string } | null, formData: FormData) =>
+    async (_prev: RegisterSchoolResult, formData: FormData) =>
       runServerAction(async () => (await registerSchoolAction(formData)) ?? null),
     null
   );
+
+  if (state?.success) {
+    return <RegisterSchoolSuccess result={state} />;
+  }
 
   function handleLookup() {
     setLookupError(null);
@@ -206,7 +211,7 @@ export function RegisterSchoolForm() {
               />
             </div>
 
-            {state?.error && (
+            {state && "error" in state && state.error && (
               <p
                 className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800 dark:bg-red-950/50 dark:text-red-200"
                 role="alert"
