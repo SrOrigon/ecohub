@@ -164,31 +164,36 @@ export async function registerSchoolAction(formData: FormData) {
   const passwordHash = await hashPassword(password);
   const slug = await createUniqueSchoolSlug(schoolName);
 
-  const school = await prisma.school.create({
-    data: {
-      name: schoolName,
-      slug,
-      cnpj,
-      legalName: cnpjLookup.razaoSocial,
-      verificationStatus: cnpjLookup.verificationStatus,
-      cnpjCheckedAt: new Date(),
-      city: cnpjLookup.city,
-      state: cnpjLookup.state,
-      settings: stringifySchoolSettings(structuredClone(DEFAULT_SCHOOL_SETTINGS)),
-    },
+  const { school, user } = await prisma.$transaction(async (tx) => {
+    const createdSchool = await tx.school.create({
+      data: {
+        name: schoolName,
+        slug,
+        cnpj,
+        legalName: cnpjLookup.razaoSocial,
+        verificationStatus: cnpjLookup.verificationStatus,
+        cnpjCheckedAt: new Date(),
+        city: cnpjLookup.city,
+        state: cnpjLookup.state,
+        settings: stringifySchoolSettings(structuredClone(DEFAULT_SCHOOL_SETTINGS)),
+      },
+    });
+
+    const createdUser = await tx.user.create({
+      data: {
+        email,
+        passwordHash,
+        fullName,
+        role: "director",
+        schoolId: createdSchool.id,
+      },
+    });
+
+    return { school: createdSchool, user: createdUser };
   });
+
   await ensureDefaultBadges(school.id);
   await ensureDefaultRewards(school.id);
-
-  const user = await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      fullName,
-      role: "director",
-      schoolId: school.id,
-    },
-  });
 
   await establishSession(user, { tenantSlug: school.slug });
   redirect("/dashboard");

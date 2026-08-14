@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { acceptTeacherInviteAction } from "@/actions/invites";
+import { runServerAction } from "@/lib/run-server-action";
 import { AvatarUploadField } from "@/components/forms/avatar-upload-field";
 import { LocationFields } from "@/components/forms/location-fields";
 import { portalLoginPath } from "@/lib/login-paths";
@@ -25,7 +26,7 @@ export function AcceptTeacherInviteForm({
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string } | null, formData: FormData) => {
       formData.set("token", token);
-      return (await acceptTeacherInviteAction(formData)) ?? null;
+      return runServerAction(async () => (await acceptTeacherInviteAction(formData)) ?? null);
     },
     null
   );

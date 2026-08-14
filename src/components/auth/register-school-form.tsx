@@ -3,6 +3,7 @@
 import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
 import { registerSchoolAction } from "@/actions/auth";
+import { runServerAction } from "@/lib/run-server-action";
 import { lookupCnpjAction } from "@/actions/cnpj";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,9 +44,8 @@ export function RegisterSchoolForm() {
   const [isLookingUp, startLookup] = useTransition();
 
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string } | null, formData: FormData) => {
-      return (await registerSchoolAction(formData)) ?? null;
-    },
+    async (_prev: { error?: string } | null, formData: FormData) =>
+      runServerAction(async () => (await registerSchoolAction(formData)) ?? null),
     null
   );
 

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { loginAction } from "@/actions/auth";
+import { runServerAction } from "@/lib/run-server-action";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -83,7 +84,7 @@ export function RoleLoginForm({
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string } | null, formData: FormData) => {
       formData.set("portal", portal);
-      return (await loginAction(formData)) ?? null;
+      return runServerAction(async () => (await loginAction(formData)) ?? null);
     },
     null
   );

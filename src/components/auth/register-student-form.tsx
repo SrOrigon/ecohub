@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { registerStudentAction, listClassesForSignupAction } from "@/actions/auth";
+import { runServerAction } from "@/lib/run-server-action";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,9 +18,8 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
   const [loadingClasses, startLoad] = useTransition();
 
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string } | null, formData: FormData) => {
-      return (await registerStudentAction(formData)) ?? null;
-    },
+    async (_prev: { error?: string } | null, formData: FormData) =>
+      runServerAction(async () => (await registerStudentAction(formData)) ?? null),
     null
   );
 

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { studentPinLoginAction } from "@/actions/auth";
+import { runServerAction } from "@/lib/run-server-action";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,9 +23,8 @@ export function StudentPinLoginForm({
   emailLoginHref?: string;
 }) {
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string } | null, formData: FormData) => {
-      return (await studentPinLoginAction(formData)) ?? null;
-    },
+    async (_prev: { error?: string } | null, formData: FormData) =>
+      runServerAction(async () => (await studentPinLoginAction(formData)) ?? null),
     null
   );
 

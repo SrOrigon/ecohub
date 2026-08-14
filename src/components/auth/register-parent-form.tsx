@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { registerParentAction } from "@/actions/auth";
+import { runServerAction } from "@/lib/run-server-action";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,9 +12,8 @@ import { ArrowLeft } from "lucide-react";
 
 export function RegisterParentForm({ initialSchoolSlug = "" }: { initialSchoolSlug?: string }) {
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string } | null, formData: FormData) => {
-      return (await registerParentAction(formData)) ?? null;
-    },
+    async (_prev: { error?: string } | null, formData: FormData) =>
+      runServerAction(async () => (await registerParentAction(formData)) ?? null),
     null
   );
 
