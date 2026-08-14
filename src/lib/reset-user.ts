@@ -92,7 +92,31 @@ export async function resetUserByCnpj(rawCnpj: string): Promise<ResetUserResult>
   };
 }
 
-/** Corrige hash de senha sem apagar cadastro (quando CNPJ já está em uso). */
+/** Remove instituição pelo slug (libera CNPJ mesmo sem usuário diretor). */
+export async function resetSchoolBySlug(rawSlug: string): Promise<ResetUserResult> {
+  const slug = rawSlug.trim().toLowerCase();
+  if (!slug) return { ok: false, error: "Slug inválido." };
+
+  const school = await prisma.school.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      users: { where: { role: "director" }, select: { email: true }, take: 1 },
+    },
+  });
+
+  if (!school) return { ok: true, found: false };
+
+  const email = school.users[0]?.email ?? `slug:${slug}`;
+  const removedUsers = await deleteSchoolAndUsers(school.id);
+  return {
+    ok: true,
+    found: true,
+    removedSchool: true,
+    removedUsers,
+    email,
+  };
+}
 export async function repairUserPassword(
   rawEmail: string,
   rawPassword: string
