@@ -104,7 +104,11 @@ export async function loginAction(formData: FormData) {
 
   const remember = formData.get("rememberMe") === "true";
   const tenantSlugRaw = formData.get("tenantSlug")?.toString().trim().toLowerCase() || null;
-  await saveLoginPreferencesAction(formData);
+  try {
+    await saveLoginPreferencesAction(formData);
+  } catch (error) {
+    console.error("[auth] Falha ao salvar preferências de login (ignorado):", error);
+  }
 
   let resolvedTenantSlug: string | null = null;
   if (tenantSlugRaw) {
@@ -113,7 +117,12 @@ export async function loginAction(formData: FormData) {
       return { error: "Instituição não encontrada. Verifique o endereço de acesso." };
     }
     if (user.schoolId && tenantSchool.id !== user.schoolId) {
-      return { error: "Esta conta não pertence a esta instituição." };
+      return {
+        error:
+          portal === "escola"
+            ? "Este e-mail não pertence a esta instituição neste endereço. Use /login/escola (login global) ou o link correto da sua escola."
+            : "Esta conta não pertence a esta instituição.",
+      };
     }
     resolvedTenantSlug = tenantSchool.slug;
   }

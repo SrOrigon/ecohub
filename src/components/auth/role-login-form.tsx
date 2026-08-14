@@ -123,14 +123,31 @@ export function RoleLoginForm({
               name="email"
               type="email"
               required
-              autoComplete="email"
+              autoComplete="username"
               defaultValue={defaultEmail}
             />
           </div>
           <div>
             <Label htmlFor="password">Senha</Label>
-            <Input id="password" name="password" type="password" required autoComplete="current-password" />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+            />
           </div>
+          {portal === "escola" && (
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 p-3 text-sm text-slate-700 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-slate-300">
+              <p className="font-medium text-slate-900 dark:text-slate-100">Acesso da instituição</p>
+              <ul className="mt-2 list-inside list-disc space-y-1 text-xs">
+                <li>Use o <strong>mesmo e-mail e senha</strong> do cadastro em &quot;Registrar instituição&quot;.</li>
+                <li>A senha precisa ter <strong>letras e números</strong> (mín. 8 caracteres).</li>
+                <li>Professores e alunos usam outros portais — não este.</li>
+                <li>Prefira <strong>/login/escola</strong> se o link da escola não funcionar.</li>
+              </ul>
+            </div>
+          )}
           <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--muted-foreground)]">
             <input
               type="checkbox"

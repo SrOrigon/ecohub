@@ -71,11 +71,15 @@ export async function verifyAndUpgradePassword(
   if (!ok) return false;
 
   if (shouldUpgradePasswordHash(user.passwordHash)) {
-    const passwordHash = await hashPassword(password);
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { passwordHash },
-    });
+    try {
+      const passwordHash = await hashPassword(password);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+      });
+    } catch (error) {
+      console.error("[auth] Falha ao atualizar hash de senha (login segue):", error);
+    }
   }
 
   return true;
