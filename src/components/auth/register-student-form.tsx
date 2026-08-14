@@ -104,7 +104,7 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
           </div>
           <div>
             <Label htmlFor="password">Senha</Label>
-            <Input id="password" name="password" type="password" minLength={6} required />
+            <Input id="password" name="password" type="password" minLength={8} required />
           </div>
           <div>
             <Label htmlFor="enrollmentCode">Matrícula (opcional)</Label>

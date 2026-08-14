@@ -200,7 +200,7 @@ export function RegisterSchoolForm() {
                 id="password"
                 name="password"
                 type="password"
-                minLength={6}
+                minLength={8}
                 required
                 autoComplete="new-password"
               />

@@ -65,7 +65,7 @@ export function RegisterParentForm({ initialSchoolSlug = "" }: { initialSchoolSl
           </div>
           <div>
             <Label htmlFor="password">Senha</Label>
-            <Input id="password" name="password" type="password" minLength={6} required />
+            <Input id="password" name="password" type="password" minLength={8} required />
           </div>
           {state?.error && (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>

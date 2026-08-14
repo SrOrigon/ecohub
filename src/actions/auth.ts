@@ -1,6 +1,5 @@
 "use server";
 
-import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
@@ -34,13 +33,11 @@ import {
 import {
   GENERIC_AUTH_ERROR,
   GENERIC_REGISTER_ERROR,
+  hashPassword,
+  normalizePassword,
   validatePassword,
+  verifyPassword,
 } from "@/lib/security/password-policy";
-import { BCRYPT_ROUNDS } from "@/lib/security/constants";
-
-async function hashPassword(password: string) {
-  return bcrypt.hash(password, BCRYPT_ROUNDS);
-}
 
 function handleRateLimitError(error: unknown): { error: string } | null {
   if (error instanceof RateLimitError) {
@@ -78,7 +75,7 @@ function portalError(portal: string) {
 }
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
+  const password = normalizePassword(String(formData.get("password") ?? ""));
   const portal = String(formData.get("portal") ?? "");
 
   if (!email || !password) {
@@ -95,7 +92,7 @@ export async function loginAction(formData: FormData) {
 
   const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
     return { error: GENERIC_AUTH_ERROR };
   }
 
@@ -125,7 +122,7 @@ export async function loginAction(formData: FormData) {
 
 export async function registerSchoolAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
+  const password = normalizePassword(String(formData.get("password") ?? ""));
   const fullName = String(formData.get("fullName") ?? "").trim();
   const schoolName = String(formData.get("schoolName") ?? "").trim();
   const cnpjRaw = String(formData.get("cnpj") ?? "").trim();
@@ -206,7 +203,7 @@ export async function registerTeacherAction() {
 
 export async function registerStudentAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
+  const password = normalizePassword(String(formData.get("password") ?? ""));
   const fullName = String(formData.get("fullName") ?? "").trim();
   const schoolSlug = String(formData.get("schoolSlug") ?? "").trim().toLowerCase();
   const classId = String(formData.get("classId") ?? "").trim();
@@ -294,7 +291,7 @@ export async function registerStudentAction(formData: FormData) {
 
 export async function registerParentAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
+  const password = normalizePassword(String(formData.get("password") ?? ""));
   const fullName = String(formData.get("fullName") ?? "").trim();
   const schoolSlug = String(formData.get("schoolSlug") ?? "").trim().toLowerCase();
   const enrollmentCode = String(formData.get("enrollmentCode") ?? "").trim();

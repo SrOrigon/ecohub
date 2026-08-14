@@ -14,9 +14,8 @@ import {
   RateLimitError,
   rateLimitMessage,
 } from "@/lib/security/rate-limit";
-import { validatePassword } from "@/lib/security/password-policy";
+import { validatePassword, hashPassword, normalizePassword } from "@/lib/security/password-policy";
 import { resolveAvatarFromForm } from "@/lib/avatar";
-import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 import { sendEmail } from "@/lib/email";
 
 const INVITE_TTL_DAYS = 14;
@@ -97,7 +96,7 @@ export async function acceptTeacherInviteAction(formData: FormData) {
   const token = formData.get("token")?.toString();
   const fullName = formData.get("fullName")?.toString().trim();
   const email = formData.get("email")?.toString().trim().toLowerCase();
-  const password = formData.get("password")?.toString() ?? "";
+  const password = normalizePassword(formData.get("password")?.toString() ?? "");
 
   if (!token || !fullName || !email || !password) {
     return { error: "Preencha todos os campos." };
@@ -126,8 +125,7 @@ export async function acceptTeacherInviteAction(formData: FormData) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "Não foi possível criar a conta. Verifique os dados." };
 
-  const bcrypt = await import("bcryptjs");
-  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  const passwordHash = await hashPassword(password);
 
   const city = String(formData.get("city") ?? "").trim();
   const state = String(formData.get("state") ?? "").trim().toUpperCase();

@@ -1,12 +1,10 @@
 "use server";
 
-import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { requireSessionResult } from "@/lib/auth";
 import { resolveAvatarFromForm } from "@/lib/avatar";
 import { prisma } from "@/lib/db";
-import { validatePassword } from "@/lib/security/password-policy";
-import { BCRYPT_ROUNDS } from "@/lib/security/constants";
+import { validatePassword, hashPassword, verifyPassword, normalizePassword } from "@/lib/security/password-policy";
 
 function revalidateProfile() {
   revalidatePath("/dashboard/perfil");
@@ -65,9 +63,9 @@ export async function changePasswordAction(formData: FormData) {
   if (!session.ok) return { error: session.error };
   const user = session.user;
 
-  const currentPassword = String(formData.get("currentPassword") ?? "");
-  const newPassword = String(formData.get("newPassword") ?? "");
-  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  const currentPassword = normalizePassword(String(formData.get("currentPassword") ?? ""));
+  const newPassword = normalizePassword(String(formData.get("newPassword") ?? ""));
+  const confirmPassword = normalizePassword(String(formData.get("confirmPassword") ?? ""));
 
   if (!currentPassword || !newPassword || !confirmPassword) {
     return { error: "Preencha todos os campos de senha." };
@@ -88,10 +86,10 @@ export async function changePasswordAction(formData: FormData) {
   });
   if (!dbUser) return { error: "Usuário não encontrado." };
 
-  const valid = await bcrypt.compare(currentPassword, dbUser.passwordHash);
+  const valid = await verifyPassword(currentPassword, dbUser.passwordHash);
   if (!valid) return { error: "Senha atual incorreta." };
 
-  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+  const passwordHash = await hashPassword(newPassword);
   await prisma.user.update({
     where: { id: user.id },
     data: { passwordHash },
