@@ -1,8 +1,8 @@
-# Arquitetura Ecohub — Revisão Técnica
+# Arquitetura Ecohub  -  Revisão Técnica
 
 ## Comparativo das opções (revisão da conversa com Gemini)
 
-### Opção 1: TypeScript Unificado (Next.js + Supabase) — **ESCOLHIDA**
+### Opção 1: TypeScript Unificado (Next.js + Supabase)  -  **ESCOLHIDA**
 
 | Critério | Nota | Comentário |
 |----------|------|------------|
@@ -14,7 +14,7 @@
 
 **Veredito:** Melhor equilíbrio para 1 dev pleno construindo tudo.
 
-### Opção 2: Laravel + Filament + Inertia — **Alternativa válida**
+### Opção 2: Laravel + Filament + Inertia  -  **Alternativa válida**
 
 | Critério | Nota | Comentário |
 |----------|------|------------|
@@ -67,7 +67,7 @@ Boa para admin rápido, mas UI gamificada exige mais esforço front-end.
      ↓
 [Resend]     3.000 e-mails/mês (confirmação de conta)
      ↓
-[Cloudflare R2] 10GB storage (materiais, avatares) — opcional
+[Cloudflare R2] 10GB storage (materiais, avatares)  -  opcional
 ```
 
 **Limite real:** ~500 alunos ativos confortavelmente no free tier. Escale quando houver receita.
@@ -76,15 +76,15 @@ Boa para admin rápido, mas UI gamificada exige mais esforço front-end.
 
 ## Decisões técnicas importantes
 
-1. **Monorepo Next.js** — Não separe front/back inicialmente. Route Handlers (`app/api/`) bastam até ~10k usuários.
+1. **Monorepo Next.js**  -  Não separe front/back inicialmente. Route Handlers (`app/api/`) bastam até ~10k usuários.
 
-2. **Mock data primeiro** — Permite desenvolver UI sem depender de Supabase configurado. Troque por queries reais quando conectar.
+2. **Mock data primeiro**  -  Permite desenvolver UI sem depender de Supabase configurado. Troque por queries reais quando conectar.
 
-3. **Multi-tenant por `school_id`** — Cada escola é isolada via Row Level Security no Supabase.
+3. **Multi-tenant por `school_id`**  -  Cada escola é isolada via Row Level Security no Supabase.
 
-4. **Gamificação no PostgreSQL** — Triggers calculam XP; evita lógica duplicada no front.
+4. **Gamificação no PostgreSQL**  -  Triggers calculam XP; evita lógica duplicada no front.
 
-5. **Não use microserviços** — Para 1 dev, monolito modular é a regra.
+5. **Não use microserviços**  -  Para 1 dev, monolito modular é a regra.
 
 ---
 

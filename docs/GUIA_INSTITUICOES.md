@@ -1,4 +1,4 @@
-# Ecohub — Guia para implantação em instituições
+# Ecohub  -  Guia para implantação em instituições
 
 Este guia cobre deploy, configuração inicial e **checklist de testes** antes de colocar o Ecohub em uso real numa escola.
 

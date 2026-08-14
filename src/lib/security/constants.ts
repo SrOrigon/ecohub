@@ -1,4 +1,4 @@
-/** Campos públicos de usuário — nunca incluir passwordHash. */
+/** Campos públicos de usuário  -  nunca incluir passwordHash. */
 export const SAFE_USER_SELECT = {
   id: true,
   email: true,

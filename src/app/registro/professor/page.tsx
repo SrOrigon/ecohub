@@ -30,7 +30,7 @@ export default function RegisterProfessorPage() {
           </p>
           <p>
             <Link href="/login/professor" className="font-semibold text-indigo-600 hover:underline">
-              Já tenho conta — fazer login
+              Já tenho conta  -  fazer login
             </Link>
           </p>
         </CardContent>

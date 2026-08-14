@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Orquestrador completo — Fases 1, 2 e 3 de validação institucional.
+ * Orquestrador completo  -  Fases 1, 2 e 3 de validação institucional.
  * Uso: node scripts/run-full-validation.mjs [url-producao]
  */
 import { execSync, spawn } from "node:child_process";
@@ -32,7 +32,7 @@ const report = {
   validation: null,
 };
 
-log("Fase 1 — Infraestrutura");
+log("Fase 1  -  Infraestrutura");
 
 try {
   run("npx prisma migrate deploy", {
@@ -51,7 +51,7 @@ try {
   report.phases.push({ phase: 1, step: "build", ok: true });
 } catch {
   if (existsSync(".next/BUILD_ID")) {
-    log("Build falhou (lock?) — usando build existente");
+    log("Build falhou (lock?)  -  usando build existente");
     report.phases.push({ phase: 1, step: "build", ok: true, note: "cached" });
   } else {
     report.phases.push({ phase: 1, step: "build", ok: false });
@@ -66,11 +66,11 @@ try {
 }
 
 if (!existsSync("prisma/dev.db")) {
-  log("Banco ausente — executando seed...");
+  log("Banco ausente  -  executando seed...");
   try {
     run("npm run db:seed");
   } catch {
-    log("Seed falhou — continuando com banco existente ou vazio");
+    log("Seed falhou  -  continuando com banco existente ou vazio");
   }
 } else {
   log("Banco dev.db encontrado");
@@ -83,7 +83,7 @@ try {
   report.phases.push({ phase: 2, step: "seed-pilot", ok: false });
 }
 
-log("Fase 2 — Testes piloto (suite + servidor local)");
+log("Fase 2  -  Testes piloto (suite + servidor local)");
 
 let serverProc = null;
 try {
@@ -136,7 +136,7 @@ try {
   }
 }
 
-log("Fase 3 — Produção e go-live");
+log("Fase 3  -  Produção e go-live");
 
 try {
   run(`npm run test:smoke -- ${prodUrl}`);
@@ -180,7 +180,7 @@ Gerado em: ${report.finishedAt}
 
 ## Fases executadas
 
-${report.phases.map((p) => `- [${p.ok ? "x" : " "}] Fase ${p.phase} — ${p.step}${p.error ? ` (${p.error})` : ""}`).join("\n")}
+${report.phases.map((p) => `- [${p.ok ? "x" : " "}] Fase ${p.phase}  -  ${p.step}${p.error ? ` (${p.error})` : ""}`).join("\n")}
 
 ## Health local
 

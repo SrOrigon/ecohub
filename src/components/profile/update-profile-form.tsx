@@ -174,7 +174,7 @@ export function UpdateProfileForm({
           {pendingFile && (
             <p className="flex items-center justify-center gap-1 text-xs text-emerald-700 sm:justify-start">
               <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-              Nova foto pronta — clique em Salvar para aplicar
+              Nova foto pronta  -  clique em Salvar para aplicar
             </p>
           )}
           {avatarWarning && (

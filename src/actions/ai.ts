@@ -120,7 +120,7 @@ export async function ecohubAiChatAction(formData: FormData) {
     return {
       success: true,
       reply:
-        "A geração de questões e exercícios é exclusiva da equipe escolar. Posso ajudar você a **entender** o conteúdo — reformule sua dúvida sobre o tema.",
+        "A geração de questões e exercícios é exclusiva da equipe escolar. Posso ajudar você a **entender** o conteúdo  -  reformule sua dúvida sobre o tema.",
     };
   }
 

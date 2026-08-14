@@ -64,7 +64,7 @@ export function JustifyAbsencePanel({
             >
               {pendingAbsences.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {formatDate(a.date)} — {a.status === "late" ? "Atraso" : "Falta"}
+                  {formatDate(a.date)}  -  {a.status === "late" ? "Atraso" : "Falta"}
                 </option>
               ))}
             </select>

@@ -1,5 +1,5 @@
 /**
- * Suite de validação institucional — roda com banco seedado.
+ * Suite de validação institucional  -  roda com banco seedado.
  * Uso: npx tsx scripts/institutional-validation.ts
  */
 import { PrismaClient } from "@prisma/client";
@@ -13,12 +13,12 @@ const results: Result[] = [];
 
 function pass(name: string, detail?: string) {
   results.push({ name, ok: true, detail });
-  console.log(`  ✓ ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`  ✓ ${name}${detail ? `  -  ${detail}` : ""}`);
 }
 
 function fail(name: string, detail?: string) {
   results.push({ name, ok: false, detail });
-  console.log(`  ✗ ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`  ✗ ${name}${detail ? `  -  ${detail}` : ""}`);
 }
 
 function assert(name: string, condition: boolean, detail?: string) {
@@ -45,7 +45,7 @@ async function testMultiSchoolIsolation() {
   console.log("\n[2] Isolamento multi-escola");
   const schools = await prisma.school.findMany({ select: { id: true, slug: true } });
   if (schools.length < 2) {
-    pass("Isolamento (skip — apenas 1 escola no banco)");
+    pass("Isolamento (skip  -  apenas 1 escola no banco)");
     return;
   }
 
@@ -96,7 +96,7 @@ async function testProductSuite() {
 }
 
 async function testEcohubAi() {
-  console.log("\n[5] Ecohub IA — restrições e capacidades");
+  console.log("\n[5] Ecohub IA  -  restrições e capacidades");
 
   const studentBlock = ecohubAiChat("Gerar 3 questões sobre frações", {
     role: "student",
@@ -157,7 +157,7 @@ async function testStudentPin() {
 }
 
 export async function runValidation(): Promise<{ passed: number; failed: number; results: Result[] }> {
-  console.log("[validação] Ecohub — suite institucional\n");
+  console.log("[validação] Ecohub  -  suite institucional\n");
 
   try {
     await testDatabase();

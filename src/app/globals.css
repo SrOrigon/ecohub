@@ -124,6 +124,17 @@ body {
   overflow-x: clip;
   min-height: 100dvh;
   transition: background-color 0.2s ease, color 0.2s ease;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  letter-spacing: normal;
 }
 
 .skip-link {

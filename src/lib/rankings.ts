@@ -421,7 +421,7 @@ export async function getRankingsOverview(
     })),
     currentStudent,
     healthyCompetitionNote:
-      "Competição saudável: celebre o progresso pessoal, respeite colegas e lembre-se — cada um evolui no seu ritmo. Rankings semanais equilibram oportunidades para todos.",
+      "Competição saudável: celebre o progresso pessoal, respeite colegas e lembre-se  -  cada um evolui no seu ritmo. Rankings semanais equilibram oportunidades para todos.",
   };
 }
 

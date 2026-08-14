@@ -32,7 +32,7 @@ export default async function SecretariaPage() {
     <div className="space-y-6">
       <PageHeader
         title="Painel da Secretaria"
-        description="Operações do dia a dia — matrículas, documentos, mensagens e alertas."
+        description="Operações do dia a dia  -  matrículas, documentos, mensagens e alertas."
       >
         <Link
           href="/dashboard/leitura-geral"
@@ -68,7 +68,7 @@ export default async function SecretariaPage() {
         <CardContent className="text-sm text-slate-600">
           <p>
             Use a assistente para rascunhar comunicados, orientar famílias sobre matrícula e tirar dúvidas
-            operacionais — tudo local, sem API paga.
+            operacionais  -  tudo local, sem API paga.
           </p>
           <Link href="/dashboard/assistente" className="mt-3 inline-block text-indigo-600 hover:underline">
             Abrir Ecohub IA →

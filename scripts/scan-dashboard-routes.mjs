@@ -79,10 +79,10 @@ async function main() {
       const html = await res.text();
       const hasError = html.includes(ERROR_MARKER);
       const ok = res.status === 200 && !hasError;
-      console.log(`${ok ? "OK" : "FAIL"} ${route} — HTTP ${res.status}${hasError ? " (error boundary)" : ""}`);
+      console.log(`${ok ? "OK" : "FAIL"} ${route}  -  HTTP ${res.status}${hasError ? " (error boundary)" : ""}`);
       if (!ok) failed++;
     } catch (e) {
-      console.log(`ERR  ${route} — ${e instanceof Error ? e.message : e}`);
+      console.log(`ERR  ${route}  -  ${e instanceof Error ? e.message : e}`);
       failed++;
     }
   }

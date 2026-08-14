@@ -1,4 +1,4 @@
-/** Disciplinas cadastradas manualmente pela instituição — fonte única do sistema. */
+/** Disciplinas cadastradas manualmente pela instituição  -  fonte única do sistema. */
 
 export function normalizeSubjectName(value: string): string {
   return value.trim().replace(/\s+/g, " ");

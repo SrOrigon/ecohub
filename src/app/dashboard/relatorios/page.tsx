@@ -21,7 +21,7 @@ export default async function RelatoriosPage() {
   if (!report) {
     return (
       <div className="p-6 text-center text-slate-600">
-        Escola não configurada — impossível gerar relatórios.
+        Escola não configurada  -  impossível gerar relatórios.
       </div>
     );
   }

@@ -129,8 +129,8 @@ export function LiveStudentStatsCard({ className }: { className?: string }) {
       <div className="stat-grid mt-3 gap-3">
         <LiveStat label="XP total" value={String(student.xpTotal)} />
         <LiveStat label="XP semana" value={`+${student.xpThisWeek}`} accent />
-        <LiveStat label="Turma" value={student.classRank ? `#${student.classRank}` : "—"} />
-        <LiveStat label="Escola" value={student.schoolRank ? `#${student.schoolRank}` : "—"} />
+        <LiveStat label="Turma" value={student.classRank ? `#${student.classRank}` : " - "} />
+        <LiveStat label="Escola" value={student.schoolRank ? `#${student.schoolRank}` : " - "} />
       </div>
     </div>
   );

@@ -83,7 +83,7 @@ export function TeacherInvitePanel({ invites }: { invites: InviteRow[] }) {
             )}
             {state?.emailSkipped && (
               <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
-                E-mail não configurado (RESEND_API_KEY) — copie o link abaixo.
+                E-mail não configurado (RESEND_API_KEY)  -  copie o link abaixo.
               </p>
             )}
             <p className="mt-1 break-all font-mono text-xs">{lastInvite?.url ?? state?.url}</p>

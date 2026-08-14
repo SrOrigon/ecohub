@@ -1,6 +1,6 @@
 import type { TutorSnippet } from "@/lib/ecohub-ai/knowledge/tutor-knowledge";
 
-/** Conhecimento expandido — história, geografia, inglês, operações, plataforma Ecohub. */
+/** Conhecimento expandido  -  história, geografia, inglês, operações, plataforma Ecohub. */
 export const EXTENDED_SNIPPETS: TutorSnippet[] = [
   {
     patterns: [/porcentagem|percentual|%/i, /desconto/i],
@@ -21,7 +21,7 @@ export const EXTENDED_SNIPPETS: TutorSnippet[] = [
   {
     patterns: [/crase|a\s+a/i],
     answer:
-      "Crase é a fusão de preposição 'a' + artigo 'a(s)'. Teste: substitua por 'a casa' — se couber 'à casa', há crase. Ex.: Vou à escola.",
+      "Crase é a fusão de preposição 'a' + artigo 'a(s)'. Teste: substitua por 'a casa'  -  se couber 'à casa', há crase. Ex.: Vou à escola.",
   },
   {
     patterns: [/concordancia|sujeito.*verbo/i],
@@ -41,7 +41,7 @@ export const EXTENDED_SNIPPETS: TutorSnippet[] = [
   {
     patterns: [/clima|bioma|amazonia|cerrado/i],
     answer:
-      "Biomas brasileiros: Amazônia, Cerrado, Caatinga, Mata Atlântica, Pampa, Pantanal — cada um com clima e vegetação próprios.",
+      "Biomas brasileiros: Amazônia, Cerrado, Caatinga, Mata Atlântica, Pampa, Pantanal  -  cada um com clima e vegetação próprios.",
   },
   {
     patterns: [/latitude|longitude|equador/i],
@@ -81,7 +81,7 @@ export const EXTENDED_SNIPPETS: TutorSnippet[] = [
   {
     patterns: [/ecohub ia|assistente local/i],
     answer:
-      "A **Ecohub IA** roda 100% local — sem API paga. Professores geram questões na criação de exercícios; alunos usam o chat para tirar dúvidas e estudar.",
+      "A **Ecohub IA** roda 100% local  -  sem API paga. Professores geram questões na criação de exercícios; alunos usam o chat para tirar dúvidas e estudar.",
   },
   {
     patterns: [/ansiedade.*prova|medo.*prova/i],
@@ -95,7 +95,7 @@ export const ROLE_GREETINGS: Record<string, string> = {
   director: "Diretor(a), trago insights de desempenho, alertas e fechamento de bimestre.",
   secretary: "Secretaria, auxilio em matrículas, autorizações e comunicados.",
   parent: "Responsável, oriento sobre notas, faltas e hábitos de estudo (não gero exercícios).",
-  student: "Aluno(a), explico matérias e dicas de estudo — sem gerar exercícios ou gabaritos.",
+  student: "Aluno(a), explico matérias e dicas de estudo  -  sem gerar exercícios ou gabaritos.",
 };
 
 export const SUGGESTED_TOPICS = [

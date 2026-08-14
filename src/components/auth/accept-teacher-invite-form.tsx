@@ -62,7 +62,7 @@ export function AcceptTeacherInviteForm({
             <Input id="password" name="password" type="password" minLength={8} required />
           </div>
 
-          <AvatarUploadField label="Sua foto" hint="Opcional — aparece para alunos e responsáveis." />
+          <AvatarUploadField label="Sua foto" hint="Opcional  -  aparece para alunos e responsáveis." />
 
           <LocationFields />
 

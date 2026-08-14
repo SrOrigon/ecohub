@@ -51,7 +51,7 @@ export default async function ComunicadosPage() {
     <div className="space-y-6">
       <PageHeader
         title="Comunicados"
-        description="Avisos da escola e da turma — todos recebem notificação automaticamente."
+        description="Avisos da escola e da turma  -  todos recebem notificação automaticamente."
       />
       <AnnouncementBoard announcements={announcements} canCreate={canCreate} classes={classes} />
     </div>

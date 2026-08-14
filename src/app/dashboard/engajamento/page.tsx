@@ -19,7 +19,7 @@ export default async function EngajamentoPage() {
     <div className="space-y-6">
       <PageHeader
         title="Painel de engajamento"
-        description="Missões, exercícios, frequência e XP — visão unificada da participação."
+        description="Missões, exercícios, frequência e XP  -  visão unificada da participação."
       />
 
       <LiveStatsStrip />

@@ -127,10 +127,10 @@ export function YourPositionCard({
   const percentile = total > 0 ? Math.round(((total - rank + 1) / total) * 100) : 0;
   const scopeLabel = scope === "class" ? "na turma" : "na escola";
 
-  let message = "Continue participando — cada missão e exercício conta!";
+  let message = "Continue participando  -  cada missão e exercício conta!";
   if (rank === 1) message = "Parabéns! Você lidera o ranking. Inspire colegas com colaboração.";
   else if (rank <= 3) message = "Excelente! Você está no pódio. Mantenha o ritmo com foco e respeito.";
-  else if (percentile >= 75) message = "Ótimo desempenho! Você está entre os melhores — siga evoluindo.";
+  else if (percentile >= 75) message = "Ótimo desempenho! Você está entre os melhores  -  siga evoluindo.";
   else if (percentile >= 50) message = "Bom progresso! Foque nas missões da semana para subir posições.";
   else message = "Cada passo importa! Complete missões e exercícios para ganhar XP e subir no ranking.";
 

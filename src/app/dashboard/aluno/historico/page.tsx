@@ -35,7 +35,7 @@ export default async function AlunoHistoricoPage() {
     <div className="space-y-6">
       <PageHeader
         title="Meu histórico"
-        description="Sua evolução desde a matrícula — compare desempenho dia a dia, semana a semana e mês a mês"
+        description="Sua evolução desde a matrícula  -  compare desempenho dia a dia, semana a semana e mês a mês"
       >
         <Link href="/dashboard/aluno">
           <Button variant="outline" className="gap-2">

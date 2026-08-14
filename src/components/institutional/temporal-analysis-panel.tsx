@@ -40,7 +40,7 @@ export function TemporalAnalysisPanel({ analysis }: { analysis: TemporalAnalysis
             Análise temporal estratégica
           </CardTitle>
           <CardDescription>
-            Evolução pedagógica em horizontes mensal, semestral e anual — identifique melhorias e quedas
+            Evolução pedagógica em horizontes mensal, semestral e anual  -  identifique melhorias e quedas
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

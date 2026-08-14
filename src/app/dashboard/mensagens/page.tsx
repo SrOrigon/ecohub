@@ -155,7 +155,7 @@ export default async function MensagensPage({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <PageHeader title="Mensagens" description="Canal família-escola — conversas por aluno e responsável." />
+      <PageHeader title="Mensagens" description="Canal família-escola  -  conversas por aluno e responsável." />
 
       <MessagesLayout
         threadId={threadId}

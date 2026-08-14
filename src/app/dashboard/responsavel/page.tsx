@@ -91,7 +91,7 @@ export default async function ResponsavelPortalPage() {
     <div className="space-y-6">
       <PageHeader
         title={`Olá, ${user.fullName.split(" ")[0]}!`}
-        description="Portal do responsável — acompanhe seus filhos e crie tarefas de casa"
+        description="Portal do responsável  -  acompanhe seus filhos e crie tarefas de casa"
       >
         {childOptions.length > 0 && <CreateHomeTaskForm childOptions={childOptions} />}
       </PageHeader>
@@ -110,7 +110,7 @@ export default async function ResponsavelPortalPage() {
           compact
           maxItems={5}
           title="Alertas de atenção monitorados"
-          description="Problemas em matérias, faltas e prazos — atualização contínua."
+          description="Problemas em matérias, faltas e prazos  -  atualização contínua."
         />
       )}
 

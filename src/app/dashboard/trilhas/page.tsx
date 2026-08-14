@@ -30,7 +30,7 @@ export default async function TrilhasPage() {
       <div className="space-y-6">
         <PageHeader
           title="Trilhas de aprendizagem"
-          description="Complete missões, exercícios e recompensas em sequência — como um jogo!"
+          description="Complete missões, exercícios e recompensas em sequência  -  como um jogo!"
         />
         {trails.length === 0 ? (
           <p className="text-slate-600">Nenhuma trilha disponível no momento.</p>

@@ -52,7 +52,7 @@ export default async function DiarioPage() {
     <div className="space-y-6">
       <PageHeader
         title="Diário de classe"
-        description="Registre conteúdo ministrado e ocorrências — integrado ao portal dos responsáveis."
+        description="Registre conteúdo ministrado e ocorrências  -  integrado ao portal dos responsáveis."
       >
         <DiaryForms classes={classOptions} subjects={settings.academic.subjects} />
       </PageHeader>
@@ -70,7 +70,7 @@ export default async function DiarioPage() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Últimos registros — {classes[0].name}</CardTitle>
+              <CardTitle>Últimos registros  -  {classes[0].name}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {diary.length === 0 ? (

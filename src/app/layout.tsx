@@ -7,16 +7,16 @@ import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 export const metadata: Metadata = {
-  title: "Ecohub — Gestão Escolar + Gamificação",
+  title: "Ecohub - Gestão Escolar + Gamificação",
   description: "Plataforma educacional gratuita unindo gestão acadêmica e gamificação para escolas e cursos.",
   manifest: "/manifest.json",
   appleWebApp: {

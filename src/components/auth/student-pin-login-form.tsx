@@ -50,7 +50,7 @@ export function StudentPinLoginForm({
               <CardTitle className="text-xl">Entrar com matrícula e PIN</CardTitle>
               <CardDescription>
                 {schoolName
-                  ? `Acesso rápido — ${schoolName}`
+                  ? `Acesso rápido  -  ${schoolName}`
                   : "Para alunos menores ou contas liberadas pela escola"}
               </CardDescription>
             </div>

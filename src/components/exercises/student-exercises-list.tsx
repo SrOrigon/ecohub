@@ -67,7 +67,7 @@ export function StudentExercisesList({ exercises }: { exercises: ExerciseItem[] 
   );
 
   const emptyMessages: Record<(typeof tabs)[number]["id"], string> = {
-    pending: "Nada pendente — você está em dia!",
+    pending: "Nada pendente  -  você está em dia!",
     overdue: "Nenhum exercício com prazo encerrado.",
     submitted: "Nenhuma entrega aguardando correção.",
     graded: "Ainda não há exercícios corrigidos.",

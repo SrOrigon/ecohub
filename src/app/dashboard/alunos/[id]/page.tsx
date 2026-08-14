@@ -94,7 +94,7 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
             <p className="text-sm text-slate-500">{student.user.email}</p>
             {!student.user.avatarUrl && (
               <p className="text-xs text-slate-500">
-                Sem foto de perfil — o aluno pode adicionar em Minha conta.
+                Sem foto de perfil  -  o aluno pode adicionar em Minha conta.
               </p>
             )}
           </div>

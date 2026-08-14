@@ -121,7 +121,7 @@ export default async function ExerciseDetailPage({
           </div>
           {studentStatus === "pending" && (
             <p className="mt-2 text-base text-indigo-900">
-              Responda questão por questão — ao enviar, seu professor será avisado.
+              Responda questão por questão  -  ao enviar, seu professor será avisado.
             </p>
           )}
           {studentStatus === "graded" && studentSubmission?.feedback && (

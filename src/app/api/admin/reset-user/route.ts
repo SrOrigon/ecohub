@@ -4,7 +4,7 @@ import { resetSchoolBySlug, resetUserByCnpj, resetUserByEmail } from "@/lib/rese
 
 export const dynamic = "force-dynamic";
 
-/** POST { email?, cnpj? } — libera cadastro removendo conta/instituição. */
+/** POST { email?, cnpj?, slug? } - libera cadastro removendo conta/instituicao. */
 export async function POST(request: Request) {
   if (!authorizeMaintenanceRequest(request)) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   if (!result.found) {
     return NextResponse.json({
       success: true,
-      message: "Nenhum cadastro encontrado — já estava livre.",
+      message: "Nenhum cadastro encontrado - já estava livre.",
     });
   }
 

@@ -5,7 +5,7 @@ import { validatePassword } from "@/lib/security/password-policy";
 
 export const dynamic = "force-dynamic";
 
-/** POST { email, password } — regrava hash de senha (cadastro/CNPJ permanecem). */
+/** POST { email, password } - regrava hash de senha (cadastro/CNPJ permanecem). */
 export async function POST(request: Request) {
   if (!authorizeMaintenanceRequest(request)) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });

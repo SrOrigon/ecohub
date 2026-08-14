@@ -50,7 +50,7 @@ export function verificationStatusMessage(status: SchoolVerificationStatus): str
     case SCHOOL_VERIFICATION_STATUS.verified:
       return "Instituição verificada na Receita Federal. Professores e famílias já podem se cadastrar com o código da escola.";
     case SCHOOL_VERIFICATION_STATUS.manual_review:
-      return "CNPJ ativo, mas o CNAE não é de ensino. Nossa equipe pode revisar manualmente — enquanto isso, cadastros públicos ficam pausados.";
+      return "CNPJ ativo, mas o CNAE não é de ensino. Nossa equipe pode revisar manualmente  -  enquanto isso, cadastros públicos ficam pausados.";
     case SCHOOL_VERIFICATION_STATUS.pending:
       return "Aguardando validação do CNPJ.";
     case SCHOOL_VERIFICATION_STATUS.rejected:

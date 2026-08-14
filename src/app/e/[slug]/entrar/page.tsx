@@ -25,7 +25,7 @@ export default async function TenantEntrarPage({
         />
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Outros acessos — {school.name}</CardTitle>
+            <CardTitle className="text-sm">Outros acessos  -  {school.name}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3 text-sm">
             <Link href={`${tenantLoginPath(slug)}/professor`} className="text-indigo-600 hover:underline">

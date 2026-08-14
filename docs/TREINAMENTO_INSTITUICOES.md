@@ -1,10 +1,10 @@
-# Ecohub — Treinamento rápido para instituições
+# Ecohub  -  Treinamento rápido para instituições
 
 Guia de **2 horas** para direção, secretaria e professores piloto.
 
 ---
 
-## Sessão 1 — Direção (45 min)
+## Sessão 1  -  Direção (45 min)
 
 ### Login e configuração inicial
 1. Acesse `/login/escola` ou `/e/{slug}/login`
@@ -16,10 +16,10 @@ Guia de **2 horas** para direção, secretaria e professores piloto.
    - Fechamento de bimestre (quando aplicável)
 
 ### Estrutura escolar
-1. **Turmas** — crie turmas por ano/série
-2. **Professores** — convide via e-mail ou link de convite
-3. **Alunos** — matrícula manual ou link `/inscricao/{slug}`
-4. **Responsáveis** — vincule pais aos alunos
+1. **Turmas**  -  crie turmas por ano/série
+2. **Professores**  -  convide via e-mail ou link de convite
+3. **Alunos**  -  matrícula manual ou link `/inscricao/{slug}`
+4. **Responsáveis**  -  vincule pais aos alunos
 
 ### Ferramentas de gestão
 | Menu | Uso |
@@ -32,32 +32,32 @@ Guia de **2 horas** para direção, secretaria e professores piloto.
 
 ---
 
-## Sessão 2 — Secretaria (30 min)
+## Sessão 2  -  Secretaria (30 min)
 
-1. **Matrículas** — aprovar inscrições online
-2. **Autorizações** — formulários digitais para pais
-3. **Documentos** — declarações e certificados
-4. **Horários** — grade de aulas
-5. **Mensagens** — canal família ↔ escola
+1. **Matrículas**  -  aprovar inscrições online
+2. **Autorizações**  -  formulários digitais para pais
+3. **Documentos**  -  declarações e certificados
+4. **Horários**  -  grade de aulas
+5. **Mensagens**  -  canal família ↔ escola
 
 ---
 
-## Sessão 3 — Professores piloto (45 min)
+## Sessão 3  -  Professores piloto (45 min)
 
 ### Rotina diária
-1. **Diário de classe** — registro do dia
-2. **Frequência** — chamada digital
-3. **Notas** — lançamento por disciplina
+1. **Diário de classe**  -  registro do dia
+2. **Frequência**  -  chamada digital
+3. **Notas**  -  lançamento por disciplina
 
 ### Avaliação
-1. **Exercícios** — criar atividade
-2. **Gerar com Ecohub IA** — questões (só equipe escolar)
-3. Corrigir entregas — quiz automático + dissertativas manuais
+1. **Exercícios**  -  criar atividade
+2. **Gerar com Ecohub IA**  -  questões (só equipe escolar)
+3. Corrigir entregas  -  quiz automático + dissertativas manuais
 
 ### Engajamento
-1. **Missões** — tarefas gamificadas
-2. **Trilhas** — percursos de aprendizagem
-3. **Comunicados** — avisos da turma
+1. **Missões**  -  tarefas gamificadas
+2. **Trilhas**  -  percursos de aprendizagem
+3. **Comunicados**  -  avisos da turma
 
 ---
 
@@ -67,7 +67,7 @@ Guia de **2 horas** para direção, secretaria e professores piloto.
 |--------|--------|-----------|
 | Responsável | `/login/responsavel` | Boletim, faltas, mensagens, tarefas de casa |
 | Aluno | PIN + matrícula | Exercícios, XP, loja, trilhas |
-| Ecohub IA (aluno) | `/dashboard/assistente` | Dúvidas e dicas — **sem gabarito** |
+| Ecohub IA (aluno) | `/dashboard/assistente` | Dúvidas e dicas  -  **sem gabarito** |
 
 ---
 

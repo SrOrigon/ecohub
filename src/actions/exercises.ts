@@ -363,7 +363,7 @@ export async function submitExerciseAction(formData: FormData) {
     await notifyStudent(
       student.id,
       "Resultado imediato!",
-      `${exercise.title}: ${autoScore.toFixed(1)}/${maxScore} pts — XP e moedas creditados.`,
+      `${exercise.title}: ${autoScore.toFixed(1)}/${maxScore} pts  -  XP e moedas creditados.`,
       `/dashboard/exercicios/${exerciseId}`
     );
     await notifyStudentParents(

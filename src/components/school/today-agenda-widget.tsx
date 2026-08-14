@@ -57,7 +57,7 @@ export function TodayAgendaWidget({
         {items.length === 0 ? (
           <div className="flex items-center gap-2 rounded-xl border border-dashed border-[var(--border)] bg-[var(--hover)] px-3 py-4 text-sm text-[var(--muted-foreground)]">
             <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
-            Agenda livre — aproveite para revisar ou anotar lembretes!
+            Agenda livre  -  aproveite para revisar ou anotar lembretes!
           </div>
         ) : (
           items.slice(0, 6).map((item) => (

@@ -22,9 +22,9 @@ export type SubjectPrecisionEntry = {
   /** Precisão geral do monitoramento + ensino nesta disciplina (0–100) */
   precisionScore: number;
   precisionLabel: PrecisionLabel;
-  /** Confiança nos dados — cobertura e volume de registros (0–100) */
+  /** Confiança nos dados  -  cobertura e volume de registros (0–100) */
   dataConfidence: number;
-  /** Efetividade pedagógica — desempenho vs meta (0–100) */
+  /** Efetividade pedagógica  -  desempenho vs meta (0–100) */
   teachingEffectiveness: number;
   average: number;
   gradeCount: number;
@@ -117,7 +117,7 @@ function buildRecommendations(entry: Omit<SubjectPrecisionEntry, "recommendation
   const exerciseRes = entry.resources.find((r) => r.kind === "exercises");
 
   if (entry.dataConfidence < 50) {
-    tips.push("Amplie o lançamento de notas para mais alunos — a cobertura ainda é baixa para análises confiáveis.");
+    tips.push("Amplie o lançamento de notas para mais alunos  -  a cobertura ainda é baixa para análises confiáveis.");
   }
   if (gradesRes && gradesRes.precisionScore < 55) {
     tips.push("Registre notas com regularidade (ideal: ao fim de cada bimestre ou unidade).");
@@ -126,16 +126,16 @@ function buildRecommendations(entry: Omit<SubjectPrecisionEntry, "recommendation
     tips.push("Use o diário de classe vinculado à disciplina para enriquecer o histórico pedagógico.");
   }
   if (scheduleRes && scheduleRes.count === 0) {
-    tips.push("Cadastre horários da disciplina na grade — reforça o planejamento institucional.");
+    tips.push("Cadastre horários da disciplina na grade  -  reforça o planejamento institucional.");
   }
   if (exerciseRes && exerciseRes.count === 0) {
     tips.push("Crie exercícios com a disciplina no título para rastrear engajamento por matéria.");
   }
   if (entry.teachingEffectiveness < 55 && entry.gradeCount >= 3) {
-    tips.push("Desempenho abaixo da meta — considere reforço, trilhas ou missões focadas nesta matéria.");
+    tips.push("Desempenho abaixo da meta  -  considere reforço, trilhas ou missões focadas nesta matéria.");
   }
   if (entry.teachingEffectiveness >= 80 && entry.dataConfidence >= 70) {
-    tips.push("Disciplina com monitoramento sólido e bons resultados — documente as práticas de sucesso.");
+    tips.push("Disciplina com monitoramento sólido e bons resultados  -  documente as práticas de sucesso.");
   }
   if (tips.length === 0) {
     tips.push("Mantenha o ritmo de registros para preservar a precisão dos indicadores.");
@@ -425,7 +425,7 @@ export async function getSubjectPrecisionOverview(
     }
     if (weak.length > 0) {
       insights.push(
-        `${weak.length} disciplina(s) com precisão baixa — reforce registros de notas, diário e horários.`
+        `${weak.length} disciplina(s) com precisão baixa  -  reforce registros de notas, diário e horários.`
       );
     }
     const unconfiguredWithData = entries.filter((e) => !e.configured && e.gradeCount > 0);
@@ -455,12 +455,12 @@ function buildOverallSummary(precision: number, subjectCount: number, students: 
     return "Configure disciplinas e lance dados para gerar indicadores de precisão por matéria.";
   }
   if (precision >= 75) {
-    return `Monitoramento pedagógico sólido em ${subjectCount} disciplina(s) — indicadores confiáveis para ${students} aluno(s).`;
+    return `Monitoramento pedagógico sólido em ${subjectCount} disciplina(s)  -  indicadores confiáveis para ${students} aluno(s).`;
   }
   if (precision >= 55) {
-    return "Precisão moderada — expanda registros por disciplina para decisões mais assertivas.";
+    return "Precisão moderada  -  expanda registros por disciplina para decisões mais assertivas.";
   }
-  return "Precisão insuficiente — priorize lançamento de notas, diário e grade horária por matéria.";
+  return "Precisão insuficiente  -  priorize lançamento de notas, diário e grade horária por matéria.";
 }
 
 function emptyOverview(): SubjectPrecisionOverview {

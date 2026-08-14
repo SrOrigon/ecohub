@@ -22,7 +22,7 @@ export function SubjectPerformanceChart({ data }: SubjectChartProps) {
   const mounted = useIsMounted();
 
   const safeData = data.map((d) => ({
-    subject: d.subject ?? "—",
+    subject: d.subject ?? " - ",
     average: isNaN(d.average) ? 0 : d.average,
     meta: isNaN(d.meta) ? 7 : d.meta,
   }));

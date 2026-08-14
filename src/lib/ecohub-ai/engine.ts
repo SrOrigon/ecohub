@@ -134,7 +134,7 @@ export function ecohubAiChat(message: string, context: AiContext): string {
     if (!canGenerateQuestions(context.role)) {
       return (
         "A **geração de questões e exercícios** é exclusiva da equipe escolar (professores, direção e secretaria), para garantir avaliações justas.\n\n" +
-        "Posso ajudar você a **entender** o conteúdo — por exemplo: *\"Como funciona fotossíntese?\"* ou *\"Explicar frações\"*."
+        "Posso ajudar você a **entender** o conteúdo  -  por exemplo: *\"Como funciona fotossíntese?\"* ou *\"Explicar frações\"*."
       );
     }
     const topic = extractTopic(trimmed);
@@ -145,7 +145,7 @@ export function ecohubAiChat(message: string, context: AiContext): string {
 
   if (["student", "parent"].includes(context.role) && CHEAT_ATTEMPT_PATTERN.test(trimmed)) {
     return (
-      "Não posso fornecer gabarito ou respostas de exercícios e provas — isso prejudica seu aprendizado.\n\n" +
+      "Não posso fornecer gabarito ou respostas de exercícios e provas  -  isso prejudica seu aprendizado.\n\n" +
       "Posso **explicar o conteúdo** e dar dicas de estudo. Pergunte sobre o tema (ex.: *\"Como resolver equações?\"*)."
     );
   }
@@ -192,7 +192,7 @@ export function ecohubAiChat(message: string, context: AiContext): string {
   }
 
   if (/fechar bimestre|periodo fechado|nota.*bloque/i.test(trimmed) && ["director", "admin"].includes(context.role)) {
-    return "**Fechar bimestre:** em **Configurações → Fechamento de bimestre**, selecione o período e confirme. Notas daquele bimestre ficam bloqueadas para edição — ideal após conferência com professores.";
+    return "**Fechar bimestre:** em **Configurações → Fechamento de bimestre**, selecione o período e confirme. Notas daquele bimestre ficam bloqueadas para edição  -  ideal após conferência com professores.";
   }
 
   if (context.role === "parent" && context.parentContext) {
@@ -243,7 +243,7 @@ export function ecohubAiChat(message: string, context: AiContext): string {
 
 function fallbackForRole(role: EcohubAiRole): string {
   if (role === "student") {
-    return "Posso ajudar com **dúvidas de matérias**, **dicas de estudo**, **BNCC** e uso do Ecohub. Não gero exercícios nem gabaritos — pergunte sobre o tema (ex.: *\"O que é fotossíntese?\"*).";
+    return "Posso ajudar com **dúvidas de matérias**, **dicas de estudo**, **BNCC** e uso do Ecohub. Não gero exercícios nem gabaritos  -  pergunte sobre o tema (ex.: *\"O que é fotossíntese?\"*).";
   }
   if (role === "parent") {
     return "Posso orientar sobre **notas, faltas e hábitos de estudo** do seu filho. A geração de exercícios fica com a equipe escolar.";

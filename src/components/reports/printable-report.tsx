@@ -111,8 +111,8 @@ export function PrintableReport({ report }: { report: InstitutionalReport }) {
                 <td className="p-2 font-medium">{s.name}</td>
                 <td className="p-2">{s.enrollmentCode}</td>
                 <td className="p-2">{s.className}</td>
-                <td className="p-2">{s.overallAverage?.toFixed(1) ?? "—"}</td>
-                <td className="p-2">{s.attendanceRate != null ? `${s.attendanceRate}%` : "—"}</td>
+                <td className="p-2">{s.overallAverage?.toFixed(1) ?? " - "}</td>
+                <td className="p-2">{s.attendanceRate != null ? `${s.attendanceRate}%` : " - "}</td>
                 <td className="p-2">{s.approvalStatus}</td>
               </tr>
             ))}
@@ -121,7 +121,7 @@ export function PrintableReport({ report }: { report: InstitutionalReport }) {
       </section>
 
       <section className="break-before-page">
-        <h2 className="mb-3 text-lg font-bold">4. Detalhe — aluno por disciplina</h2>
+        <h2 className="mb-3 text-lg font-bold">4. Detalhe  -  aluno por disciplina</h2>
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="border-b bg-slate-100 text-left">
@@ -142,7 +142,7 @@ export function PrintableReport({ report }: { report: InstitutionalReport }) {
                 <td className="p-2 font-medium">{r.subject}</td>
                 <td className="p-2">{r.average.toFixed(1)}</td>
                 <td className="p-2">{r.gradeCount}</td>
-                <td className="p-2">{r.periods || "—"}</td>
+                <td className="p-2">{r.periods || " - "}</td>
                 <td className="p-2">{r.status}</td>
               </tr>
             ))}
@@ -151,7 +151,7 @@ export function PrintableReport({ report }: { report: InstitutionalReport }) {
       </section>
 
       <footer className="border-t pt-4 text-xs text-slate-500">
-        Ecohub — Relatório gerado automaticamente. Disciplinas configuradas:{" "}
+        Ecohub  -  Relatório gerado automaticamente. Disciplinas configuradas:{" "}
         {report.configuredSubjects.join(", ")}.
       </footer>
     </div>

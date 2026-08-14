@@ -176,7 +176,7 @@ export function CreateExerciseForm({
           ))}
         </div>
         <p className="mb-4 text-sm font-medium text-slate-600">
-          Passo {step} de 3 —{" "}
+          Passo {step} de 3  - {" "}
           {step === 1 ? "Informações básicas" : step === 2 ? "Configurar Pontuação & Gamificação" : "Elaboração de Questões"}
         </p>
 
@@ -185,7 +185,7 @@ export function CreateExerciseForm({
             <>
               <div>
                 <Label htmlFor="title">Título da atividade</Label>
-                <Input id="title" name="title" required placeholder="Ex.: Frações Equivalentes — Exercício Semanal" />
+                <Input id="title" name="title" required placeholder="Ex.: Frações Equivalentes  -  Exercício Semanal" />
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>

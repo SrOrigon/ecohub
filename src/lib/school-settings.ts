@@ -96,7 +96,7 @@ export type SchoolSettings = {
     /** Peso por disciplina (1 = padrão) */
     subjectWeights: Record<string, number>;
     recoveryEnabled: boolean;
-    /** Períodos fechados — notas não editáveis */
+    /** Períodos fechados  -  notas não editáveis */
     closedPeriods: string[];
   };
   gamificationSeason: {

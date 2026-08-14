@@ -45,7 +45,7 @@ export function buildReportCsv(report: InstitutionalReport, kind: ReportExportKi
         content: rowsToCsv(["Campo", "Valor"], [
           ["Instituição", report.schoolName],
           ["Gerado em", formatDate(report.generatedAt)],
-          ["Conta desde", report.accountSince ? formatDate(report.accountSince) : "—"],
+          ["Conta desde", report.accountSince ? formatDate(report.accountSince) : " - "],
           ["Meta de aprovação", report.passGrade],
           ["Nota máxima", report.maxGrade],
           ["Alunos", report.summary.totalStudents],

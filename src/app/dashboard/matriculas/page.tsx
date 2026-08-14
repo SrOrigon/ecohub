@@ -22,7 +22,7 @@ export default async function MatriculasPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Matrículas" description="Pipeline de inscrições online — aprove ou recuse candidatos.">
+      <PageHeader title="Matrículas" description="Pipeline de inscrições online  -  aprove ou recuse candidatos.">
         {school?.slug ? (
           <a
             href={`/inscricao/${school.slug}`}

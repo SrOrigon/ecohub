@@ -33,7 +33,7 @@ export function TodayChecklist({
         </CardTitle>
         <p className="text-base text-slate-600">
           {pending === 0
-            ? "Tudo em dia — você arrasou!"
+            ? "Tudo em dia  -  você arrasou!"
             : `${pending} pendência(s) · ${done} concluída(s)`}
         </p>
       </CardHeader>

@@ -135,7 +135,7 @@ export async function startTrailMission(studentId: string, missionId: string) {
     await completeMission(studentId, missionId);
     await syncTrailAfterAction(studentId, "mission", missionId);
   } catch {
-    // mission may already be complete — still sync trail
+    // mission may already be complete  -  still sync trail
     await syncTrailAfterAction(studentId, "mission", missionId);
   }
 }

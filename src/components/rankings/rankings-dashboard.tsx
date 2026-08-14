@@ -97,7 +97,7 @@ export function RankingsDashboard({
               Competitividade entre turmas
             </CardTitle>
             <CardDescription>
-              Compare salas por engajamento, participação e desempenho — métricas normalizadas por aluno
+              Compare salas por engajamento, participação e desempenho  -  métricas normalizadas por aluno
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -124,7 +124,7 @@ export function RankingsDashboard({
               </CardTitle>
               <CardDescription>
                 {kidFriendly
-                  ? "Veja quem está se destacando na turma — foque no seu progresso!"
+                  ? "Veja quem está se destacando na turma  -  foque no seu progresso!"
                   : "Desempenho individual por XP, notas e missões concluídas"}
               </CardDescription>
             </CardHeader>

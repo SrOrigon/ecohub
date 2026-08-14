@@ -43,7 +43,7 @@ export function SubjectPrecisionPanel({
             Precisão pedagógica por disciplina
           </CardTitle>
           <CardDescription>
-            Indicador de confiabilidade dos dados e efetividade do ensino — por matéria e por recurso
+            Indicador de confiabilidade dos dados e efetividade do ensino  -  por matéria e por recurso
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

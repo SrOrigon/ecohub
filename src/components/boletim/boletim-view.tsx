@@ -104,7 +104,7 @@ export function BoletimView({ data }: { data: BoletimPayload }) {
         <SummaryCard
           icon={TrendingUp}
           label="Média geral"
-          value={overallAvg != null ? overallAvg.toFixed(1) : "—"}
+          value={overallAvg != null ? overallAvg.toFixed(1) : " - "}
           hint={`Aprovação ≥ ${data.passGrade}`}
         />
         <SummaryCard
@@ -116,7 +116,7 @@ export function BoletimView({ data }: { data: BoletimPayload }) {
         <SummaryCard
           icon={UserCheck}
           label="Presença"
-          value={attendance ? `${attendance.rate}%` : "—"}
+          value={attendance ? `${attendance.rate}%` : " - "}
           hint={attendance ? `${attendance.present + attendance.late} de ${attendance.total} aulas` : "Sem registros"}
         />
         <SummaryCard
@@ -171,7 +171,7 @@ export function BoletimView({ data }: { data: BoletimPayload }) {
                     if (!g) {
                       return (
                         <td key={period} className="border p-2 text-center text-slate-400">
-                          —
+                           -
                         </td>
                       );
                     }
@@ -192,7 +192,7 @@ export function BoletimView({ data }: { data: BoletimPayload }) {
                       avg != null ? gradeCellClass(gradeVariant(avg, data.passGrade, data.maxGrade)) : ""
                     )}
                   >
-                    {avg != null ? avg.toFixed(1) : "—"}
+                    {avg != null ? avg.toFixed(1) : " - "}
                   </td>
                 </tr>
               ))}

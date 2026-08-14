@@ -5,7 +5,7 @@ function isNextBuildPhase(): boolean {
   return process.env.NEXT_PHASE === "phase-production-build";
 }
 
-/** Segredo JWT — exige AUTH_SECRET em produção (exceto fase de build). */
+/** Segredo JWT  -  exige AUTH_SECRET em produção (exceto fase de build). */
 export function getAuthSecret(): Uint8Array {
   const secret = process.env.AUTH_SECRET?.trim();
 

@@ -40,7 +40,7 @@ export default async function RankingsPage() {
         title="Rankings"
         description={
           isStudent
-            ? "Competição saudável na turma e na escola — celebre seu progresso e o dos colegas"
+            ? "Competição saudável na turma e na escola  -  celebre seu progresso e o dos colegas"
             : "Rankings de turmas e alunos para engajamento, desempenho e competitividade saudável"
         }
       />

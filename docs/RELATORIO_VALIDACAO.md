@@ -1,7 +1,7 @@
 # Relatório de Validação Ecohub
 
-**Data:** 2026-08-10  
-**Ambiente local:** validado  
+**Data:** 2026-08-10
+**Ambiente local:** validado
 **Produção:** https://ecohub-production-b513.up.railway.app
 
 ---
@@ -10,9 +10,9 @@
 
 | Fase | Status | Detalhe |
 |------|--------|---------|
-| 1 — Infraestrutura | ✅ | Build, migrate, backup, health check |
-| 2 — Piloto automatizado | ✅ | **26/26 testes** passaram |
-| 3 — Go-live | ✅ | Produção online — smoke 4/4, health 200 |
+| 1  -  Infraestrutura | ✅ | Build, migrate, backup, health check |
+| 2  -  Piloto automatizado | ✅ | **26/26 testes** passaram |
+| 3  -  Go-live | ✅ | Produção online  -  smoke 4/4, health 200 |
 
 ---
 
@@ -36,7 +36,7 @@
 - Explicações pedagógicas para alunos ✅
 
 ### Papéis
-- director, secretary, teacher, student, parent — todos presentes
+- director, secretary, teacher, student, parent  -  todos presentes
 
 ### Smoke local
 - `/api/health` → 200, database ok
@@ -89,6 +89,6 @@ URL: https://ecohub-production-b513.up.railway.app
 
 ## Documentação
 
-- `DEPLOY.md` — variáveis e Railway
-- `docs/GUIA_INSTITUICOES.md` — checklist go-live
-- `docs/TREINAMENTO_INSTITUICOES.md` — treinamento 2h
+- `DEPLOY.md`  -  variáveis e Railway
+- `docs/GUIA_INSTITUICOES.md`  -  checklist go-live
+- `docs/TREINAMENTO_INSTITUICOES.md`  -  treinamento 2h

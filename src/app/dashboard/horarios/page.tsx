@@ -35,7 +35,7 @@ export default async function HorariosPage() {
     <div className="space-y-6">
       <PageHeader
         title="Horários"
-        description="Grade semanal por turma ou curso — somente disciplinas cadastradas pela instituição."
+        description="Grade semanal por turma ou curso  -  somente disciplinas cadastradas pela instituição."
       />
 
       {subjects.length === 0 ? (
@@ -76,7 +76,7 @@ export default async function HorariosPage() {
                     {slot.startTime} – {slot.endTime}
                   </td>
                   <td className="px-4 py-3">{slot.subject}</td>
-                  <td className="px-4 py-3">{slot.room ?? "—"}</td>
+                  <td className="px-4 py-3">{slot.room ?? " - "}</td>
                 </tr>
               ))
             )}

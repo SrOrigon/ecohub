@@ -98,7 +98,7 @@ export default async function AlunoPortalPage() {
     todayItems.push({
       id: "waiting",
       title: `${waitingGrade} atividade(s) aguardando correção`,
-      subtitle: "Você já enviou — agora é com o professor",
+      subtitle: "Você já enviou  -  agora é com o professor",
       href: "/dashboard/exercicios",
       done: true,
       cta: "Ver",

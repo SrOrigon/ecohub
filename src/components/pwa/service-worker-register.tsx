@@ -7,7 +7,7 @@ export function ServiceWorkerRegister() {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
     navigator.serviceWorker.register("/sw.js").catch(() => {
-      // silent — PWA enhancement only
+      // silent  -  PWA enhancement only
     });
   }, []);
 

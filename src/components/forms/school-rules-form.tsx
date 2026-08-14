@@ -75,7 +75,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
       <CardHeader>
         <CardTitle>Regras da escola</CardTitle>
         <p className="text-sm text-slate-500">
-          Tudo aqui alimenta notas, frequência, exercícios, missões, loja e alertas — uma engrenagem só.
+          Tudo aqui alimenta notas, frequência, exercícios, missões, loja e alertas  -  uma engrenagem só.
         </p>
       </CardHeader>
       <CardContent>
@@ -849,7 +849,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
           )}
           {state?.success && (
             <p className="text-sm text-emerald-600" role="status">
-              Regras salvas — já valem em todo o sistema.
+              Regras salvas  -  já valem em todo o sistema.
             </p>
           )}
 

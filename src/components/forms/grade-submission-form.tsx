@@ -104,7 +104,7 @@ export function GradeSubmissionForm({
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
         <CheckCircle2 className="h-6 w-6 text-emerald-600" aria-hidden="true" />
         <div>
-          <p className="font-semibold text-emerald-900">{studentName} — corrigido!</p>
+          <p className="font-semibold text-emerald-900">{studentName}  -  corrigido!</p>
           <p className="text-sm text-emerald-800">
             Nota {total.toFixed(1)}/{max}. XP e moedas enviados ao aluno.
           </p>
@@ -149,12 +149,12 @@ export function GradeSubmissionForm({
             <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
               <span className="font-medium text-slate-500">Resposta: </span>
               {q.type === "choice"
-                ? opts.find((o) => o.id === answer?.selectedOptionId)?.text ?? "—"
-                : answer?.textAnswer ?? "—"}
+                ? opts.find((o) => o.id === answer?.selectedOptionId)?.text ?? " - "
+                : answer?.textAnswer ?? " - "}
             </p>
             {q.type === "choice" && (
               <p className="text-xs text-slate-500">
-                Gabarito: {opts.find((o) => o.isCorrect)?.text ?? "—"}
+                Gabarito: {opts.find((o) => o.isCorrect)?.text ?? " - "}
                 {isCorrectChoice && (
                   <span className="ml-2 font-medium text-emerald-600">✓ Correta</span>
                 )}

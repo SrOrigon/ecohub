@@ -143,7 +143,7 @@ export function RegisterSchoolForm() {
                     <p className="mt-1 font-mono text-xs">{formatCnpj(preview.cnpj)}</p>
                     {preview.city && preview.state && (
                       <p className="mt-1 text-[var(--muted-foreground)]">
-                        {preview.city} — {preview.state}
+                        {preview.city}  -  {preview.state}
                       </p>
                     )}
                     {preview.cnaeDescricao && (
@@ -183,7 +183,7 @@ export function RegisterSchoolForm() {
                 key={preview?.cnpj ?? "empty"}
               />
               <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                Pode ser o nome fantasia ou abreviação — a razão social vem do CNPJ.
+                Pode ser o nome fantasia ou abreviação - a razão social vem do CNPJ.
               </p>
             </div>
             <div>

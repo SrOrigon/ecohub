@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Smoke test pós-deploy — verifica health e rotas públicas.
+ * Smoke test pós-deploy  -  verifica health e rotas públicas.
  * Uso: node scripts/smoke-test.mjs [baseUrl]
  * Ex.: node scripts/smoke-test.mjs https://seu-app.up.railway.app
  */
@@ -30,17 +30,17 @@ for (const check of checks) {
 
     if (check.json && res.status === 200) {
       const body = await res.json();
-      console.log(`${ok ? "✓" : "✗"} ${check.name} — ${res.status} — status=${body.status}`);
+      console.log(`${ok ? "✓" : "✗"} ${check.name}  -  ${res.status}  -  status=${body.status}`);
       if (body.checks) {
         console.log(`    database=${body.checks.database}, auth=${body.checks.authSecret}, mode=${body.mode}`);
       }
     } else {
-      console.log(`${ok ? "✓" : "✗"} ${check.name} — ${res.status}`);
+      console.log(`${ok ? "✓" : "✗"} ${check.name}  -  ${res.status}`);
     }
 
     if (!ok) failed++;
   } catch (error) {
-    console.log(`✗ ${check.name} — ERRO: ${error instanceof Error ? error.message : error}`);
+    console.log(`✗ ${check.name}  -  ERRO: ${error instanceof Error ? error.message : error}`);
     failed++;
   }
 }

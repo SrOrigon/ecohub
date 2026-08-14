@@ -7,7 +7,7 @@ export type GeneratedQuestion = {
   options: { id: string; text: string; isCorrect: boolean }[];
 };
 
-/** Gera questões via Ecohub IA local — especialista pedagógico, sem API externa. */
+/** Gera questões via Ecohub IA local  -  especialista pedagógico, sem API externa. */
 export function generateQuestionsLocally(
   topic: string,
   subject: string,
@@ -16,7 +16,7 @@ export function generateQuestionsLocally(
   return ecohubAiGenerateQuestions(topic, subject, count);
 }
 
-/** Ecohub IA local — nunca usa API externa. */
+/** Ecohub IA local  -  nunca usa API externa. */
 export async function generateQuestionsWithAi(
   topic: string,
   subject: string,

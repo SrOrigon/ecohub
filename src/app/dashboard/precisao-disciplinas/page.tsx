@@ -22,7 +22,7 @@ export default async function PrecisaoDisciplinasPage() {
     <div className="space-y-6">
       <PageHeader
         title="Precisão por disciplina"
-        description="Indicadores de confiabilidade e efetividade do ensino — por matéria e por recurso (notas, diário, horários, exercícios)"
+        description="Indicadores de confiabilidade e efetividade do ensino  -  por matéria e por recurso (notas, diário, horários, exercícios)"
       >
         <div className="flex flex-wrap gap-2">
           <Link href="/dashboard/leitura-geral">

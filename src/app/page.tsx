@@ -15,7 +15,7 @@ const features = [
   {
     icon: GraduationCap,
     title: "Gestão Acadêmica",
-    description: "Escolas, turmas, alunos, notas e frequência — inspirado no Sponte Educacional.",
+    description: "Escolas, turmas, alunos, notas e frequência  -  inspirado no Sponte Educacional.",
   },
   {
     icon: Target,
@@ -40,7 +40,7 @@ const features = [
   {
     icon: Medal,
     title: "100% Gratuito",
-    description: "Roda localmente com SQLite — zero configuração. Pronto para deploy quando quiser.",
+    description: "Roda localmente com SQLite  -  zero configuração. Pronto para deploy quando quiser.",
   },
 ];
 
@@ -62,7 +62,7 @@ const portalLinks = [
   {
     href: "/entrar",
     title: "Aluno (PIN)",
-    description: "Entrada rápida com matrícula e PIN — ideal para crianças",
+    description: "Entrada rápida com matrícula e PIN  -  ideal para crianças",
     color:
       "border-orange-200 bg-orange-50/50 hover:border-orange-400 dark:border-orange-800 dark:bg-orange-950/30 dark:hover:border-orange-600",
   },

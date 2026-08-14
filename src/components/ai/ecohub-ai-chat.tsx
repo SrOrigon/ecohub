@@ -24,7 +24,7 @@ export function EcohubAiChat({
       role: "assistant",
       content:
         introMessage ??
-        `Olá! Sou a **${assistantName}**, assistente pedagógica local da Ecohub — treinada para BNCC, sem uso de APIs externas. Como posso ajudar?`,
+        `Olá! Sou a **${assistantName}**, assistente pedagógica local da Ecohub  -  treinada para BNCC, sem uso de APIs externas. Como posso ajudar?`,
     },
   ]);
   const [input, setInput] = useState("");

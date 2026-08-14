@@ -70,7 +70,7 @@ export async function createTeacherInviteAction(formData: FormData) {
   if (email) {
     const result = await sendEmail({
       to: email,
-      subject: `Convite para professor — ${school.name}`,
+      subject: `Convite para professor  -  ${school.name}`,
       html: `
         <p>Olá,</p>
         <p>Você foi convidado(a) para lecionar em <strong>${school.name}</strong> no Ecohub.</p>

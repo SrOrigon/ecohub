@@ -4,13 +4,13 @@ export type TutorSnippet = {
   followUp?: string;
 };
 
-/** Base de conhecimento pedagógico da Ecohub IA — especialista em educação básica (BNCC). */
+/** Base de conhecimento pedagógico da Ecohub IA  -  especialista em educação básica (BNCC). */
 export const TUTOR_SNIPPETS: TutorSnippet[] = [
   {
     patterns: [/fraç/i, /numerador/i, /denominador/i],
     answer:
       "Fração representa partes de um todo. O numerador (de cima) indica quantas partes você tem; o denominador (de baixo) indica em quantas partes o todo foi dividido. Ex.: 3/4 = 3 partes de um total de 4.",
-    followUp: "Tente somar frações com mesmo denominador primeiro — é o passo mais seguro.",
+    followUp: "Tente somar frações com mesmo denominador primeiro  -  é o passo mais seguro.",
   },
   {
     patterns: [/fotoss[ií]ntese/i, /planta/i, /clorofila/i],
@@ -45,12 +45,12 @@ export const TUTOR_SNIPPETS: TutorSnippet[] = [
   {
     patterns: [/bncc/i, /base nacional/i],
     answer:
-      "A BNCC (Base Nacional Comum Curricular) define o que alunos devem aprender em cada etapa no Brasil. Seu professor alinha atividades e avaliações a essas competências — pergunte qual habilidade a atividade desenvolve.",
+      "A BNCC (Base Nacional Comum Curricular) define o que alunos devem aprender em cada etapa no Brasil. Seu professor alinha atividades e avaliações a essas competências  -  pergunte qual habilidade a atividade desenvolve.",
   },
   {
     patterns: [/bullying|agress/i, /briga/i],
     answer:
-      "Se você presenciar ou sofrer bullying, fale com um adulto de confiança (professor, coordenação, responsável). Não responda com violência. A escola deve acolher e investigar — você não está sozinho.",
+      "Se você presenciar ou sofrer bullying, fale com um adulto de confiança (professor, coordenação, responsável). Não responda com violência. A escola deve acolher e investigar  -  você não está sozinho.",
   },
 ];
 

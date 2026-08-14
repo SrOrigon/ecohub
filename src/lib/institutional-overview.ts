@@ -139,7 +139,7 @@ function buildImprovements(input: {
     items.push({
       area: `Disciplina: ${input.weakestSubject.subject}`,
       severity: input.weakestSubject.average < 5 ? "high" : "medium",
-      detail: `Média ${input.weakestSubject.average.toFixed(1)} — ${input.weakestSubject.studentsBelowPass} lançamento(s) abaixo da meta.`,
+      detail: `Média ${input.weakestSubject.average.toFixed(1)}  -  ${input.weakestSubject.studentsBelowPass} lançamento(s) abaixo da meta.`,
       actionHref: "/dashboard/notas",
     });
   }

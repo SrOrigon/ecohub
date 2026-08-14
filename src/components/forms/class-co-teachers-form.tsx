@@ -35,7 +35,7 @@ export function ClassCoTeachersForm({
       <input type="hidden" name="classId" value={classId} />
       <p className="mb-2 flex items-center gap-1 text-xs font-medium text-slate-600">
         <Users className="h-3.5 w-3.5" aria-hidden="true" />
-        Co-docentes — {className}
+        Co-docentes  -  {className}
       </p>
       <div className="flex flex-wrap gap-3">
         {options.map((t) => (

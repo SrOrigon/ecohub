@@ -59,7 +59,7 @@ export function ProvisionStudentForm({ classes }: { classes: ClassOption[] }) {
               PIN: <strong className="font-mono text-lg">{credentials.pin}</strong>
             </p>
             <p className="text-xs text-[var(--muted-foreground)]">
-              Anote o PIN — ele não será exibido novamente. O aluno entra em{" "}
+              Anote o PIN  -  ele não será exibido novamente. O aluno entra em{" "}
               <strong>/entrar</strong> com matrícula e PIN.
             </p>
             <Button type="button" variant="outline" size="sm" onClick={() => setCredentials(null)}>

@@ -6,7 +6,7 @@ const institutionalMode =
 
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = "file:/data/prod.db";
-  console.warn("[ecohub] DATABASE_URL ausente — usando", process.env.DATABASE_URL);
+  console.warn("[ecohub] DATABASE_URL ausente  -  usando", process.env.DATABASE_URL);
 }
 
 function run(cmd, optional = false) {
@@ -49,7 +49,7 @@ try {
   const users = await prisma.user.count();
 
   if (users === 0) {
-    console.log("[ecohub] Banco vazio — cadastre a escola em /registro/escola");
+    console.log("[ecohub] Banco vazio  -  cadastre a escola em /registro/escola");
   } else {
     console.log(`[ecohub] ${users} usuário(s) no banco.`);
   }

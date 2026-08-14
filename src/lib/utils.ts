@@ -6,17 +6,17 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: string | Date | null | undefined) {
-  if (!date) return "—";
+  if (!date) return " - ";
   try {
     const d = new Date(date);
-    if (isNaN(d.getTime())) return "—";
+    if (isNaN(d.getTime())) return " - ";
     return new Intl.DateTimeFormat("pt-BR", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     }).format(d);
   } catch {
-    return "—";
+    return " - ";
   }
 }
 

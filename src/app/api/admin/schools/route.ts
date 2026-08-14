@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-/** GET ?q= — lista escolas (busca por nome, slug, cnpj ou e-mail do diretor). */
+/** GET ?q= - lista escolas (busca por nome, slug, cnpj ou e-mail do diretor). */
 export async function GET(request: Request) {
   if (!authorizeMaintenanceRequest(request)) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });

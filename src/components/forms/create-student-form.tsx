@@ -52,7 +52,7 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
             )}
             {created.pin && (
               <p className="text-xs text-[var(--muted-foreground)]">
-                Anote o PIN — o aluno entra em /entrar com matrícula e PIN.
+                Anote o PIN  -  o aluno entra em /entrar com matrícula e PIN.
               </p>
             )}
             <Button type="button" onClick={closeModal} className="w-full">
@@ -111,7 +111,7 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
               <>
                 <div>
                   <Label htmlFor="pin">PIN personalizado (opcional)</Label>
-                  <Input id="pin" name="pin" inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="6 dígitos — gerado se vazio" />
+                  <Input id="pin" name="pin" inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="6 dígitos  -  gerado se vazio" />
                 </div>
                 <input type="hidden" name="password" value="unused" />
               </>

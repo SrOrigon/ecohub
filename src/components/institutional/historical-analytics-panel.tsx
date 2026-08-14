@@ -36,7 +36,7 @@ const ALL_GRANULARITIES: HistoryGranularity[] = ["day", "week", "month", "semest
 export function HistoricalAnalyticsPanel({
   history,
   title = "Histórico temporal",
-  description = "Compare métricas do dia ao ano — calculado desde a criação da conta no Ecohub",
+  description = "Compare métricas do dia ao ano  -  calculado desde a criação da conta no Ecohub",
 }: {
   history: HistoryData;
   title?: string;
@@ -133,7 +133,7 @@ export function HistoricalAnalyticsPanel({
         <CardHeader>
           <CardTitle>Granularidade temporal</CardTitle>
           <CardDescription>
-            Selecione o intervalo de comparação — do dia individual ao ano letivo completo
+            Selecione o intervalo de comparação  -  do dia individual ao ano letivo completo
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -248,7 +248,7 @@ export function HistoricalAnalyticsPanel({
 
       <Card>
         <CardHeader>
-          <CardTitle>Tabela histórica — {getGranularityLabel(granularity)}</CardTitle>
+          <CardTitle>Tabela histórica  -  {getGranularityLabel(granularity)}</CardTitle>
           <CardDescription>
             {series.bucketCount} período(s) desde {history.meta.originLabel}
           </CardDescription>

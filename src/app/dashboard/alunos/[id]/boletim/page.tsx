@@ -102,7 +102,7 @@ export default async function BoletimPage({ params }: { params: Promise<{ id: st
       <BoletimView data={payload} />
 
       <footer className="border-t pt-4 text-center text-xs text-slate-500">
-        Emitido em {formatDate(new Date())} · Ecohub — Gestão + Gamificação
+        Emitido em {formatDate(new Date())} · Ecohub  -  Gestão + Gamificação
       </footer>
     </div>
   );

@@ -76,7 +76,7 @@ export default async function LeituraGeralPage() {
     <div className="space-y-6">
       <PageHeader
         title="Leitura geral da instituição"
-        description="Métricas pedagógicas unificadas — saúde acadêmica, engajamento, exercícios e pontos de melhoria"
+        description="Métricas pedagógicas unificadas  -  saúde acadêmica, engajamento, exercícios e pontos de melhoria"
       >
         <div className="flex flex-wrap gap-2">
           <Link
@@ -260,7 +260,7 @@ export default async function LeituraGeralPage() {
       {data.subjectPerformance.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Disciplinas — detalhe</CardTitle>
+            <CardTitle>Disciplinas  -  detalhe</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {data.subjectPerformance.map((s) => (

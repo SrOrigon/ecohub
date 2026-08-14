@@ -10,7 +10,7 @@ const portals = [
     registerHref: "/registro/escola",
     icon: Building2,
     title: "Instituição",
-    description: "Direção e gestão da escola — turmas, relatórios e configurações.",
+    description: "Direção e gestão da escola  -  turmas, relatórios e configurações.",
     color:
       "border-indigo-200 bg-indigo-50/50 hover:border-indigo-400 dark:border-indigo-800 dark:bg-indigo-950/30 dark:hover:border-indigo-600",
     iconColor: "text-indigo-600 bg-indigo-100 dark:text-indigo-300 dark:bg-indigo-950",
@@ -99,7 +99,7 @@ export function AuthPortalPicker({ mode }: { mode: "login" | "register" }) {
             className="flex items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50/50 px-4 py-3 text-sm font-semibold text-indigo-800 transition hover:border-indigo-400 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-200"
           >
             <KeyRound className="h-4 w-4" aria-hidden="true" />
-            Aluno — entrar com matrícula e PIN
+            Aluno  -  entrar com matrícula e PIN
           </Link>
         </div>
       )}

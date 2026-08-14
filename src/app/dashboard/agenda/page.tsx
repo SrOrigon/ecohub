@@ -31,7 +31,7 @@ export default async function AgendaPage({
     <div className="space-y-6">
       <PageHeader
         title="Minha agenda"
-        description="Anotações rápidas e lembretes por dia — organize estudos, provas e tarefas do seu jeito."
+        description="Anotações rápidas e lembretes por dia  -  organize estudos, provas e tarefas do seu jeito."
       >
         <Link href="/dashboard/calendario">
           <Button variant="outline" className="gap-2">

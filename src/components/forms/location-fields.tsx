@@ -30,7 +30,7 @@ export function LocationFields({
       <div>
         <Label htmlFor={stateId}>Estado (UF){required ? "" : " (opcional)"}</Label>
         <Select id={stateId} name={stateId} defaultValue={defaultState} required={required}>
-          <option value="">{required ? "Selecione..." : "—"}</option>
+          <option value="">{required ? "Selecione..." : " - "}</option>
           {BRAZILIAN_STATES.map((uf) => (
             <option key={uf} value={uf}>
               {uf}

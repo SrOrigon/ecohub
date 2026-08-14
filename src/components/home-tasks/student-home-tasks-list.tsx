@@ -58,7 +58,7 @@ export function StudentHomeTasksList({
         </CardTitle>
         <p className={`text-slate-600 ${kidFriendly ? "text-base" : "text-sm"}`}>
           {pending.length === 0
-            ? "Nenhuma tarefa pendente — parabéns!"
+            ? "Nenhuma tarefa pendente  -  parabéns!"
             : `${pending.length} tarefa(s) da família para fazer`}
         </p>
       </CardHeader>

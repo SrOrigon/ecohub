@@ -355,7 +355,7 @@ function buildInsights(
 ): string[] {
   const notes: string[] = [];
   notes.push(
-    `Histórico calculado desde ${meta.originLabel} — ${meta.accountAgeLabel} de uso do Ecohub (${meta.accountAgeDays} dias).`
+    `Histórico calculado desde ${meta.originLabel}  -  ${meta.accountAgeLabel} de uso do Ecohub (${meta.accountAgeDays} dias).`
   );
 
   if (lifetime.dataPoints === 0) {
@@ -364,7 +364,7 @@ function buildInsights(
   }
 
   notes.push(
-    `Acumulado total: ${lifetime.gradesCount} nota(s), ${lifetime.exerciseSubmissions} entrega(s), ${lifetime.xpTotal.toLocaleString("pt-BR")} XP — saúde pedagógica ${lifetime.healthScore}/100.`
+    `Acumulado total: ${lifetime.gradesCount} nota(s), ${lifetime.exerciseSubmissions} entrega(s), ${lifetime.xpTotal.toLocaleString("pt-BR")} XP  -  saúde pedagógica ${lifetime.healthScore}/100.`
   );
 
   const monthly = series.month;
@@ -651,7 +651,7 @@ export async function getStudentHistory(studentId: string): Promise<StudentHisto
 
 function emptyHistory(): InstitutionalHistory {
   const emptySnap: PeriodSnapshot = {
-    label: "—",
+    label: " - ",
     start: "",
     end: "",
     averageGrade: 0,
@@ -673,9 +673,9 @@ function emptyHistory(): InstitutionalHistory {
   return {
     meta: {
       originDate: "",
-      originLabel: "—",
+      originLabel: " - ",
       accountAgeDays: 0,
-      accountAgeLabel: "—",
+      accountAgeLabel: " - ",
       firstDataDate: null,
       lastDataDate: "",
       totalGrades: 0,

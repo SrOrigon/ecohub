@@ -61,7 +61,7 @@ export function ExerciseQuestionStats({
                   <p className="mt-1 text-sm text-slate-800">{q.prompt}</p>
                   {q.type === "choice" && (
                     <p className="mt-1 text-xs text-slate-500">
-                      Gabarito: {parseOptions(q.options).find((o) => o.isCorrect)?.text ?? "—"}
+                      Gabarito: {parseOptions(q.options).find((o) => o.isCorrect)?.text ?? " - "}
                     </p>
                   )}
                 </div>

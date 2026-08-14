@@ -21,7 +21,7 @@ export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(normalizePassword(password), BCRYPT_ROUNDS);
 }
 
-/** Compara senha informada com hash — inclui compatibilidade com contas antigas. */
+/** Compara senha informada com hash  -  inclui compatibilidade com contas antigas. */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   const normalized = normalizePassword(password);
   if (await bcrypt.compare(normalized, hash)) return true;

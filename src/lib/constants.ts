@@ -44,7 +44,7 @@ export const BRAZILIAN_STATES = [
 
 export function formatUserLocation(city?: string | null, state?: string | null) {
   const parts = [city?.trim(), state?.trim()].filter(Boolean);
-  return parts.length > 0 ? parts.join(" — ") : null;
+  return parts.length > 0 ? parts.join("  -  ") : null;
 }
 
 export const OCCURRENCE_KINDS = ["observation", "positive", "warning", "disciplinary"] as const;

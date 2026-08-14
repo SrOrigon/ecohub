@@ -44,7 +44,7 @@ export default async function CalendarioPage() {
     <div className="space-y-6">
       <PageHeader
         title="Agenda compartilhada"
-        description="Feriados, eventos e datas importantes da escola — visíveis para todos."
+        description="Feriados, eventos e datas importantes da escola  -  visíveis para todos."
       >
         <Link href="/dashboard/agenda">
           <Button variant="outline" className="gap-2">

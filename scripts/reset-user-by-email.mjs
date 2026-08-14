@@ -50,9 +50,9 @@ async function resetUser(targetEmail) {
     return { found: false };
   }
 
-  console.log(`[reset] Encontrado: ${user.fullName} (${user.role}) — ${user.email}`);
+  console.log(`[reset] Encontrado: ${user.fullName} (${user.role})  -  ${user.email}`);
   if (user.school) {
-    console.log(`[reset] Instituição: ${user.school.name} (${user.school.slug}) CNPJ=${user.school.cnpj ?? "—"}`);
+    console.log(`[reset] Instituição: ${user.school.name} (${user.school.slug}) CNPJ=${user.school.cnpj ?? "-"}`);
   }
 
   const isInstitutionOwner =
@@ -74,7 +74,7 @@ try {
   console.log(`[reset] Banco: ${dbPath}`);
   const result = await resetUser(email);
   if (result.found) {
-    console.log(`[reset] OK — ${email} liberado para novo cadastro.`);
+    console.log(`[reset] OK  -  ${email} liberado para novo cadastro.`);
   }
 } catch (error) {
   console.error("[reset] ERRO:", error instanceof Error ? error.message : error);

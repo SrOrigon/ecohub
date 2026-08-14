@@ -28,11 +28,11 @@ export default async function AssistentePage() {
 
   const isLearner = role === "student" || role === "parent";
   const pageDescription = isLearner
-    ? "Tire dúvidas de matérias e receba dicas de estudo — sem geração de exercícios ou gabaritos."
-    : "Especialista em educação básica (BNCC) — 100% local, sem API. Gera questões, planos de aula, comunicados e orientações por perfil.";
+    ? "Tire dúvidas de matérias e receba dicas de estudo  -  sem geração de exercícios ou gabaritos."
+    : "Especialista em educação básica (BNCC)  -  100% local, sem API. Gera questões, planos de aula, comunicados e orientações por perfil.";
 
   const introMessage = isLearner
-    ? `Olá! Sou a **${assistantName}**. Posso **explicar matérias** e dar **dicas de estudo**. Não gero exercícios nem gabaritos — isso fica com professores e avaliações da escola.`
+    ? `Olá! Sou a **${assistantName}**. Posso **explicar matérias** e dar **dicas de estudo**. Não gero exercícios nem gabaritos  -  isso fica com professores e avaliações da escola.`
     : undefined;
 
   const inputPlaceholder = isLearner

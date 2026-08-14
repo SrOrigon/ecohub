@@ -190,7 +190,7 @@ export async function fetchCnpjFromBrasilApi(cnpj: string): Promise<CnpjLookupRe
   if (!/^\d{14}$/.test(normalized)) {
     return {
       error:
-        "CNPJ alfanumérico detectado. A consulta automática ainda não está disponível — entre em contato para verificação manual.",
+        "CNPJ alfanumérico detectado. A consulta automática ainda não está disponível  -  entre em contato para verificação manual.",
     };
   }
 

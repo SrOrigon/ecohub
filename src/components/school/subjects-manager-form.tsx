@@ -54,7 +54,7 @@ export function SubjectsManagerForm({
         <ul className="mt-2 list-inside list-disc space-y-1">
           <li>Escola tradicional: Matemática, Português, História…</li>
           <li>Curso livre: apenas as matérias ofertadas, ex. Programação Web</li>
-          <li>Todo o sistema — notas, horários, diário, exercícios — usa esta lista</li>
+          <li>Todo o sistema  -  notas, horários, diário, exercícios  -  usa esta lista</li>
         </ul>
       </div>
 

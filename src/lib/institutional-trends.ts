@@ -225,7 +225,7 @@ function buildStrategicNotes(trends: MetricTrend[], kindLabel: string): string[]
 
   if (declined.length > 0) {
     notes.push(
-      `Atenção ${kindLabel}: ${declined.map((t) => `${t.label} (${t.delta > 0 ? "+" : ""}${round1(t.delta)})`).join(", ")} — priorize plano de ação.`
+      `Atenção ${kindLabel}: ${declined.map((t) => `${t.label} (${t.delta > 0 ? "+" : ""}${round1(t.delta)})`).join(", ")}  -  priorize plano de ação.`
     );
   }
 
@@ -237,7 +237,7 @@ function buildStrategicNotes(trends: MetricTrend[], kindLabel: string): string[]
   }
 
   if (notes.length === 0) {
-    notes.push("Período estável — mantenha monitoramento e documente boas práticas das turmas de destaque.");
+    notes.push("Período estável  -  mantenha monitoramento e documente boas práticas das turmas de destaque.");
   }
 
   return notes.slice(0, 4);
@@ -335,9 +335,9 @@ function buildOverallVerdict(
     return "Panorama exige intervenção: deterioração perceptível em mais de um ciclo de análise.";
   }
   if (up === 1 && down === 1) {
-    return "Cenário misto: ganhos recentes coexistem com desafios de médio prazo — alinhe metas por turma.";
+    return "Cenário misto: ganhos recentes coexistem com desafios de médio prazo  -  alinhe metas por turma.";
   }
-  return "Instituição em fase de consolidação — use os ciclos mensal, semestral e anual para decisões pedagógicas.";
+  return "Instituição em fase de consolidação  -  use os ciclos mensal, semestral e anual para decisões pedagógicas.";
 }
 
 export async function getTemporalAnalysis(schoolId: string | null): Promise<TemporalAnalysis> {
@@ -469,7 +469,7 @@ export async function getTemporalAnalysis(schoolId: string | null): Promise<Temp
 
 function emptyPeriodComparison(kind: PeriodComparison["kind"], kindLabel: string): PeriodComparison {
   const emptySnap: PeriodSnapshot = {
-    label: "—",
+    label: " - ",
     start: "",
     end: "",
     averageGrade: 0,

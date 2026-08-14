@@ -87,8 +87,8 @@ export function ExerciseSubmitForm({
               <p className="font-medium">{i + 1}. {q.prompt}</p>
               <p className="mt-2 text-slate-600">
                 {q.type === "choice"
-                  ? opts.find((o) => o.id === a?.selectedOptionId)?.text ?? "—"
-                  : a?.textAnswer ?? "—"}
+                  ? opts.find((o) => o.id === a?.selectedOptionId)?.text ?? " - "
+                  : a?.textAnswer ?? " - "}
               </p>
             </div>
           );

@@ -50,7 +50,7 @@ async function scanRole(role) {
     const hasError = html.includes(ERROR_MARKER);
     const onLogin = html.includes("Entrar") && html.includes('type="password"');
     const ok = res.status === 200 && !hasError && !onLogin;
-    console.log(`${ok ? "OK" : "FAIL"} ${route} — ${res.status}${hasError ? " (error boundary)" : ""}${onLogin ? " (login page)" : ""}`);
+    console.log(`${ok ? "OK" : "FAIL"} ${route}  -  ${res.status}${hasError ? " (error boundary)" : ""}${onLogin ? " (login page)" : ""}`);
     if (!ok) failed++;
   }
   return failed;

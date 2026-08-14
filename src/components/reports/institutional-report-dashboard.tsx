@@ -99,7 +99,7 @@ export function InstitutionalReportDashboard({ report }: { report: Institutional
       </div>
 
       <div className="print-only hidden print:block mb-4 border-b pb-4">
-        <h1 className="text-2xl font-bold">Relatório institucional — {report.schoolName}</h1>
+        <h1 className="text-2xl font-bold">Relatório institucional  -  {report.schoolName}</h1>
         <p className="text-sm text-slate-600">Gerado em {generatedLabel} · Meta {report.passGrade}</p>
       </div>
 
@@ -122,7 +122,7 @@ export function InstitutionalReportDashboard({ report }: { report: Institutional
       {tab === "matrix" && <MatrixSection report={report} />}
 
       <p className="no-print text-xs text-slate-500">
-        Arquivos CSV usam separador <strong>;</strong> e codificação UTF-8 — abra no Excel, Google Sheets ou LibreOffice.
+        Arquivos CSV usam separador <strong>;</strong> e codificação UTF-8  -  abra no Excel, Google Sheets ou LibreOffice.
         Para PDF, use <strong>Imprimir / PDF</strong> e escolha &quot;Salvar como PDF&quot; no navegador.
       </p>
     </div>
@@ -183,7 +183,7 @@ function SubjectsSection({ report }: { report: InstitutionalReport }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Disciplinas — precisão e desempenho</CardTitle>
+        <CardTitle>Disciplinas  -  precisão e desempenho</CardTitle>
         <CardDescription>
           {report.subjects.length} disciplina(s) · configuradas: {report.configuredSubjects.join(", ")}
         </CardDescription>
@@ -239,7 +239,7 @@ function StudentsSection({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Alunos — visão individual</CardTitle>
+        <CardTitle>Alunos  -  visão individual</CardTitle>
         <CardDescription>Clique no aluno para ver disciplinas e médias</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -264,7 +264,7 @@ function StudentsSection({
                   <div className="flex shrink-0 items-center gap-2">
                     <Badge variant={statusVariant(s.approvalStatus)}>{s.approvalStatus}</Badge>
                     <span className="font-bold text-indigo-600">
-                      {s.overallAverage?.toFixed(1) ?? "—"}
+                      {s.overallAverage?.toFixed(1) ?? " - "}
                     </span>
                     {open ? (
                       <ChevronDown className="h-4 w-4 text-slate-400" />
@@ -291,7 +291,7 @@ function StudentsSection({
                             <td className="py-1.5 pr-2 font-medium">{sub.subject}</td>
                             <td className="py-1.5 pr-2">{sub.average.toFixed(1)}</td>
                             <td className="py-1.5 pr-2">{sub.gradeCount}</td>
-                            <td className="py-1.5 pr-2 text-xs">{sub.periods || "—"}</td>
+                            <td className="py-1.5 pr-2 text-xs">{sub.periods || " - "}</td>
                             <td className="py-1.5">
                               <Badge variant={statusVariant(sub.status)}>{sub.status}</Badge>
                             </td>
@@ -315,7 +315,7 @@ function MatrixSection({ report }: { report: InstitutionalReport }) {
     <Card>
       <CardHeader>
         <CardTitle>Matriz aluno × disciplina</CardTitle>
-        <CardDescription>{report.studentSubjectRows.length} registro(s) — ideal para exportação Excel</CardDescription>
+        <CardDescription>{report.studentSubjectRows.length} registro(s)  -  ideal para exportação Excel</CardDescription>
       </CardHeader>
       <CardContent className="table-scroll-container">
         <table className="w-full min-w-[800px] text-sm">
@@ -340,7 +340,7 @@ function MatrixSection({ report }: { report: InstitutionalReport }) {
                 <td className="py-2 pr-3">{r.subject}</td>
                 <td className="py-2 pr-3">{r.average.toFixed(1)}</td>
                 <td className="py-2 pr-3">{r.gradeCount}</td>
-                <td className="py-2 pr-3 text-xs">{r.periods || "—"}</td>
+                <td className="py-2 pr-3 text-xs">{r.periods || " - "}</td>
                 <td className="py-2">
                   <Badge variant={statusVariant(r.status)}>{r.status}</Badge>
                 </td>
