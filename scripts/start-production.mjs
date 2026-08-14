@@ -1,14 +1,10 @@
 import { execSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 import { ensureAuthSecret } from "./ensure-auth-secret.mjs";
+import { ensureProductionPersistence } from "./ensure-production-persistence.mjs";
+import { isInstitutionalMode } from "./lib/paths.mjs";
 
-const institutionalMode =
-  process.env.ECOHUB_INSTITUTIONAL === "1" || process.env.ECOHUB_INSTITUTIONAL === "true";
-
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "file:/data/prod.db";
-  console.warn("[ecohub] DATABASE_URL ausente  -  usando", process.env.DATABASE_URL);
-}
+const institutionalMode = isInstitutionalMode();
 
 function run(cmd, optional = false) {
   try {
@@ -27,6 +23,13 @@ function run(cmd, optional = false) {
 console.log(
   `[ecohub] Iniciando produção (modo: ${institutionalMode ? "institucional" : "produção"})...`
 );
+
+const persistence = await ensureProductionPersistence();
+if (institutionalMode && !persistence.volumeWritable) {
+  console.error(
+    "[ecohub] ERRO CRÍTICO: monte um volume em /data no Railway antes de usar em produção."
+  );
+}
 
 try {
   run("npx prisma migrate deploy", true);

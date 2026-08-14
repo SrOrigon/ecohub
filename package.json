@@ -18,7 +18,7 @@
     "db:pilot": "npx tsx scripts/seed-pilot-institution.ts",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx scripts/seed-pilot-institution.ts",
-    "db:reset": "prisma migrate reset --force",
+    "db:reset": "node scripts/guard-destructive-db.mjs && prisma migrate reset --force",
     "postinstall": "node scripts/prisma-generate.mjs"
   },
   "engines": {
