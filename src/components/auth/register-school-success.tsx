@@ -26,6 +26,7 @@ function statusBadgeVariant(status: SchoolVerificationStatus) {
 export function RegisterSchoolSuccess({ result }: { result: RegisterSchoolSuccess }) {
   const router = useRouter();
   const loginPath = tenantEntrarPath(result.slug);
+  const needsLogin = result.loginRequired === true;
 
   return (
     <div className="relative w-full max-w-lg">
@@ -40,11 +41,27 @@ export function RegisterSchoolSuccess({ result }: { result: RegisterSchoolSucces
             </div>
             <div>
               <CardTitle>Instituição criada com sucesso</CardTitle>
-              <CardDescription>Sua conta de direção já está ativa no Ecohub.</CardDescription>
+              <CardDescription>
+                {needsLogin
+                  ? "Conta criada. Faça login para acessar o painel."
+                  : "Sua conta de direção já está ativa no Ecohub."}
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
+          {needsLogin && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+              <p className="font-medium">Próximo passo: entrar no sistema</p>
+              <p className="mt-1">
+                Use o e-mail <strong>{result.email}</strong> e a senha que você acabou de definir em{" "}
+                <Link href="/login/escola" className="font-semibold underline">
+                  /login/escola
+                </Link>
+                .
+              </p>
+            </div>
+          )}
           <div className="rounded-xl border border-[var(--border)] bg-[var(--hover)] p-4 text-sm">
             <div className="flex items-start gap-3">
               <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
@@ -73,16 +90,26 @@ export function RegisterSchoolSuccess({ result }: { result: RegisterSchoolSucces
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button type="button" className="flex-1 gap-2" size="lg" onClick={() => router.push("/dashboard")}>
-              <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
-              Acessar painel
-            </Button>
+            {needsLogin ? (
+              <Link
+                href="/login/escola"
+                className={cn(buttonVariants({ size: "lg" }), "flex-1 gap-2")}
+              >
+                <LogIn className="h-4 w-4" aria-hidden="true" />
+                Fazer login agora
+              </Link>
+            ) : (
+              <Button type="button" className="flex-1 gap-2" size="lg" onClick={() => router.push("/dashboard")}>
+                <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+                Acessar painel
+              </Button>
+            )}
             <Link
               href={loginPath}
               className={cn(buttonVariants({ variant: "secondary", size: "lg" }), "flex-1 gap-2")}
             >
               <LogIn className="h-4 w-4" aria-hidden="true" />
-              Ver página de login
+              {needsLogin ? "Link da escola" : "Ver página de login"}
             </Link>
           </div>
         </CardContent>

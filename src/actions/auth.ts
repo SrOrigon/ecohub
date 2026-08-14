@@ -7,6 +7,7 @@ import {
   clearSessionCookie,
   clearTenantCookie,
   establishSession,
+  safeEstablishSession,
   requireSession,
 } from "@/lib/auth";
 import { loginHubPath } from "@/lib/login-paths";
@@ -131,6 +132,13 @@ export async function loginAction(formData: FormData) {
     await establishSession(user, { remember, tenantSlug: resolvedTenantSlug });
   } catch (error) {
     console.error("[auth] Falha ao criar sessão após login:", error);
+    const reason = error instanceof Error ? error.message : "";
+    if (reason.includes("AUTH_SECRET")) {
+      return {
+        error:
+          "Servidor em configuração incompleta (AUTH_SECRET). A senha pode estar correta — contate o suporte técnico.",
+      };
+    }
     return {
       error:
         "Não foi possível iniciar a sessão após o login. Tente novamente em instantes ou contate o suporte.",
@@ -145,11 +153,25 @@ export type RegisterSchoolSuccess = {
   email: string;
   slug: string;
   verificationStatus: SchoolVerificationStatus;
+  /** true quando a sessão automática falhou — usuário deve entrar manualmente */
+  loginRequired?: boolean;
 };
 
 export type RegisterSchoolResult = { error: string } | RegisterSchoolSuccess | null;
 
 export async function registerSchoolAction(formData: FormData): Promise<RegisterSchoolResult> {
+  try {
+    return await registerSchoolActionImpl(formData);
+  } catch (error) {
+    console.error("[auth] registerSchoolAction falhou:", error);
+    return {
+      error:
+        "Não foi possível concluir o cadastro agora. Se o CNPJ ou e-mail já existir, tente fazer login em /login/escola.",
+    };
+  }
+}
+
+async function registerSchoolActionImpl(formData: FormData): Promise<RegisterSchoolResult> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = normalizePassword(String(formData.get("password") ?? ""));
   const fullName = String(formData.get("fullName") ?? "").trim();
@@ -184,11 +206,19 @@ export async function registerSchoolAction(formData: FormData): Promise<Register
   const cnpj = normalizeCnpj(cnpjLookup.cnpj);
   const existingCnpj = await prisma.school.findUnique({ where: { cnpj } });
   if (existingCnpj) {
-    return { error: "Este CNPJ já está cadastrado no Ecohub." };
+    return {
+      error:
+        "Este CNPJ já está cadastrado. Se você já criou a conta, faça login em /login/escola com o e-mail cadastrado.",
+    };
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: GENERIC_REGISTER_ERROR };
+  if (existing) {
+    return {
+      error:
+        "Este e-mail já está cadastrado. Faça login em /login/escola com a senha definida no cadastro.",
+    };
+  }
 
   const passwordHash = await hashPassword(password);
   const slug = await createUniqueSchoolSlug(schoolName);
@@ -221,13 +251,22 @@ export async function registerSchoolAction(formData: FormData): Promise<Register
     return { school: createdSchool, user: createdUser };
   });
 
-  await ensureDefaultBadges(school.id);
-  await ensureDefaultRewards(school.id);
-
-  await establishSession(user, { tenantSlug: school.slug });
+  try {
+    await ensureDefaultBadges(school.id);
+    await ensureDefaultRewards(school.id);
+  } catch (error) {
+    console.error("[auth] Falha ao criar badges/recompensas padrão (cadastro segue):", error);
+  }
 
   const verificationStatus = school.verificationStatus as SchoolVerificationStatus;
-  await notifyInitialSchoolVerification(school.id, verificationStatus);
+
+  const session = await safeEstablishSession(user, { tenantSlug: school.slug });
+
+  try {
+    await notifyInitialSchoolVerification(school.id, verificationStatus);
+  } catch (error) {
+    console.error("[auth] Falha ao notificar verificação inicial (ignorado):", error);
+  }
 
   return {
     success: true,
@@ -235,6 +274,7 @@ export async function registerSchoolAction(formData: FormData): Promise<Register
     email,
     slug: school.slug,
     verificationStatus,
+    loginRequired: !session.ok,
   };
 }
 

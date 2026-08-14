@@ -167,4 +167,19 @@ export async function establishSession(
   }
 }
 
+/** Igual a establishSession, mas não derruba a requisição se a sessão falhar. */
+export async function safeEstablishSession(
+  user: { id: string; schoolId: string | null; role: string },
+  options?: { remember?: boolean; tenantSlug?: string | null }
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  try {
+    await establishSession(user, options);
+    return { ok: true };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "Falha ao criar sessão.";
+    console.error("[auth] safeEstablishSession:", reason);
+    return { ok: false, reason };
+  }
+}
+
 export { SESSION_COOKIE, TENANT_COOKIE };

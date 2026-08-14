@@ -36,9 +36,10 @@ try {
 const authOk = process.env.AUTH_SECRET?.trim() && process.env.AUTH_SECRET.trim().length >= 32;
 
 if (!authOk) {
-  console.warn(
-    "[ecohub] AVISO: AUTH_SECRET não configurado ou menor que 32 caracteres.\n" +
-      "        Defina AUTH_SECRET nas variáveis de ambiente antes do go-live."
+  console.error(
+    "[ecohub] ERRO CRÍTICO: AUTH_SECRET não configurado ou menor que 32 caracteres.\n" +
+      "        Cadastro e login vão falhar até definir AUTH_SECRET nas variáveis do Railway.\n" +
+      "        Gere com: openssl rand -base64 32"
   );
 } else {
   console.log("[ecohub] AUTH_SECRET OK.");
