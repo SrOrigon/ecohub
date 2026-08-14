@@ -4,6 +4,8 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { ecohubAiChat, ecohubAiGenerateQuestions } from "../src/lib/ecohub-ai/engine";
+import { hashPassword, verifyPassword } from "../src/lib/security/password-policy";
+import { findUserByEmailForLogin } from "../src/lib/auth-credentials";
 
 const prisma = new PrismaClient();
 
@@ -156,6 +158,26 @@ async function testStudentPin() {
   assert("Aluno com PIN configurado", !!student, student?.enrollmentCode ?? student?.user.fullName);
 }
 
+async function testAuthCredentials() {
+  console.log("\n[7] Autenticação (senha)");
+  const sample = "ValidacaoSenha1";
+  const hash = await hashPassword(sample);
+  assert("hashPassword + verifyPassword", await verifyPassword(sample, hash));
+  assert("Senha com espaços nas pontas", await verifyPassword(`  ${sample}  `, hash));
+
+  const director = await prisma.user.findFirst({
+    where: { role: "director" },
+    select: { email: true },
+  });
+  if (!director?.email) {
+    pass("Login por e-mail (skip — sem diretor no banco)");
+    return;
+  }
+
+  const found = await findUserByEmailForLogin(director.email.toUpperCase());
+  assert("Busca de usuário case-insensitive", !!found, director.email);
+}
+
 export async function runValidation(): Promise<{ passed: number; failed: number; results: Result[] }> {
   console.log("[validação] Ecohub  -  suite institucional\n");
 
@@ -167,6 +189,7 @@ export async function runValidation(): Promise<{ passed: number; failed: number;
     await testEcohubAi();
     await testRoles();
     await testStudentPin();
+    await testAuthCredentials();
   } finally {
     await prisma.$disconnect();
   }

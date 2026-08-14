@@ -10,7 +10,7 @@ import {
   hashStudentPin,
   syntheticStudentEmail,
 } from "@/lib/student-pin";
-import { validatePassword } from "@/lib/security/password-policy";
+import { validatePassword, hashPassword } from "@/lib/security/password-policy";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 
 export async function createParentAction(formData: FormData) {
@@ -31,7 +31,7 @@ export async function createParentAction(formData: FormData) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "E-mail já cadastrado." };
 
-  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  const passwordHash = await hashPassword(password);
   const parent = await prisma.user.create({
     data: { email, passwordHash, fullName, role: "parent", schoolId: user.schoolId },
   });

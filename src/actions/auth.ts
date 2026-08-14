@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth";
 import { loginHubPath } from "@/lib/login-paths";
 import { TENANT_COOKIE } from "@/lib/tenant";
+import { findUserByEmailForLogin, verifyAndUpgradePassword } from "@/lib/auth-credentials";
 import { prisma } from "@/lib/db";
 import { ensureDefaultBadges, ensureDefaultRewards } from "@/lib/school-setup";
 import { notifyInitialSchoolVerification } from "@/lib/sync-school-verification";
@@ -38,7 +39,6 @@ import {
   hashPassword,
   normalizePassword,
   validatePassword,
-  verifyPassword,
 } from "@/lib/security/password-policy";
 
 function handleRateLimitError(error: unknown): { error: string } | null {
@@ -92,9 +92,9 @@ export async function loginAction(formData: FormData) {
     throw error;
   }
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await findUserByEmailForLogin(email);
 
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  if (!user || !(await verifyAndUpgradePassword(user, password))) {
     return { error: GENERIC_AUTH_ERROR };
   }
 
@@ -118,7 +118,15 @@ export async function loginAction(formData: FormData) {
     resolvedTenantSlug = tenantSchool.slug;
   }
 
-  await establishSession(user, { remember, tenantSlug: resolvedTenantSlug });
+  try {
+    await establishSession(user, { remember, tenantSlug: resolvedTenantSlug });
+  } catch (error) {
+    console.error("[auth] Falha ao criar sessão após login:", error);
+    return {
+      error:
+        "Não foi possível iniciar a sessão após o login. Tente novamente em instantes ou contate o suporte.",
+    };
+  }
   redirect(dashboardForRole(user.role as UserRole));
 }
 

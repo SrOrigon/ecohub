@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
 import { ensureDefaultBadges, ensureDefaultRewards } from "../src/lib/school-setup";
 import { hashStudentPin } from "../src/lib/student-pin";
+import { hashPassword } from "../src/lib/security/password-policy";
 
 /** Escola piloto idempotente para validação institucional local. */
 const prisma = new PrismaClient();
@@ -16,7 +16,7 @@ async function main() {
     return;
   }
 
-  const passwordHash = await bcrypt.hash("Piloto2026!", 10);
+  const passwordHash = await hashPassword("Piloto2026!");
   const pinHash = await hashStudentPin("654321");
 
   const school = await prisma.school.create({

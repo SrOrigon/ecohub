@@ -26,7 +26,7 @@ import {
   type SchoolSettings,
 } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
-import { validatePassword } from "@/lib/security/password-policy";
+import { validatePassword, hashPassword } from "@/lib/security/password-policy";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 import { parseBirthDate } from "@/lib/student-age";
 import { resolveAvatarFromForm } from "@/lib/avatar";
@@ -120,7 +120,7 @@ export async function createStudentAction(formData: FormData) {
     if (!password) return { error: "Senha inicial é obrigatória." };
     const passwordCheck = validatePassword(password);
     if (!passwordCheck.ok) return { error: passwordCheck.error };
-    passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    passwordHash = await hashPassword(password);
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -899,7 +899,7 @@ export async function createTeacherAction(formData: FormData) {
     return { error: avatarResult.error };
   }
 
-  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  const passwordHash = await hashPassword(password);
   await prisma.user.create({
     data: {
       email,

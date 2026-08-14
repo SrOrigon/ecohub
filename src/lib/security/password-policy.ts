@@ -14,19 +14,38 @@ const BLOCKED_PASSWORDS = new Set([
 
 /** Normaliza senha antes de validar, hashear ou comparar. */
 export function normalizePassword(password: string): string {
-  return password.trim();
+  return password
+    .trim()
+    .normalize("NFC")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "");
 }
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(normalizePassword(password), BCRYPT_ROUNDS);
 }
 
-/** Compara senha informada com hash  -  inclui compatibilidade com contas antigas. */
+function isValidBcryptHash(hash: string): boolean {
+  return typeof hash === "string" && /^\$2[aby]\$\d{2}\$/.test(hash);
+}
+
+/** Compara senha informada com hash — inclui compatibilidade com contas antigas. */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  if (!isValidBcryptHash(hash)) return false;
+
   const normalized = normalizePassword(password);
-  if (await bcrypt.compare(normalized, hash)) return true;
-  // Contas criadas antes da normalização podem ter espaços no hash.
-  if (normalized !== password && (await bcrypt.compare(password, hash))) return true;
+  const candidates = [normalized];
+  if (password !== normalized) candidates.push(password);
+  if (password.trim() !== normalized) candidates.push(password.trim());
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      if (await bcrypt.compare(candidate, hash)) return true;
+    } catch {
+      /* hash inválido no banco */
+    }
+  }
+
   return false;
 }
 
