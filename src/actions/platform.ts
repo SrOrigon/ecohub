@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { isPlatformAdmin } from "@/lib/platform-admin";
 import { resetUserByEmail } from "@/lib/reset-user";
 import { SCHOOL_VERIFICATION_STATUS } from "@/lib/school-verification";
+import { notifySchoolVerificationChange } from "@/lib/sync-school-verification";
 
 function revalidatePlatform() {
   revalidatePath("/dashboard/plataforma");
@@ -31,6 +32,11 @@ export async function approveSchoolAction(formData: FormData) {
   const school = await prisma.school.findUnique({ where: { id: schoolId } });
   if (!school) return { error: "Escola não encontrada." };
 
+  const previous = school.verificationStatus;
+  if (previous === SCHOOL_VERIFICATION_STATUS.verified) {
+    return { success: true, schoolName: school.name };
+  }
+
   await prisma.school.update({
     where: { id: schoolId },
     data: {
@@ -40,6 +46,11 @@ export async function approveSchoolAction(formData: FormData) {
   });
 
   revalidatePlatform();
+  await notifySchoolVerificationChange(
+    schoolId,
+    previous as (typeof SCHOOL_VERIFICATION_STATUS)[keyof typeof SCHOOL_VERIFICATION_STATUS],
+    SCHOOL_VERIFICATION_STATUS.verified
+  );
   return { success: true, schoolName: school.name };
 }
 
@@ -50,12 +61,25 @@ export async function rejectSchoolAction(formData: FormData) {
   const schoolId = String(formData.get("schoolId") ?? "");
   if (!schoolId) return { error: "Escola inválida." };
 
+  const school = await prisma.school.findUnique({ where: { id: schoolId } });
+  if (!school) return { error: "Escola não encontrada." };
+
+  const previous = school.verificationStatus;
+  if (previous === SCHOOL_VERIFICATION_STATUS.rejected) {
+    return { success: true };
+  }
+
   await prisma.school.update({
     where: { id: schoolId },
     data: { verificationStatus: SCHOOL_VERIFICATION_STATUS.rejected },
   });
 
   revalidatePlatform();
+  await notifySchoolVerificationChange(
+    schoolId,
+    previous as (typeof SCHOOL_VERIFICATION_STATUS)[keyof typeof SCHOOL_VERIFICATION_STATUS],
+    SCHOOL_VERIFICATION_STATUS.rejected
+  );
   return { success: true };
 }
 

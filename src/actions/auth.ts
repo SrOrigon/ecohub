@@ -13,6 +13,7 @@ import { loginHubPath } from "@/lib/login-paths";
 import { TENANT_COOKIE } from "@/lib/tenant";
 import { prisma } from "@/lib/db";
 import { ensureDefaultBadges, ensureDefaultRewards } from "@/lib/school-setup";
+import { notifyInitialSchoolVerification } from "@/lib/sync-school-verification";
 import { saveLoginPreferencesAction, saveSchoolSlugPreference } from "@/actions/preferences";
 import { createUniqueSchoolSlug, findSchoolBySlug } from "@/lib/school-lookup";
 import { fetchCnpjFromBrasilApi, normalizeCnpj } from "@/lib/cnpj";
@@ -208,12 +209,15 @@ export async function registerSchoolAction(formData: FormData): Promise<Register
 
   await establishSession(user, { tenantSlug: school.slug });
 
+  const verificationStatus = school.verificationStatus as SchoolVerificationStatus;
+  await notifyInitialSchoolVerification(school.id, verificationStatus);
+
   return {
     success: true,
     schoolName: school.name,
     email,
     slug: school.slug,
-    verificationStatus: school.verificationStatus as SchoolVerificationStatus,
+    verificationStatus,
   };
 }
 

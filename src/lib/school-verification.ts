@@ -69,12 +69,3 @@ export function verificationStatusMessage(status: SchoolVerificationStatus): str
       return "";
   }
 }
-
-/** Banner persistente só para status que ainda exigem ação ou bloqueiam cadastros públicos. */
-export function shouldShowVerificationBanner(status: string): boolean {
-  return (
-    status === SCHOOL_VERIFICATION_STATUS.pending ||
-    status === SCHOOL_VERIFICATION_STATUS.manual_review ||
-    status === SCHOOL_VERIFICATION_STATUS.rejected
-  );
-}

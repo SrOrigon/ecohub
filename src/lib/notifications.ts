@@ -113,6 +113,19 @@ export async function notifyClassTeacher(
   }
 }
 
+export async function notifySchoolDirectors(
+  schoolId: string,
+  title: string,
+  message: string,
+  href?: string
+) {
+  const leaders = await prisma.user.findMany({
+    where: { schoolId, role: { in: ["director", "admin"] } },
+    select: { id: true },
+  });
+  await Promise.all(leaders.map((leader) => createNotification(leader.id, title, message, href)));
+}
+
 export async function canNotifyTeacherSubmission(schoolId: string | null | undefined) {
   const settings = await getSchoolSettings(schoolId);
   return settings.notifications.teacherOnSubmission;
