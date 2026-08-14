@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isPlatformAdmin } from "@/lib/platform-admin";
+import { resetUserByEmail } from "@/lib/reset-user";
 import { SCHOOL_VERIFICATION_STATUS } from "@/lib/school-verification";
 
 function revalidatePlatform() {
@@ -56,6 +57,30 @@ export async function rejectSchoolAction(formData: FormData) {
 
   revalidatePlatform();
   return { success: true };
+}
+
+export async function resetPlatformUserAction(formData: FormData) {
+  const gate = await requirePlatformAdmin();
+  if (!gate.ok) return { error: gate.error };
+
+  const email = String(formData.get("email") ?? "");
+  const result = await resetUserByEmail(email);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePlatform();
+  revalidatePath("/login");
+  revalidatePath("/registro");
+
+  if (!result.found) {
+    return { success: true, message: "E-mail já estava livre para cadastro." };
+  }
+
+  return {
+    success: true,
+    message: result.removedSchool
+      ? `Instituição e ${result.removedUsers} usuário(s) removidos.`
+      : "Usuário removido.",
+  };
 }
 
 export async function fetchPendingSchoolsForPlatform(actorEmail: string) {

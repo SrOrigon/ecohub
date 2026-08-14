@@ -14,6 +14,7 @@
     "test:validation": "npx tsx scripts/institutional-validation.ts",
     "test:full": "node scripts/run-full-validation.mjs",
     "db:backup": "node scripts/backup-db.mjs",
+    "db:reset-user": "node scripts/reset-user-by-email.mjs",
     "db:pilot": "npx tsx scripts/seed-pilot-institution.ts",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx scripts/seed-pilot-institution.ts",

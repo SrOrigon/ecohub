@@ -2,6 +2,7 @@ import { getSessionUser } from "@/lib/auth";
 import { fetchPendingSchoolsForPlatform } from "@/actions/platform";
 import { isPlatformAdmin } from "@/lib/platform-admin";
 import { PlatformSchoolsPanel } from "@/components/platform/platform-schools-panel";
+import { PlatformResetUserForm } from "@/components/platform/platform-reset-user-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { redirect } from "next/navigation";
 
@@ -18,6 +19,7 @@ export default async function PlataformaPage() {
         title="Administração da plataforma"
         description="Aprove ou rejeite escolas com CNPJ em análise manual."
       />
+      <PlatformResetUserForm />
       <PlatformSchoolsPanel schools={schools} />
     </div>
   );
