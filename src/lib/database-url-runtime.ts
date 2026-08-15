@@ -5,7 +5,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
-export const DEFAULT_DATABASE_URL = "file:/data/prod.db";
+import { PRODUCTION_DATABASE_URL } from "@/lib/production-database";
+
+export const DEFAULT_DATABASE_URL = PRODUCTION_DATABASE_URL;
 const DATABASE_URL_FILE =
   process.env.ECOHUB_DATABASE_URL_FILE?.trim() || "/data/.database_url";
 

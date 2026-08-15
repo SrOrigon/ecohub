@@ -1,6 +1,15 @@
 /**
  * Garante que contas (logins) sejam gravadas no volume persistente em produção.
  */
+import { accessSync, constants, copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
+import {
+  ACCOUNT_SNAPSHOT_PATH,
+  DATABASE_COPY_PATH,
+  GOLDEN_BACKUP_PATH,
+  PRODUCTION_DATABASE_PATH,
+  PRODUCTION_DATABASE_URL,
+} from "@/lib/production-database";
 
 const DATA_DIR = process.env.ECOHUB_DATA_DIR?.trim() || "/data";
 
@@ -15,21 +24,58 @@ export function isOnPersistentVolume(dbPath: string | null): boolean {
   return normalized === DATA_DIR || normalized.startsWith(`${DATA_DIR}/`);
 }
 
-/** Bloqueia criação de conta se o banco não estiver no volume /data (produção). */
+/** Força banco em /data/prod.db e valida volume gravável. */
 export function assertProductionDatabasePersistent(): void {
   if (process.env.NODE_ENV !== "production") return;
 
-  const dbPath = databasePathFromUrl();
-  if (!isOnPersistentVolume(dbPath)) {
+  process.env.DATABASE_URL = PRODUCTION_DATABASE_URL;
+
+  try {
+    mkdirSync(DATA_DIR, { recursive: true });
+    mkdirSync(dirname(GOLDEN_BACKUP_PATH), { recursive: true });
+    accessSync(DATA_DIR, constants.W_OK);
+  } catch (error) {
     console.error(
-      "[persistência] CRÍTICO: tentativa de salvar conta fora do volume /data.",
-      "DATABASE_URL atual:",
-      process.env.DATABASE_URL ?? "(ausente)"
+      "[persistência] CRÍTICO: volume /data não gravável:",
+      error instanceof Error ? error.message : error
     );
-    throw new Error(
-      "PERSISTENCE_UNAVAILABLE: contas só podem ser criadas com banco em /data/prod.db"
-    );
+    throw new Error("PERSISTENCE_UNAVAILABLE: monte o volume Railway em /data");
   }
+
+  if (!isOnPersistentVolume(PRODUCTION_DATABASE_PATH)) {
+    throw new Error("PERSISTENCE_UNAVAILABLE: banco deve estar em /data/prod.db");
+  }
+}
+
+/** Copia prod.db para golden + cópia extra imediatamente após cadastro. */
+export async function persistGoldenBackupNow(): Promise<void> {
+  if (process.env.NODE_ENV !== "production") return;
+
+  const { prisma } = await import("@/lib/db");
+
+  try {
+    await prisma.$executeRawUnsafe("PRAGMA wal_checkpoint(FULL)");
+  } catch {
+    /* continua */
+  }
+
+  if (!existsSync(PRODUCTION_DATABASE_PATH)) {
+    console.warn("[persistência] prod.db não encontrado para backup dourado.");
+    return;
+  }
+
+  mkdirSync(dirname(GOLDEN_BACKUP_PATH), { recursive: true });
+  copyFileSync(PRODUCTION_DATABASE_PATH, GOLDEN_BACKUP_PATH);
+  copyFileSync(PRODUCTION_DATABASE_PATH, DATABASE_COPY_PATH);
+
+  const userCount = await prisma.user.count();
+  writeFileSync(
+    ACCOUNT_SNAPSHOT_PATH,
+    `${JSON.stringify({ userCount, updatedAt: new Date().toISOString() })}\n`,
+    "utf8"
+  );
+
+  console.log(`[persistência] Backup dourado salvo (${userCount} usuário(s)).`);
 }
 
 /** Confirma que o usuário foi gravado no banco após create. */
@@ -43,21 +89,5 @@ export async function confirmUserPersisted(
     throw new Error("USER_NOT_PERSISTED");
   }
 
-  scheduleGoldenBackup();
-}
-
-/** Atualiza backup dourado imediatamente após novo cadastro (produção). */
-export function scheduleGoldenBackup(): void {
-  if (process.env.NODE_ENV !== "production") return;
-
-  const dbPath = databasePathFromUrl();
-  if (!isOnPersistentVolume(dbPath)) return;
-
-  import("node:child_process").then(({ exec }) => {
-    exec("node scripts/golden-backup.mjs", { cwd: process.cwd() }, (error) => {
-      if (error) {
-        console.warn("[persistência] Backup dourado pós-cadastro falhou:", error.message);
-      }
-    });
-  });
+  await persistGoldenBackupNow();
 }

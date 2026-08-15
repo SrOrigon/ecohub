@@ -111,7 +111,7 @@ export async function backupDatabase(options = {}) {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const dest = join(destDir, `ecohub-${stamp}.db`);
 
-  const prisma = new PrismaClient();
+  const prisma = createProductionPrisma();
   try {
     await prisma.$executeRawUnsafe("PRAGMA wal_checkpoint(FULL)");
     await prisma.$executeRawUnsafe(`VACUUM INTO '${sqlPath(dest)}'`);

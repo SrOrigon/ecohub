@@ -18,6 +18,7 @@ import {
   databasePathFromUrl,
   shouldEnforcePersistentDatabase,
 } from "./lib/paths.mjs";
+import { createProductionPrisma } from "./lib/db-user-count.mjs";
 
 function log(level, message) {
   console.log(`[ecohub:persistência] ${level}: ${message}`);
@@ -117,7 +118,7 @@ export async function ensureProductionPersistence(options = {}) {
   const previous = readManifest();
 
   let userCount = null;
-  const prisma = new PrismaClient();
+  const prisma = createProductionPrisma();
   try {
     await optimizeSqlite(prisma);
     userCount = await prisma.user.count();

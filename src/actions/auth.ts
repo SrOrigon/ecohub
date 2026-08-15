@@ -106,7 +106,7 @@ export async function loginAction(formData: FormData) {
       if (totalUsers === 0) {
         return {
           error:
-            "Nenhuma conta no sistema. Cadastre em /registro/escola ou aguarde 1 minuto após o deploy (restauração automática do backup).",
+            "Nenhuma conta encontrada. Cadastre em /registro/escola — após cadastrar, não atualize o sistema por 2 minutos para o backup ser salvo.",
         };
       }
     }

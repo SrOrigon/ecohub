@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { PrismaClient } from "@prisma/client";
 import { ensureAuthSecret } from "./ensure-auth-secret.mjs";
+import { createProductionPrisma } from "./lib/db-user-count.mjs";
 import { ensureProductionPersistence, ensureDatabaseUrl } from "./ensure-production-persistence.mjs";
 import { restoreDatabaseIfNeeded } from "./restore-db-from-backup.mjs";
 import { updateGoldenBackup } from "./golden-backup.mjs";
@@ -103,7 +103,7 @@ if (!authOk) {
   console.log("[ecohub] AUTH_SECRET OK (login e sessões habilitados).");
 }
 
-const prisma = new PrismaClient();
+const prisma = createProductionPrisma();
 try {
   const users = await prisma.user.count();
 
