@@ -24,11 +24,7 @@ export function getAuthSecret(): Uint8Array {
     return new TextEncoder().encode(secret);
   }
 
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "AUTH_SECRET ausente. Reinicie o serviço — o startup deve gerar o segredo automaticamente."
-    );
-  }
-
-  return new TextEncoder().encode("ecohub-dev-secret-change-in-production");
+  // Nunca derruba a página: gera um segredo em memória se o volume ainda não estiver pronto.
+  const generated = ensureAuthSecretAtRuntime();
+  return new TextEncoder().encode(generated);
 }

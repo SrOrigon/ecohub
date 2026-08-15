@@ -56,10 +56,7 @@ export async function proxy(request: NextRequest) {
   try {
     await jwtVerify(token, authSecret());
     return NextResponse.next({ request: { headers: requestHeaders } });
-  } catch (error) {
-    if (process.env.NODE_ENV === "production" && !process.env.AUTH_SECRET?.trim()) {
-      console.error("[proxy] AUTH_SECRET ausente — sessões inválidas em produção.");
-    }
+  } catch {
     const response = NextResponse.redirect(new URL(loginHubPath(tenantSlug), request.url));
     response.cookies.delete(SESSION_COOKIE);
     return response;

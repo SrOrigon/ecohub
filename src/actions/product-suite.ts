@@ -11,7 +11,7 @@ import { assertClassInScope } from "@/lib/tenant-guards";
 
 const STAFF_ROLES: UserRole[] = ["admin", "director", "secretary", "teacher"];
 
-export async function submitEnrollmentAction(formData: FormData): Promise<void> {
+export async function submitEnrollmentAction(formData: FormData) {
   const schoolSlug = String(formData.get("schoolSlug") ?? "").trim().toLowerCase();
   const studentName = String(formData.get("studentName") ?? "").trim();
   const birthDateStr = String(formData.get("birthDate") ?? "").trim();
@@ -20,13 +20,20 @@ export async function submitEnrollmentAction(formData: FormData): Promise<void> 
   const parentPhone = String(formData.get("parentPhone") ?? "").trim() || null;
   const gradeLevel = String(formData.get("gradeLevel") ?? "").trim();
 
-  if (!schoolSlug || !studentName || !birthDateStr || !parentName || !parentEmail || !gradeLevel) return;
+  if (!schoolSlug || !studentName || !birthDateStr || !parentName || !parentEmail || !gradeLevel) {
+    if (schoolSlug) redirect(`/inscricao/${schoolSlug}?erro=campos`);
+    return;
+  }
 
   const school = await prisma.school.findUnique({ where: { slug: schoolSlug } });
-  if (!school) return;
+  if (!school) {
+    redirect(`/inscricao/${schoolSlug}?erro=escola`);
+  }
 
   const birthDate = new Date(birthDateStr);
-  if (Number.isNaN(birthDate.getTime())) return;
+  if (Number.isNaN(birthDate.getTime())) {
+    redirect(`/inscricao/${schoolSlug}?erro=data`);
+  }
 
   await prisma.enrollmentApplication.create({
     data: { schoolId: school.id, studentName, birthDate, parentName, parentEmail, parentPhone, gradeLevel },

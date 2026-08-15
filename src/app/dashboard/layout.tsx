@@ -6,12 +6,32 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { syncSchoolVerificationIfNeeded } from "@/lib/sync-school-verification";
 import { SCHOOL_VERIFICATION_STATUS } from "@/lib/school-verification";
 import { redirect } from "next/navigation";
+import { isNextRedirect } from "@/lib/run-server-action";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const user = await getSessionUser();
+  let user;
+  try {
+    user = await getSessionUser();
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    const digest =
+      typeof error === "object" && error && "digest" in error
+        ? String((error as { digest?: string }).digest)
+        : "";
+    if (digest === "DYNAMIC_SERVER_USAGE") throw error;
+    console.error("[dashboard] sessão:", error);
+    redirect("/login");
+  }
   if (!user) redirect("/login");
 
-  const school = await getSchool(user);
+  let school = null;
+  try {
+    school = await getSchool(user);
+  } catch (error) {
+    console.error("[dashboard] escola:", error);
+  }
   const settings = parseSchoolSettings(school?.settings);
 
   if (
@@ -20,7 +40,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     school.verificationStatus !== SCHOOL_VERIFICATION_STATUS.verified &&
     school.verificationStatus !== SCHOOL_VERIFICATION_STATUS.rejected
   ) {
-    await syncSchoolVerificationIfNeeded(school);
+    try {
+      await syncSchoolVerificationIfNeeded(school);
+    } catch (error) {
+      console.error("[dashboard] verificação CNPJ:", error);
+    }
   }
 
   return (

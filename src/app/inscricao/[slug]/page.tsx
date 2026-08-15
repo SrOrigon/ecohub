@@ -10,10 +10,10 @@ export default async function InscricaoPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ ok?: string }>;
+  searchParams: Promise<{ ok?: string; erro?: string }>;
 }) {
   const { slug } = await params;
-  const { ok } = await searchParams;
+  const { ok, erro } = await searchParams;
   const school = await prisma.school.findUnique({
     where: { slug: slug.toLowerCase() },
     select: { name: true, slug: true, city: true, state: true },
@@ -37,6 +37,15 @@ export default async function InscricaoPage({
         {ok === "1" && (
           <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center text-emerald-900">
             Inscrição enviada com sucesso! A secretaria entrará em contato em breve.
+          </p>
+        )}
+        {erro && (
+          <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-center text-red-900">
+            {erro === "escola"
+              ? "Instituição não encontrada."
+              : erro === "data"
+                ? "Data de nascimento inválida."
+                : "Preencha todos os campos obrigatórios."}
           </p>
         )}
 

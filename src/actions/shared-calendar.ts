@@ -15,7 +15,7 @@ const CALENDAR_STAFF = ["admin", "director", "secretary", "teacher"] as const;
 
 async function loadSettings(schoolId: string) {
   const school = await prisma.school.findUnique({ where: { id: schoolId } });
-  if (!school) throw new Error("Escola não encontrada.");
+  if (!school) return null;
   return { school, settings: parseSchoolSettings(school.settings) };
 }
 
@@ -41,7 +41,9 @@ export async function addSharedCalendarItemAction(formData: FormData): Promise<v
 
   if (!date || !label) return;
 
-  const { settings } = await loadSettings(user.schoolId);
+  const loaded = await loadSettings(user.schoolId);
+  if (!loaded) return;
+  const { settings } = loaded;
 
   if (itemType === "holiday") {
     const holiday: SchoolHoliday = { date, label };
@@ -66,7 +68,9 @@ export async function removeSharedCalendarItemAction(formData: FormData): Promis
   const date = String(formData.get("date") ?? "").trim();
   const label = String(formData.get("label") ?? "").trim();
 
-  const { settings } = await loadSettings(user.schoolId);
+  const loaded = await loadSettings(user.schoolId);
+  if (!loaded) return;
+  const { settings } = loaded;
 
   if (itemType === "holiday") {
     settings.calendar.holidays = settings.calendar.holidays.filter(
@@ -91,7 +95,9 @@ export async function updateSharedCalendarMetaAction(formData: FormData): Promis
   const classEndTime = String(formData.get("classEndTime") ?? "").trim();
   const schoolDaysRaw = String(formData.get("schoolDays") ?? "");
 
-  const { settings } = await loadSettings(user.schoolId);
+  const loaded = await loadSettings(user.schoolId);
+  if (!loaded) return;
+  const { settings } = loaded;
 
   if (yearStart) settings.calendar.yearStart = yearStart;
   if (yearEnd) settings.calendar.yearEnd = yearEnd;

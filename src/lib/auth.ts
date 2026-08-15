@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { cache } from "react";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import type { UserRole } from "@/lib/constants";
 import { findSchoolBySlug } from "@/lib/school-lookup";
@@ -129,10 +130,27 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   return sessionUser;
 });
 
+function homePathForRole(role: UserRole) {
+  switch (role) {
+    case "student":
+      return "/dashboard/aluno";
+    case "parent":
+      return "/dashboard/responsavel";
+    case "teacher":
+      return "/dashboard/professor";
+    case "secretary":
+      return "/dashboard/secretaria";
+    default:
+      return "/dashboard";
+  }
+}
+
 export async function requireSession(allowedRoles?: UserRole[]) {
   const user = await getSessionUser();
-  if (!user) throw new Error("UNAUTHORIZED");
-  if (allowedRoles && !allowedRoles.includes(user.role)) throw new Error("FORBIDDEN");
+  if (!user) redirect("/login");
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    redirect(homePathForRole(user.role));
+  }
   return user;
 }
 

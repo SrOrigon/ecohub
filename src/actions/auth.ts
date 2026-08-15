@@ -8,7 +8,7 @@ import {
   clearTenantCookie,
   establishSession,
   safeEstablishSession,
-  requireSession,
+  getSessionUser,
 } from "@/lib/auth";
 import { isNextRedirect } from "@/lib/run-server-action";
 import {
@@ -688,5 +688,5 @@ export async function logoutAction(formData?: FormData) {
 }
 
 export async function getCurrentUserAction() {
-  return requireSession().catch(() => null);
+  return getSessionUser();
 }
