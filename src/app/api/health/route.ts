@@ -4,6 +4,8 @@ import { isUsableAuthSecret, ensureAuthSecretAtRuntime } from "@/lib/auth-secret
 import { ensureDatabaseUrlAtRuntime } from "@/lib/database-url-runtime";
 import { NextResponse } from "next/server";
 
+const GOLDEN_BACKUP_PATH = "/data/backups/ecohub-golden.db";
+
 export const dynamic = "force-dynamic";
 
 type PersistenceManifest = {
@@ -89,6 +91,7 @@ export async function GET() {
               users: userCount ?? manifest?.userCount ?? null,
               schools: schoolCount,
               persisted: onPersistentVolume && (manifest?.volumeWritable ?? true),
+              goldenBackup: existsSync(/* turbopackIgnore: true */ GOLDEN_BACKUP_PATH),
             },
             lastBackup: manifest?.lastBackup ?? null,
           }

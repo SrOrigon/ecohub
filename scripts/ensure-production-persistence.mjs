@@ -106,27 +106,15 @@ function writeManifest(data) {
 
 /**
  * Valida volume e registra estado de persistência.
- * @param {{ runBackup?: boolean }} [options]
+ * @param {{ runBackup?: boolean, minUsersForBackup?: number }} [options]
  */
 export async function ensureProductionPersistence(options = {}) {
   const runBackup = options.runBackup ?? false;
+  const minUsersForBackup = options.minUsersForBackup ?? 0;
   const databaseUrl = ensureDatabaseUrl();
   const dbPath = databasePathFromUrl(databaseUrl);
   const volumeWritable = ensureDataDirWritable();
   const previous = readManifest();
-
-  let lastBackup = null;
-  if (runBackup && dbPath && existsSync(dbPath)) {
-    try {
-      const result = await backupDatabase({ dbPath, label: "pós-migração" });
-      if (result.ok) lastBackup = result.path;
-    } catch (error) {
-      log(
-        "aviso",
-        `Backup automático falhou (deploy continua): ${error instanceof Error ? error.message : error}`
-      );
-    }
-  }
 
   let userCount = null;
   const prisma = new PrismaClient();
@@ -142,6 +130,26 @@ export async function ensureProductionPersistence(options = {}) {
     await prisma.$disconnect();
   }
 
+  let lastBackup = null;
+  if (runBackup && dbPath && existsSync(dbPath)) {
+    try {
+      const result = await backupDatabase({
+        dbPath,
+        label: "pós-migração",
+        minUsers: Math.max(minUsersForBackup, previous?.userCount ?? 0),
+      });
+      if (result.ok) lastBackup = result.path;
+      if (result.skipped && result.reason === "empty-db-with-history") {
+        log("erro", "Backup bloqueado — banco vazio com histórico de contas.");
+      }
+    } catch (error) {
+      log(
+        "aviso",
+        `Backup automático falhou (deploy continua): ${error instanceof Error ? error.message : error}`
+      );
+    }
+  }
+
   const manifest = {
     updatedAt: new Date().toISOString(),
     databaseUrl,
@@ -151,6 +159,7 @@ export async function ensureProductionPersistence(options = {}) {
     userCount,
     lastBackup,
     previousUserCount: previous?.userCount ?? null,
+    goldenBackup: `${DATA_DIR}/backups/ecohub-golden.db`,
     authSecretFile: process.env.ECOHUB_AUTH_SECRET_FILE?.trim() || `${DATA_DIR}/.auth_secret`,
   };
 

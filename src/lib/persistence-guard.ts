@@ -42,4 +42,22 @@ export async function confirmUserPersisted(
     console.error("[persistência] CRÍTICO: usuário criado mas não encontrado no banco:", userId);
     throw new Error("USER_NOT_PERSISTED");
   }
+
+  scheduleGoldenBackup();
+}
+
+/** Atualiza backup dourado imediatamente após novo cadastro (produção). */
+export function scheduleGoldenBackup(): void {
+  if (process.env.NODE_ENV !== "production") return;
+
+  const dbPath = databasePathFromUrl();
+  if (!isOnPersistentVolume(dbPath)) return;
+
+  import("node:child_process").then(({ exec }) => {
+    exec("node scripts/golden-backup.mjs", { cwd: process.cwd() }, (error) => {
+      if (error) {
+        console.warn("[persistência] Backup dourado pós-cadastro falhou:", error.message);
+      }
+    });
+  });
 }

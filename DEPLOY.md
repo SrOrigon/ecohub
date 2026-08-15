@@ -94,7 +94,8 @@ O sistema foi configurado para **não perder contas nem registros** entre deploy
 |-------|-----------|----------|
 | Usuários, senhas (hash), escolas, turmas, etc. | `/data/prod.db` | Volume Railway em `/data` |
 | Segredo de sessão (`AUTH_SECRET`) | `/data/.auth_secret` | Gerado uma vez e reutilizado |
-| Backups automáticos | `/data/backups/` | Cópia antes de cada `npm start` (até 14 versões) |
+| Backups automáticos | `/data/backups/` | Cópia após cada deploy (só se houver usuários) |
+| **Backup dourado** | `/data/backups/ecohub-golden.db` | **Nunca apagado** — restaurado automaticamente se o banco zerar |
 | Estado de persistência | `/data/.ecohub-persistence.json` | Contagem de usuários e último backup |
 
 ### Regras obrigatórias no Railway
@@ -108,11 +109,12 @@ O sistema foi configurado para **não perder contas nem registros** entre deploy
 
 ### O que acontece em cada deploy
 
-1. Valida que `/data` está gravável
-2. Backup automático de `prod.db` → `/data/backups/ecohub-AAAA-MM-DD...db`
-3. `prisma migrate deploy` (só adiciona/altera estrutura, **não apaga dados**)
-4. Carrega ou gera `AUTH_SECRET` no volume
-5. Sobe o Next.js
+1. Valida que `/data` está gravável e fixa `DATABASE_URL` em `/data/prod.db`
+2. **Restaura automaticamente** do backup dourado ou backups se o banco estiver vazio
+3. `prisma migrate deploy` (só adiciona estrutura, **não apaga dados**)
+4. Backup automático **somente se houver usuários** (nunca sobrescreve histórico com banco vazio)
+5. Atualiza o **backup dourado** (`ecohub-golden.db`) com as contas atuais
+6. Carrega `AUTH_SECRET` do volume e sobe o Next.js
 
 Verifique após deploy: `GET /api/health` — deve retornar `persistence.accounts.persisted: true` e contagem de usuários estável.
 
