@@ -18,6 +18,7 @@ import {
   databasePathFromUrl,
   DATA_DIR,
   PERSISTENCE_MANIFEST,
+  getPersistentVolumeStatus,
 } from "./lib/paths.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -223,6 +224,16 @@ async function main() {
   const previousUsers = readPreviousUserCount();
 
   console.log("[ecohub] DATABASE_URL:", process.env.DATABASE_URL);
+
+  const volume = getPersistentVolumeStatus();
+  if (!volume.mounted) {
+    console.error("[ecohub] CRÍTICO: volume persistente NÃO montado.");
+    console.error("[ecohub]", volume.reason);
+    console.error("[ecohub] Cadastros serão recusados até existir um Volume em /data.");
+  } else {
+    console.log(`[ecohub] Volume persistente OK (${volume.source}):`, volume.mountPath);
+  }
+
   await bootstrapDatabase(dbPath, previousUsers);
 
   const port = process.env.PORT || "3000";

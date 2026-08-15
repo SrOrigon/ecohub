@@ -218,6 +218,13 @@ export async function registerSchoolAction(formData: FormData): Promise<Register
     return await registerSchoolActionImpl(formData);
   } catch (error) {
     console.error("[auth] registerSchoolAction falhou:", error);
+    const reason = error instanceof Error ? error.message : "";
+    if (reason.includes("PERSISTENCE_UNAVAILABLE")) {
+      return {
+        error:
+          "O volume persistente /data não está montado no Railway. Sem ele, o cadastro seria perdido no próximo deploy. Monte o volume em /data e tente novamente.",
+      };
+    }
     if (isDatabaseUnavailable(error)) {
       return { error: DATABASE_DOWN_MESSAGE };
     }

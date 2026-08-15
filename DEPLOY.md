@@ -1,5 +1,17 @@
 # Ecohub — Deploy
 
+## Volume persistente (obrigatório)
+
+Sem um **Volume Railway montado em `/data`**, cada deploy apaga logins, turmas e cadastros.
+
+1. Abra o serviço **eduhub** no Railway
+2. **Settings → Volumes → Add volume**
+3. **Mount path:** `/data` (exatamente isso, sem barra extra)
+4. Redeploy
+5. Confira `GET /api/health`: `volumeMounted: true`, `goldenBackup: true` depois do primeiro cadastro
+
+O app **recusa novos cadastros** se o volume não estiver montado.
+
 ## Variáveis de ambiente
 
 ### Obrigatórias (produção)

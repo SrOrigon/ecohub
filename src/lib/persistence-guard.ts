@@ -24,11 +24,67 @@ export function isOnPersistentVolume(dbPath: string | null): boolean {
   return normalized === DATA_DIR || normalized.startsWith(`${DATA_DIR}/`);
 }
 
-/** Força banco em /data/prod.db e valida volume gravável. */
+export function getPersistentVolumeStatus(): {
+  mounted: boolean;
+  source: string;
+  mountPath: string | null;
+  reason: string | null;
+} {
+  const expected = DATA_DIR.replace(/\\/g, "/");
+  const railwayMount = process.env.RAILWAY_VOLUME_MOUNT_PATH?.trim().replace(/\\/g, "/");
+  const onRailway = !!(
+    process.env.RAILWAY_ENVIRONMENT ||
+    process.env.RAILWAY_PROJECT_ID ||
+    process.env.RAILWAY_SERVICE_ID
+  );
+
+  if (railwayMount) {
+    const ok = railwayMount === expected || railwayMount === `${expected}/`;
+    return {
+      mounted: ok,
+      source: "railway-env",
+      mountPath: railwayMount,
+      reason: ok
+        ? null
+        : `Volume Railway montado em ${railwayMount}, mas o app exige ${expected}.`,
+    };
+  }
+
+  if (onRailway) {
+    return {
+      mounted: false,
+      source: "railway-missing-volume",
+      mountPath: null,
+      reason:
+        "Nenhum volume persistente detectado. No Railway: o serviço eduhub → Volumes → Add volume → Mount path exatamente /data.",
+    };
+  }
+
+  try {
+    const mounts = readFileSync("/proc/mounts", "utf8");
+    const mounted = mounts.split("\n").some((line) => line.split(/\s+/)[1] === expected);
+    return {
+      mounted,
+      source: "proc-mounts",
+      mountPath: mounted ? expected : null,
+      reason: mounted ? null : `${expected} não é um ponto de montagem.`,
+    };
+  } catch {
+    return { mounted: true, source: "local", mountPath: expected, reason: null };
+  }
+}
+
+/** Força banco em /data/prod.db e valida volume gravável E montado. */
 export function assertProductionDatabasePersistent(): void {
   if (process.env.NODE_ENV !== "production") return;
 
   process.env.DATABASE_URL = PRODUCTION_DATABASE_URL;
+
+  const volume = getPersistentVolumeStatus();
+  if (!volume.mounted) {
+    console.error("[persistência] CRÍTICO:", volume.reason);
+    throw new Error("PERSISTENCE_UNAVAILABLE: monte o volume Railway em /data");
+  }
 
   try {
     mkdirSync(DATA_DIR, { recursive: true });

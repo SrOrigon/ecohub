@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync, writeFileSyn
 import { dirname } from "node:path";
 import { prisma } from "@/lib/db";
 import { isUsableAuthSecret, ensureAuthSecretAtRuntime } from "@/lib/auth-secret-runtime";
+import { getPersistentVolumeStatus } from "@/lib/persistence-guard";
 import { ensureDatabaseUrlAtRuntime } from "@/lib/database-url-runtime";
 import { NextResponse } from "next/server";
 
@@ -80,7 +81,9 @@ export async function GET() {
     databasePath.startsWith("/data/") || databasePath === "/data";
 
   const manifest = readPersistenceManifest();
+  const volumeStatus = getPersistentVolumeStatus();
   const volumeWritable = productionDeploy ? probeVolumeWritable(databasePath) : null;
+  const volumeMounted = !productionDeploy || volumeStatus.mounted;
 
   const goldenExists = existsSync(/* turbopackIgnore: true */ GOLDEN_BACKUP_PATH);
   let lastBackup = manifest?.lastBackup ?? null;
@@ -93,10 +96,10 @@ export async function GET() {
   }
 
   const persistenceOk =
-    !productionDeploy || (onPersistentVolume && volumeWritable === true);
+    !productionDeploy || (onPersistentVolume && volumeWritable === true && volumeMounted);
 
   const status = dbOk && persistenceOk ? "ok" : "degraded";
-  const httpStatus = dbOk ? 200 : 503;
+  const httpStatus = dbOk && volumeMounted ? 200 : 503;
 
   return NextResponse.json(
     {
@@ -113,11 +116,15 @@ export async function GET() {
         ? {
             databasePath: databasePath || null,
             onPersistentVolume,
+            volumeMounted,
+            volumeMountPath: volumeStatus.mountPath,
+            volumeSource: volumeStatus.source,
+            volumeReason: volumeStatus.reason,
             volumeWritable,
             accounts: {
               users: userCount ?? manifest?.userCount ?? null,
               schools: schoolCount,
-              persisted: onPersistentVolume && volumeWritable === true,
+              persisted: onPersistentVolume && volumeWritable === true && volumeMounted,
               goldenBackup: goldenExists,
             },
             lastBackup,
