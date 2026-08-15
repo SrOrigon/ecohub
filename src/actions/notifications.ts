@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 
 function revalidateNotifications() {
   revalidatePath("/dashboard/notificacoes");
+  revalidatePath("/dashboard", "layout");
 }
 
 export async function getNotifications(limit = 20) {

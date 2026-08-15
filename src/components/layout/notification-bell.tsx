@@ -1,30 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import {
-  getNotifications,
   markAllNotificationsReadAction,
   markNotificationReadAction,
 } from "@/actions/notifications";
-
-type NotificationItem = {
-  id: string;
-  title: string;
-  message: string;
-  href: string | null;
-  isRead: boolean;
-  createdAt: Date;
-};
+import { useNotifications } from "@/components/notifications/notifications-provider";
+import type { NotificationSnapshotItem } from "@/lib/notification-snapshot";
 
 export function NotificationBell() {
+  const { unreadCount, items, refresh } = useNotifications();
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [markingAll, setMarkingAll] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(true);
@@ -36,23 +27,14 @@ export function NotificationBell() {
     };
   }, []);
 
-  const load = useCallback(async () => {
-    const data = await getNotifications(8);
-    if (!mountedRef.current) return;
-    setItems(data.items);
-    setUnreadCount(data.unreadCount);
-  }, []);
-
   useEffect(() => {
-    if (!open) return;
-    const interval = setInterval(() => void load(), 180_000);
-    return () => clearInterval(interval);
-  }, [open, load]);
+    void refresh();
+  }, [refresh]);
 
   function handleToggle() {
     setOpen((prev) => {
       const next = !prev;
-      if (next) void load();
+      if (next) void refresh();
       return next;
     });
   }
@@ -72,7 +54,7 @@ export function NotificationBell() {
     setMarkingAll(true);
     try {
       await markAllNotificationsReadAction();
-      await load();
+      await refresh();
     } finally {
       if (mountedRef.current) setMarkingAll(false);
     }
@@ -118,7 +100,7 @@ export function NotificationBell() {
             )}
             {items.map((n) => (
               <li key={n.id} className={!n.isRead ? "bg-[color:var(--school-primary-soft)]" : ""}>
-                <NotificationRow item={n} onRead={load} />
+                <NotificationRow item={n} onRead={refresh} />
               </li>
             ))}
           </ul>
@@ -141,7 +123,7 @@ function NotificationRow({
   item,
   onRead,
 }: {
-  item: NotificationItem;
+  item: NotificationSnapshotItem;
   onRead: () => void;
 }) {
   const router = useRouter();
@@ -157,7 +139,11 @@ function NotificationRow({
     <div className="px-4 py-3">
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-semibold text-[var(--foreground)]">{item.title}</p>
-        {!item.isRead && <Badge variant="default" className="shrink-0 text-xs">Nova</Badge>}
+        {!item.isRead && (
+          <Badge variant="default" className="shrink-0 text-xs">
+            Nova
+          </Badge>
+        )}
       </div>
       <p className="mt-1 text-sm text-[var(--muted-foreground)]">{item.message}</p>
       <p className="mt-1 text-xs text-[var(--muted-foreground)] opacity-70">{formatDate(item.createdAt)}</p>
@@ -169,8 +155,6 @@ function NotificationRow({
     return (
       <Link
         href={href}
-        // A navegação do Link pode cancelar a server action antes de concluir,
-        // então marcamos como lida e só então trocamos de rota.
         onClick={(event) => {
           event.preventDefault();
           void markRead().finally(() => router.push(href));

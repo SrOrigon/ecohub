@@ -51,6 +51,7 @@ import type { SchoolSettings } from "@/lib/school-settings";
 import { logoutAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
+import { useNotificationsOptional } from "@/components/notifications/notifications-provider";
 
 type NavItem = {
   href: string;
@@ -165,11 +166,14 @@ function NavLinks({
   onNavigate?: () => void;
 }) {
   const items = filterNav(role, permissions, features);
+  const notifications = useNotificationsOptional();
+  const unreadCount = notifications?.unreadCount ?? 0;
 
   return (
     <nav aria-label="Menu principal" className="space-y-0.5 px-2 py-3 sm:px-3 sm:py-4">
       {items.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+        const showUnread = href === "/dashboard/notificacoes" && unreadCount > 0;
         return (
           <Link
             key={href}
@@ -183,7 +187,12 @@ function NavLinks({
             )}
           >
             <Icon className={cn("shrink-0", kidFriendly ? "h-6 w-6" : "h-5 w-5")} aria-hidden="true" />
-            <span className="truncate">{label}</span>
+            <span className="min-w-0 flex-1 truncate">{label}</span>
+            {showUnread && (
+              <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </Link>
         );
       })}

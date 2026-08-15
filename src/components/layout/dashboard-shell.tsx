@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/header";
 import { SchoolThemeProvider } from "@/components/school/school-theme-provider";
 import { LiveMetricsProvider } from "@/components/metrics/live-metrics-provider";
 import { AttentionAlertsProvider } from "@/components/alerts/attention-alerts-provider";
+import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { isKidFriendlyRole, type UserRole } from "@/lib/constants";
 import type { SchoolSettings } from "@/lib/school-settings";
 
@@ -89,6 +90,7 @@ export function DashboardShell({
 
   return (
     <SchoolThemeProvider branding={branding}>
+      <NotificationsProvider>
       {needsLiveMetrics ? (
         needsAttentionAlerts ? (
           <LiveMetricsProvider>
@@ -102,6 +104,7 @@ export function DashboardShell({
       ) : (
         shell
       )}
+      </NotificationsProvider>
     </SchoolThemeProvider>
   );
 }
