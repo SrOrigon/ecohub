@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { DEFAULT_DB_URL } from "./lib/paths.mjs";
+import { DEFAULT_DB_URL } from "./paths.mjs";
 
 /**
  * Conta usuários em um banco SQLite via Prisma (URL explícita).
