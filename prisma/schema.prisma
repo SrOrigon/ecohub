@@ -778,6 +778,12 @@ model IssuedDocument {
   issuedBy  User    @relation("DocIssuer", fields: [issuedById], references: [id], onDelete: Cascade)
 }
 
+model AppMeta {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 model AiChatLog {
   id        String   @id @default(cuid())
   userId    String

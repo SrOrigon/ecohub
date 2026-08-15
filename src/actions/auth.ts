@@ -222,7 +222,7 @@ export async function registerSchoolAction(formData: FormData): Promise<Register
     if (reason.includes("PERSISTENCE_UNAVAILABLE")) {
       return {
         error:
-          "O volume persistente /data não está montado no Railway. Sem ele, o cadastro seria perdido no próximo deploy. Monte o volume em /data e tente novamente.",
+          "Não há banco durável configurado. No Railway: New → Database → PostgreSQL, ligue DATABASE_URL ao app, remova file:/data/prod.db e faça redeploy.",
       };
     }
     if (isDatabaseUnavailable(error)) {

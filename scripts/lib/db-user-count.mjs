@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { DEFAULT_DB_URL } from "./paths.mjs";
+import { applyDurableDatabaseUrl, isPostgresUrl } from "./database-mode.mjs";
 
 /**
  * Conta usuários em um banco SQLite via Prisma (URL explícita).
@@ -12,14 +12,14 @@ export async function countUsersInDatabase(databaseUrl, options = {}) {
     datasources: { db: { url: databaseUrl } },
   });
   try {
-    if (options.flushWal) {
+    if (options.flushWal && !isPostgresUrl(databaseUrl)) {
       await prisma.$executeRawUnsafe("PRAGMA wal_checkpoint(FULL)");
     }
     return await prisma.user.count();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     // Arquivo novo / schema ainda não aplicado: tratar como vazio, não como leitura incerta.
-    if (message.includes("does not exist in the current database") || message.includes("no such table")) {
+    if (message.includes("does not exist in the current database") || message.includes("no such table") || message.includes("does not exist")) {
       return 0;
     }
     console.warn("[db-count] Falha ao contar usuários:", databaseUrl, message);
@@ -30,11 +30,7 @@ export async function countUsersInDatabase(databaseUrl, options = {}) {
 }
 
 export function productionDatabaseUrl() {
-  if (process.env.NODE_ENV === "production") {
-    process.env.DATABASE_URL = DEFAULT_DB_URL;
-    return DEFAULT_DB_URL;
-  }
-  return process.env.DATABASE_URL?.trim() || "file:./prisma/dev.db";
+  return applyDurableDatabaseUrl();
 }
 
 export function createProductionPrisma() {
@@ -44,6 +40,7 @@ export function createProductionPrisma() {
 }
 
 export async function withSqliteBusyTimeout(prisma) {
+  if (isPostgresUrl(process.env.DATABASE_URL)) return;
   try {
     await prisma.$executeRawUnsafe("PRAGMA busy_timeout = 10000");
   } catch {

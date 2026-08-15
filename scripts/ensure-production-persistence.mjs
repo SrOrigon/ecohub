@@ -18,24 +18,24 @@ import {
   shouldEnforcePersistentDatabase,
 } from "./lib/paths.mjs";
 import { createProductionPrisma, withSqliteBusyTimeout } from "./lib/db-user-count.mjs";
+import { applyDurableDatabaseUrl, isPostgresUrl } from "./lib/database-mode.mjs";
 
 function log(level, message) {
   console.log(`[ecohub:persistência] ${level}: ${message}`);
 }
 
 export function ensureDatabaseUrl() {
-  const current = process.env.DATABASE_URL?.trim();
-  const dbPath = databasePathFromUrl(current);
-
-  if (!current) {
+  const resolved = applyDurableDatabaseUrl();
+  if (isPostgresUrl(resolved)) {
+    log("info", "Usando PostgreSQL gerenciado (dados sobrevivem a deploys).");
+  } else if (!resolved) {
     process.env.DATABASE_URL = DEFAULT_DB_URL;
     log("info", `DATABASE_URL ausente — usando ${DEFAULT_DB_URL}`);
-  } else if (shouldEnforcePersistentDatabase() && !isPersistentDatabasePath(dbPath)) {
+  } else if (shouldEnforcePersistentDatabase() && !isPersistentDatabasePath(databasePathFromUrl(resolved))) {
     log(
       "aviso",
-      `DATABASE_URL (${current}) não está no volume ${DATA_DIR}. Redirecionando para ${DEFAULT_DB_URL} para não perder dados no redeploy.`
+      `SQLite fora de ${DATA_DIR}. Em produção use PostgreSQL no Railway ou volume em /data.`
     );
-    process.env.DATABASE_URL = DEFAULT_DB_URL;
   }
 
   try {
@@ -126,15 +126,18 @@ export async function ensureProductionPersistence(options = {}) {
   const minUsersForBackup = options.minUsersForBackup ?? 0;
   const skipPrune = options.skipPrune ?? false;
   const databaseUrl = ensureDatabaseUrl();
-  const dbPath = databasePathFromUrl(databaseUrl);
-  const volumeWritable = ensureDataDirWritable();
+  const postgres = isPostgresUrl(databaseUrl);
+  const dbPath = postgres ? null : databasePathFromUrl(databaseUrl);
+  const volumeWritable = postgres ? true : ensureDataDirWritable();
   const previous = readManifest();
 
   let userCount = null;
   const prisma = createProductionPrisma();
   try {
-    await withSqliteBusyTimeout(prisma);
-    await optimizeSqlite(prisma);
+    if (!postgres) {
+      await withSqliteBusyTimeout(prisma);
+      await optimizeSqlite(prisma);
+    }
     userCount = await prisma.user.count();
   } catch (error) {
     log(
@@ -146,7 +149,7 @@ export async function ensureProductionPersistence(options = {}) {
   }
 
   let lastBackup = null;
-  if (runBackup && dbPath && existsSync(dbPath)) {
+  if (runBackup && !postgres && dbPath && existsSync(dbPath)) {
     try {
       const result = await backupDatabase({
         dbPath,
@@ -176,7 +179,7 @@ export async function ensureProductionPersistence(options = {}) {
     peakUserCount: Math.max(previous?.peakUserCount ?? 0, userCount ?? 0),
     lastBackup,
     previousUserCount: previous?.userCount ?? null,
-    goldenBackup: `${DATA_DIR}/backups/ecohub-golden.db`,
+    engine: postgres ? "postgresql" : "sqlite",
     authSecretFile: process.env.ECOHUB_AUTH_SECRET_FILE?.trim() || `${DATA_DIR}/.auth_secret`,
   };
 
@@ -189,7 +192,9 @@ export async function ensureProductionPersistence(options = {}) {
     );
   }
 
-  if (volumeWritable && isPersistentDatabasePath(dbPath)) {
+  if (postgres) {
+    log("info", `PostgreSQL pronto (${userCount ?? "?"} usuário(s)).`);
+  } else if (volumeWritable && isPersistentDatabasePath(dbPath)) {
     log("info", `Dados persistentes em ${dbPath} (${userCount ?? "?"} usuário(s)).`);
     if (lastBackup) log("info", `Backup automático: ${lastBackup}`);
   }

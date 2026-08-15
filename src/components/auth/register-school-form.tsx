@@ -129,12 +129,13 @@ export function RegisterSchoolForm({
               <p className="font-semibold">Cadastro bloqueado para não perder o login</p>
               <p className="mt-1">
                 {volumeReason ??
-                  "Monte um Volume no Railway em /data, faça o redeploy e volte a esta página."}
+                  "Falta um banco PostgreSQL (recomendado) ou um Volume em /data no Railway."}
               </p>
               <ol className="mt-2 list-inside list-decimal space-y-1 text-xs">
-                <li>Railway → serviço <strong>eduhub</strong> → <strong>Volumes</strong></li>
-                <li>Add volume → Mount path: <code>/data</code></li>
-                <li>Aguarde o redeploy e recarregue esta página</li>
+                <li>Railway → projeto → <strong>New</strong> → <strong>Database</strong> → <strong>PostgreSQL</strong></li>
+                <li>No serviço <strong>eduhub</strong> → Variables → apague <code>DATABASE_URL=file:/data/prod.db</code></li>
+                <li>Adicione <code>DATABASE_URL</code> apontando para o Postgres (variable reference)</li>
+                <li>Redeploy e recarregue esta página</li>
               </ol>
             </div>
           )}

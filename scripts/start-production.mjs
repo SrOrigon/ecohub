@@ -8,11 +8,13 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ensureAuthSecret } from "./ensure-auth-secret.mjs";
+import { ensureAuthSecretInDatabase } from "./ensure-auth-secret-store.mjs";
 import { ensureProductionPersistence, ensureDatabaseUrl } from "./ensure-production-persistence.mjs";
 import { restoreDatabaseIfNeeded } from "./restore-db-from-backup.mjs";
 import { updateGoldenBackup } from "./golden-backup.mjs";
 import { countUsersInDatabase } from "./lib/db-user-count.mjs";
+import { isPostgresUrl } from "./lib/database-mode.mjs";
+import { syncPrismaSchema } from "./sync-prisma-schema.mjs";
 import {
   isInstitutionalMode,
   databasePathFromUrl,
@@ -73,11 +75,31 @@ function ensureDataDirectory(dbPath) {
   }
 }
 
+async function bootstrapPostgres() {
+  const schema = syncPrismaSchema();
+  const pushed = run(`npx prisma db push --skip-generate --schema="${schema}"`, { optional: true });
+  if (!pushed) {
+    console.error("[ecohub] prisma db push no PostgreSQL falhou — login pode falhar até o schema existir.");
+  }
+
+  const users = await countUsersInDatabase(process.env.DATABASE_URL);
+  if (users < 0) {
+    console.error("[ecohub] CRÍTICO: PostgreSQL inacessível após bootstrap.");
+  } else {
+    console.log(`[ecohub] PostgreSQL pronto: ${users} usuário(s)`);
+  }
+  return { writable: true, users, postgres: true };
+}
+
 /**
  * Prepara o banco ANTES de servir tráfego: restaura backup, aplica migrations
  * e valida a conexão. Servir com banco quebrado derruba login e cadastros.
  */
 async function bootstrapDatabase(dbPath, previousUsers) {
+  if (isPostgresUrl(process.env.DATABASE_URL)) {
+    return bootstrapPostgres();
+  }
+
   const writable = ensureDataDirectory(dbPath);
 
   try {
@@ -142,11 +164,15 @@ async function backgroundMaintenance(dbPath, previousUsers) {
       skipPrune: true,
     });
 
-    if (dbPath && (persistence.userCount ?? 0) > 0) {
+    if (dbPath && !isPostgresUrl(process.env.DATABASE_URL) && (persistence.userCount ?? 0) > 0) {
       await updateGoldenBackup(dbPath);
     }
 
-    if ((institutionalMode || process.env.NODE_ENV === "production") && !persistence.volumeWritable) {
+    if (
+      (institutionalMode || process.env.NODE_ENV === "production") &&
+      !isPostgresUrl(process.env.DATABASE_URL) &&
+      !persistence.volumeWritable
+    ) {
       console.error(
         `[ecohub:bg] ERRO CRÍTICO: monte um volume em ${DATA_DIR} no Railway antes de usar em produção.`
       );
@@ -208,33 +234,36 @@ async function main() {
 
   ensureDatabaseUrl();
 
-  const authSecret = ensureAuthSecret();
-  if (authSecret.length < 32) {
-    console.error("[ecohub] ERRO CRÍTICO: não foi possível obter AUTH_SECRET válido.");
-  } else {
-    console.log("[ecohub] AUTH_SECRET OK (login e sessões habilitados).");
-  }
-
   if (!existsSync(NEXT_BIN)) {
     console.error("[ecohub] Next.js não encontrado em", NEXT_BIN);
     process.exit(1);
   }
 
-  const dbPath = databasePathFromUrl(process.env.DATABASE_URL);
+  const postgres = isPostgresUrl(process.env.DATABASE_URL);
+  const dbPath = postgres ? null : databasePathFromUrl(process.env.DATABASE_URL);
   const previousUsers = readPreviousUserCount();
 
-  console.log("[ecohub] DATABASE_URL:", process.env.DATABASE_URL);
+  console.log("[ecohub] DATABASE_URL:", postgres ? "postgresql://***" : process.env.DATABASE_URL);
 
   const volume = getPersistentVolumeStatus();
-  if (!volume.mounted) {
-    console.error("[ecohub] CRÍTICO: volume persistente NÃO montado.");
+  if (postgres) {
+    console.log("[ecohub] Persistência: PostgreSQL gerenciado (logins sobrevivem a deploys).");
+  } else if (!volume.mounted) {
+    console.error("[ecohub] CRÍTICO: sem PostgreSQL e sem volume persistente.");
     console.error("[ecohub]", volume.reason);
-    console.error("[ecohub] Cadastros serão recusados até existir um Volume em /data.");
+    console.error("[ecohub] Cadastros serão recusados até existir PostgreSQL ou Volume em /data.");
   } else {
     console.log(`[ecohub] Volume persistente OK (${volume.source}):`, volume.mountPath);
   }
 
   await bootstrapDatabase(dbPath, previousUsers);
+
+  const authSecret = await ensureAuthSecretInDatabase();
+  if (!authSecret || authSecret.length < 32) {
+    console.error("[ecohub] ERRO CRÍTICO: não foi possível obter AUTH_SECRET válido.");
+  } else {
+    console.log("[ecohub] AUTH_SECRET OK (login e sessões habilitados).");
+  }
 
   const port = process.env.PORT || "3000";
   console.log(`[ecohub] Subindo Next.js na porta ${port}...`);

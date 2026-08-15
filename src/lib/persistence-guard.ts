@@ -3,12 +3,12 @@
  */
 import { accessSync, constants, copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { isManagedPostgres, applyDurableDatabaseUrl, isPostgresUrl } from "@/lib/database-mode";
 import {
   ACCOUNT_SNAPSHOT_PATH,
   DATABASE_COPY_PATH,
   GOLDEN_BACKUP_PATH,
   PRODUCTION_DATABASE_PATH,
-  PRODUCTION_DATABASE_URL,
 } from "@/lib/production-database";
 
 const DATA_DIR = process.env.ECOHUB_DATA_DIR?.trim() || "/data";
@@ -79,16 +79,26 @@ export function getPersistentVolumeStatus(): {
   return { mounted: true, source: "local", mountPath: expected, reason: null };
 }
 
-/** Força banco em /data/prod.db e valida volume gravável E montado. */
+/** True quando logins sobrevivem a deploy: Postgres gerenciado ou volume /data. */
+export function isDurablePersistenceReady(): boolean {
+  if (process.env.NODE_ENV !== "production") return true;
+  if (isManagedPostgres()) return true;
+  return getPersistentVolumeStatus().mounted;
+}
+
+/** Exige banco durável em produção (PostgreSQL Railway ou Volume /data). */
 export function assertProductionDatabasePersistent(): void {
   if (process.env.NODE_ENV !== "production") return;
 
-  process.env.DATABASE_URL = PRODUCTION_DATABASE_URL;
+  const url = applyDurableDatabaseUrl();
+  if (isPostgresUrl(url)) return;
 
   const volume = getPersistentVolumeStatus();
   if (!volume.mounted) {
     console.error("[persistência] CRÍTICO:", volume.reason);
-    throw new Error("PERSISTENCE_UNAVAILABLE: monte o volume Railway em /data");
+    throw new Error(
+      "PERSISTENCE_UNAVAILABLE: adicione PostgreSQL no Railway (Database) ou monte o volume em /data"
+    );
   }
 
   try {
@@ -100,17 +110,18 @@ export function assertProductionDatabasePersistent(): void {
       "[persistência] CRÍTICO: volume /data não gravável:",
       error instanceof Error ? error.message : error
     );
-    throw new Error("PERSISTENCE_UNAVAILABLE: monte o volume Railway em /data");
+    throw new Error("PERSISTENCE_UNAVAILABLE: adicione PostgreSQL no Railway ou monte o volume em /data");
   }
 
-  if (!isOnPersistentVolume(PRODUCTION_DATABASE_PATH)) {
-    throw new Error("PERSISTENCE_UNAVAILABLE: banco deve estar em /data/prod.db");
+  if (!isOnPersistentVolume(PRODUCTION_DATABASE_PATH) && !isOnPersistentVolume(databasePathFromUrl(url))) {
+    throw new Error("PERSISTENCE_UNAVAILABLE: banco SQLite deve estar em /data/prod.db");
   }
 }
 
 /** Copia prod.db para golden + cópia extra imediatamente após cadastro. */
 export async function persistGoldenBackupNow(): Promise<void> {
   if (process.env.NODE_ENV !== "production") return;
+  if (isManagedPostgres()) return;
 
   const { prisma } = await import("@/lib/db");
 

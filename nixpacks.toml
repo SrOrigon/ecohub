@@ -1,7 +1,6 @@
 [variables]
 NIXPACKS_NODE_VERSION = "20"
-# Runtime: defina DATABASE_URL no Railway (ex.: file:/data/ecohub.db com volume)
-# e AUTH_SECRET com pelo menos 32 caracteres.
+# Runtime: DATABASE_URL do PostgreSQL Railway (${{Postgres.DATABASE_URL}}).
 
 [phases.install]
 cmds = ["npm install"]

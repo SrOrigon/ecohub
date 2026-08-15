@@ -1,16 +1,26 @@
 # Ecohub — Deploy
 
-## Volume persistente (obrigatório)
+## Banco PostgreSQL (obrigatório para lançamento)
 
-Sem um **Volume Railway montado em `/data`**, cada deploy apaga logins, turmas e cadastros.
+Cada deploy do Railway **apaga o disco do container**. SQLite em `/data` só sobrevive com Volume. O caminho oficial é **PostgreSQL gerenciado** — os logins não somem mais quando você atualiza o sistema.
 
-1. Abra o serviço **eduhub** no Railway
-2. **Settings → Volumes → Add volume**
-3. **Mount path:** `/data` (exatamente isso, sem barra extra)
-4. Redeploy
-5. Confira `GET /api/health`: `volumeMounted: true`, `goldenBackup: true` depois do primeiro cadastro
+### Passos no Railway (faça nesta ordem)
 
-O app **recusa novos cadastros** se o volume não estiver montado.
+1. Abra o projeto do Ecohub
+2. **New** → **Database** → **PostgreSQL** (espere ficar `Available`)
+3. Serviço **eduhub** → **Variables**
+4. **Apague** `DATABASE_URL` se o valor for `file:/data/prod.db` (isso gravava no disco temporário)
+5. **Add variable** → nome `DATABASE_URL` → valor a referência do Postgres, por exemplo:
+   `${{Postgres.DATABASE_URL}}`  
+   (o nome do serviço Postgres pode aparecer como `Postgres` ou `PostgreSQL` no painel)
+6. Confirme também `ECOHUB_INSTITUTIONAL=1`
+7. **Deploy** / Redeploy o serviço **eduhub**
+8. Confira `GET /api/health`: `"engine":"postgresql"`, `"persisted": true`, `"status":"ok"`
+9. Só então acesse `/registro/escola` e cadastre a instituição
+
+O app **recusa cadastros** enquanto não houver PostgreSQL (ou um Volume real em `/data`). Isso evita gravar a conta da escola em disco que some no próximo deploy.
+
+`AUTH_SECRET` fica salvo na tabela `AppMeta` do Postgres — sessões e senhas (hash) sobrevivem a atualizações.
 
 ## Variáveis de ambiente
 
@@ -19,12 +29,12 @@ O app **recusa novos cadastros** se o volume não estiver montado.
 ```env
 ECOHUB_INSTITUTIONAL=1
 NODE_ENV=production
-DATABASE_URL=file:/data/prod.db
+DATABASE_URL=${{Postgres.DATABASE_URL}}
 ```
 
-> **`AUTH_SECRET` é opcional.** O sistema gera e salva automaticamente em `/data/.auth_secret` no primeiro deploy. **Não use o texto de exemplo** da documentação como valor — deixe vazio ou remova a variável no Railway.
+> **Não use** `DATABASE_URL=file:/data/prod.db` em produção.
 >
-> O **volume em `/data` é obrigatório** para logins e dados persistirem entre deploys.
+> **`AUTH_SECRET` é opcional** com Postgres: o sistema grava o segredo no próprio banco. Se quiser fixar, use um valor aleatório com 32+ caracteres e **não troque** depois.
 
 ### Recomendadas
 
@@ -42,13 +52,13 @@ PORT=3000
 ## Railway
 
 1. Conecte o repositório GitHub (`SrOrigon/eduhub`, branch `main`)
-2. **Volume** montado em `/data`
+2. **PostgreSQL** no mesmo projeto, com `DATABASE_URL` apontando para ele
 3. Configure as variáveis acima
 4. Build: `npm run build` · Start: `npm start`
 5. Health check: `GET /api/health` (configurado em `railway.toml`)
 6. Smoke test: `npm run test:smoke -- https://seu-app.up.railway.app`
 
-`railway.toml` usa **SQLite** com volume — não é PostgreSQL.
+`railway.toml` sobe o Next.js; a persistência oficial é **PostgreSQL** no Railway.
 
 **Produção atual:** `https://eduhub-production-b513.up.railway.app`
 

@@ -1,13 +1,13 @@
 /**
- * Garante que o Next.js use sempre o banco no volume /data em produção.
- * Sem isso, cadastros podem ir para disco efêmero e sumir no redeploy.
+ * Garante DATABASE_URL durável: PostgreSQL gerenciado ou SQLite em /data.
+ * Nunca troca uma URL Postgres por arquivo SQLite.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
+import { applyDurableDatabaseUrl, isPostgresUrl, isSqliteFileUrl } from "@/lib/database-mode";
 import { PRODUCTION_DATABASE_URL } from "@/lib/production-database";
 
-export const DEFAULT_DATABASE_URL = PRODUCTION_DATABASE_URL;
 const DATABASE_URL_FILE =
   process.env.ECOHUB_DATABASE_URL_FILE?.trim() || "/data/.database_url";
 
@@ -15,7 +15,9 @@ function readPersistedDatabaseUrl(): string | null {
   try {
     if (!existsSync(/* turbopackIgnore: true */ DATABASE_URL_FILE)) return null;
     const url = readFileSync(/* turbopackIgnore: true */ DATABASE_URL_FILE, "utf8").trim();
-    return url.startsWith("file:/data/") ? url : null;
+    if (isPostgresUrl(url)) return url;
+    if (url.startsWith("file:/data/")) return url;
+    return null;
   } catch {
     return null;
   }
@@ -26,7 +28,7 @@ export function persistDatabaseUrl(url: string) {
     mkdirSync(dirname(DATABASE_URL_FILE), { recursive: true });
     writeFileSync(DATABASE_URL_FILE, `${url}\n`, "utf8");
   } catch {
-    /* volume opcional em dev */
+    /* volume opcional */
   }
 }
 
@@ -35,19 +37,20 @@ export function ensureDatabaseUrlAtRuntime(): string {
     return process.env.DATABASE_URL?.trim() || "file:./prisma/dev.db";
   }
 
-  const persisted = readPersistedDatabaseUrl();
-  const canonical = persisted ?? DEFAULT_DATABASE_URL;
-  const current = process.env.DATABASE_URL?.trim();
-  const currentPath = current?.replace(/^file:/, "") ?? "";
-
-  if (!currentPath.startsWith("/data/")) {
-    console.warn(
-      "[ecohub] DATABASE_URL fora do volume /data — usando",
-      canonical,
-      "(evita perda de logins no redeploy)"
-    );
+  const fromEnv = applyDurableDatabaseUrl();
+  if (isPostgresUrl(fromEnv)) {
+    persistDatabaseUrl(fromEnv);
+    return fromEnv;
   }
 
+  const persisted = readPersistedDatabaseUrl();
+  if (persisted && isPostgresUrl(persisted)) {
+    process.env.DATABASE_URL = persisted;
+    return persisted;
+  }
+
+  const canonical =
+    persisted && isSqliteFileUrl(persisted) ? persisted : fromEnv || PRODUCTION_DATABASE_URL;
   process.env.DATABASE_URL = canonical;
   persistDatabaseUrl(canonical);
   return canonical;

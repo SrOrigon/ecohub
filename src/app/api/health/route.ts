@@ -2,8 +2,9 @@ import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync, writeFileSyn
 import { dirname } from "node:path";
 import { prisma } from "@/lib/db";
 import { isUsableAuthSecret, ensureAuthSecretAtRuntime } from "@/lib/auth-secret-runtime";
-import { getPersistentVolumeStatus } from "@/lib/persistence-guard";
+import { getPersistentVolumeStatus, isDurablePersistenceReady } from "@/lib/persistence-guard";
 import { ensureDatabaseUrlAtRuntime } from "@/lib/database-url-runtime";
+import { isManagedPostgres, isPostgresUrl, isSqliteFileUrl } from "@/lib/database-mode";
 import { NextResponse } from "next/server";
 
 const GOLDEN_BACKUP_PATH = "/data/backups/ecohub-golden.db";
@@ -76,14 +77,23 @@ export async function GET() {
     process.env.ECOHUB_INSTITUTIONAL === "true";
 
   const databaseUrl = process.env.DATABASE_URL?.trim() ?? "";
-  const databasePath = databaseUrl.replace(/^file:/, "");
-  const onPersistentVolume =
-    databasePath.startsWith("/data/") || databasePath === "/data";
+  const postgres = isManagedPostgres() || isPostgresUrl(databaseUrl);
+  const databasePath = postgres ? null : databaseUrl.replace(/^file:/, "");
+  const onPersistentVolume = postgres
+    ? true
+    : Boolean(databasePath && (databasePath.startsWith("/data/") || databasePath === "/data"));
 
   const manifest = readPersistenceManifest();
   const volumeStatus = getPersistentVolumeStatus();
-  const volumeWritable = productionDeploy ? probeVolumeWritable(databasePath) : null;
-  const volumeMounted = !productionDeploy || volumeStatus.mounted;
+  const volumeWritable = postgres
+    ? true
+    : productionDeploy && databasePath && isSqliteFileUrl(`file:${databasePath}`)
+      ? probeVolumeWritable(databasePath)
+      : productionDeploy
+        ? probeVolumeWritable(databasePath || "/data")
+        : null;
+  const volumeMounted = postgres || !productionDeploy || volumeStatus.mounted;
+  const durable = postgres || isDurablePersistenceReady();
 
   const goldenExists = existsSync(/* turbopackIgnore: true */ GOLDEN_BACKUP_PATH);
   let lastBackup = manifest?.lastBackup ?? null;
@@ -95,11 +105,9 @@ export async function GET() {
     }
   }
 
-  const persistenceOk =
-    !productionDeploy || (onPersistentVolume && volumeWritable === true && volumeMounted);
-
+  const persistenceOk = !productionDeploy || durable;
   const status = dbOk && persistenceOk ? "ok" : "degraded";
-  const httpStatus = dbOk && volumeMounted ? 200 : 503;
+  const httpStatus = dbOk && persistenceOk ? 200 : 503;
 
   return NextResponse.json(
     {
@@ -114,17 +122,18 @@ export async function GET() {
       },
       persistence: productionDeploy
         ? {
-            databasePath: databasePath || null,
+            engine: postgres ? "postgresql" : "sqlite",
+            databasePath: postgres ? "postgresql" : databasePath || null,
             onPersistentVolume,
             volumeMounted,
             volumeMountPath: volumeStatus.mountPath,
-            volumeSource: volumeStatus.source,
-            volumeReason: volumeStatus.reason,
+            volumeSource: postgres ? "postgresql" : volumeStatus.source,
+            volumeReason: postgres ? null : volumeStatus.reason,
             volumeWritable,
             accounts: {
               users: userCount ?? manifest?.userCount ?? null,
               schools: schoolCount,
-              persisted: onPersistentVolume && volumeWritable === true && volumeMounted,
+              persisted: durable && dbOk,
               goldenBackup: goldenExists,
             },
             lastBackup,

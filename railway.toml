@@ -10,8 +10,7 @@ restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
 # OBRIGATÓRIO no painel Railway:
-# 1. Volume montado em /data (sem isso, logins somem a cada deploy)
-# 2. ECOHUB_INSTITUTIONAL=1
-# 3. DATABASE_URL=file:/data/prod.db
-# 4. Uma réplica apenas (SQLite)
-# 5. NÃO definir AUTH_SECRET placeholder — usar /data/.auth_secret
+# 1. New → Database → PostgreSQL
+# 2. DATABASE_URL = ${{Postgres.DATABASE_URL}}  (apague file:/data/prod.db)
+# 3. ECOHUB_INSTITUTIONAL=1
+# Sem Postgres (ou volume /data), cadastros são recusados para não perder logins.
