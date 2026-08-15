@@ -7,6 +7,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
+import { dirname } from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { backupDatabase } from "./backup-db.mjs";
 import {
@@ -29,19 +30,23 @@ export function ensureDatabaseUrl() {
   if (!current) {
     process.env.DATABASE_URL = DEFAULT_DB_URL;
     log("info", `DATABASE_URL ausente — usando ${DEFAULT_DB_URL}`);
-    return process.env.DATABASE_URL;
-  }
-
-  if (shouldEnforcePersistentDatabase() && !isPersistentDatabasePath(dbPath)) {
+  } else if (shouldEnforcePersistentDatabase() && !isPersistentDatabasePath(dbPath)) {
     log(
       "aviso",
       `DATABASE_URL (${current}) não está no volume ${DATA_DIR}. Redirecionando para ${DEFAULT_DB_URL} para não perder dados no redeploy.`
     );
     process.env.DATABASE_URL = DEFAULT_DB_URL;
-    return DEFAULT_DB_URL;
   }
 
-  return current;
+  try {
+    const urlFile = `${DATA_DIR}/.database_url`;
+    mkdirSync(dirname(urlFile), { recursive: true });
+    writeFileSync(urlFile, `${process.env.DATABASE_URL}\n`, "utf8");
+  } catch {
+    /* opcional */
+  }
+
+  return process.env.DATABASE_URL;
 }
 
 function ensureDataDirWritable() {

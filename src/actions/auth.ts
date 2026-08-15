@@ -101,6 +101,15 @@ export async function loginAction(formData: FormData) {
 
   if (!user) {
     console.warn("[auth] login: usuário não encontrado:", email);
+    if (process.env.NODE_ENV === "production") {
+      const totalUsers = await prisma.user.count();
+      if (totalUsers === 0) {
+        return {
+          error:
+            "Nenhuma conta no sistema. Cadastre em /registro/escola ou aguarde 1 minuto após o deploy (restauração automática do backup).",
+        };
+      }
+    }
     return { error: GENERIC_AUTH_ERROR };
   }
 

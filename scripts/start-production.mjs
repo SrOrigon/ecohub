@@ -2,7 +2,8 @@ import { execSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 import { ensureAuthSecret } from "./ensure-auth-secret.mjs";
 import { ensureProductionPersistence } from "./ensure-production-persistence.mjs";
-import { isInstitutionalMode } from "./lib/paths.mjs";
+import { restoreDatabaseIfEmpty } from "./restore-db-from-backup.mjs";
+import { isInstitutionalMode, databasePathFromUrl } from "./lib/paths.mjs";
 
 const institutionalMode = isInstitutionalMode();
 
@@ -32,6 +33,11 @@ if (process.env.NODE_ENV === "production" && !institutionalMode) {
 
 await ensureProductionPersistence();
 
+const restore = await restoreDatabaseIfEmpty(databasePathFromUrl(process.env.DATABASE_URL));
+if (restore.restored) {
+  console.log(`[ecohub] Recuperação automática: ${restore.userCount} usuário(s) restaurado(s).`);
+}
+
 try {
   run("npx prisma migrate deploy", true);
 } catch {
@@ -39,6 +45,13 @@ try {
 }
 
 const persistence = await ensureProductionPersistence({ runBackup: true });
+
+if (persistence.userCount === 0) {
+  const retryRestore = await restoreDatabaseIfEmpty(databasePathFromUrl(process.env.DATABASE_URL));
+  if (retryRestore.restored) {
+    console.log(`[ecohub] Recuperação pós-backup: ${retryRestore.userCount} usuário(s).`);
+  }
+}
 
 if ((institutionalMode || process.env.NODE_ENV === "production") && !persistence.volumeWritable) {
   console.error(
@@ -72,4 +85,8 @@ try {
 
 const port = process.env.PORT || "3000";
 console.log(`[ecohub] Subindo Next.js na porta ${port}...`);
-execSync(`npx next start -p ${port}`, { stdio: "inherit" });
+console.log("[ecohub] DATABASE_URL:", process.env.DATABASE_URL);
+execSync(`npx next start -p ${port}`, {
+  stdio: "inherit",
+  env: { ...process.env },
+});

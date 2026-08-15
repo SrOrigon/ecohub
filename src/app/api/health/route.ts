@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { prisma } from "@/lib/db";
 import { isUsableAuthSecret, ensureAuthSecretAtRuntime } from "@/lib/auth-secret-runtime";
+import { ensureDatabaseUrlAtRuntime } from "@/lib/database-url-runtime";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -39,11 +40,14 @@ export async function GET() {
     dbOk = false;
   }
 
-  if (productionDeploy && !isUsableAuthSecret(process.env.AUTH_SECRET)) {
-    try {
-      ensureAuthSecretAtRuntime();
-    } catch {
-      /* health check continua */
+  if (productionDeploy) {
+    ensureDatabaseUrlAtRuntime();
+    if (!isUsableAuthSecret(process.env.AUTH_SECRET)) {
+      try {
+        ensureAuthSecretAtRuntime();
+      } catch {
+        /* health check continua */
+      }
     }
   }
 
