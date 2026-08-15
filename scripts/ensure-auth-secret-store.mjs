@@ -8,7 +8,6 @@ const AUTH_META_KEY = "AUTH_SECRET";
  * a deploys mesmo sem volume /data.
  */
 export async function ensureAuthSecretInDatabase() {
-  const secret = ensureAuthSecret();
   const prisma = new PrismaClient();
   try {
     const row = await prisma.appMeta.findUnique({ where: { key: AUTH_META_KEY } });
@@ -18,10 +17,11 @@ export async function ensureAuthSecretInDatabase() {
       return row.value;
     }
 
+    const secret = ensureAuthSecret();
     await prisma.appMeta.upsert({
       where: { key: AUTH_META_KEY },
       create: { key: AUTH_META_KEY, value: secret },
-      update: { value: secret },
+      update: {},
     });
     console.log("[ecohub] AUTH_SECRET gravado em AppMeta (sobrevive a deploys).");
     return secret;

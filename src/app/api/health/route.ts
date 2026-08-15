@@ -134,7 +134,7 @@ export async function GET() {
               users: userCount ?? manifest?.userCount ?? null,
               schools: schoolCount,
               persisted: durable && dbOk,
-              goldenBackup: goldenExists,
+              goldenBackup: postgres ? durable && dbOk : goldenExists,
             },
             lastBackup,
           }

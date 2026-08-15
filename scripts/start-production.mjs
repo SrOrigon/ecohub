@@ -76,7 +76,13 @@ function ensureDataDirectory(dbPath) {
 }
 
 async function bootstrapPostgres() {
+  const before = await countUsersInDatabase(process.env.DATABASE_URL);
+  if (before > 0) {
+    console.log(`[ecohub] PostgreSQL já tem ${before} usuário(s) — schema será só atualizado, sem apagar contas.`);
+  }
+
   const schema = syncPrismaSchema();
+  // Nunca usar --accept-data-loss: se o schema exigir drop, o push falha e as contas ficam.
   const pushed = run(`npx prisma db push --skip-generate --schema="${schema}"`, { optional: true });
   if (!pushed) {
     console.error("[ecohub] prisma db push no PostgreSQL falhou — login pode falhar até o schema existir.");
@@ -87,6 +93,11 @@ async function bootstrapPostgres() {
     console.error("[ecohub] CRÍTICO: PostgreSQL inacessível após bootstrap.");
   } else {
     console.log(`[ecohub] PostgreSQL pronto: ${users} usuário(s)`);
+  }
+  if (before > 0 && users === 0) {
+    console.error(
+      `[ecohub] CRÍTICO: havia ${before} usuário(s) e o Postgres ficou vazio após o schema. Contas não deveriam ser apagadas.`
+    );
   }
   return { writable: true, users, postgres: true };
 }

@@ -9,8 +9,5 @@ healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
-# OBRIGATÓRIO no painel Railway:
-# 1. New → Database → PostgreSQL
-# 2. DATABASE_URL = ${{Postgres.DATABASE_URL}}  (apague file:/data/prod.db)
-# 3. ECOHUB_INSTITUTIONAL=1
-# Sem Postgres (ou volume /data), cadastros são recusados para não perder logins.
+# Postgres gerenciado já está ligado ao serviço eduhub (DATABASE_URL).
+# Não use file:/data/prod.db. Não apague o serviço Postgres.
