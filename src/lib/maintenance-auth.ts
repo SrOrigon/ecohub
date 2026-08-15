@@ -1,12 +1,14 @@
 import { timingSafeEqual } from "crypto";
+import { ensureAuthSecretAtRuntime, isUsableAuthSecret } from "@/lib/auth-secret-runtime";
 
 /**
  * Segredos aceitos para endpoints operacionais (/api/admin/*).
- *
- * Nunca inclui fallback: sem MAINTENANCE_SECRET ou AUTH_SECRET configurados,
- * as rotas de manutenção ficam fechadas em vez de aceitarem um valor público.
  */
 export function getMaintenanceSecrets(): string[] {
+  if (process.env.NODE_ENV === "production" && !isUsableAuthSecret(process.env.AUTH_SECRET)) {
+    ensureAuthSecretAtRuntime();
+  }
+
   const secrets = new Set<string>();
   const maintenance = process.env.MAINTENANCE_SECRET?.trim();
   const auth = process.env.AUTH_SECRET?.trim();

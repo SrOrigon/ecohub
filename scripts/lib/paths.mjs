@@ -14,6 +14,14 @@ export function isInstitutionalMode() {
   );
 }
 
+export function isProductionDeploy() {
+  return process.env.NODE_ENV === "production";
+}
+
+export function shouldEnforcePersistentDatabase() {
+  return isInstitutionalMode() || isProductionDeploy();
+}
+
 export function databasePathFromUrl(url = process.env.DATABASE_URL) {
   if (!url?.trim()) return null;
   return url.trim().replace(/^file:/, "");

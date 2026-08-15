@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { prisma } from "@/lib/db";
+import { isUsableAuthSecret, ensureAuthSecretAtRuntime } from "@/lib/auth-secret-runtime";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ function readPersistenceManifest(): PersistenceManifest | null {
 
 export async function GET() {
   const started = Date.now();
+  const productionDeploy = process.env.NODE_ENV === "production";
   let dbOk = false;
   let userCount: number | null = null;
 
@@ -36,8 +38,15 @@ export async function GET() {
     dbOk = false;
   }
 
-  const authConfigured =
-    !!process.env.AUTH_SECRET?.trim() && process.env.AUTH_SECRET.trim().length >= 32;
+  if (productionDeploy && !isUsableAuthSecret(process.env.AUTH_SECRET)) {
+    try {
+      ensureAuthSecretAtRuntime();
+    } catch {
+      /* health check continua */
+    }
+  }
+
+  const authConfigured = isUsableAuthSecret(process.env.AUTH_SECRET);
   const institutional =
     process.env.ECOHUB_INSTITUTIONAL === "1" ||
     process.env.ECOHUB_INSTITUTIONAL === "true";
@@ -50,7 +59,7 @@ export async function GET() {
   const manifest = readPersistenceManifest();
 
   const persistenceOk =
-    !institutional || (onPersistentVolume && (manifest?.volumeWritable ?? true));
+    !productionDeploy || (onPersistentVolume && (manifest?.volumeWritable ?? true));
 
   const status = dbOk && persistenceOk ? "ok" : "degraded";
   const httpStatus = dbOk ? 200 : 503;
@@ -66,7 +75,7 @@ export async function GET() {
         authSecret: authConfigured ? "ok" : "missing",
         persistence: persistenceOk ? "ok" : "warning",
       },
-      persistence: institutional
+      persistence: productionDeploy
         ? {
             databasePath: databasePath || null,
             onPersistentVolume,

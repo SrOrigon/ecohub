@@ -1,3 +1,5 @@
+import { ensureAuthSecretAtRuntime, isUsableAuthSecret } from "@/lib/auth-secret-runtime";
+
 const BUILD_FALLBACK =
   "ecohub-build-placeholder-secret-do-not-use-at-runtime-32";
 
@@ -6,18 +8,20 @@ function isNextBuildPhase(): boolean {
 }
 
 /**
- * Segredo JWT. Em produção, `scripts/start-production.mjs` garante AUTH_SECRET
- * (variável de ambiente ou arquivo /data/.auth_secret) antes de subir o Next.js.
+ * Segredo JWT. Em produção, prioriza /data/.auth_secret (via instrumentation + startup).
  */
 export function getAuthSecret(): Uint8Array {
-  const secret = process.env.AUTH_SECRET?.trim();
-
-  if (secret && secret.length >= 32) {
-    return new TextEncoder().encode(secret);
-  }
-
   if (isNextBuildPhase()) {
     return new TextEncoder().encode(BUILD_FALLBACK);
+  }
+
+  if (!isUsableAuthSecret(process.env.AUTH_SECRET)) {
+    ensureAuthSecretAtRuntime();
+  }
+
+  const secret = process.env.AUTH_SECRET?.trim();
+  if (isUsableAuthSecret(secret)) {
+    return new TextEncoder().encode(secret);
   }
 
   if (process.env.NODE_ENV === "production") {

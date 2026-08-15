@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { findUserByEmailForLogin } from "@/lib/auth-credentials";
 import { normalizeCnpj } from "@/lib/cnpj";
 import { hashPassword, normalizePassword } from "@/lib/security/password-policy";
 
@@ -127,7 +128,7 @@ export async function repairUserPassword(
   if (!email || !email.includes("@")) return { ok: false, error: "E-mail inválido." };
   if (password.length < 8) return { ok: false, error: "Senha inválida." };
 
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  const user = await findUserByEmailForLogin(email);
   if (!user) return { ok: true, found: false };
 
   const passwordHash = await hashPassword(password);

@@ -24,17 +24,26 @@ console.log(
   `[ecohub] Iniciando produção (modo: ${institutionalMode ? "institucional" : "produção"})...`
 );
 
-const persistence = await ensureProductionPersistence();
-if (institutionalMode && !persistence.volumeWritable) {
-  console.error(
-    "[ecohub] ERRO CRÍTICO: monte um volume em /data no Railway antes de usar em produção."
+if (process.env.NODE_ENV === "production" && !institutionalMode) {
+  console.warn(
+    "[ecohub] AVISO: defina ECOHUB_INSTITUTIONAL=1 no Railway para modo institucional completo."
   );
 }
+
+await ensureProductionPersistence();
 
 try {
   run("npx prisma migrate deploy", true);
 } catch {
   /* já logado */
+}
+
+const persistence = await ensureProductionPersistence({ runBackup: true });
+
+if ((institutionalMode || process.env.NODE_ENV === "production") && !persistence.volumeWritable) {
+  console.error(
+    "[ecohub] ERRO CRÍTICO: monte um volume em /data no Railway antes de usar em produção."
+  );
 }
 
 const authSecret = ensureAuthSecret();

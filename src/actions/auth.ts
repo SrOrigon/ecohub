@@ -95,7 +95,13 @@ export async function loginAction(formData: FormData) {
 
   const user = await findUserByEmailForLogin(email);
 
-  if (!user || !(await verifyAndUpgradePassword(user, password))) {
+  if (!user) {
+    console.warn("[auth] login: usuário não encontrado:", email);
+    return { error: GENERIC_AUTH_ERROR };
+  }
+
+  if (!(await verifyAndUpgradePassword(user, password))) {
+    console.warn("[auth] login: senha incorreta:", email);
     return { error: GENERIC_AUTH_ERROR };
   }
 

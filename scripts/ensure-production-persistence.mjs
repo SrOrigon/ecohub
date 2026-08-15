@@ -12,10 +12,10 @@ import { backupDatabase } from "./backup-db.mjs";
 import {
   DATA_DIR,
   DEFAULT_DB_URL,
-  isInstitutionalMode,
   isPersistentDatabasePath,
   PERSISTENCE_MANIFEST,
   databasePathFromUrl,
+  shouldEnforcePersistentDatabase,
 } from "./lib/paths.mjs";
 
 function log(level, message) {
@@ -32,7 +32,7 @@ export function ensureDatabaseUrl() {
     return process.env.DATABASE_URL;
   }
 
-  if (isInstitutionalMode() && !isPersistentDatabasePath(dbPath)) {
+  if (shouldEnforcePersistentDatabase() && !isPersistentDatabasePath(dbPath)) {
     log(
       "aviso",
       `DATABASE_URL (${current}) não está no volume ${DATA_DIR}. Redirecionando para ${DEFAULT_DB_URL} para não perder dados no redeploy.`
@@ -45,7 +45,7 @@ export function ensureDatabaseUrl() {
 }
 
 function ensureDataDirWritable() {
-  if (!isInstitutionalMode()) return true;
+  if (!shouldEnforcePersistentDatabase()) return true;
 
   try {
     mkdirSync(DATA_DIR, { recursive: true });
@@ -87,7 +87,7 @@ function readManifest() {
 }
 
 function writeManifest(data) {
-  if (!isInstitutionalMode()) return;
+  if (!shouldEnforcePersistentDatabase()) return;
   try {
     mkdirSync(DATA_DIR, { recursive: true });
     writeFileSync(PERSISTENCE_MANIFEST, `${JSON.stringify(data, null, 2)}\n`, "utf8");
@@ -100,19 +100,20 @@ function writeManifest(data) {
 }
 
 /**
- * Valida volume, faz backup pré-migração e registra estado de persistência.
- * @returns {Promise<{ volumeWritable: boolean, userCount: number | null, lastBackup: string | null }>}
+ * Valida volume e registra estado de persistência.
+ * @param {{ runBackup?: boolean }} [options]
  */
-export async function ensureProductionPersistence() {
+export async function ensureProductionPersistence(options = {}) {
+  const runBackup = options.runBackup ?? false;
   const databaseUrl = ensureDatabaseUrl();
   const dbPath = databasePathFromUrl(databaseUrl);
   const volumeWritable = ensureDataDirWritable();
   const previous = readManifest();
 
   let lastBackup = null;
-  if (dbPath && existsSync(dbPath)) {
+  if (runBackup && dbPath && existsSync(dbPath)) {
     try {
-      const result = await backupDatabase({ dbPath, label: "pré-deploy" });
+      const result = await backupDatabase({ dbPath, label: "pós-migração" });
       if (result.ok) lastBackup = result.path;
     } catch (error) {
       log(
