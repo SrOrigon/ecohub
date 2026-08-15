@@ -4,13 +4,17 @@ import { DEFAULT_DB_URL } from "./lib/paths.mjs";
 /**
  * Conta usuários em um banco SQLite via Prisma (URL explícita).
  * Retorna -1 se não foi possível ler (evita restauração destrutiva).
+ * @param {string} databaseUrl
+ * @param {{ flushWal?: boolean }} [options]
  */
-export async function countUsersInDatabase(databaseUrl) {
+export async function countUsersInDatabase(databaseUrl, options = {}) {
   const prisma = new PrismaClient({
     datasources: { db: { url: databaseUrl } },
   });
   try {
-    await prisma.$executeRawUnsafe("PRAGMA wal_checkpoint(FULL)");
+    if (options.flushWal) {
+      await prisma.$executeRawUnsafe("PRAGMA wal_checkpoint(FULL)");
+    }
     return await prisma.user.count();
   } catch (error) {
     console.warn(

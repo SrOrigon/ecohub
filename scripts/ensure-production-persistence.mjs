@@ -8,7 +8,6 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname } from "node:path";
-import { PrismaClient } from "@prisma/client";
 import { backupDatabase } from "./backup-db.mjs";
 import {
   DATA_DIR,
@@ -107,11 +106,12 @@ function writeManifest(data) {
 
 /**
  * Valida volume e registra estado de persistência.
- * @param {{ runBackup?: boolean, minUsersForBackup?: number }} [options]
+ * @param {{ runBackup?: boolean, minUsersForBackup?: number, skipPrune?: boolean }} [options]
  */
 export async function ensureProductionPersistence(options = {}) {
   const runBackup = options.runBackup ?? false;
   const minUsersForBackup = options.minUsersForBackup ?? 0;
+  const skipPrune = options.skipPrune ?? false;
   const databaseUrl = ensureDatabaseUrl();
   const dbPath = databasePathFromUrl(databaseUrl);
   const volumeWritable = ensureDataDirWritable();
@@ -138,6 +138,7 @@ export async function ensureProductionPersistence(options = {}) {
         dbPath,
         label: "pós-migração",
         minUsers: Math.max(minUsersForBackup, previous?.userCount ?? 0),
+        skipPrune,
       });
       if (result.ok) lastBackup = result.path;
       if (result.skipped && result.reason === "empty-db-with-history") {

@@ -5,7 +5,6 @@
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
-import { PrismaClient } from "@prisma/client";
 import {
   databasePathFromUrl,
   DEFAULT_BACKUP_DIR,
@@ -13,7 +12,7 @@ import {
   isPersistentDatabasePath,
   PERSISTENCE_MANIFEST,
 } from "./lib/paths.mjs";
-import { countUsersInDatabase } from "./lib/db-user-count.mjs";
+import { countUsersInDatabase, createProductionPrisma } from "./lib/db-user-count.mjs";
 import { updateGoldenBackup, GOLDEN_BACKUP_FILENAME } from "./golden-backup.mjs";
 
 const MAX_BACKUPS = Number.parseInt(process.env.ECOHUB_MAX_BACKUPS ?? "14", 10);
@@ -80,7 +79,7 @@ async function pruneOldBackups(destDir, keep) {
 }
 
 /**
- * @param {{ dbPath?: string, destDir?: string, label?: string, minUsers?: number }} [options]
+ * @param {{ dbPath?: string, destDir?: string, label?: string, minUsers?: number, skipPrune?: boolean }} [options]
  */
 export async function backupDatabase(options = {}) {
   const dbPath =
@@ -121,7 +120,9 @@ export async function backupDatabase(options = {}) {
 
   await updateGoldenBackup(dbPath);
 
-  await pruneOldBackups(destDir, MAX_BACKUPS);
+  if (!options.skipPrune) {
+    await pruneOldBackups(destDir, MAX_BACKUPS);
+  }
   console.log(`[backup] OK (${label}, ${userCount} usuário(s)) → ${dest}`);
   return { ok: true, path: dest, label, userCount };
 }
