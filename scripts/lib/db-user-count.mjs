@@ -17,11 +17,12 @@ export async function countUsersInDatabase(databaseUrl, options = {}) {
     }
     return await prisma.user.count();
   } catch (error) {
-    console.warn(
-      "[db-count] Falha ao contar usuários:",
-      databaseUrl,
-      error instanceof Error ? error.message : error
-    );
+    const message = error instanceof Error ? error.message : String(error);
+    // Arquivo novo / schema ainda não aplicado: tratar como vazio, não como leitura incerta.
+    if (message.includes("does not exist in the current database") || message.includes("no such table")) {
+      return 0;
+    }
+    console.warn("[db-count] Falha ao contar usuários:", databaseUrl, message);
     return -1;
   } finally {
     await prisma.$disconnect();

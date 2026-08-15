@@ -1,7 +1,7 @@
 /**
  * Garante que contas (logins) sejam gravadas no volume persistente em produção.
  */
-import { accessSync, constants, copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { accessSync, constants, copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import {
   ACCOUNT_SNAPSHOT_PATH,
@@ -67,13 +67,49 @@ export async function persistGoldenBackupNow(): Promise<void> {
   mkdirSync(dirname(GOLDEN_BACKUP_PATH), { recursive: true });
   copyFileSync(PRODUCTION_DATABASE_PATH, GOLDEN_BACKUP_PATH);
   copyFileSync(PRODUCTION_DATABASE_PATH, DATABASE_COPY_PATH);
+  for (const suffix of ["-wal", "-shm"] as const) {
+    const source = `${PRODUCTION_DATABASE_PATH}${suffix}`;
+    if (existsSync(source)) {
+      copyFileSync(source, `${GOLDEN_BACKUP_PATH}${suffix}`);
+      copyFileSync(source, `${DATABASE_COPY_PATH}${suffix}`);
+    }
+  }
 
   const userCount = await prisma.user.count();
+  const updatedAt = new Date().toISOString();
   writeFileSync(
     ACCOUNT_SNAPSHOT_PATH,
-    `${JSON.stringify({ userCount, updatedAt: new Date().toISOString() })}\n`,
+    `${JSON.stringify({ userCount, updatedAt })}\n`,
     "utf8"
   );
+
+  const manifestPath = process.env.ECOHUB_PERSISTENCE_MANIFEST?.trim() || `${DATA_DIR}/.ecohub-persistence.json`;
+  try {
+    const previous = existsSync(manifestPath)
+      ? (JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>)
+      : {};
+    writeFileSync(
+      manifestPath,
+      `${JSON.stringify(
+        {
+          ...previous,
+          updatedAt,
+          userCount,
+          peakUserCount: Math.max(Number(previous.peakUserCount ?? 0), userCount),
+          lastBackup: GOLDEN_BACKUP_PATH,
+          goldenBackup: GOLDEN_BACKUP_PATH,
+          databasePath: PRODUCTION_DATABASE_PATH,
+          databaseBytes: statSync(PRODUCTION_DATABASE_PATH).size,
+          volumeWritable: true,
+        },
+        null,
+        2
+      )}\n`,
+      "utf8"
+    );
+  } catch {
+    /* manifesto é auxiliar — o backup dourado já foi gravado */
+  }
 
   console.log(`[persistência] Backup dourado salvo (${userCount} usuário(s)).`);
 }

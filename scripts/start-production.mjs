@@ -95,10 +95,15 @@ async function bootstrapDatabase(dbPath, previousUsers) {
 
   const migrated = run("npx prisma migrate deploy", { optional: true });
   if (!migrated) {
-    // Migration em estado inconsistente não pode deixar o app sem schema.
-    // db push sem --accept-data-loss cria o que falta e nunca apaga dados.
-    console.warn("[ecohub] migrate deploy falhou — sincronizando schema via db push.");
-    run("npx prisma db push --skip-generate", { optional: true });
+    const usersNow = await countUsersInDatabase(`file:${dbPath}`);
+    if (usersNow > 0) {
+      console.error(
+        `[ecohub] migrate deploy falhou com ${usersNow} usuário(s) no banco — NÃO será feito db push para não arriscar dados.`
+      );
+    } else {
+      console.warn("[ecohub] migrate deploy falhou em banco vazio — sincronizando schema via db push.");
+      run("npx prisma db push --skip-generate", { optional: true });
+    }
   }
 
   try {
@@ -225,6 +230,11 @@ async function main() {
   startNext(port);
 
   void backgroundMaintenance(dbPath, previousUsers);
+
+  const HOUR_MS = 60 * 60 * 1000;
+  setInterval(() => {
+    void backgroundMaintenance(dbPath, Math.max(previousUsers, 1));
+  }, HOUR_MS);
 }
 
 main().catch((error) => {

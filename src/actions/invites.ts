@@ -18,6 +18,7 @@ import { validatePassword, hashPassword, normalizePassword } from "@/lib/securit
 import { resolveAvatarFromForm } from "@/lib/avatar";
 import { sendEmail } from "@/lib/email";
 import { isNextRedirect } from "@/lib/run-server-action";
+import { confirmUserPersisted } from "@/lib/persistence-guard";
 
 const INVITE_TTL_DAYS = 14;
 
@@ -193,6 +194,11 @@ async function acceptTeacherInviteActionImpl(formData: FormData) {
     });
     return created;
   });
+
+  await confirmUserPersisted(
+    (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
+    user.id
+  );
 
   const { safeEstablishSession } = await import("@/lib/auth");
   const session = await safeEstablishSession(user, { tenantSlug: inviteData.school.slug });

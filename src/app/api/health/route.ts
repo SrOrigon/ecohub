@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { prisma } from "@/lib/db";
 import { isUsableAuthSecret, ensureAuthSecretAtRuntime } from "@/lib/auth-secret-runtime";
@@ -82,6 +82,16 @@ export async function GET() {
   const manifest = readPersistenceManifest();
   const volumeWritable = productionDeploy ? probeVolumeWritable(databasePath) : null;
 
+  const goldenExists = existsSync(/* turbopackIgnore: true */ GOLDEN_BACKUP_PATH);
+  let lastBackup = manifest?.lastBackup ?? null;
+  if (!lastBackup && goldenExists) {
+    try {
+      lastBackup = statSync(/* turbopackIgnore: true */ GOLDEN_BACKUP_PATH).mtime.toISOString();
+    } catch {
+      lastBackup = GOLDEN_BACKUP_PATH;
+    }
+  }
+
   const persistenceOk =
     !productionDeploy || (onPersistentVolume && volumeWritable === true);
 
@@ -107,10 +117,10 @@ export async function GET() {
             accounts: {
               users: userCount ?? manifest?.userCount ?? null,
               schools: schoolCount,
-              persisted: onPersistentVolume && (manifest?.volumeWritable ?? true),
-              goldenBackup: existsSync(/* turbopackIgnore: true */ GOLDEN_BACKUP_PATH),
+              persisted: onPersistentVolume && volumeWritable === true,
+              goldenBackup: goldenExists,
             },
-            lastBackup: manifest?.lastBackup ?? null,
+            lastBackup,
           }
         : undefined,
       mode: institutional ? "institutional" : "production",

@@ -36,6 +36,7 @@ import {
   hashStudentPin,
   syntheticStudentEmail,
 } from "@/lib/student-pin";
+import { confirmUserPersisted, persistGoldenBackupNow } from "@/lib/persistence-guard";
 
 function revalidatePaths(paths: string[]) {
   for (const p of paths) revalidatePath(p);
@@ -131,8 +132,9 @@ export async function createStudentAction(formData: FormData) {
   const existingCode = await prisma.student.findUnique({ where: { enrollmentCode } });
   if (existingCode) return { error: "Matrícula já em uso." };
 
+  let createdUser: { id: string };
   try {
-    await prisma.user.create({
+    createdUser = await prisma.user.create({
       data: {
         email,
         passwordHash,
@@ -154,6 +156,11 @@ export async function createStudentAction(formData: FormData) {
     console.error("[crud] createStudentAction falhou:", error);
     return { error: "Não foi possível cadastrar o aluno. Verifique matrícula e e-mail." };
   }
+
+  await confirmUserPersisted(
+    (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
+    createdUser.id
+  );
 
   revalidateGroups("core", "people", "gamification", "analytics", "alerts");
   return {
@@ -211,6 +218,9 @@ export async function createClassAction(formData: FormData) {
   revalidateGroups("core", "people", "exercises");
   revalidatePath("/dashboard/professor");
   revalidatePath("/dashboard/exercicios");
+  await persistGoldenBackupNow().catch((error) => {
+    console.error("[crud] Backup após criar turma falhou (turma gravada):", error);
+  });
   return { success: true };
 }
 
@@ -909,8 +919,9 @@ export async function createTeacherAction(formData: FormData) {
   }
 
   const passwordHash = await hashPassword(password);
+  let createdTeacher: { id: string };
   try {
-    await prisma.user.create({
+    createdTeacher = await prisma.user.create({
       data: {
         email,
         passwordHash,
@@ -926,6 +937,11 @@ export async function createTeacherAction(formData: FormData) {
     console.error("[crud] createTeacherAction falhou:", error);
     return { error: "Não foi possível cadastrar o professor. Verifique o e-mail informado." };
   }
+
+  await confirmUserPersisted(
+    (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
+    createdTeacher.id
+  );
 
   revalidatePath("/dashboard/professores");
   return { success: true };

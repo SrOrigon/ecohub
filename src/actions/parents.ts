@@ -11,7 +11,7 @@ import {
   syntheticStudentEmail,
 } from "@/lib/student-pin";
 import { validatePassword, hashPassword } from "@/lib/security/password-policy";
-import { BCRYPT_ROUNDS } from "@/lib/security/constants";
+import { confirmUserPersisted } from "@/lib/persistence-guard";
 
 export async function createParentAction(formData: FormData) {
   const user = await requireSession(["admin", "director"]);
@@ -35,6 +35,11 @@ export async function createParentAction(formData: FormData) {
   const parent = await prisma.user.create({
     data: { email, passwordHash, fullName, role: "parent", schoolId: user.schoolId },
   });
+
+  await confirmUserPersisted(
+    (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
+    parent.id
+  );
 
   if (studentId) {
     const student = await prisma.student.findFirst({
@@ -297,6 +302,11 @@ export async function provisionStudentForParentAction(formData: FormData) {
       relation,
     },
   });
+
+  await confirmUserPersisted(
+    (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
+    studentUser.id
+  );
 
   revalidateParentPaths();
   return {
