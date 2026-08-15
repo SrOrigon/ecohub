@@ -157,6 +157,7 @@ export async function ensureProductionPersistence(options = {}) {
     databaseBytes: dbPath && existsSync(dbPath) ? statSync(dbPath).size : 0,
     volumeWritable,
     userCount,
+    peakUserCount: Math.max(previous?.peakUserCount ?? 0, userCount ?? 0),
     lastBackup,
     previousUserCount: previous?.userCount ?? null,
     goldenBackup: `${DATA_DIR}/backups/ecohub-golden.db`,

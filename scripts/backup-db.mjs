@@ -40,7 +40,7 @@ function readPreviousUserCount() {
   }
 }
 
-function pruneOldBackups(destDir, keep) {
+async function pruneOldBackups(destDir, keep) {
   if (!existsSync(destDir) || keep < 1) return;
 
   const files = readdirSync(destDir)
@@ -56,10 +56,20 @@ function pruneOldBackups(destDir, keep) {
     })
     .sort((a, b) => b.mtime - a.mtime);
 
-  for (const entry of files.slice(keep)) {
+  const emptyBackups = [];
+  for (const entry of files) {
+    const users = await countUsersInDatabase(`file:${entry.full}`);
+    if (users > 0) {
+      console.log(`[backup] Preservado (tem ${users} usuário(s)):`, entry.full);
+      continue;
+    }
+    emptyBackups.push(entry);
+  }
+
+  for (const entry of emptyBackups.slice(keep)) {
     try {
       unlinkSync(entry.full);
-      console.log("[backup] Removido backup antigo:", entry.full);
+      console.log("[backup] Removido backup vazio antigo:", entry.full);
     } catch (error) {
       console.warn(
         "[backup] Não foi possível remover backup antigo:",
@@ -111,7 +121,7 @@ export async function backupDatabase(options = {}) {
 
   await updateGoldenBackup(dbPath);
 
-  pruneOldBackups(destDir, MAX_BACKUPS);
+  await pruneOldBackups(destDir, MAX_BACKUPS);
   console.log(`[backup] OK (${label}, ${userCount} usuário(s)) → ${dest}`);
   return { ok: true, path: dest, label, userCount };
 }

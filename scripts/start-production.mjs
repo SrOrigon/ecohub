@@ -35,7 +35,7 @@ function readPreviousUserCount() {
   if (!existsSync(PERSISTENCE_MANIFEST)) return 0;
   try {
     const manifest = JSON.parse(readFileSync(PERSISTENCE_MANIFEST, "utf8"));
-    return manifest.userCount ?? 0;
+    return Math.max(manifest.peakUserCount ?? 0, manifest.userCount ?? 0, manifest.previousUserCount ?? 0);
   } catch {
     return 0;
   }
@@ -48,15 +48,15 @@ console.log(
 ensureDatabaseUrl();
 const dbPath = databasePathFromUrl(process.env.DATABASE_URL);
 const previousUsers = readPreviousUserCount();
+const minUsersToRestore = previousUsers > 0 ? 1 : 1;
 
-await ensureProductionPersistence();
-
-const restore = await restoreDatabaseIfNeeded(dbPath, {
-  minUsers: previousUsers > 0 ? 1 : 1,
-});
+// RESTAURAR PRIMEIRO — antes de qualquer escrita no manifesto ou backup
+const restore = await restoreDatabaseIfNeeded(dbPath, { minUsers: minUsersToRestore });
 if (restore.restored) {
   console.log(`[ecohub] Recuperação automática: ${restore.userCount} usuário(s) (${restore.source}).`);
 }
+
+await ensureProductionPersistence();
 
 try {
   run("npx prisma migrate deploy", true);

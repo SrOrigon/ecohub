@@ -1,19 +1,9 @@
 import { copyFileSync, existsSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
-import {
-  DATA_DIR,
-  DEFAULT_DB_URL,
-  databasePathFromUrl,
-} from "./lib/paths.mjs";
+import { DEFAULT_DB_URL, databasePathFromUrl } from "./lib/paths.mjs";
 import { countUsersInDatabase } from "./lib/db-user-count.mjs";
-import {
-  GOLDEN_BACKUP_PATH,
-  countUsersInGoldenBackup,
-  goldenBackupExists,
-  updateGoldenBackup,
-} from "./golden-backup.mjs";
 
-const BACKUP_DIR = `${DATA_DIR}/backups`;
+const BACKUP_DIR = "/data/backups";
 
 function removeWalFiles(dbPath) {
   for (const suffix of ["-wal", "-shm"]) {
@@ -25,22 +15,35 @@ function removeWalFiles(dbPath) {
   }
 }
 
-function listBackupsNewestFirst() {
+function listAllBackupFiles() {
   if (!existsSync(BACKUP_DIR)) return [];
 
   return readdirSync(BACKUP_DIR)
-    .filter(
-      (name) =>
-        name.startsWith("ecohub-") &&
-        name.endsWith(".db") &&
-        name !== "ecohub-golden.db"
-    )
+    .filter((name) => name.startsWith("ecohub-") && name.endsWith(".db"))
     .map((name) => {
-      const full = join(BACKUP_DIR, name);
-      return { path: full, mtime: statSync(full).mtimeMs, size: statSync(full).size };
+      const path = join(BACKUP_DIR, name);
+      return { path, name, mtime: statSync(path).mtimeMs, size: statSync(path).size };
     })
-    .filter((entry) => entry.size > 0)
-    .sort((a, b) => b.mtime - a.mtime);
+    .filter((entry) => entry.size > 0);
+}
+
+/**
+ * Encontra o backup com mais usuários (golden + todos os timestamped).
+ */
+export async function findBestBackupSource() {
+  const candidates = listAllBackupFiles();
+
+  let best = null;
+
+  for (const candidate of candidates) {
+    const users = await countUsersInDatabase(`file:${candidate.path}`);
+    if (users <= 0) continue;
+    if (!best || users > best.users) {
+      best = { path: candidate.path, label: candidate.name === "ecohub-golden.db" ? "golden" : "backup", users };
+    }
+  }
+
+  return best;
 }
 
 async function restoreFromFile(backupPath, dbPath) {
@@ -60,9 +63,7 @@ async function restoreFromFile(backupPath, dbPath) {
 }
 
 /**
- * Restaura o banco se estiver vazio ou com menos usuários que o esperado.
- * @param {string} [dbPath]
- * @param {{ minUsers?: number }} [options]
+ * Restaura do backup com MAIS usuários se o banco atual estiver vazio ou pior.
  */
 export async function restoreDatabaseIfNeeded(
   dbPath = databasePathFromUrl(process.env.DATABASE_URL) ?? databasePathFromUrl(DEFAULT_DB_URL),
@@ -81,38 +82,36 @@ export async function restoreDatabaseIfNeeded(
     return { restored: false, userCount: currentUsers, reason: "ok" };
   }
 
-  const sources = [];
+  const best = await findBestBackupSource();
 
-  if (goldenBackupExists()) {
-    sources.push({ path: GOLDEN_BACKUP_PATH, label: "golden" });
+  if (!best || best.users < minUsers) {
+    console.warn(
+      `[ecohub:restore] Nenhum backup com usuários encontrado (atual: ${currentUsers}, necessário: ${minUsers}).`
+    );
+    return { restored: false, userCount: currentUsers, reason: "no-valid-backup" };
   }
 
-  for (const backup of listBackupsNewestFirst()) {
-    sources.push({ path: backup.path, label: "backup" });
+  if (best.users <= currentUsers) {
+    return { restored: false, userCount: currentUsers, reason: "ok" };
   }
 
-  for (const source of sources) {
-    const backupUsers = await countUsersInDatabase(`file:${source.path}`);
-    if (backupUsers < minUsers) continue;
-
-    try {
-      const result = await restoreFromFile(source.path, dbPath);
-      if (result) {
-        return { ...result, source: source.label };
-      }
-    } catch (error) {
-      console.warn(
-        "[ecohub:restore] Falha:",
-        source.path,
-        error instanceof Error ? error.message : error
-      );
+  try {
+    const result = await restoreFromFile(best.path, dbPath);
+    if (result) {
+      return { ...result, source: best.label, backupUsers: best.users };
     }
+  } catch (error) {
+    console.warn(
+      "[ecohub:restore] Falha ao restaurar melhor backup:",
+      best.path,
+      error instanceof Error ? error.message : error
+    );
   }
 
-  return { restored: false, userCount: currentUsers, reason: "no-valid-backup" };
+  return { restored: false, userCount: currentUsers, reason: "restore-failed" };
 }
 
-/** @deprecated use restoreDatabaseIfNeeded */
+/** @deprecated */
 export async function restoreDatabaseIfEmpty(dbPath) {
   return restoreDatabaseIfNeeded(dbPath, { minUsers: 1 });
 }
