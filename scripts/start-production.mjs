@@ -1,5 +1,7 @@
-import { execSync, spawn } from "node:child_process";
+import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { ensureAuthSecret } from "./ensure-auth-secret.mjs";
 import { ensureProductionPersistence, ensureDatabaseUrl } from "./ensure-production-persistence.mjs";
 import { restoreDatabaseIfNeeded } from "./restore-db-from-backup.mjs";
@@ -10,6 +12,9 @@ import {
   PERSISTENCE_MANIFEST,
 } from "./lib/paths.mjs";
 
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const NEXT_BIN = join(ROOT, "node_modules/next/dist/bin/next");
+
 if (process.env.NODE_ENV === "production") {
   process.env.ECOHUB_INSTITUTIONAL = process.env.ECOHUB_INSTITUTIONAL || "1";
 }
@@ -18,7 +23,7 @@ const institutionalMode = isInstitutionalMode();
 
 function run(cmd, optional = false) {
   try {
-    execSync(cmd, { stdio: "inherit" });
+    execSync(cmd, { stdio: "inherit", cwd: ROOT });
     return true;
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
@@ -42,6 +47,14 @@ function readPreviousUserCount() {
 
 async function runDeferredPersistence(dbPath, previousUsers) {
   try {
+    const minUsersToRestore = previousUsers > 0 ? 1 : 0;
+    const restore = await restoreDatabaseIfNeeded(dbPath, { minUsers: minUsersToRestore });
+    if (restore.restored) {
+      console.log(`[ecohub:bg] Recuperação: ${restore.userCount} usuário(s) (${restore.source}).`);
+    }
+
+    run("npx prisma migrate deploy", true);
+
     const restoreAfterMigrate = await restoreDatabaseIfNeeded(dbPath, { minUsers: 1 });
     if (restoreAfterMigrate.restored) {
       console.log(`[ecohub:bg] Recuperação pós-migração: ${restoreAfterMigrate.userCount} usuário(s).`);
@@ -87,16 +100,6 @@ console.log(
 );
 
 ensureDatabaseUrl();
-const dbPath = databasePathFromUrl(process.env.DATABASE_URL);
-const previousUsers = readPreviousUserCount();
-const minUsersToRestore = previousUsers > 0 ? 1 : 0;
-
-const restore = await restoreDatabaseIfNeeded(dbPath, { minUsers: minUsersToRestore });
-if (restore.restored) {
-  console.log(`[ecohub] Recuperação automática: ${restore.userCount} usuário(s) (${restore.source}).`);
-}
-
-run("npx prisma migrate deploy", true);
 
 const authSecret = ensureAuthSecret();
 if (authSecret.length < 32) {
@@ -105,33 +108,31 @@ if (authSecret.length < 32) {
   console.log("[ecohub] AUTH_SECRET OK (login e sessões habilitados).");
 }
 
-await ensureProductionPersistence({ runBackup: false });
+const dbPath = databasePathFromUrl(process.env.DATABASE_URL);
+const previousUsers = readPreviousUserCount();
 
 const port = process.env.PORT || "3000";
-console.log(`[ecohub] Subindo Next.js na porta ${port} (backups em background)...`);
+console.log(`[ecohub] Subindo Next.js na porta ${port} (banco e backups em background)...`);
 console.log("[ecohub] DATABASE_URL:", process.env.DATABASE_URL);
 
 void runDeferredPersistence(dbPath, previousUsers);
 
-const child = spawn("npx", ["next", "start", "-p", port], {
-  stdio: "inherit",
-  env: {
-    ...process.env,
-    NODE_ENV: "production",
-    DATABASE_URL: process.env.DATABASE_URL,
-    ECOHUB_INSTITUTIONAL: process.env.ECOHUB_INSTITUTIONAL || "1",
-  },
-});
-
-child.on("error", (error) => {
-  console.error("[ecohub] Falha ao iniciar Next.js:", error instanceof Error ? error.message : error);
+if (!existsSync(NEXT_BIN)) {
+  console.error("[ecohub] Next.js não encontrado em", NEXT_BIN);
   process.exit(1);
-});
+}
 
-child.on("exit", (code, signal) => {
-  if (signal) {
-    console.error(`[ecohub] Next.js encerrado por sinal: ${signal}`);
-    process.exit(1);
-  }
-  process.exit(code ?? 0);
+const runtimeEnv = {
+  ...process.env,
+  NODE_ENV: "production",
+  DATABASE_URL: process.env.DATABASE_URL,
+  ECOHUB_INSTITUTIONAL: process.env.ECOHUB_INSTITUTIONAL || "1",
+  AUTH_SECRET: process.env.AUTH_SECRET,
+  HOSTNAME: "0.0.0.0",
+};
+
+execSync(`node "${NEXT_BIN}" start -H 0.0.0.0 -p ${port}`, {
+  stdio: "inherit",
+  cwd: ROOT,
+  env: runtimeEnv,
 });

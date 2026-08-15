@@ -41,3 +41,11 @@ export function createProductionPrisma() {
     datasources: { db: { url: productionDatabaseUrl() } },
   });
 }
+
+export async function withSqliteBusyTimeout(prisma) {
+  try {
+    await prisma.$executeRawUnsafe("PRAGMA busy_timeout = 10000");
+  } catch {
+    /* opcional */
+  }
+}

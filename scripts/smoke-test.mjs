@@ -11,6 +11,7 @@ const base = (process.argv[2] ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://loca
 );
 
 const checks = [
+  { name: "Health live", path: "/api/health/live", expectStatus: [200], json: true },
   { name: "Health API", path: "/api/health", expectStatus: [200, 503], json: true },
   { name: "Página inicial", path: "/", expectStatus: [200] },
   { name: "Login escola", path: "/login/escola", expectStatus: [200] },

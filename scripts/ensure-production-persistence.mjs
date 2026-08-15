@@ -17,7 +17,7 @@ import {
   databasePathFromUrl,
   shouldEnforcePersistentDatabase,
 } from "./lib/paths.mjs";
-import { createProductionPrisma } from "./lib/db-user-count.mjs";
+import { createProductionPrisma, withSqliteBusyTimeout } from "./lib/db-user-count.mjs";
 
 function log(level, message) {
   console.log(`[ecohub:persistência] ${level}: ${message}`);
@@ -71,6 +71,7 @@ function ensureDataDirWritable() {
 
 async function optimizeSqlite(prisma) {
   try {
+    await prisma.$executeRawUnsafe("PRAGMA busy_timeout = 10000");
     await prisma.$executeRawUnsafe("PRAGMA journal_mode=WAL");
     await prisma.$executeRawUnsafe("PRAGMA synchronous=NORMAL");
     await prisma.$executeRawUnsafe("PRAGMA foreign_keys=ON");
@@ -120,6 +121,7 @@ export async function ensureProductionPersistence(options = {}) {
   let userCount = null;
   const prisma = createProductionPrisma();
   try {
+    await withSqliteBusyTimeout(prisma);
     await optimizeSqlite(prisma);
     userCount = await prisma.user.count();
   } catch (error) {
