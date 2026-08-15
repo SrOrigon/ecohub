@@ -70,16 +70,28 @@ function ensureDataDirWritable() {
 }
 
 async function optimizeSqlite(prisma) {
-  try {
-    await prisma.$executeRawUnsafe("PRAGMA busy_timeout = 10000");
-    await prisma.$executeRawUnsafe("PRAGMA journal_mode=WAL");
-    await prisma.$executeRawUnsafe("PRAGMA synchronous=NORMAL");
-    await prisma.$executeRawUnsafe("PRAGMA foreign_keys=ON");
-  } catch (error) {
-    log(
-      "aviso",
-      `PRAGMA SQLite ignorado: ${error instanceof Error ? error.message : error}`
-    );
+  // journal_mode devolve uma linha: com $executeRawUnsafe o SQLite recusa e
+  // aborta os PRAGMAs seguintes, deixando o banco sem WAL.
+  const pragmas = [
+    ["PRAGMA busy_timeout = 10000", "query"],
+    ["PRAGMA journal_mode=WAL", "query"],
+    ["PRAGMA synchronous=NORMAL", "execute"],
+    ["PRAGMA foreign_keys=ON", "execute"],
+  ];
+
+  for (const [statement, kind] of pragmas) {
+    try {
+      if (kind === "query") {
+        await prisma.$queryRawUnsafe(statement);
+      } else {
+        await prisma.$executeRawUnsafe(statement);
+      }
+    } catch (error) {
+      log(
+        "aviso",
+        `PRAGMA ignorado (${statement}): ${error instanceof Error ? error.message : error}`
+      );
+    }
   }
 }
 

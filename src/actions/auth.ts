@@ -54,6 +54,25 @@ function handleRateLimitError(error: unknown): { error: string } | null {
   return null;
 }
 
+const DATABASE_DOWN_MARKERS = [
+  "Unable to open the database file",
+  "does not exist in the current database",
+  "no such table",
+  "P1001",
+  "P1003",
+  "P2021",
+  "P2022",
+];
+
+/** Banco fora do ar precisa de aviso próprio — não é erro de credencial. */
+function isDatabaseUnavailable(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return DATABASE_DOWN_MARKERS.some((marker) => message.includes(marker));
+}
+
+const DATABASE_DOWN_MESSAGE =
+  "Sistema temporariamente indisponível (banco de dados). Nenhum dado foi perdido — tente novamente em alguns instantes.";
+
 function dashboardForRole(role: UserRole) {
   switch (role) {
     case "student":
@@ -82,6 +101,21 @@ function portalError(portal: string) {
   if (portal === "responsavel") return "Esta conta não é de responsável. Use o login de aluno se for estudante.";
 }
 export async function loginAction(formData: FormData) {
+  try {
+    return await loginActionImpl(formData);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    console.error("[auth] loginAction falhou:", error);
+    if (isDatabaseUnavailable(error)) {
+      return { error: DATABASE_DOWN_MESSAGE };
+    }
+    return {
+      error: "Não foi possível entrar agora. Tente novamente em instantes.",
+    };
+  }
+}
+
+async function loginActionImpl(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = normalizePassword(String(formData.get("password") ?? ""));
   const portal = String(formData.get("portal") ?? "");
@@ -184,6 +218,9 @@ export async function registerSchoolAction(formData: FormData): Promise<Register
     return await registerSchoolActionImpl(formData);
   } catch (error) {
     console.error("[auth] registerSchoolAction falhou:", error);
+    if (isDatabaseUnavailable(error)) {
+      return { error: DATABASE_DOWN_MESSAGE };
+    }
     return {
       error:
         "Não foi possível concluir o cadastro agora. Se o CNPJ ou e-mail já existir, tente fazer login em /login/escola.",
@@ -319,10 +356,8 @@ export async function registerStudentAction(formData: FormData) {
     if (isNextRedirect(error)) throw error;
     console.error("[auth] registerStudentAction falhou:", error);
     const reason = error instanceof Error ? error.message : "";
-    if (reason.includes("PERSISTENCE_UNAVAILABLE")) {
-      return {
-        error: "Serviço temporariamente indisponível. Tente novamente em instantes.",
-      };
+    if (reason.includes("PERSISTENCE_UNAVAILABLE") || isDatabaseUnavailable(error)) {
+      return { error: DATABASE_DOWN_MESSAGE };
     }
     return {
       error: "Não foi possível concluir o cadastro agora. Verifique os dados e tente novamente.",
@@ -435,6 +470,21 @@ async function registerStudentActionImpl(formData: FormData) {
 }
 
 export async function registerParentAction(formData: FormData) {
+  try {
+    return await registerParentActionImpl(formData);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    console.error("[auth] registerParentAction falhou:", error);
+    if (isDatabaseUnavailable(error)) {
+      return { error: DATABASE_DOWN_MESSAGE };
+    }
+    return {
+      error: "Não foi possível concluir o cadastro agora. Verifique os dados e tente novamente.",
+    };
+  }
+}
+
+async function registerParentActionImpl(formData: FormData) {
   assertProductionDatabasePersistent();
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -511,6 +561,19 @@ export async function registerParentAction(formData: FormData) {
 }
 
 export async function studentPinLoginAction(formData: FormData) {
+  try {
+    return await studentPinLoginActionImpl(formData);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    console.error("[auth] studentPinLoginAction falhou:", error);
+    if (isDatabaseUnavailable(error)) {
+      return { error: DATABASE_DOWN_MESSAGE };
+    }
+    return { error: "Não foi possível entrar agora. Tente novamente em instantes." };
+  }
+}
+
+async function studentPinLoginActionImpl(formData: FormData) {
   const schoolSlug = String(formData.get("schoolSlug") ?? "").trim().toLowerCase();
   const enrollmentCode = String(formData.get("enrollmentCode") ?? "").trim();
   const pin = String(formData.get("pin") ?? "").trim();
@@ -557,6 +620,22 @@ export async function studentPinLoginAction(formData: FormData) {
 
 /** Lista turmas públicas para cadastro de aluno (por código parcial da escola). */
 export async function listClassesForSignupAction(formData: FormData) {
+  try {
+    return await listClassesForSignupActionImpl(formData);
+  } catch (error) {
+    console.error("[auth] listClassesForSignupAction falhou:", error);
+    return {
+      classes: [] as { id: string; name: string }[],
+      schoolName: null,
+      schoolSlug: null,
+      error: isDatabaseUnavailable(error)
+        ? DATABASE_DOWN_MESSAGE
+        : "Não foi possível buscar as turmas agora. Tente novamente.",
+    };
+  }
+}
+
+async function listClassesForSignupActionImpl(formData: FormData) {
   const schoolSlug = String(formData.get("schoolSlug") ?? "").trim().toLowerCase();
   if (!schoolSlug || schoolSlug.length < 3) {
     return { classes: [] as { id: string; name: string }[] };

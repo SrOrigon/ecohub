@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { prisma } from "@/lib/db";
 import { isUsableAuthSecret, ensureAuthSecretAtRuntime } from "@/lib/auth-secret-runtime";
 import { ensureDatabaseUrlAtRuntime } from "@/lib/database-url-runtime";
@@ -14,6 +15,21 @@ type PersistenceManifest = {
   lastBackup?: string | null;
   databasePath?: string | null;
 };
+
+/** Testa escrita real no volume — manifesto ausente não prova nada. */
+function probeVolumeWritable(databasePath: string): boolean | null {
+  if (!databasePath) return null;
+  const dir = dirname(databasePath);
+  try {
+    mkdirSync(/* turbopackIgnore: true */ dir, { recursive: true });
+    const probe = `${dir}/.ecohub-health-probe`;
+    writeFileSync(/* turbopackIgnore: true */ probe, "ok", "utf8");
+    unlinkSync(/* turbopackIgnore: true */ probe);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function readPersistenceManifest(): PersistenceManifest | null {
   const manifestPath = process.env.ECOHUB_PERSISTENCE_MANIFEST?.trim() || "/data/.ecohub-persistence.json";
@@ -64,9 +80,10 @@ export async function GET() {
     databasePath.startsWith("/data/") || databasePath === "/data";
 
   const manifest = readPersistenceManifest();
+  const volumeWritable = productionDeploy ? probeVolumeWritable(databasePath) : null;
 
   const persistenceOk =
-    !productionDeploy || (onPersistentVolume && (manifest?.volumeWritable ?? true));
+    !productionDeploy || (onPersistentVolume && volumeWritable === true);
 
   const status = dbOk && persistenceOk ? "ok" : "degraded";
   const httpStatus = dbOk ? 200 : 503;
@@ -86,7 +103,7 @@ export async function GET() {
         ? {
             databasePath: databasePath || null,
             onPersistentVolume,
-            volumeWritable: manifest?.volumeWritable ?? null,
+            volumeWritable,
             accounts: {
               users: userCount ?? manifest?.userCount ?? null,
               schools: schoolCount,
