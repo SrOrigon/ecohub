@@ -84,6 +84,11 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
               <p className="mt-1 text-sm text-amber-800 dark:text-amber-200">{schoolError}</p>
             )}
             {loadingClasses && <p className="mt-1 text-xs text-slate-500">Buscando turmas...</p>}
+            {schoolName && classes.length === 0 && !loadingClasses && !schoolError && (
+              <p className="mt-1 text-sm text-amber-800 dark:text-amber-200">
+                Esta escola ainda não tem turmas cadastradas. Peça ao diretor para criar uma turma antes do cadastro.
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="classId">Turma</Label>

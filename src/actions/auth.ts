@@ -10,6 +10,7 @@ import {
   safeEstablishSession,
   requireSession,
 } from "@/lib/auth";
+import { isNextRedirect } from "@/lib/run-server-action";
 import {
   assertProductionDatabasePersistent,
   confirmUserPersisted,
@@ -312,6 +313,24 @@ export async function registerTeacherAction() {
 }
 
 export async function registerStudentAction(formData: FormData) {
+  try {
+    return await registerStudentActionImpl(formData);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    console.error("[auth] registerStudentAction falhou:", error);
+    const reason = error instanceof Error ? error.message : "";
+    if (reason.includes("PERSISTENCE_UNAVAILABLE")) {
+      return {
+        error: "Serviço temporariamente indisponível. Tente novamente em instantes.",
+      };
+    }
+    return {
+      error: "Não foi possível concluir o cadastro agora. Verifique os dados e tente novamente.",
+    };
+  }
+}
+
+async function registerStudentActionImpl(formData: FormData) {
   assertProductionDatabasePersistent();
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -405,7 +424,13 @@ export async function registerStudentAction(formData: FormData) {
   revalidatePath("/dashboard/alunos");
   revalidatePath("/dashboard/turmas");
 
-  await establishSession(user, { tenantSlug: school.slug });
+  const session = await safeEstablishSession(user, { tenantSlug: school.slug });
+  if (!session.ok) {
+    return {
+      error:
+        "Conta criada, mas não foi possível iniciar a sessão automaticamente. Faça login em /login/aluno.",
+    };
+  }
   redirect("/dashboard/aluno");
 }
 

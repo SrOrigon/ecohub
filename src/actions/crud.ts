@@ -67,7 +67,9 @@ function revalidateGroups(...groups: (keyof typeof REVALIDATE)[]) {
 }
 
 export async function createStudentAction(formData: FormData) {
-  const user = await requireSession(["admin", "director", "teacher"]);
+  const session = await requireSessionResult(["admin", "director", "teacher"]);
+  if (!session.ok) return { error: session.error };
+  const user = session.user;
   if (!user.schoolId) return { error: "Escola não configurada." };
 
   const fullName = String(formData.get("fullName") ?? "").trim();
@@ -129,24 +131,29 @@ export async function createStudentAction(formData: FormData) {
   const existingCode = await prisma.student.findUnique({ where: { enrollmentCode } });
   if (existingCode) return { error: "Matrícula já em uso." };
 
-  await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      fullName,
-      role: "student",
-      schoolId: user.schoolId,
-      student: {
-        create: {
-          enrollmentCode,
-          classId,
-          birthDate,
-          accessPinHash,
-          accountType,
+  try {
+    await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        fullName,
+        role: "student",
+        schoolId: user.schoolId,
+        student: {
+          create: {
+            enrollmentCode,
+            classId,
+            birthDate,
+            accessPinHash,
+            accountType,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (error) {
+    console.error("[crud] createStudentAction falhou:", error);
+    return { error: "Não foi possível cadastrar o aluno. Verifique matrícula e e-mail." };
+  }
 
   revalidateGroups("core", "people", "gamification", "analytics", "alerts");
   return {
@@ -877,7 +884,9 @@ export async function updateStudentAction(formData: FormData) {
 }
 
 export async function createTeacherAction(formData: FormData) {
-  const user = await requireSession(["admin", "director"]);
+  const session = await requireSessionResult(["admin", "director"]);
+  if (!session.ok) return { error: session.error };
+  const user = session.user;
   if (!user.schoolId) return { error: "Escola não configurada." };
 
   const fullName = String(formData.get("fullName") ?? "").trim();
@@ -900,18 +909,23 @@ export async function createTeacherAction(formData: FormData) {
   }
 
   const passwordHash = await hashPassword(password);
-  await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      fullName,
-      role: "teacher",
-      schoolId: user.schoolId,
-      avatarUrl: avatarResult as string | null,
-      city: city || null,
-      state: state || null,
-    },
-  });
+  try {
+    await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        fullName,
+        role: "teacher",
+        schoolId: user.schoolId,
+        avatarUrl: avatarResult as string | null,
+        city: city || null,
+        state: state || null,
+      },
+    });
+  } catch (error) {
+    console.error("[crud] createTeacherAction falhou:", error);
+    return { error: "Não foi possível cadastrar o professor. Verifique o e-mail informado." };
+  }
 
   revalidatePath("/dashboard/professores");
   return { success: true };

@@ -89,5 +89,10 @@ export async function confirmUserPersisted(
     throw new Error("USER_NOT_PERSISTED");
   }
 
-  await persistGoldenBackupNow();
+  try {
+    await persistGoldenBackupNow();
+  } catch (error) {
+    // A conta já foi gravada; falha no backup não deve bloquear o cadastro.
+    console.error("[persistência] Backup pós-cadastro falhou (conta gravada):", error);
+  }
 }

@@ -17,6 +17,7 @@ import {
 import { validatePassword, hashPassword, normalizePassword } from "@/lib/security/password-policy";
 import { resolveAvatarFromForm } from "@/lib/avatar";
 import { sendEmail } from "@/lib/email";
+import { isNextRedirect } from "@/lib/run-server-action";
 
 const INVITE_TTL_DAYS = 14;
 
@@ -120,6 +121,18 @@ export async function deleteTeacherInviteAction(formData: FormData) {
 }
 
 export async function acceptTeacherInviteAction(formData: FormData) {
+  try {
+    return await acceptTeacherInviteActionImpl(formData);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    console.error("[invites] acceptTeacherInviteAction falhou:", error);
+    return {
+      error: "Não foi possível concluir o cadastro agora. Verifique os dados e tente novamente.",
+    };
+  }
+}
+
+async function acceptTeacherInviteActionImpl(formData: FormData) {
   const token = formData.get("token")?.toString();
   const fullName = formData.get("fullName")?.toString().trim();
   const email = formData.get("email")?.toString().trim().toLowerCase();
@@ -181,8 +194,14 @@ export async function acceptTeacherInviteAction(formData: FormData) {
     return created;
   });
 
-  const { establishSession } = await import("@/lib/auth");
-  await establishSession(user, { tenantSlug: inviteData.school.slug });
+  const { safeEstablishSession } = await import("@/lib/auth");
+  const session = await safeEstablishSession(user, { tenantSlug: inviteData.school.slug });
+  if (!session.ok) {
+    return {
+      error:
+        "Conta criada, mas não foi possível iniciar a sessão automaticamente. Faça login em /login/professor.",
+    };
+  }
 
   revalidateInvites();
   const { redirect } = await import("next/navigation");
