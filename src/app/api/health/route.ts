@@ -29,11 +29,12 @@ export async function GET() {
   const productionDeploy = process.env.NODE_ENV === "production";
   let dbOk = false;
   let userCount: number | null = null;
+  let schoolCount: number | null = null;
 
   try {
     await prisma.$queryRaw`SELECT 1`;
     dbOk = true;
-    userCount = await prisma.user.count();
+    [userCount, schoolCount] = await Promise.all([prisma.user.count(), prisma.school.count()]);
   } catch {
     dbOk = false;
   }
@@ -79,9 +80,13 @@ export async function GET() {
         ? {
             databasePath: databasePath || null,
             onPersistentVolume,
-            userCount: userCount ?? manifest?.userCount ?? null,
-            lastBackup: manifest?.lastBackup ?? null,
             volumeWritable: manifest?.volumeWritable ?? null,
+            accounts: {
+              users: userCount ?? manifest?.userCount ?? null,
+              schools: schoolCount,
+              persisted: onPersistentVolume && (manifest?.volumeWritable ?? true),
+            },
+            lastBackup: manifest?.lastBackup ?? null,
           }
         : undefined,
       mode: institutional ? "institutional" : "production",

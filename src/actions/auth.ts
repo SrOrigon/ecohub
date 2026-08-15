@@ -10,6 +10,10 @@ import {
   safeEstablishSession,
   requireSession,
 } from "@/lib/auth";
+import {
+  assertProductionDatabasePersistent,
+  confirmUserPersisted,
+} from "@/lib/persistence-guard";
 import { loginHubPath } from "@/lib/login-paths";
 import { TENANT_COOKIE } from "@/lib/tenant";
 import { findUserByEmailForLogin, verifyAndUpgradePassword } from "@/lib/auth-credentials";
@@ -178,6 +182,8 @@ export async function registerSchoolAction(formData: FormData): Promise<Register
 }
 
 async function registerSchoolActionImpl(formData: FormData): Promise<RegisterSchoolResult> {
+  assertProductionDatabasePersistent();
+
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = normalizePassword(String(formData.get("password") ?? ""));
   const fullName = String(formData.get("fullName") ?? "").trim();
@@ -257,6 +263,11 @@ async function registerSchoolActionImpl(formData: FormData): Promise<RegisterSch
     return { school: createdSchool, user: createdUser };
   });
 
+  await confirmUserPersisted(
+    (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
+    user.id
+  );
+
   try {
     await ensureDefaultBadges(school.id);
     await ensureDefaultRewards(school.id);
@@ -292,6 +303,8 @@ export async function registerTeacherAction() {
 }
 
 export async function registerStudentAction(formData: FormData) {
+  assertProductionDatabasePersistent();
+
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = normalizePassword(String(formData.get("password") ?? ""));
   const fullName = String(formData.get("fullName") ?? "").trim();
@@ -375,6 +388,11 @@ export async function registerStudentAction(formData: FormData) {
     return { error: "E-mail ou matrícula já cadastrados. Tente novamente." };
   }
 
+  await confirmUserPersisted(
+    (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
+    user.id
+  );
+
   revalidatePath("/dashboard/alunos");
   revalidatePath("/dashboard/turmas");
 
@@ -383,6 +401,8 @@ export async function registerStudentAction(formData: FormData) {
 }
 
 export async function registerParentAction(formData: FormData) {
+  assertProductionDatabasePersistent();
+
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = normalizePassword(String(formData.get("password") ?? ""));
   const fullName = String(formData.get("fullName") ?? "").trim();
@@ -446,6 +466,11 @@ export async function registerParentAction(formData: FormData) {
     });
     return created;
   });
+
+  await confirmUserPersisted(
+    (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
+    parent.id
+  );
 
   await establishSession(parent, { tenantSlug: school.slug });
   redirect("/dashboard/responsavel");
