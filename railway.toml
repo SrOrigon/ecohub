@@ -4,12 +4,14 @@ buildCommand = "npm run build"
 
 [deploy]
 startCommand = "npm start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
 # Variáveis no painel Railway (Variables):
-# AUTH_SECRET          — JWT, mínimo 32 caracteres (obrigatório em produção)
-# ECOHUB_INSTITUTIONAL — 1 para modo institucional
+# ECOHUB_INSTITUTIONAL — 1 (obrigatório)
 # DATABASE_URL         — file:/data/prod.db (monte Volume em /data)
+# AUTH_SECRET          — opcional; preferir /data/.auth_secret gerado automaticamente
 # NEXT_PUBLIC_APP_URL  — URL pública do app
 # PLATFORM_ADMIN_EMAILS — admins da plataforma (aprovar escolas)
