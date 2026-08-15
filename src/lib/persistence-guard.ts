@@ -38,40 +38,45 @@ export function getPersistentVolumeStatus(): {
     process.env.RAILWAY_SERVICE_ID
   );
 
-  if (railwayMount) {
-    const ok = railwayMount === expected || railwayMount === `${expected}/`;
-    return {
-      mounted: ok,
-      source: "railway-env",
-      mountPath: railwayMount,
-      reason: ok
-        ? null
-        : `Volume Railway montado em ${railwayMount}, mas o app exige ${expected}.`,
-    };
-  }
-
-  if (onRailway) {
-    return {
-      mounted: false,
-      source: "railway-missing-volume",
-      mountPath: null,
-      reason:
-        "Nenhum volume persistente detectado. No Railway: o serviço eduhub → Volumes → Add volume → Mount path exatamente /data.",
-    };
-  }
-
+  let procMounted: boolean | null = null;
   try {
     const mounts = readFileSync("/proc/mounts", "utf8");
-    const mounted = mounts.split("\n").some((line) => line.split(/\s+/)[1] === expected);
-    return {
-      mounted,
-      source: "proc-mounts",
-      mountPath: mounted ? expected : null,
-      reason: mounted ? null : `${expected} não é um ponto de montagem.`,
-    };
+    procMounted = mounts.split("\n").some((line) => {
+      const mountPoint = line.split(/\s+/)[1];
+      return mountPoint === expected || mountPoint === `${expected}/`;
+    });
   } catch {
-    return { mounted: true, source: "local", mountPath: expected, reason: null };
+    procMounted = null;
   }
+
+  if (railwayMount === expected || railwayMount === `${expected}/`) {
+    return { mounted: true, source: "railway-env", mountPath: railwayMount, reason: null };
+  }
+
+  if (procMounted) {
+    return { mounted: true, source: "proc-mounts", mountPath: expected, reason: null };
+  }
+
+  if (railwayMount) {
+    return {
+      mounted: false,
+      source: "railway-env",
+      mountPath: railwayMount,
+      reason: `Volume Railway montado em ${railwayMount}, mas o app exige ${expected}.`,
+    };
+  }
+
+  if (onRailway || procMounted === false) {
+    return {
+      mounted: false,
+      source: onRailway ? "railway-missing-volume" : "proc-mounts",
+      mountPath: null,
+      reason:
+        "Nenhum volume persistente em /data. No Railway: serviço eduhub → Volumes → Add volume → Mount path /data. Depois redeploy e cadastre de novo.",
+    };
+  }
+
+  return { mounted: true, source: "local", mountPath: expected, reason: null };
 }
 
 /** Força banco em /data/prod.db e valida volume gravável E montado. */
@@ -125,7 +130,7 @@ export async function persistGoldenBackupNow(): Promise<void> {
   copyFileSync(PRODUCTION_DATABASE_PATH, DATABASE_COPY_PATH);
   for (const suffix of ["-wal", "-shm"] as const) {
     const source = `${PRODUCTION_DATABASE_PATH}${suffix}`;
-    if (existsSync(source)) {
+    if (existsSync(/* turbopackIgnore: true */ source)) {
       copyFileSync(source, `${GOLDEN_BACKUP_PATH}${suffix}`);
       copyFileSync(source, `${DATABASE_COPY_PATH}${suffix}`);
     }
@@ -141,8 +146,8 @@ export async function persistGoldenBackupNow(): Promise<void> {
 
   const manifestPath = process.env.ECOHUB_PERSISTENCE_MANIFEST?.trim() || `${DATA_DIR}/.ecohub-persistence.json`;
   try {
-    const previous = existsSync(manifestPath)
-      ? (JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>)
+    const previous = existsSync(/* turbopackIgnore: true */ manifestPath)
+      ? (JSON.parse(readFileSync(/* turbopackIgnore: true */ manifestPath, "utf8")) as Record<string, unknown>)
       : {};
     writeFileSync(
       manifestPath,

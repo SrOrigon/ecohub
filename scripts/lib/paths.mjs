@@ -47,43 +47,45 @@ export function getPersistentVolumeStatus() {
     process.env.RAILWAY_SERVICE_ID
   );
 
-  if (railwayMount) {
-    const ok = railwayMount === expected || railwayMount === `${expected}/`;
-    return {
-      mounted: ok,
-      source: "railway-env",
-      mountPath: railwayMount,
-      reason: ok
-        ? null
-        : `Volume Railway montado em ${railwayMount}, mas o app exige ${expected}.`,
-    };
-  }
-
-  if (onRailway) {
-    return {
-      mounted: false,
-      source: "railway-missing-volume",
-      mountPath: null,
-      reason:
-        "Nenhum volume persistente detectado. No Railway: Settings → Volumes → Mount path /data.",
-    };
-  }
-
+  let procMounted = null;
   try {
     const mounts = readFileSync("/proc/mounts", "utf8");
-    const mounted = mounts.split("\n").some((line) => {
-      const parts = line.split(/\s+/);
-      return parts[1] === expected;
+    procMounted = mounts.split("\n").some((line) => {
+      const mountPoint = line.split(/\s+/)[1];
+      return mountPoint === expected || mountPoint === `${expected}/`;
     });
-    return {
-      mounted,
-      source: "proc-mounts",
-      mountPath: mounted ? expected : null,
-      reason: mounted ? null : `${expected} não aparece em /proc/mounts.`,
-    };
   } catch {
-    return { mounted: true, source: "local", mountPath: expected, reason: null };
+    procMounted = null;
   }
+
+  if (railwayMount === expected || railwayMount === `${expected}/`) {
+    return { mounted: true, source: "railway-env", mountPath: railwayMount, reason: null };
+  }
+
+  if (procMounted) {
+    return { mounted: true, source: "proc-mounts", mountPath: expected, reason: null };
+  }
+
+  if (railwayMount) {
+    return {
+      mounted: false,
+      source: "railway-env",
+      mountPath: railwayMount,
+      reason: `Volume Railway montado em ${railwayMount}, mas o app exige ${expected}.`,
+    };
+  }
+
+  if (onRailway || procMounted === false) {
+    return {
+      mounted: false,
+      source: onRailway ? "railway-missing-volume" : "proc-mounts",
+      mountPath: null,
+      reason:
+        "Nenhum volume persistente em /data. No Railway: serviço eduhub → Volumes → Add volume → Mount path /data. Depois redeploy e cadastre de novo.",
+    };
+  }
+
+  return { mounted: true, source: "local", mountPath: expected, reason: null };
 }
 
 export function isPersistentVolumeMounted() {

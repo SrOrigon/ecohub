@@ -48,7 +48,13 @@ function isRegisterSchoolSuccess(state: RegisterSchoolResult): state is Register
   return state != null && "success" in state && state.success === true;
 }
 
-export function RegisterSchoolForm() {
+export function RegisterSchoolForm({
+  volumeReady = true,
+  volumeReason = null,
+}: {
+  volumeReady?: boolean;
+  volumeReason?: string | null;
+}) {
   const [cnpjInput, setCnpjInput] = useState("");
   const [preview, setPreview] = useState<CnpjPreview | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -115,6 +121,23 @@ export function RegisterSchoolForm() {
           </div>
         </CardHeader>
         <CardContent>
+          {!volumeReady && (
+            <div
+              className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100"
+              role="alert"
+            >
+              <p className="font-semibold">Cadastro bloqueado para não perder o login</p>
+              <p className="mt-1">
+                {volumeReason ??
+                  "Monte um Volume no Railway em /data, faça o redeploy e volte a esta página."}
+              </p>
+              <ol className="mt-2 list-inside list-decimal space-y-1 text-xs">
+                <li>Railway → serviço <strong>eduhub</strong> → <strong>Volumes</strong></li>
+                <li>Add volume → Mount path: <code>/data</code></li>
+                <li>Aguarde o redeploy e recarregue esta página</li>
+              </ol>
+            </div>
+          )}
           <form action={formAction} className="space-y-4">
             <div>
               <Label htmlFor="cnpj">CNPJ da instituição</Label>
@@ -237,7 +260,7 @@ export function RegisterSchoolForm() {
               </p>
             )}
 
-            <Button type="submit" className="w-full" size="lg" disabled={pending || !canSubmit}>
+            <Button type="submit" className="w-full" size="lg" disabled={pending || !canSubmit || !volumeReady}>
               {pending ? "Criando instituição..." : "Criar conta da instituição"}
             </Button>
             {!preview && (

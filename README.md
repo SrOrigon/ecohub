@@ -93,10 +93,6 @@ prisma/
 | UI | Tailwind CSS 4 |
 | Gráficos | Recharts |
 
-## Migração futura para Supabase
-
-O schema SQL em `supabase/migrations/` está pronto para quando quiser hospedar na nuvem. Basta trocar `DATABASE_URL` para PostgreSQL e ajustar o provider no Prisma.
-
 ## Licença
 
 Projeto educacional — uso livre.
