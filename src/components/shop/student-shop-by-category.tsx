@@ -4,6 +4,11 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RedeemRewardButton } from "@/components/forms/redeem-reward-button";
+import { EditRewardForm } from "@/components/forms/edit-reward-form";
+import { ToggleRewardButton } from "@/components/forms/toggle-reward-button";
+import { DeleteRewardButton } from "@/components/forms/delete-reward-button";
+import { AdjustRewardStockForm } from "@/components/forms/adjust-reward-stock-form";
+import type { ShopCategoryOption } from "@/components/forms/create-reward-form";
 import { CosmeticFrame } from "@/components/cosmetics/cosmetic-frame";
 import { CosmeticBackgroundCard } from "@/components/cosmetics/cosmetic-background";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
@@ -23,6 +28,7 @@ type RewardItem = {
   cosmeticKey?: string | null;
   categoryId: string | null;
   category: { id: string; name: string; isActive: boolean } | null;
+  _count?: { redemptions: number };
 };
 
 type CategoryItem = {
@@ -115,12 +121,58 @@ function RewardCard({
   );
 }
 
+function StaffRewardManageCard({
+  reward,
+  categories,
+}: {
+  reward: RewardItem;
+  categories: ShopCategoryOption[];
+}) {
+  const outOfStock = reward.stock !== null && reward.stock <= 0;
+
+  return (
+    <Card className={!reward.isActive ? "opacity-80" : undefined}>
+      <CardHeader>
+        <CardTitle className="text-base">{reward.name}</CardTitle>
+        <CardDescription>{reward.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="warning">{reward.coinCost} moedas</Badge>
+          <Badge variant={reward.isActive ? "success" : "secondary"}>
+            {reward.isActive ? "Ativo" : "Inativo"}
+          </Badge>
+          {reward.stock === null ? (
+            <Badge variant="secondary">Estoque ilimitado</Badge>
+          ) : (
+            <Badge variant={outOfStock ? "danger" : "secondary"}>
+              {outOfStock ? "Esgotado" : `${reward.stock} em estoque`}
+            </Badge>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-1">
+          <EditRewardForm reward={reward} categories={categories} />
+          <ToggleRewardButton rewardId={reward.id} isActive={reward.isActive} />
+          <DeleteRewardButton
+            rewardId={reward.id}
+            rewardName={reward.name}
+            hasRedemptions={(reward._count?.redemptions ?? 0) > 0}
+          />
+        </div>
+        <AdjustRewardStockForm key={`${reward.id}-${reward.stock}`} rewardId={reward.id} stock={reward.stock} />
+      </CardContent>
+    </Card>
+  );
+}
+
 export function StudentShopByCategory({
   rewards,
+  categories,
   student,
   role,
   preview = false,
   canRedeem = true,
+  canManage = false,
 }: {
   rewards: RewardItem[];
   categories: CategoryItem[];
@@ -128,13 +180,21 @@ export function StudentShopByCategory({
   role: UserRole;
   preview?: boolean;
   canRedeem?: boolean;
+  canManage?: boolean;
 }) {
   const [filterType, setFilterType] = useState<"all" | "frames" | "backgrounds" | "physical">("all");
   const kidFriendly = isKidFriendlyRole(role);
+  const categoryOptions: ShopCategoryOption[] = categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    isActive: c.isActive,
+  }));
 
-  const visibleRewards = preview
-    ? rewards.filter((r) => r.isActive)
-    : rewards.filter((r) => r.isActive && (r.category?.isActive !== false));
+  const visibleRewards = canManage
+    ? rewards
+    : preview
+      ? rewards.filter((r) => r.isActive)
+      : rewards.filter((r) => r.isActive && (r.category?.isActive !== false));
 
   const filteredRewards = visibleRewards.filter((r) => {
     if (filterType === "frames") return r.itemType === "frame";
@@ -218,7 +278,9 @@ export function StudentShopByCategory({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredRewards.map((reward) =>
-          student && !preview ? (
+          canManage ? (
+            <StaffRewardManageCard key={reward.id} reward={reward} categories={categoryOptions} />
+          ) : student && !preview ? (
             <RewardCard
               key={reward.id}
               reward={reward}

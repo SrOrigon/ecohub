@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { updateRewardAction } from "@/actions/rewards";
+import { runServerAction } from "@/lib/run-server-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select, Textarea } from "@/components/ui/form-fields";
@@ -16,6 +17,8 @@ export interface RewardEditData {
   stock: number | null;
   isActive: boolean;
   categoryId: string | null;
+  itemType?: string;
+  cosmeticKey?: string | null;
 }
 
 export function EditRewardForm({
@@ -26,10 +29,11 @@ export function EditRewardForm({
   categories: ShopCategoryOption[];
 }) {
   const [open, setOpen] = useState(false);
+  const [unlimited, setUnlimited] = useState(reward.stock === null);
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
-      const result = await updateRewardAction(formData);
-      if (result.success) setOpen(false);
+      const result = await runServerAction(async () => updateRewardAction(formData));
+      if (result && "success" in result && result.success) setOpen(false);
       return result;
     },
     null
@@ -37,12 +41,23 @@ export function EditRewardForm({
 
   return (
     <>
-      <Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          setUnlimited(reward.stock === null);
+          setOpen(true);
+        }}
+      >
         Editar
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} title="Editar item da loja">
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="rewardId" value={reward.id} />
+          <input type="hidden" name="itemType" value={reward.itemType ?? "physical"} />
+          <input type="hidden" name="cosmeticKey" value={reward.cosmeticKey ?? ""} />
+          {unlimited ? <input type="hidden" name="unlimitedStock" value="1" /> : null}
           <div>
             <Label htmlFor={`edit-cat-${reward.id}`}>Categoria</Label>
             <Select id={`edit-cat-${reward.id}`} name="categoryId" defaultValue={reward.categoryId ?? ""}>
@@ -80,15 +95,25 @@ export function EditRewardForm({
               />
             </div>
             <div>
-              <Label htmlFor={`edit-stock-${reward.id}`}>Estoque (vazio = ilimitado)</Label>
-              <Input
-                id={`edit-stock-${reward.id}`}
-                name="stock"
-                type="number"
-                min="0"
-                defaultValue={reward.stock ?? ""}
-                placeholder="Ilimitado"
-              />
+              <Label htmlFor={`edit-stock-${reward.id}`}>Quantidade em estoque</Label>
+              <label className="mb-2 flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={unlimited}
+                  onChange={(e) => setUnlimited(e.target.checked)}
+                />
+                Ilimitado
+              </label>
+              {!unlimited && (
+                <Input
+                  id={`edit-stock-${reward.id}`}
+                  name="stock"
+                  type="number"
+                  min="0"
+                  required
+                  defaultValue={reward.stock ?? 0}
+                />
+              )}
             </div>
           </div>
           {state?.error && <p className="text-sm text-red-600">{state.error}</p>}

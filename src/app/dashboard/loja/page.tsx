@@ -9,6 +9,7 @@ import { InstitutionShopManager } from "@/components/shop/institution-shop-manag
 import { StudentShopByCategory } from "@/components/shop/student-shop-by-category";
 import { StudentInventory } from "@/components/shop/student-inventory";
 import { ShopTabsContainer } from "@/components/shop/shop-tabs-container";
+import { EcohubShopPanel } from "@/components/shop/ecohub-shop-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { FulfillRedemptionButton } from "@/components/forms/fulfill-redemption-button";
 import { redirect } from "next/navigation";
@@ -122,9 +123,9 @@ export default async function LojaPage() {
         title="Loja de Moedas & Cosméticos"
         description={
           isStudent
-            ? `Você tem ${student?.coins ?? 0} moedas. Compre prêmios, molduras e planos de fundo!`
+            ? `Você tem ${student?.coins ?? 0} moedas. Prêmios da escola na vitrine; molduras e pets oficiais na Loja Ecohub.`
             : canManageShop
-              ? "Gerencie prêmios, importe catálogo de cosméticos e acompanhe resgates"
+              ? "Edite quantidade, preço e itens já cadastrados na aba Gerenciador. A Loja Ecohub (molduras e pets) continua em desenvolvimento."
               : pendingCount > 0
                 ? `${pendingCount} resgate(s) aguardando entrega`
                 : "Prêmios e cosméticos disponíveis para resgate com moedas"
@@ -161,9 +162,11 @@ export default async function LojaPage() {
               role={user.role}
               preview={!isStudent && !canManageShop}
               canRedeem={canRedeem}
+              canManage={canManageShop}
             />
           </section>
         }
+        ecohubTabContent={<EcohubShopPanel />}
         inventoryTabContent={
           student ? (
             <StudentInventory

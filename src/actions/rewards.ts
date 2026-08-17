@@ -7,11 +7,13 @@ import { notifyStudent, notifyStudentParents } from "@/lib/notifications";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
 import { assertStudentInScope, canReadStudentData } from "@/lib/tenant-guards";
+import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 
-function revalidateLoja() {
+function revalidateLoja(schoolId?: string | null) {
   ["/dashboard/loja", "/dashboard/aluno", "/dashboard/gamificacao", "/dashboard/notificacoes"].forEach((p) =>
     revalidatePath(p)
   );
+  invalidateSchoolCaches(schoolId);
 }
 
 export async function createRewardAction(formData: FormData) {
@@ -57,14 +59,14 @@ export async function createRewardAction(formData: FormData) {
       name,
       description: description || null,
       coinCost,
-      stock: stock && stock > 0 ? stock : null,
+      stock: stock !== null && !Number.isNaN(stock) && stock >= 0 ? stock : null,
       itemType,
       cosmeticKey,
       isActive: true,
     },
   });
 
-  revalidateLoja();
+  revalidateLoja(user.schoolId);
   return { success: true };
 }
 
@@ -85,12 +87,16 @@ export async function updateRewardAction(formData: FormData) {
   const categoryId = String(formData.get("categoryId") ?? "").trim() || null;
   const coinCost = parseInt(String(formData.get("coinCost") ?? "0"), 10);
   const stockStr = String(formData.get("stock") ?? "").trim();
-  const stock = stockStr ? parseInt(stockStr, 10) : null;
-  const itemType = String(formData.get("itemType") ?? "physical").trim();
-  const cosmeticKey = String(formData.get("cosmeticKey") ?? "").trim() || null;
+  const unlimited = formData.get("unlimitedStock") === "1" || stockStr === "";
+  const stockParsed = stockStr ? parseInt(stockStr, 10) : NaN;
+  const itemTypeRaw = String(formData.get("itemType") ?? "").trim();
+  const cosmeticKeyRaw = formData.get("cosmeticKey");
 
-  if (!rewardId || !name || coinCost <= 0) {
+  if (!rewardId || !name || coinCost <= 0 || Number.isNaN(coinCost)) {
     return { error: "Nome e custo em moedas são obrigatórios." };
+  }
+  if (!unlimited && (Number.isNaN(stockParsed) || stockParsed < 0)) {
+    return { error: "Informe um estoque válido (0 ou mais) ou deixe ilimitado." };
   }
 
   const reward = await prisma.reward.findFirst({
@@ -112,13 +118,16 @@ export async function updateRewardAction(formData: FormData) {
       name,
       description: description || null,
       coinCost,
-      stock: stock !== null && stock >= 0 ? stock : null,
-      itemType,
-      cosmeticKey,
+      stock: unlimited ? null : stockParsed,
+      itemType: itemTypeRaw || reward.itemType,
+      cosmeticKey:
+        cosmeticKeyRaw === null
+          ? reward.cosmeticKey
+          : String(cosmeticKeyRaw).trim() || null,
     },
   });
 
-  revalidateLoja();
+  revalidateLoja(user.schoolId);
   return { success: true };
 }
 
@@ -134,26 +143,27 @@ export async function deleteRewardAction(formData: FormData) {
   }
 
   const rewardId = String(formData.get("rewardId") ?? "");
+  const force = formData.get("force") === "1";
   const reward = await prisma.reward.findFirst({
     where: { id: rewardId, schoolId: user.schoolId },
     include: { _count: { select: { redemptions: true } } },
   });
   if (!reward) return { error: "Item não encontrado." };
 
-  if (reward._count.redemptions > 0) {
+  if (reward._count.redemptions > 0 && !force) {
     await prisma.reward.update({
       where: { id: rewardId },
       data: { isActive: false },
     });
-    revalidateLoja();
+    revalidateLoja(user.schoolId);
     return {
       success: true,
-      message: "Item desativado (já possui resgates e não pode ser excluído).",
+      message: "Item desativado porque já tem resgates. Use Excluir de novo e confirme para remover de vez.",
     };
   }
 
   await prisma.reward.delete({ where: { id: rewardId } });
-  revalidateLoja();
+  revalidateLoja(user.schoolId);
   return { success: true };
 }
 
@@ -179,7 +189,41 @@ export async function toggleRewardAction(formData: FormData) {
     data: { isActive: !reward.isActive },
   });
 
-  revalidateLoja();
+  revalidateLoja(user.schoolId);
+  return { success: true };
+}
+
+export async function adjustRewardStockAction(formData: FormData) {
+  const session = await requireSessionResult(["admin", "director"]);
+  if (!session.ok) return { error: session.error };
+  const user = session.user;
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const settings = await getSchoolSettings(user.schoolId);
+  if (user.role === "director" && !hasPermission(user.role, settings, "director.manageRewards")) {
+    return { error: "Sem permissão para gerenciar prêmios." };
+  }
+
+  const rewardId = String(formData.get("rewardId") ?? "");
+  const unlimited = formData.get("unlimitedStock") === "1";
+  const stockStr = String(formData.get("stock") ?? "").trim();
+  const stockParsed = stockStr ? parseInt(stockStr, 10) : NaN;
+
+  const reward = await prisma.reward.findFirst({
+    where: { id: rewardId, schoolId: user.schoolId },
+  });
+  if (!reward) return { error: "Item não encontrado." };
+
+  if (!unlimited && (Number.isNaN(stockParsed) || stockParsed < 0)) {
+    return { error: "Informe a quantidade em estoque (0 ou mais) ou marque ilimitado." };
+  }
+
+  await prisma.reward.update({
+    where: { id: rewardId },
+    data: { stock: unlimited ? null : stockParsed },
+  });
+
+  revalidateLoja(user.schoolId);
   return { success: true };
 }
 
@@ -303,7 +347,7 @@ export async function redeemRewardAction(formData: FormData) {
       `Você comprou ${reward.name}! O item já foi adicionado ao seu inventário.`,
       "/dashboard/loja"
     );
-    revalidateLoja();
+    revalidateLoja(user.schoolId);
     return {
       success: true,
       message: `Item desbloqueado: ${reward.name}! Acesse a aba Meu Inventário para equipar.`,
@@ -324,7 +368,7 @@ export async function redeemRewardAction(formData: FormData) {
     "shop"
   );
 
-  revalidateLoja();
+  revalidateLoja(user.schoolId);
   return { success: true, message: `Resgate confirmado: ${reward.name}! Retire na escola.` };
 }
 
@@ -369,7 +413,7 @@ export async function equipStudentCosmeticAction(formData: FormData) {
     });
   }
 
-  revalidateLoja();
+  revalidateLoja(user.schoolId);
   revalidatePath("/dashboard/perfil");
   return {
     success: true,
@@ -407,7 +451,7 @@ export async function seedPresetCosmeticsForSchoolAction() {
     }
   }
 
-  revalidateLoja();
+  revalidateLoja(user.schoolId);
   return {
     success: true,
     message: createdCount > 0 ? `${createdCount} cosmético(s) adicionado(s) à loja da escola!` : "Todos os cosméticos já foram adicionados.",
@@ -461,7 +505,7 @@ export async function fulfillRedemptionAction(formData: FormData) {
     "shop"
   );
 
-  revalidateLoja();
+  revalidateLoja(user.schoolId);
   return { success: true };
 }
 

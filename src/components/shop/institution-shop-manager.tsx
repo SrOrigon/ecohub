@@ -6,6 +6,7 @@ import { CreateRewardForm, type ShopCategoryOption } from "@/components/forms/cr
 import { EditRewardForm } from "@/components/forms/edit-reward-form";
 import { ToggleRewardButton } from "@/components/forms/toggle-reward-button";
 import { DeleteRewardButton } from "@/components/forms/delete-reward-button";
+import { AdjustRewardStockForm } from "@/components/forms/adjust-reward-stock-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { InstitutionShopCategories, type RewardCategoryRow } from "@/components/shop/institution-shop-categories";
@@ -53,7 +54,7 @@ export function InstitutionShopManager({
               Itens da loja de moedas
             </CardTitle>
             <CardDescription className="mt-1 max-w-2xl">
-              Cadastre prêmios e vincule cada um a uma categoria definida pela instituição, ou importe molduras e fundos digitais.
+              Depois de cadastrar, você pode alterar nome, preço e quantidade, desativar ou excluir o item da loja da escola.
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -125,13 +126,17 @@ export function InstitutionShopManager({
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-wrap items-center gap-1">
-                          <EditRewardForm reward={reward} categories={categoryOptions} />
-                          <ToggleRewardButton rewardId={reward.id} isActive={reward.isActive} />
-                          <DeleteRewardButton
-                            rewardId={reward.id}
-                            hasRedemptions={reward._count.redemptions > 0}
-                          />
+                        <div className="flex min-w-[12rem] flex-col gap-2">
+                          <div className="flex flex-wrap items-center gap-1">
+                            <EditRewardForm reward={reward} categories={categoryOptions} />
+                            <ToggleRewardButton rewardId={reward.id} isActive={reward.isActive} />
+                            <DeleteRewardButton
+                              rewardId={reward.id}
+                              rewardName={reward.name}
+                              hasRedemptions={reward._count.redemptions > 0}
+                            />
+                          </div>
+                          <AdjustRewardStockForm key={`${reward.id}-${reward.stock}`} rewardId={reward.id} stock={reward.stock} />
                         </div>
                       </td>
                     </tr>

@@ -65,7 +65,7 @@ export function CreateRewardForm({ categories }: { categories: ShopCategoryOptio
                 </div>
                 <div>
                   <Label htmlFor="stock">Estoque (vazio = ilimitado)</Label>
-                  <Input id="stock" name="stock" type="number" min="1" placeholder="Ilimitado" />
+                  <Input id="stock" name="stock" type="number" min="0" placeholder="Ilimitado" />
                 </div>
               </div>
             </>

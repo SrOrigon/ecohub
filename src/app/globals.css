@@ -673,3 +673,23 @@ input[type="radio"] {
     margin: 0;
   }
 }
+
+@keyframes ecohub-pet-idle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.ecohub-pet-idle {
+  animation: ecohub-pet-idle 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ecohub-pet-idle {
+    animation: none;
+  }
+}
