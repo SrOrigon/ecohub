@@ -2,6 +2,7 @@ import { FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateRewardCategoryForm } from "@/components/forms/create-reward-category-form";
+import { SeedShopCategoriesButton } from "@/components/shop/seed-shop-categories-button";
 import { EditRewardCategoryForm } from "@/components/forms/edit-reward-category-form";
 import { ToggleRewardCategoryButton } from "@/components/forms/toggle-reward-category-button";
 import { DeleteRewardCategoryButton } from "@/components/forms/delete-reward-category-button";
@@ -33,7 +34,10 @@ export function InstitutionShopCategories({ categories }: { categories: RewardCa
             delas ao cadastrar prêmios.
           </CardDescription>
         </div>
-        <CreateRewardCategoryForm />
+        <div className="flex flex-wrap items-start gap-2">
+          <SeedShopCategoriesButton />
+          <CreateRewardCategoryForm />
+        </div>
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex flex-wrap gap-2">
@@ -42,12 +46,15 @@ export function InstitutionShopCategories({ categories }: { categories: RewardCa
         </div>
 
         {categories.length === 0 ? (
-          <EmptyState
-            icon={FolderOpen}
-            title="Nenhuma categoria"
-            description='Crie categorias como "Lanches", "Material escolar" ou "Benefícios" antes de cadastrar itens.'
-            className="py-6"
-          />
+            <EmptyState
+              icon={FolderOpen}
+              title="Nenhuma categoria"
+              description='Crie uma categoria (ex.: "Lanches") ou use as categorias iniciais para voltar a cadastrar prêmios.'
+              className="py-6"
+            >
+              <SeedShopCategoriesButton />
+              <CreateRewardCategoryForm variant="default" size="default" label="Criar categoria agora" />
+            </EmptyState>
         ) : (
           <ResponsiveTable minWidth="32rem" className="rounded-xl border border-slate-200 bg-white">
             <thead>

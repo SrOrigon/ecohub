@@ -18,6 +18,8 @@ import { isKidFriendlyRole } from "@/lib/constants";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
 
+export const dynamic = "force-dynamic";
+
 export default async function LojaPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");

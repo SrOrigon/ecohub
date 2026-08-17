@@ -38,13 +38,6 @@ export async function createRewardAction(formData: FormData) {
 
   if (!name || coinCost <= 0) return { error: "Nome e custo em moedas são obrigatórios." };
 
-  const activeCategories = await prisma.rewardCategory.count({
-    where: { schoolId: user.schoolId, isActive: true },
-  });
-  if (itemType === "physical" && activeCategories > 0 && !categoryId) {
-    return { error: "Selecione uma categoria para o item." };
-  }
-
   if (categoryId) {
     const cat = await prisma.rewardCategory.findFirst({
       where: { id: categoryId, schoolId: user.schoolId, isActive: true },

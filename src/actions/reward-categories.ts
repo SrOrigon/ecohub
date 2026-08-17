@@ -5,9 +5,26 @@ import { requireSessionResult } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
+import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 
-function revalidateShop() {
+const DEFAULT_SHOP_CATEGORIES = [
+  { name: "Lanches", description: "Lanches, bebidas e recompensas da cantina.", sortOrder: 0 },
+  { name: "Material escolar", description: "Itens de papelaria e material didático.", sortOrder: 1 },
+  { name: "Benefícios", description: "Vantagens, vales e privilégios na escola.", sortOrder: 2 },
+];
+
+function revalidateShop(schoolId?: string | null) {
   ["/dashboard/loja", "/dashboard/gamificacao"].forEach((p) => revalidatePath(p));
+  invalidateSchoolCaches(schoolId);
+}
+
+function isUniqueConstraintError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2002"
+  );
 }
 
 function manageRewardsError(user: { role: string; schoolId: string | null }) {
@@ -51,19 +68,86 @@ export async function createRewardCategoryAction(formData: FormData) {
   const existing = await prisma.rewardCategory.findFirst({
     where: { schoolId: user.schoolId!, name },
   });
-  if (existing) return { error: "Já existe uma categoria com este nome." };
+  if (existing) {
+    if (!existing.isActive) {
+      await prisma.rewardCategory.update({
+        where: { id: existing.id },
+        data: {
+          isActive: true,
+          description: description || existing.description,
+          sortOrder: Number.isFinite(sortOrder) ? sortOrder : existing.sortOrder,
+        },
+      });
+      revalidateShop(user.schoolId);
+      return { success: true };
+    }
+    return { error: "Já existe uma categoria com este nome." };
+  }
 
-  await prisma.rewardCategory.create({
-    data: {
-      schoolId: user.schoolId!,
-      name,
-      description: description || null,
-      sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
-    },
-  });
+  try {
+    await prisma.rewardCategory.create({
+      data: {
+        schoolId: user.schoolId!,
+        name,
+        description: description || null,
+        sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+        isActive: true,
+      },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return { error: "Já existe uma categoria com este nome. Atualize a página e tente de novo." };
+    }
+    throw error;
+  }
 
-  revalidateShop();
+  revalidateShop(user.schoolId);
   return { success: true };
+}
+
+export async function seedDefaultShopCategoriesAction() {
+  const session = await requireSessionResult(["admin", "director"]);
+  if (!session.ok) return { error: session.error };
+  const user = session.user;
+
+  const permError = await checkDirectorManageRewards(user);
+  if (permError) return { error: permError };
+
+  let created = 0;
+  for (const item of DEFAULT_SHOP_CATEGORIES) {
+    const existing = await prisma.rewardCategory.findFirst({
+      where: { schoolId: user.schoolId!, name: item.name },
+    });
+    if (existing) {
+      if (!existing.isActive) {
+        await prisma.rewardCategory.update({
+          where: { id: existing.id },
+          data: { isActive: true },
+        });
+        created += 1;
+      }
+      continue;
+    }
+    await prisma.rewardCategory.create({
+      data: {
+        schoolId: user.schoolId!,
+        name: item.name,
+        description: item.description,
+        sortOrder: item.sortOrder,
+        isActive: true,
+      },
+    });
+    created += 1;
+  }
+
+  revalidateShop(user.schoolId);
+  if (created === 0) {
+    return { success: true, message: "As categorias iniciais já existem. Você já pode cadastrar itens." };
+  }
+  return {
+    success: true,
+    message: `${created} categoria(s) pronta(s). Agora você pode cadastrar os prêmios.`,
+  };
 }
 
 export async function updateRewardCategoryAction(formData: FormData) {
@@ -100,7 +184,7 @@ export async function updateRewardCategoryAction(formData: FormData) {
     },
   });
 
-  revalidateShop();
+  revalidateShop(user.schoolId);
   return { success: true };
 }
 
@@ -123,7 +207,7 @@ export async function toggleRewardCategoryAction(formData: FormData) {
     data: { isActive: !category.isActive },
   });
 
-  revalidateShop();
+  revalidateShop(user.schoolId);
   return { success: true };
 }
 
@@ -147,7 +231,7 @@ export async function deleteRewardCategoryAction(formData: FormData) {
       where: { id: categoryId },
       data: { isActive: false },
     });
-    revalidateShop();
+    revalidateShop(user.schoolId);
     return {
       success: true,
       message: "Categoria desativada (ainda possui itens vinculados).",
@@ -155,6 +239,6 @@ export async function deleteRewardCategoryAction(formData: FormData) {
   }
 
   await prisma.rewardCategory.delete({ where: { id: categoryId } });
-  revalidateShop();
+  revalidateShop(user.schoolId);
   return { success: true };
 }

@@ -77,9 +77,11 @@ export function InstitutionShopManager({
             <EmptyState
               icon={Coins}
               title="Nenhum item cadastrado"
-              description="Crie categorias acima e depois adicione itens com preço em moedas."
+              description="Cadastre um prêmio com preço em moedas. A categoria é opcional."
               className="py-8"
-            />
+            >
+              <CreateRewardForm categories={categoryOptions} />
+            </EmptyState>
           ) : (
             <ResponsiveTable minWidth="40rem" className="rounded-xl border border-slate-200 bg-white">
               <thead>

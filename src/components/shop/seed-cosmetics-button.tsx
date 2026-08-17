@@ -1,22 +1,26 @@
 "use client";
 
 import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { seedPresetCosmeticsForSchoolAction } from "@/actions/rewards";
+import { runServerAction } from "@/lib/run-server-action";
 import { Sparkles, Loader2 } from "lucide-react";
 
 export function SeedCosmeticsButton() {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
   const handleSeed = () => {
     startTransition(async () => {
-      const res = await seedPresetCosmeticsForSchoolAction();
-      if ("error" in res && res.error) {
+      const res = await runServerAction(async () => seedPresetCosmeticsForSchoolAction());
+      if (res && "error" in res && res.error) {
         setMessage(res.error);
-      } else if ("message" in res && res.message) {
+      } else if (res && "message" in res && res.message) {
         setMessage(res.message);
       }
+      router.refresh();
     });
   };
 
