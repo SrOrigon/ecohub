@@ -34,23 +34,28 @@ export async function findUserByEmailForLogin(email: string): Promise<AuthUserRe
   });
   if (exact) return exact;
 
-  const legacy = await prisma.$queryRaw<AuthUserRecord[]>`
-    SELECT id, email, passwordHash, role, schoolId, fullName, avatarUrl
-    FROM User
-    WHERE lower(email) = ${normalized}
-    LIMIT 1
-  `;
-  const user = legacy[0];
-  if (!user) return null;
+  try {
+    const legacy = await prisma.$queryRaw<AuthUserRecord[]>`
+      SELECT id, email, passwordHash, role, schoolId, fullName, avatarUrl
+      FROM "User"
+      WHERE lower(email) = ${normalized}
+      LIMIT 1
+    `;
+    const user = legacy[0];
+    if (!user) return null;
 
-  if (user.email !== normalized) {
-    await prisma.user
-      .update({ where: { id: user.id }, data: { email: normalized } })
-      .catch(() => undefined);
-    return { ...user, email: normalized };
+    if (user.email !== normalized) {
+      await prisma.user
+        .update({ where: { id: user.id }, data: { email: normalized } })
+        .catch(() => undefined);
+      return { ...user, email: normalized };
+    }
+
+    return user;
+  } catch (error) {
+    console.error("[auth] busca de e-mail legado falhou:", error);
+    return null;
   }
-
-  return user;
 }
 
 function shouldUpgradePasswordHash(hash: string): boolean {

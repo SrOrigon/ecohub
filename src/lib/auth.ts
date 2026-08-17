@@ -4,7 +4,6 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import type { UserRole } from "@/lib/constants";
-import { findSchoolBySlug } from "@/lib/school-lookup";
 import { getAuthSecret } from "@/lib/auth-secret";
 import { TENANT_COOKIE } from "@/lib/tenant";
 
@@ -88,18 +87,6 @@ export async function clearTenantCookie() {
   cookieStore.delete(TENANT_COOKIE);
 }
 
-async function validateTenantForUser(user: SessionUser): Promise<boolean> {
-  const cookieStore = await cookies();
-  const tenantSlug = cookieStore.get(TENANT_COOKIE)?.value;
-  if (!tenantSlug) return true;
-  if (!user.schoolId) return true;
-
-  const school = await findSchoolBySlug(tenantSlug);
-  if (!school) return false;
-
-  return school.id === user.schoolId;
-}
-
 export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
@@ -123,9 +110,6 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   if (payload.role && payload.role !== user.role) {
     return null;
   }
-
-  const tenantOk = await validateTenantForUser(sessionUser);
-  if (!tenantOk) return null;
 
   return sessionUser;
 });

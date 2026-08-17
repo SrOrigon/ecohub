@@ -26,7 +26,7 @@ import {
   type SchoolSettings,
 } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
-import { validatePassword, hashPassword } from "@/lib/security/password-policy";
+import { validatePassword, hashPassword, normalizePassword, verifyPassword } from "@/lib/security/password-policy";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 import { parseBirthDate } from "@/lib/student-age";
 import { resolveAvatarFromForm } from "@/lib/avatar";
@@ -68,7 +68,16 @@ function revalidateGroups(...groups: (keyof typeof REVALIDATE)[]) {
 }
 
 export async function createStudentAction(formData: FormData) {
-  const session = await requireSessionResult(["admin", "director", "teacher"]);
+  try {
+    return await createStudentActionImpl(formData);
+  } catch (error) {
+    console.error("[crud] createStudentAction falhou:", error);
+    return { error: "Não foi possível cadastrar o aluno. Verifique matrícula, e-mail e senha." };
+  }
+}
+
+async function createStudentActionImpl(formData: FormData) {
+  const session = await requireSessionResult(["admin", "director", "secretary", "teacher"]);
   if (!session.ok) return { error: session.error };
   const user = session.user;
   if (!user.schoolId) return { error: "Escola não configurada." };
@@ -77,7 +86,7 @@ export async function createStudentAction(formData: FormData) {
   let email = String(formData.get("email") ?? "").trim().toLowerCase();
   const enrollmentCode = String(formData.get("enrollmentCode") ?? "").trim();
   const classId = String(formData.get("classId") ?? "") || null;
-  const password = String(formData.get("password") ?? "").trim();
+  const password = normalizePassword(String(formData.get("password") ?? ""));
   const birthDateStr = String(formData.get("birthDate") ?? "").trim();
   const accountMode = String(formData.get("accountMode") ?? "standard");
   const customPin = String(formData.get("pin") ?? "").trim();
@@ -162,12 +171,25 @@ export async function createStudentAction(formData: FormData) {
     createdUser.id
   );
 
+  if (accountMode !== "pin_only") {
+    const stored = await prisma.user.findUnique({
+      where: { id: createdUser.id },
+      select: { passwordHash: true, email: true, role: true },
+    });
+    if (!stored || stored.role !== "student" || !(await verifyPassword(password, stored.passwordHash))) {
+      console.error("[crud] login do aluno recém-criado não conferiu:", createdUser.id);
+      return { error: "Aluno cadastrado, mas a senha não ficou utilizável. Redefina a senha ou cadastre novamente." };
+    }
+  }
+
   revalidateGroups("core", "people", "gamification", "analytics", "alerts");
   return {
     success: true,
     pin: pin ?? undefined,
     enrollmentCode,
     accountType,
+    email,
+    loginPath: accountMode === "pin_only" ? "/entrar" : "/login/aluno",
   };
 }
 
@@ -894,6 +916,15 @@ export async function updateStudentAction(formData: FormData) {
 }
 
 export async function createTeacherAction(formData: FormData) {
+  try {
+    return await createTeacherActionImpl(formData);
+  } catch (error) {
+    console.error("[crud] createTeacherAction falhou:", error);
+    return { error: "Não foi possível cadastrar o professor. Verifique o e-mail e a senha." };
+  }
+}
+
+async function createTeacherActionImpl(formData: FormData) {
   const session = await requireSessionResult(["admin", "director"]);
   if (!session.ok) return { error: session.error };
   const user = session.user;
@@ -901,7 +932,7 @@ export async function createTeacherAction(formData: FormData) {
 
   const fullName = String(formData.get("fullName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "").trim();
+  const password = normalizePassword(String(formData.get("password") ?? ""));
   const city = String(formData.get("city") ?? "").trim();
   const state = String(formData.get("state") ?? "").trim().toUpperCase();
 
@@ -943,8 +974,17 @@ export async function createTeacherAction(formData: FormData) {
     createdTeacher.id
   );
 
+  const stored = await prisma.user.findUnique({
+    where: { id: createdTeacher.id },
+    select: { passwordHash: true, role: true },
+  });
+  if (!stored || stored.role !== "teacher" || !(await verifyPassword(password, stored.passwordHash))) {
+    console.error("[crud] login do professor recém-criado não conferiu:", createdTeacher.id);
+    return { error: "Professor cadastrado, mas a senha não ficou utilizável. Redefina a senha ou cadastre novamente." };
+  }
+
   revalidatePath("/dashboard/professores");
-  return { success: true };
+  return { success: true, email, loginPath: "/login/professor" };
 }
 
 export async function deleteStudentAction(formData: FormData) {

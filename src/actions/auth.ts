@@ -18,6 +18,7 @@ import {
 import { loginHubPath } from "@/lib/login-paths";
 import { TENANT_COOKIE } from "@/lib/tenant";
 import { findUserByEmailForLogin, verifyAndUpgradePassword } from "@/lib/auth-credentials";
+import { findStudentForPinLogin } from "@/lib/student-pin";
 import { prisma } from "@/lib/db";
 import { ensureDefaultBadges, ensureDefaultRewards } from "@/lib/school-setup";
 import { notifyInitialSchoolVerification } from "@/lib/sync-school-verification";
@@ -94,12 +95,6 @@ function matchesPortal(role: UserRole, portal: string) {
   return true;
 }
 
-function portalError(portal: string) {
-  if (portal === "escola") return "Esta conta não é de instituição. Use o login de professor, aluno ou responsável.";
-  if (portal === "professor") return "Esta conta não é de professor. Verifique o tipo de acesso.";
-  if (portal === "aluno") return "Esta conta não é de aluno. Use o login de responsável se for pai/mãe.";
-  if (portal === "responsavel") return "Esta conta não é de responsável. Use o login de aluno se for estudante.";
-}
 export async function loginAction(formData: FormData) {
   try {
     return await loginActionImpl(formData);
@@ -154,7 +149,11 @@ async function loginActionImpl(formData: FormData) {
   }
 
   if (portal && !matchesPortal(user.role as UserRole, portal)) {
-    return { error: portalError(portal) };
+    console.info("[auth] portal diferente do papel; login segue para o painel correto:", {
+      email,
+      portal,
+      role: user.role,
+    });
   }
 
   const remember = formData.get("rememberMe") === "true";
@@ -168,18 +167,9 @@ async function loginActionImpl(formData: FormData) {
   let resolvedTenantSlug: string | null = null;
   if (tenantSlugRaw) {
     const tenantSchool = await findSchoolBySlug(tenantSlugRaw);
-    if (!tenantSchool) {
-      return { error: "Instituição não encontrada. Verifique o endereço de acesso." };
+    if (tenantSchool && user.schoolId && tenantSchool.id === user.schoolId) {
+      resolvedTenantSlug = tenantSchool.slug;
     }
-    if (user.schoolId && tenantSchool.id !== user.schoolId) {
-      return {
-        error:
-          portal === "escola"
-            ? "Este e-mail não pertence a esta instituição neste endereço. Use /login/escola (login global) ou o link correto da sua escola."
-            : "Esta conta não pertence a esta instituição.",
-      };
-    }
-    resolvedTenantSlug = tenantSchool.slug;
   }
 
   try {
@@ -605,13 +595,7 @@ async function studentPinLoginActionImpl(formData: FormData) {
     return { error: "Login por PIN desativado nesta escola." };
   }
 
-  const student = await prisma.student.findFirst({
-    where: {
-      enrollmentCode,
-      user: { schoolId: school.id, role: "student" },
-    },
-    include: { user: true },
-  });
+  const student = await findStudentForPinLogin(school.id, enrollmentCode);
 
   if (!student?.accessPinHash) {
     return { error: "Matrícula ou PIN inválidos." };

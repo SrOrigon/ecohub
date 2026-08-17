@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { createStudentAction } from "@/actions/crud";
+import { runServerAction } from "@/lib/run-server-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
@@ -15,14 +16,26 @@ interface ClassOption {
 
 export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
   const [open, setOpen] = useState(false);
-  const [created, setCreated] = useState<{ pin?: string; enrollmentCode: string } | null>(null);
+  const [created, setCreated] = useState<{
+    pin?: string;
+    enrollmentCode: string;
+    email?: string;
+    loginPath?: string;
+    accountType?: string;
+  } | null>(null);
   const [accountMode, setAccountMode] = useState<"standard" | "pin_only">("standard");
 
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string; success?: boolean; pin?: string; enrollmentCode?: string } | null, formData: FormData) => {
-      const result = await createStudentAction(formData);
-      if (result.success) {
-        setCreated({ pin: result.pin, enrollmentCode: result.enrollmentCode ?? "" });
+    async (_prev: { error?: string; success?: boolean; pin?: string; enrollmentCode?: string; email?: string; loginPath?: string; accountType?: string } | null, formData: FormData) => {
+      const result = await runServerAction(async () => createStudentAction(formData));
+      if (result && "success" in result && result.success) {
+        setCreated({
+          pin: result.pin,
+          enrollmentCode: result.enrollmentCode ?? "",
+          email: result.email,
+          loginPath: result.loginPath,
+          accountType: result.accountType,
+        });
       }
       return result;
     },
@@ -41,20 +54,25 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
       <Modal open={open} onClose={closeModal} title="Cadastrar aluno">
         {created ? (
           <div className="space-y-3 text-sm">
-            <p className="font-medium text-emerald-800 dark:text-emerald-200">Aluno cadastrado!</p>
+            <p className="font-medium text-emerald-800 dark:text-emerald-200">Aluno cadastrado e pronto para entrar.</p>
             <p>
               Matrícula: <strong className="font-mono">{created.enrollmentCode}</strong>
             </p>
+            {created.email && created.accountType !== "pin_only" && (
+              <p>
+                E-mail: <strong>{created.email}</strong>
+              </p>
+            )}
             {created.pin && (
               <p>
                 PIN: <strong className="font-mono text-lg">{created.pin}</strong>
               </p>
             )}
-            {created.pin && (
-              <p className="text-xs text-[var(--muted-foreground)]">
-                Anote o PIN  -  o aluno entra em /entrar com matrícula e PIN.
-              </p>
-            )}
+            <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-200">
+              {created.pin
+                ? "O aluno entra em /entrar com a matrícula e o PIN. Anote o PIN agora."
+                : `O aluno entra em ${created.loginPath ?? "/login/aluno"} com este e-mail e a senha definida agora.`}
+            </p>
             <Button type="button" onClick={closeModal} className="w-full">
               Fechar
             </Button>

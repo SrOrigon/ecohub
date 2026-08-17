@@ -143,7 +143,7 @@ export function RoleLoginForm({
               <ul className="mt-2 list-inside list-disc space-y-1 text-xs">
                 <li>Use o <strong>mesmo e-mail e senha</strong> do cadastro em &quot;Registrar instituição&quot;.</li>
                 <li>A senha precisa ter <strong>letras e números</strong> (mín. 8 caracteres).</li>
-                <li>Professores e alunos usam outros portais — não este.</li>
+                <li>Professores e alunos também podem entrar por aqui com o e-mail da conta — o sistema abre o painel certo.</li>
                 <li>Prefira <strong>/login/escola</strong> se o link da escola não funcionar.</li>
               </ul>
             </div>
@@ -203,7 +203,7 @@ export function RoleLoginForm({
 
         {portal === "professor" && (
           <p className="mt-4 text-sm text-[var(--muted-foreground)]">
-            Cadastro apenas por convite. Peça um link ao diretor da escola.
+            Use o e-mail e a senha criados pela instituição em Professores. Convite também funciona.
           </p>
         )}
 
