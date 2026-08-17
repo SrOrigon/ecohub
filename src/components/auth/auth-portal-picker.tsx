@@ -1,131 +1,128 @@
 import Link from "next/link";
 import { Building2, GraduationCap, Heart, KeyRound, UserRound } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Medal } from "lucide-react";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { portalLoginPath, registerPathForPortal } from "@/lib/login-paths";
+import { tenantEntrarPath } from "@/lib/tenant";
+import { AUTH_ICON_WRAP_CLASS } from "@/components/auth/auth-shell";
+import type { LoginPortal } from "@/lib/preference-cookies";
 
-const portals = [
+const TILE_CLASS =
+  "flex h-full min-h-11 flex-col rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] p-5 text-left shadow-[var(--shadow-sm)] transition hover:border-[color:var(--school-primary)] hover:shadow-[var(--shadow-md)]";
+
+const PORTALS: { portal: LoginPortal; title: string; description: string; icon: typeof Building2 }[] = [
   {
-    href: "/login/escola",
-    registerHref: "/registro/escola",
-    icon: Building2,
+    portal: "escola",
     title: "Instituição",
-    description: "Direção e gestão da escola  -  turmas, relatórios e configurações.",
-    color:
-      "border-indigo-200 bg-indigo-50/50 hover:border-indigo-400 dark:border-indigo-800 dark:bg-indigo-950/30 dark:hover:border-indigo-600",
-    iconColor: "text-indigo-600 bg-indigo-100 dark:text-indigo-300 dark:bg-indigo-950",
+    description: "Direção, secretaria e gestão da escola.",
+    icon: Building2,
   },
   {
-    href: "/login/professor",
-    registerHref: "/registro/professor",
-    icon: GraduationCap,
+    portal: "professor",
     title: "Professor",
-    description: "Cadastre turmas, publique exercícios e acompanhe entregas.",
-    color:
-      "border-emerald-200 bg-emerald-50/50 hover:border-emerald-400 dark:border-emerald-800 dark:bg-emerald-950/30 dark:hover:border-emerald-600",
-    iconColor: "text-emerald-600 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-950",
+    description: "Turmas, exercícios e acompanhamento.",
+    icon: GraduationCap,
   },
   {
-    href: "/login/aluno",
-    registerHref: "/registro/aluno",
-    icon: UserRound,
+    portal: "aluno",
     title: "Aluno",
-    description: "Exercícios escolares, missões e tarefas de casa da família.",
-    color:
-      "border-amber-200 bg-amber-50/50 hover:border-amber-400 dark:border-amber-800 dark:bg-amber-950/30 dark:hover:border-amber-600",
-    iconColor: "text-amber-600 bg-amber-100 dark:text-amber-300 dark:bg-amber-950",
+    description: "Missões, exercícios e progresso.",
+    icon: UserRound,
   },
   {
-    href: "/login/responsavel",
-    registerHref: "/registro/responsavel",
-    icon: Heart,
+    portal: "responsavel",
     title: "Responsável",
-    description: "Veja desempenho dos filhos e crie tarefas de casa com recompensas.",
-    color:
-      "border-rose-200 bg-rose-50/50 hover:border-rose-400 dark:border-rose-800 dark:bg-rose-950/30 dark:hover:border-rose-600",
-    iconColor: "text-rose-600 bg-rose-100 dark:text-rose-300 dark:bg-rose-950",
+    description: "Acompanhe filhos e tarefas de casa.",
+    icon: Heart,
   },
 ];
 
-export function AuthPortalPicker({ mode }: { mode: "login" | "register" }) {
+export function AuthPortalPicker({
+  mode,
+  tenantSlug,
+  schoolName,
+}: {
+  mode: "login" | "register";
+  tenantSlug?: string;
+  schoolName?: string;
+}) {
+  const items = [
+    ...PORTALS.map((p) => ({
+      href: mode === "login" ? portalLoginPath(p.portal, tenantSlug) : registerPathForPortal(p.portal, tenantSlug),
+      icon: p.icon,
+      title: p.title,
+      description: p.description,
+    })),
+    ...(mode === "login"
+      ? [
+          {
+            href: tenantSlug ? tenantEntrarPath(tenantSlug) : "/entrar",
+            icon: KeyRound,
+            title: "Aluno (PIN)",
+            description: "Entrada rápida com matrícula e PIN.",
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <div className="w-full max-w-4xl space-y-6">
-      <div className="flex justify-end">
-        <ThemeToggle compact />
-      </div>
+    <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950">
-          <Medal className="h-7 w-7 text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
-        </div>
         <h1 className="text-2xl font-bold text-[var(--foreground)]">
           {mode === "login" ? "Entrar no Ecohub" : "Criar conta no Ecohub"}
         </h1>
-        <p className="mt-2 text-[var(--muted-foreground)]">Escolha seu tipo de acesso</p>
+        {schoolName ? (
+          <p className="mt-2 text-[var(--muted-foreground)]">
+            {schoolName}
+            {tenantSlug ? (
+              <>
+                {" "}
+                · <span className="font-mono text-sm">{tenantSlug}</span>
+              </>
+            ) : null}
+          </p>
+        ) : (
+          <p className="mt-2 text-[var(--muted-foreground)]">Escolha o tipo de acesso</p>
+        )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {portals.map((p) => {
+      <div className="grid gap-3 sm:grid-cols-2">
+        {items.map((p) => {
           const Icon = p.icon;
-          const href = mode === "login" ? p.href : p.registerHref;
           return (
-            <Link key={p.href} href={href} className="block min-h-11">
-              <Card className={`h-full border-2 transition-colors ${p.color}`}>
-                <CardHeader className="items-center pb-2 text-center">
-                  <div
-                    className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full ${p.iconColor}`}
-                  >
-                    <Icon className="h-6 w-6" aria-hidden="true" />
-                  </div>
-                  <CardTitle className="text-lg">{p.title}</CardTitle>
-                  <CardDescription className="text-balance text-sm leading-snug">
-                    {p.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pb-4 text-center">
-                  <span className="text-sm font-semibold text-[color:var(--school-primary,#4f46e5)]">
-                    {mode === "login" ? "Entrar →" : "Cadastrar →"}
-                  </span>
-                </CardContent>
-              </Card>
+            <Link key={p.href} href={p.href} className={TILE_CLASS}>
+              <div className={`${AUTH_ICON_WRAP_CLASS} mb-3 h-10 w-10`}>
+                <Icon className="h-5 w-5 text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
+              </div>
+              <p className="font-semibold text-[var(--foreground)]">{p.title}</p>
+              <p className="mt-1 text-sm leading-snug text-[var(--muted-foreground)]">{p.description}</p>
             </Link>
           );
         })}
       </div>
 
-      {mode === "login" && (
-        <div className="mx-auto max-w-md">
-          <Link
-            href="/entrar"
-            className="flex items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50/50 px-4 py-3 text-sm font-semibold text-indigo-800 transition hover:border-indigo-400 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-200"
-          >
-            <KeyRound className="h-4 w-4" aria-hidden="true" />
-            Aluno  -  entrar com matrícula e PIN
-          </Link>
-        </div>
-      )}
-
       <p className="text-center text-sm text-[var(--muted-foreground)]">
         {mode === "login" ? (
           <>
             Não tem conta?{" "}
-            <Link
-              href="/registro"
-              className="font-semibold text-[color:var(--school-primary)] hover:underline"
-            >
+            <Link href="/registro" className="font-semibold text-[color:var(--school-primary)] hover:underline">
               Cadastre-se
             </Link>
           </>
         ) : (
           <>
             Já tem conta?{" "}
-            <Link
-              href="/login"
-              className="font-semibold text-[color:var(--school-primary)] hover:underline"
-            >
+            <Link href="/login" className="font-semibold text-[color:var(--school-primary)] hover:underline">
               Entrar
             </Link>
           </>
         )}
+        {tenantSlug ? (
+          <>
+            {" · "}
+            <Link href="/login" className="font-semibold text-[color:var(--school-primary)] hover:underline">
+              Outra escola
+            </Link>
+          </>
+        ) : null}
       </p>
     </div>
   );

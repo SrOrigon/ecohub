@@ -1,4 +1,5 @@
 import { RegisterParentForm } from "@/components/auth/register-parent-form";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { getPreferenceCookies } from "@/actions/preferences";
 
 export default async function RegisterResponsavelPage({
@@ -11,8 +12,8 @@ export default async function RegisterResponsavelPage({
   const initialSlug = escola?.trim().toLowerCase() || prefs.lastSchoolSlug || "";
 
   return (
-    <main className="auth-page flex min-h-dvh items-center justify-center px-4 py-8">
+    <AuthShell>
       <RegisterParentForm initialSchoolSlug={initialSlug} />
-    </main>
+    </AuthShell>
   );
 }

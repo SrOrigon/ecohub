@@ -6,7 +6,6 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import type { RegisterSchoolSuccess } from "@/actions/auth";
 import {
   SCHOOL_VERIFICATION_LABELS,
@@ -14,6 +13,7 @@ import {
   type SchoolVerificationStatus,
 } from "@/lib/school-verification";
 import { tenantEntrarPath } from "@/lib/tenant";
+import { AUTH_CARD_CLASS, AUTH_ICON_WRAP_CLASS } from "@/components/auth/auth-shell";
 import { Building2, CheckCircle2, LayoutDashboard, LogIn } from "lucide-react";
 
 function statusBadgeVariant(status: SchoolVerificationStatus) {
@@ -29,16 +29,12 @@ export function RegisterSchoolSuccess({ result }: { result: RegisterSchoolSucces
   const needsLogin = result.loginRequired === true;
 
   return (
-    <div className="relative w-full max-w-lg">
-      <div className="absolute -top-12 right-0 sm:-top-14">
-        <ThemeToggle compact />
-      </div>
-      <Card className="w-full rounded-2xl border-2 border-emerald-200 shadow-[var(--shadow-md)] dark:border-emerald-900">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950">
-              <CheckCircle2 className="h-7 w-7 text-emerald-600 dark:text-emerald-300" aria-hidden="true" />
-            </div>
+    <Card className={AUTH_CARD_CLASS}>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className={AUTH_ICON_WRAP_CLASS}>
+            <CheckCircle2 className="h-7 w-7 text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
+          </div>
             <div>
               <CardTitle>Instituição criada com sucesso</CardTitle>
               <CardDescription>
@@ -113,7 +109,6 @@ export function RegisterSchoolSuccess({ result }: { result: RegisterSchoolSucces
             </Link>
           </div>
         </CardContent>
-      </Card>
-    </div>
+    </Card>
   );
 }

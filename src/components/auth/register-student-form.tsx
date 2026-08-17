@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
+import { AUTH_BACK_LINK_CLASS, AUTH_CARD_CLASS } from "@/components/auth/auth-shell";
 import { ArrowLeft } from "lucide-react";
 
 export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolSlug?: string }) {
@@ -46,9 +47,9 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
   }, [schoolSlug]);
 
   return (
-    <Card className="w-full max-w-lg rounded-2xl border-2">
+    <Card className={AUTH_CARD_CLASS}>
       <CardHeader>
-        <Link href="/registro" className="mb-2 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-indigo-600">
+        <Link href="/registro" className={AUTH_BACK_LINK_CLASS}>
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Voltar
         </Link>

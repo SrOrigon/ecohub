@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form-fields";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { AUTH_BACK_LINK_CLASS, AUTH_CARD_CLASS, AUTH_ICON_WRAP_CLASS } from "@/components/auth/auth-shell";
 import { loginHubPath, portalLoginPath, registerPathForPortal } from "@/lib/login-paths";
 import { tenantEntrarPath } from "@/lib/tenant";
 import { ArrowLeft, Building2, GraduationCap, Heart, UserRound } from "lucide-react";
@@ -34,34 +34,36 @@ const portalConfig: Record<
     title: "Instituição",
     description: "Acesso para direção e gestão escolar",
     otherPortals: [
-      { portal: "professor", label: "Sou professor" },
-      { portal: "aluno", label: "Sou aluno" },
+      { portal: "professor", label: "Professor" },
+      { portal: "aluno", label: "Aluno" },
+      { portal: "responsavel", label: "Responsável" },
     ],
   },
   professor: {
     title: "Professor",
-    description: "Publique tarefas e gerencie suas turmas",
+    description: "Turmas, tarefas e acompanhamento",
     otherPortals: [
-      { portal: "escola", label: "Sou instituição" },
-      { portal: "aluno", label: "Sou aluno" },
+      { portal: "escola", label: "Instituição" },
+      { portal: "aluno", label: "Aluno" },
+      { portal: "responsavel", label: "Responsável" },
     ],
   },
   aluno: {
     title: "Aluno",
-    description: "Faça exercícios, missões e acompanhe seu progresso",
+    description: "Exercícios, missões e progresso",
     otherPortals: [
-      { portal: "professor", label: "Sou professor" },
-      { portal: "responsavel", label: "Sou responsável" },
-      { portal: "escola", label: "Sou instituição" },
+      { portal: "escola", label: "Instituição" },
+      { portal: "professor", label: "Professor" },
+      { portal: "responsavel", label: "Responsável" },
     ],
   },
   responsavel: {
     title: "Responsável",
-    description: "Acompanhe filhos, notas e crie tarefas de casa",
+    description: "Acompanhe filhos, notas e tarefas de casa",
     otherPortals: [
-      { portal: "aluno", label: "Sou aluno" },
-      { portal: "professor", label: "Sou professor" },
-      { portal: "escola", label: "Sou instituição" },
+      { portal: "escola", label: "Instituição" },
+      { portal: "professor", label: "Professor" },
+      { portal: "aluno", label: "Aluno" },
     ],
   },
 };
@@ -71,11 +73,13 @@ export function RoleLoginForm({
   defaultEmail,
   defaultRememberEmail = false,
   tenantSlug,
+  schoolName,
 }: {
   portal: Portal;
   defaultEmail?: string;
   defaultRememberEmail?: boolean;
   tenantSlug?: string;
+  schoolName?: string;
 }) {
   const cfg = portalConfig[portal];
   const Icon = portalIcons[portal];
@@ -90,26 +94,21 @@ export function RoleLoginForm({
   );
 
   return (
-    <div className="relative w-full max-w-lg">
-      <div className="absolute -top-12 right-0 sm:-top-14">
-        <ThemeToggle compact />
-      </div>
-      <Card className="w-full rounded-2xl border-2 shadow-[var(--shadow-md)]">
+    <Card className={AUTH_CARD_CLASS}>
       <CardHeader>
-        <Link
-          href={backHref}
-          className="mb-2 inline-flex items-center gap-1 text-sm text-[var(--muted-foreground)] hover:text-[color:var(--school-primary)]"
-        >
+        <Link href={backHref} className={AUTH_BACK_LINK_CLASS}>
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Voltar
         </Link>
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950">
+          <div className={AUTH_ICON_WRAP_CLASS}>
             <Icon className="h-6 w-6 text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
           </div>
           <div>
             <CardTitle className="text-xl">{cfg.title}</CardTitle>
-            <CardDescription>{cfg.description}</CardDescription>
+            <CardDescription>
+              {schoolName ? `${schoolName} · ${cfg.description}` : cfg.description}
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -137,25 +136,8 @@ export function RoleLoginForm({
               autoComplete="current-password"
             />
           </div>
-          {portal === "escola" && (
-            <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 p-3 text-sm text-slate-700 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-slate-300">
-              <p className="font-medium text-slate-900 dark:text-slate-100">Acesso da instituição</p>
-              <ul className="mt-2 list-inside list-disc space-y-1 text-xs">
-                <li>Use o <strong>mesmo e-mail e senha</strong> do cadastro em &quot;Registrar instituição&quot;.</li>
-                <li>A senha precisa ter <strong>letras e números</strong> (mín. 8 caracteres).</li>
-                <li>Professores e alunos também podem entrar por aqui com o e-mail da conta — o sistema abre o painel certo.</li>
-                <li>Prefira <strong>/login/escola</strong> se o link da escola não funcionar.</li>
-              </ul>
-            </div>
-          )}
           <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--muted-foreground)]">
-            <input
-              type="checkbox"
-              name="rememberMe"
-              value="true"
-              defaultChecked={false}
-              className="rounded"
-            />
+            <input type="checkbox" name="rememberMe" value="true" className="rounded" />
             Manter conectado por 30 dias
           </label>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--muted-foreground)]">
@@ -182,48 +164,28 @@ export function RoleLoginForm({
         </form>
 
         {portal === "aluno" && (
-          <p className="mt-4 text-sm text-[var(--muted-foreground)]">
-            Menor de idade ou sem e-mail?{" "}
+          <p className="mt-4 text-center text-sm text-[var(--muted-foreground)]">
+            Sem e-mail?{" "}
             <Link
               href={tenantSlug ? tenantEntrarPath(tenantSlug) : "/entrar"}
-              className="font-semibold text-indigo-700 hover:underline dark:text-indigo-400"
+              className="font-semibold text-[color:var(--school-primary)] hover:underline"
             >
               Entrar com matrícula e PIN
             </Link>
-            {" · "}
-            É pai, mãe ou responsável?{" "}
-            <Link
-              href={portalLoginPath("responsavel", tenantSlug)}
-              className="font-semibold text-rose-700 hover:underline dark:text-rose-400"
-            >
-              Portal de responsáveis
-            </Link>
-          </p>
-        )}
-
-        {portal === "professor" && (
-          <p className="mt-4 text-sm text-[var(--muted-foreground)]">
-            Use o e-mail e a senha criados pela instituição em Professores. Convite também funciona.
           </p>
         )}
 
         <p className="mt-4 text-center text-sm text-[var(--muted-foreground)]">
-          {portal !== "professor" && portal !== "escola" && (
+          {portal === "professor" ? (
+            "Use o e-mail e a senha criados pela instituição, ou um convite."
+          ) : (
             <>
               Não tem conta?{" "}
               <Link
                 href={registerPathForPortal(portal, tenantSlug)}
                 className="font-semibold text-[color:var(--school-primary)] hover:underline"
               >
-                Cadastre-se
-              </Link>
-            </>
-          )}
-          {portal === "escola" && (
-            <>
-              Não tem conta?{" "}
-              <Link href="/registro/escola" className="font-semibold text-[color:var(--school-primary)] hover:underline">
-                Cadastre sua instituição
+                {portal === "escola" ? "Cadastre sua instituição" : "Cadastre-se"}
               </Link>
             </>
           )}
@@ -242,6 +204,5 @@ export function RoleLoginForm({
         </div>
       </CardContent>
     </Card>
-    </div>
   );
 }

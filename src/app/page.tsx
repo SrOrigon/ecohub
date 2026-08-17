@@ -44,44 +44,6 @@ const features = [
   },
 ];
 
-const portalLinks = [
-  {
-    href: "/login/professor",
-    title: "Professor",
-    description: "Cadastre turmas e publique tarefas manualmente",
-    color:
-      "border-emerald-200 bg-emerald-50/50 hover:border-emerald-400 dark:border-emerald-800 dark:bg-emerald-950/30 dark:hover:border-emerald-600",
-  },
-  {
-    href: "/login/aluno",
-    title: "Aluno",
-    description: "Faça exercícios, missões e acompanhe seu progresso",
-    color:
-      "border-amber-200 bg-amber-50/50 hover:border-amber-400 dark:border-amber-800 dark:bg-amber-950/30 dark:hover:border-amber-600",
-  },
-  {
-    href: "/entrar",
-    title: "Aluno (PIN)",
-    description: "Entrada rápida com matrícula e PIN  -  ideal para crianças",
-    color:
-      "border-orange-200 bg-orange-50/50 hover:border-orange-400 dark:border-orange-800 dark:bg-orange-950/30 dark:hover:border-orange-600",
-  },
-  {
-    href: "/login/responsavel",
-    title: "Responsável",
-    description: "Acompanhe filhos, notas, faltas e tarefas de casa",
-    color:
-      "border-violet-200 bg-violet-50/50 hover:border-violet-400 dark:border-violet-800 dark:bg-violet-950/30 dark:hover:border-violet-600",
-  },
-  {
-    href: "/login/escola",
-    title: "Instituição",
-    description: "Gestão, relatórios e código para vincular a escola",
-    color:
-      "border-indigo-200 bg-indigo-50/50 hover:border-indigo-400 dark:border-indigo-800 dark:bg-indigo-950/30 dark:hover:border-indigo-600",
-  },
-];
-
 export default function HomePage() {
   return (
     <div className="landing-page">
@@ -127,19 +89,6 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-        </section>
-
-        <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {portalLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`rounded-2xl border-2 p-6 text-center transition ${link.color}`}
-            >
-              <h2 className="text-lg font-bold text-[var(--foreground)]">{link.title}</h2>
-              <p className="mt-2 text-sm text-[var(--muted-foreground)]">{link.description}</p>
-            </Link>
-          ))}
         </section>
 
         <section className="responsive-grid mt-12 sm:mt-16">

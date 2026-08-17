@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { fetchTeacherInviteByToken } from "@/lib/reads/teacher-invite-reads";
 import { AcceptTeacherInviteForm } from "@/components/auth/accept-teacher-invite-form";
+import { AuthShell, AUTH_CARD_CLASS } from "@/components/auth/auth-shell";
 import { portalLoginPath } from "@/lib/login-paths";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -23,8 +24,8 @@ export default async function ConviteProfessorPage({
     };
 
     return (
-      <main className="auth-page flex min-h-dvh items-center justify-center px-4 py-8">
-        <Card className="w-full max-w-lg">
+      <AuthShell>
+        <Card className={AUTH_CARD_CLASS}>
           <CardHeader>
             <CardTitle>Convite indisponível</CardTitle>
           </CardHeader>
@@ -34,24 +35,24 @@ export default async function ConviteProfessorPage({
             </p>
             <Link
               href={portalLoginPath("professor", invite.school.slug)}
-              className="text-sm text-indigo-600 hover:underline"
+              className="text-sm font-semibold text-[color:var(--school-primary)] hover:underline"
             >
               Ir para login de professor
             </Link>
           </CardContent>
         </Card>
-      </main>
+      </AuthShell>
     );
   }
 
   return (
-    <main className="auth-page flex min-h-dvh items-center justify-center px-4 py-8">
+    <AuthShell>
       <AcceptTeacherInviteForm
         token={token}
         schoolName={invite.school.name}
         schoolSlug={invite.school.slug}
         presetEmail={invite.email}
       />
-    </main>
+    </AuthShell>
   );
 }

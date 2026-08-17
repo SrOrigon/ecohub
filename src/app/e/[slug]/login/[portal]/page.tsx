@@ -17,8 +17,6 @@ export default async function TenantRoleLoginRoute({
   if (!school) notFound();
 
   return (
-    <main className="auth-page flex min-h-dvh flex-col items-center justify-center px-4 py-8">
-      <TenantRoleLoginPage portal={portal as Portal} schoolSlug={school.slug} schoolName={school.name} />
-    </main>
+    <TenantRoleLoginPage portal={portal as Portal} schoolSlug={school.slug} schoolName={school.name} />
   );
 }

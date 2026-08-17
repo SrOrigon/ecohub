@@ -1,4 +1,5 @@
 import { RegisterStudentForm } from "@/components/auth/register-student-form";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { getPreferenceCookies } from "@/actions/preferences";
 
 export default async function RegistroAlunoPage({
@@ -11,8 +12,8 @@ export default async function RegistroAlunoPage({
   const initialSlug = escola?.trim().toLowerCase() || prefs.lastSchoolSlug || "";
 
   return (
-    <main className="auth-page flex min-h-dvh items-center justify-center px-4 py-8">
+    <AuthShell>
       <RegisterStudentForm initialSchoolSlug={initialSlug} />
-    </main>
+    </AuthShell>
   );
 }

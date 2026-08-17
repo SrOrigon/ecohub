@@ -15,7 +15,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form-fields";
 import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { formatCnpj, normalizeCnpj } from "@/lib/cnpj";
 import {
   SCHOOL_VERIFICATION_LABELS,
@@ -23,6 +22,7 @@ import {
   verificationStatusMessage,
   type SchoolVerificationStatus,
 } from "@/lib/school-verification";
+import { AUTH_BACK_LINK_CLASS, AUTH_CARD_CLASS, AUTH_ICON_WRAP_CLASS } from "@/components/auth/auth-shell";
 import { ArrowLeft, Building2, CheckCircle2, Loader2, Search } from "lucide-react";
 
 type CnpjPreview = {
@@ -95,23 +95,16 @@ export function RegisterSchoolForm({
   const canSubmit = preview && preview.verificationStatus !== "rejected";
 
   return (
-    <div className="relative w-full max-w-lg">
-      <div className="absolute -top-12 right-0 sm:-top-14">
-        <ThemeToggle compact />
-      </div>
-      <Card className="w-full rounded-2xl border-2 shadow-[var(--shadow-md)]">
-        <CardHeader>
-          <Link
-            href="/registro"
-            className="mb-2 inline-flex items-center gap-1 text-sm text-[var(--muted-foreground)] hover:text-[color:var(--school-primary)]"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            Voltar
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950">
-              <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
-            </div>
+    <Card className={AUTH_CARD_CLASS}>
+      <CardHeader>
+        <Link href="/registro" className={AUTH_BACK_LINK_CLASS}>
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Voltar
+        </Link>
+        <div className="flex items-center gap-3">
+          <div className={AUTH_ICON_WRAP_CLASS}>
+            <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
+          </div>
             <div>
               <CardTitle>Registrar instituição</CardTitle>
               <CardDescription>
@@ -278,7 +271,6 @@ export function RegisterSchoolForm({
             </Link>
           </p>
         </CardContent>
-      </Card>
-    </div>
+    </Card>
   );
 }

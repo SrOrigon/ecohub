@@ -1,4 +1,5 @@
 import { RegisterSchoolForm } from "@/components/auth/register-school-form";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { getPersistentVolumeStatus, isDurablePersistenceReady } from "@/lib/persistence-guard";
 import { isManagedPostgres } from "@/lib/database-mode";
 
@@ -14,8 +15,8 @@ export default function RegisterEscolaPage() {
       : volume.reason;
 
   return (
-    <main className="auth-page flex min-h-dvh items-center justify-center px-4 py-8">
+    <AuthShell>
       <RegisterSchoolForm volumeReady={ready} volumeReason={reason} />
-    </main>
+    </AuthShell>
   );
 }

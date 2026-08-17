@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form-fields";
+import { AUTH_CARD_CLASS } from "@/components/auth/auth-shell";
 
 export function AcceptTeacherInviteForm({
   token,
@@ -32,7 +33,7 @@ export function AcceptTeacherInviteForm({
   );
 
   return (
-    <Card className="w-full max-w-lg rounded-2xl border-2">
+    <Card className={AUTH_CARD_CLASS}>
       <CardHeader>
         <CardTitle>Convite de professor</CardTitle>
         <CardDescription>
