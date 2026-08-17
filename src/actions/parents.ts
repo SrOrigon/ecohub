@@ -12,6 +12,7 @@ import {
 } from "@/lib/student-pin";
 import { validatePassword, hashPassword } from "@/lib/security/password-policy";
 import { confirmUserPersisted } from "@/lib/persistence-guard";
+import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 
 export async function createParentAction(formData: FormData) {
   const user = await requireSession(["admin", "director"]);
@@ -53,6 +54,7 @@ export async function createParentAction(formData: FormData) {
   }
 
   revalidateParentPaths();
+  invalidateSchoolCaches(user.schoolId);
   return { success: true };
 }
 
@@ -309,6 +311,7 @@ export async function provisionStudentForParentAction(formData: FormData) {
   );
 
   revalidateParentPaths();
+  invalidateSchoolCaches(user.schoolId);
   return {
     success: true,
     enrollmentCode,

@@ -1,18 +1,10 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { LiveMetricsSnapshot } from "@/lib/live-metrics";
+import { useCachedLiveSource, type LiveUiStatus } from "@/lib/page-live-cache";
 
-export type LiveConnectionStatus = "connecting" | "live" | "polling" | "offline";
+export type LiveConnectionStatus = LiveUiStatus;
 
 type LiveMetricsContextValue = {
   snapshot: LiveMetricsSnapshot | null;
@@ -37,7 +29,7 @@ export function useLiveMetricsOptional() {
 
 async function fetchSnapshot(): Promise<LiveMetricsSnapshot | null> {
   try {
-    const res = await fetch("/api/metrics/live", { cache: "no-store" });
+    const res = await fetch("/api/metrics/live");
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -46,100 +38,21 @@ async function fetchSnapshot(): Promise<LiveMetricsSnapshot | null> {
 }
 
 export function LiveMetricsProvider({ children }: { children: ReactNode }) {
-  const [snapshot, setSnapshot] = useState<LiveMetricsSnapshot | null>(null);
-  const [status, setStatus] = useState<LiveConnectionStatus>("connecting");
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const mountedRef = useRef(true);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  const applySnapshot = useCallback((data: LiveMetricsSnapshot) => {
-    setSnapshot(data);
-    setLastUpdated(new Date(data.updatedAt));
-  }, []);
-
-  const refresh = useCallback(async () => {
-    const data = await fetchSnapshot();
-    // A requisição pode terminar depois que o provider saiu da árvore.
-    if (!mountedRef.current) return;
-    if (data) {
-      applySnapshot(data);
-      setStatus((s) => (s === "offline" ? "polling" : s));
-    } else {
-      setStatus("offline");
-    }
-  }, [applySnapshot]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const startPolling = () => {
-      if (pollRef.current) return;
-      setStatus("polling");
-      void refresh();
-      pollRef.current = setInterval(() => void refresh(), 45_000);
-    };
-
-    const connectSSE = () => {
-      if (typeof EventSource === "undefined") {
-        startPolling();
-        return;
-      }
-
-      try {
-        const es = new EventSource("/api/metrics/stream");
-        eventSourceRef.current = es;
-
-        es.onopen = () => {
-          if (!mounted) return;
-          setStatus("live");
-        };
-
-        es.onmessage = (event) => {
-          if (!mounted) return;
-          try {
-            const data = JSON.parse(event.data) as LiveMetricsSnapshot;
-            applySnapshot(data);
-            setStatus("live");
-          } catch {
-            /* ignore malformed */
-          }
-        };
-
-        es.onerror = () => {
-          if (!mounted) return;
-          es.close();
-          eventSourceRef.current = null;
-          startPolling();
-        };
-      } catch {
-        startPolling();
-      }
-    };
-
-    connectSSE();
-
-    return () => {
-      mounted = false;
-      eventSourceRef.current?.close();
-      eventSourceRef.current = null;
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-    };
-  }, [applySnapshot, refresh]);
+  const live = useCachedLiveSource<LiveMetricsSnapshot>({
+    storageKey: "ecohub:live:metrics",
+    fetchSnapshot,
+    streamUrl: "/api/metrics/stream",
+    getVersion: (data) => data.version,
+  });
 
   const value = useMemo(
-    () => ({ snapshot, status, lastUpdated, refresh }),
-    [snapshot, status, lastUpdated, refresh]
+    () => ({
+      snapshot: live.snapshot,
+      status: live.status,
+      lastUpdated: live.lastUpdated,
+      refresh: live.refresh,
+    }),
+    [live.snapshot, live.status, live.lastUpdated, live.refresh]
   );
 
   return <LiveMetricsContext.Provider value={value}>{children}</LiveMetricsContext.Provider>;

@@ -13,12 +13,11 @@ function createPrismaClient() {
 
 function getPrismaClient() {
   const cached = globalForPrisma.prisma;
-  if (cached && "notification" in cached) return cached;
+  if (cached) return cached;
 
   const client = createPrismaClient();
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = client;
-  }
+  // Um único cliente por processo: menos conexões perdidas e gravação estável no Postgres.
+  globalForPrisma.prisma = client;
   return client;
 }
 

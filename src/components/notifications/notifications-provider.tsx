@@ -2,7 +2,6 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -13,6 +12,7 @@ import {
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import type { NotificationSnapshot, NotificationSnapshotItem } from "@/lib/notification-snapshot";
+import { useCachedLiveSource } from "@/lib/page-live-cache";
 
 type NotificationsContextValue = {
   unreadCount: number;
@@ -36,7 +36,7 @@ export function useNotificationsOptional() {
 
 async function fetchSnapshot(): Promise<NotificationSnapshot | null> {
   try {
-    const res = await fetch("/api/notifications/live", { cache: "no-store" });
+    const res = await fetch("/api/notifications/live");
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -45,119 +45,54 @@ async function fetchSnapshot(): Promise<NotificationSnapshot | null> {
 }
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
-  const [snapshot, setSnapshot] = useState<NotificationSnapshot | null>(null);
+  const live = useCachedLiveSource<NotificationSnapshot>({
+    storageKey: "ecohub:live:notify",
+    fetchSnapshot,
+    streamUrl: "/api/notifications/stream",
+    getVersion: (data) => `${data.unreadCount}:${data.latestId ?? ""}`,
+  });
+
   const [toast, setToast] = useState<NotificationSnapshotItem | null>(null);
   const lastSeenId = useRef<string | null>(null);
   const hydrated = useRef(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mountedRef = useRef(true);
 
   useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+    const data = live.snapshot;
+    if (!data) return;
 
-  const showToast = useCallback((item: NotificationSnapshotItem) => {
-    setToast(item);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => {
-      if (mountedRef.current) setToast(null);
-    }, 8_000);
-  }, []);
-
-  const applySnapshot = useCallback(
-    (data: NotificationSnapshot) => {
-      const previousId = lastSeenId.current;
-      setSnapshot(data);
-
-      const newestUnread = data.items.find((item) => !item.isRead) ?? data.items[0] ?? null;
-      if (!hydrated.current) {
-        hydrated.current = true;
-        lastSeenId.current = data.latestId;
-        if (newestUnread && data.unreadCount > 0) {
-          showToast(newestUnread);
-        }
-        return;
-      }
-
-      if (data.latestId && data.latestId !== previousId && newestUnread && !newestUnread.isRead) {
-        showToast(newestUnread);
-      }
+    const newestUnread = data.items.find((item) => !item.isRead) ?? data.items[0] ?? null;
+    if (!hydrated.current) {
+      hydrated.current = true;
       lastSeenId.current = data.latestId;
-    },
-    [showToast]
-  );
+      return;
+    }
 
-  const refresh = useCallback(async () => {
-    const data = await fetchSnapshot();
-    if (!mountedRef.current || !data) return;
-    applySnapshot(data);
-  }, [applySnapshot]);
-
-  useEffect(() => {
-    const startPolling = () => {
-      if (pollRef.current) return;
-      void refresh();
-      pollRef.current = setInterval(() => void refresh(), 15_000);
-    };
-
-    const connectSSE = () => {
-      if (typeof EventSource === "undefined") {
-        startPolling();
-        return;
-      }
-
-      try {
-        const es = new EventSource("/api/notifications/stream");
-        eventSourceRef.current = es;
-
-        es.onmessage = (event) => {
-          if (!mountedRef.current) return;
-          try {
-            applySnapshot(JSON.parse(event.data) as NotificationSnapshot);
-          } catch {
-            /* ignore */
-          }
-        };
-
-        es.onerror = () => {
-          es.close();
-          eventSourceRef.current = null;
-          startPolling();
-        };
-      } catch {
-        startPolling();
-      }
-    };
-
-    void refresh();
-    connectSSE();
-
-    const onVisible = () => {
-      if (document.visibilityState === "visible") void refresh();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-
-    return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      eventSourceRef.current?.close();
-      if (pollRef.current) clearInterval(pollRef.current);
+    if (data.latestId && data.latestId !== lastSeenId.current && newestUnread && !newestUnread.isRead) {
+      setToast(newestUnread);
       if (toastTimer.current) clearTimeout(toastTimer.current);
-    };
-  }, [applySnapshot, refresh]);
+      toastTimer.current = setTimeout(() => setToast(null), 8_000);
+    }
+    lastSeenId.current = data.latestId;
+  }, [live.snapshot]);
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    },
+    []
+  );
 
   const value = useMemo<NotificationsContextValue>(
     () => ({
-      unreadCount: snapshot?.unreadCount ?? 0,
-      items: snapshot?.items ?? [],
-      refresh,
+      unreadCount: live.snapshot?.unreadCount ?? 0,
+      items: live.snapshot?.items ?? [],
+      refresh: live.refresh,
     }),
-    [snapshot, refresh]
+    [live.snapshot, live.refresh]
   );
+
+  const snapshot = live.snapshot;
 
   return (
     <NotificationsContext.Provider value={value}>

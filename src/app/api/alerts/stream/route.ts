@@ -4,8 +4,8 @@ import { getAttentionAlertsSnapshot } from "@/lib/attention-alerts";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const POLL_MS = 45_000;
-const HEARTBEAT_MS = 30_000;
+const POLL_MS = 90_000;
+const HEARTBEAT_MS = 45_000;
 
 const ALLOWED_ROLES = ["admin", "director", "secretary", "teacher", "parent", "student"];
 

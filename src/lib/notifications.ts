@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSchoolSettings, type SchoolSettings } from "@/lib/school-settings";
+import { cacheDeletePrefix } from "@/lib/runtime-cache";
 
 export type NotifyKind =
   | "grade"
@@ -41,9 +42,11 @@ export async function createNotification(
   message: string,
   href?: string
 ) {
-  return prisma.notification.create({
+  const created = await prisma.notification.create({
     data: { userId, title, message, href: href ?? null },
   });
+  cacheDeletePrefix(`live:notify:${userId}`);
+  return created;
 }
 
 export async function notifyUser(userId: string, title: string, message: string, href?: string) {

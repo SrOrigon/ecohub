@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { cache } from "react";
 import type { SessionUser } from "@/lib/auth";
 import { teacherClassWhere } from "@/lib/teacher-classes";
+import { CACHE_TTL, cacheGetOrSet } from "@/lib/runtime-cache";
 
 export const getDashboardStats = cache(async (schoolId: string | null) => {
   const empty = {
@@ -15,6 +16,7 @@ export const getDashboardStats = cache(async (schoolId: string | null) => {
   if (!schoolId) return empty;
 
   try {
+    return await cacheGetOrSet(`school:${schoolId}:stats`, CACHE_TTL.dashboardStats, async () => {
     const [students, classes, gradeAgg, attendanceGroups, activeMissions, xpSum] = await Promise.all([
       prisma.student.count({
         where: { user: { schoolId } },
@@ -52,6 +54,7 @@ export const getDashboardStats = cache(async (schoolId: string | null) => {
       activeMissions: activeMissions ?? 0,
       totalXpAwarded: xpSum._sum.xpTotal ?? 0,
     };
+    });
   } catch (err) {
     console.error("[getDashboardStats] Error:", err);
     return empty;
@@ -422,7 +425,9 @@ export async function getTeachers(schoolId: string | null) {
 export const getSchool = cache(async (user: SessionUser) => {
   if (!user.schoolId) return null;
   try {
-    return await prisma.school.findUnique({ where: { id: user.schoolId } });
+    return await cacheGetOrSet(`school:${user.schoolId}:record`, CACHE_TTL.schoolRecord, () =>
+      prisma.school.findUnique({ where: { id: user.schoolId! } })
+    );
   } catch (err) {
     console.error("[getSchool] Error:", err);
     return null;

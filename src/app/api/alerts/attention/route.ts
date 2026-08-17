@@ -17,7 +17,9 @@ export async function GET() {
     }
 
     const snapshot = await getAttentionAlertsSnapshot(user);
-    return NextResponse.json(snapshot);
+    return NextResponse.json(snapshot, {
+      headers: { "Cache-Control": "private, max-age=20, stale-while-revalidate=60" },
+    });
   } catch (error) {
     console.error("[GET /api/alerts/attention] Error:", error);
     return NextResponse.json({

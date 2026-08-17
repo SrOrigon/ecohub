@@ -19,6 +19,7 @@ import { resolveAvatarFromForm } from "@/lib/avatar";
 import { sendEmail } from "@/lib/email";
 import { isNextRedirect } from "@/lib/run-server-action";
 import { confirmUserPersisted } from "@/lib/persistence-guard";
+import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 
 const INVITE_TTL_DAYS = 14;
 
@@ -199,6 +200,8 @@ async function acceptTeacherInviteActionImpl(formData: FormData) {
     (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
     user.id
   );
+
+  invalidateSchoolCaches(inviteData.schoolId, inviteData.school.slug);
 
   const { safeEstablishSession } = await import("@/lib/auth");
   const session = await safeEstablishSession(user, { tenantSlug: inviteData.school.slug });

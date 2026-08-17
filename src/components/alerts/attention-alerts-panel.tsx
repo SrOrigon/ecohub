@@ -121,10 +121,10 @@ export function AttentionAlertsPanel({
   ).length;
 
   const statusLabel =
-    live?.status === "live"
-      ? "Monitoramento ao vivo"
-      : live?.status === "polling"
-        ? "Atualizando automaticamente"
+    live?.status === "updating"
+      ? "Atualizando"
+      : live?.status === "live"
+        ? "Monitoramento sincronizado"
         : live?.status === "connecting"
           ? "Conectando monitoramento"
           : null;

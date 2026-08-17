@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import type { SessionUser } from "@/lib/auth";
 import { studentInTeacherClassWhere } from "@/lib/teacher-classes";
+import { CACHE_TTL, cacheGetOrSet } from "@/lib/runtime-cache";
 
 export type ActivityEventType = "xp" | "exercise" | "mission" | "grade";
 
@@ -111,6 +112,10 @@ export async function getLiveMetricsSnapshot(user: SessionUser): Promise<LiveMet
 
   if (!schoolId) return empty;
 
+  return cacheGetOrSet(
+    `live:${schoolId}:metrics:${user.id}:${user.role}`,
+    CACHE_TTL.liveSnapshot,
+    async () => {
   try {
     const today = startOfToday();
     const week = weekAgo();
@@ -326,4 +331,6 @@ export async function getLiveMetricsSnapshot(user: SessionUser): Promise<LiveMet
     console.error("[getLiveMetricsSnapshot] Error:", err);
     return empty;
   }
+    }
+  );
 }

@@ -5,6 +5,7 @@ import { isUsableAuthSecret, ensureAuthSecretAtRuntime } from "@/lib/auth-secret
 import { getPersistentVolumeStatus, isDurablePersistenceReady } from "@/lib/persistence-guard";
 import { ensureDatabaseUrlAtRuntime } from "@/lib/database-url-runtime";
 import { isManagedPostgres, isPostgresUrl, isSqliteFileUrl } from "@/lib/database-mode";
+import { cacheStats } from "@/lib/runtime-cache";
 import { NextResponse } from "next/server";
 
 const GOLDEN_BACKUP_PATH = "/data/backups/ecohub-golden.db";
@@ -134,8 +135,10 @@ export async function GET() {
               users: userCount ?? manifest?.userCount ?? null,
               schools: schoolCount,
               persisted: durable && dbOk,
+              store: postgres ? "postgresql" : "sqlite",
               goldenBackup: postgres ? durable && dbOk : goldenExists,
             },
+            cache: cacheStats(),
             lastBackup,
           }
         : undefined,

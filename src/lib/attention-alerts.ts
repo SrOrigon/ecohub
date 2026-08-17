@@ -3,6 +3,7 @@ import { getSchoolSettings } from "@/lib/school-settings";
 import type { SessionUser } from "@/lib/auth";
 import { studentInTeacherClassWhere } from "@/lib/teacher-classes";
 import { getStudentExerciseStatus } from "@/components/exercises/exercise-status-badge";
+import { CACHE_TTL, cacheGetOrSet } from "@/lib/runtime-cache";
 
 export type AttentionAlertSeverity = "critical" | "high" | "medium" | "low";
 
@@ -448,7 +449,12 @@ export async function getAttentionAlertsSnapshot(user: SessionUser): Promise<Att
   };
 
   if (!user?.schoolId) return empty;
+  const schoolId = user.schoolId;
 
+  return cacheGetOrSet(
+    `live:${schoolId}:alerts:${user.id}:${user.role}`,
+    CACHE_TTL.attentionAlerts,
+    async () => {
   try {
     const studentIds = await resolveStudentIds(user);
     if (studentIds && studentIds.length === 0) return empty;
@@ -456,7 +462,7 @@ export async function getAttentionAlertsSnapshot(user: SessionUser): Promise<Att
     const audience: Audience =
       user.role === "parent" ? "parent" : user.role === "student" ? "student" : "staff";
 
-    const alerts = await computeAttentionAlerts(user.schoolId, {
+    const alerts = await computeAttentionAlerts(schoolId, {
       studentIds: studentIds ?? undefined,
       audience,
     });
@@ -471,6 +477,8 @@ export async function getAttentionAlertsSnapshot(user: SessionUser): Promise<Att
     console.error("[getAttentionAlertsSnapshot] Error:", err);
     return empty;
   }
+    }
+  );
 }
 
 export async function getAttentionAlertsForParent(parentId: string, schoolId: string) {

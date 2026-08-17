@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { CACHE_TTL, cacheGetOrSet } from "@/lib/runtime-cache";
 
 export type NotificationSnapshotItem = {
   id: string;
@@ -20,6 +21,7 @@ export async function getNotificationSnapshot(
   userId: string,
   limit = 8
 ): Promise<NotificationSnapshot> {
+  return cacheGetOrSet(`live:notify:${userId}:${limit}`, CACHE_TTL.notifications, async () => {
   const [items, unreadCount] = await Promise.all([
     prisma.notification.findMany({
       where: { userId },
@@ -42,4 +44,5 @@ export async function getNotificationSnapshot(
     })),
     updatedAt: new Date().toISOString(),
   };
+  });
 }

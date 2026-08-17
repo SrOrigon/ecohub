@@ -19,6 +19,7 @@ import { loginHubPath } from "@/lib/login-paths";
 import { TENANT_COOKIE } from "@/lib/tenant";
 import { findUserByEmailForLogin, verifyAndUpgradePassword } from "@/lib/auth-credentials";
 import { findStudentForPinLogin } from "@/lib/student-pin";
+import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 import { prisma } from "@/lib/db";
 import { ensureDefaultBadges, ensureDefaultRewards } from "@/lib/school-setup";
 import { notifyInitialSchoolVerification } from "@/lib/sync-school-verification";
@@ -312,6 +313,8 @@ async function registerSchoolActionImpl(formData: FormData): Promise<RegisterSch
     user.id
   );
 
+  invalidateSchoolCaches(school.id, school.slug);
+
   try {
     await ensureDefaultBadges(school.id);
     await ensureDefaultRewards(school.id);
@@ -455,6 +458,7 @@ async function registerStudentActionImpl(formData: FormData) {
 
   revalidatePath("/dashboard/alunos");
   revalidatePath("/dashboard/turmas");
+  invalidateSchoolCaches(school.id, school.slug);
 
   const session = await safeEstablishSession(user, { tenantSlug: school.slug });
   if (!session.ok) {
@@ -553,6 +557,7 @@ async function registerParentActionImpl(formData: FormData) {
     parent.id
   );
 
+  invalidateSchoolCaches(school.id, school.slug);
   await establishSession(parent, { tenantSlug: school.slug });
   redirect("/dashboard/responsavel");
 }

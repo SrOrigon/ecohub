@@ -4,8 +4,8 @@ import { getLiveMetricsSnapshot } from "@/lib/live-metrics";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const POLL_MS = 45_000;
-const HEARTBEAT_MS = 25_000;
+const POLL_MS = 90_000;
+const HEARTBEAT_MS = 45_000;
 
 export async function GET(request: Request) {
   const user = await getSessionUser();

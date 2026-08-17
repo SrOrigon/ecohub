@@ -12,7 +12,9 @@ export async function GET() {
     }
 
     const snapshot = await getLiveMetricsSnapshot(user);
-    return NextResponse.json(snapshot);
+    return NextResponse.json(snapshot, {
+      headers: { "Cache-Control": "private, max-age=15, stale-while-revalidate=45" },
+    });
   } catch (error) {
     console.error("[GET /api/metrics/live] Error:", error);
     return NextResponse.json({

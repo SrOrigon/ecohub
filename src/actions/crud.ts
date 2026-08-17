@@ -37,6 +37,7 @@ import {
   syntheticStudentEmail,
 } from "@/lib/student-pin";
 import { confirmUserPersisted, persistGoldenBackupNow } from "@/lib/persistence-guard";
+import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 
 function revalidatePaths(paths: string[]) {
   for (const p of paths) revalidatePath(p);
@@ -183,6 +184,7 @@ async function createStudentActionImpl(formData: FormData) {
   }
 
   revalidateGroups("core", "people", "gamification", "analytics", "alerts");
+  invalidateSchoolCaches(user.schoolId);
   return {
     success: true,
     pin: pin ?? undefined,
@@ -240,6 +242,7 @@ export async function createClassAction(formData: FormData) {
   revalidateGroups("core", "people", "exercises");
   revalidatePath("/dashboard/professor");
   revalidatePath("/dashboard/exercicios");
+  invalidateSchoolCaches(user.schoolId);
   await persistGoldenBackupNow().catch((error) => {
     console.error("[crud] Backup após criar turma falhou (turma gravada):", error);
   });
@@ -984,6 +987,7 @@ async function createTeacherActionImpl(formData: FormData) {
   }
 
   revalidatePath("/dashboard/professores");
+  invalidateSchoolCaches(user.schoolId);
   return { success: true, email, loginPath: "/login/professor" };
 }
 
@@ -1000,6 +1004,7 @@ export async function deleteStudentAction(formData: FormData) {
 
   await prisma.user.delete({ where: { id: student.userId } });
   revalidateGroups("core", "people", "academic", "gamification", "analytics", "alerts", "exercises");
+  invalidateSchoolCaches(user.schoolId);
   return { success: true };
 }
 
@@ -1027,6 +1032,7 @@ export async function deleteTeacherAction(formData: FormData) {
   revalidatePath("/dashboard/turmas");
   revalidatePath("/dashboard/exercicios");
   revalidatePath("/dashboard/diario");
+  invalidateSchoolCaches(user.schoolId);
   return { success: true };
 }
 
@@ -1138,6 +1144,7 @@ export async function updateSchoolSettingsAction(formData: FormData) {
     where: { id: user.schoolId },
     data: { settings: stringifySchoolSettings(merged) },
   });
+  invalidateSchoolCaches(user.schoolId, school.slug);
 
   [
     "/dashboard/configuracoes",
@@ -1198,6 +1205,7 @@ export async function updateInstitutionSubjectsAction(formData: FormData) {
     where: { id: user.schoolId },
     data: { settings: stringifySchoolSettings(merged) },
   });
+  invalidateSchoolCaches(user.schoolId, school.slug);
 
   [
     "/dashboard/disciplinas",
