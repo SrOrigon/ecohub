@@ -44,8 +44,19 @@ model User {
   fullName     String
   role         String   @default("student")
   avatarUrl    String?
+  displayName  String?
+  username     String?   @unique
+  phone        String?
+  gender       String?
+  pronouns     String?
+  bio          String?
+  interests    String    @default("[]")
+  socialLinks  String    @default("{}")
   city         String?
   state        String?
+  zipCode      String?
+  latitude     Float?
+  longitude    Float?
   schoolId     String?
   createdAt    DateTime @default(now())
 
@@ -164,6 +175,7 @@ model Student {
   equippedFrame   String?
   equippedBackground String?
   equippedPet     String?
+  status          String    @default("active")
   createdAt       DateTime  @default(now())
 
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -184,8 +196,59 @@ model Student {
   authorizationResponses AuthorizationResponse[]
   issuedDocuments   IssuedDocument[]
   enrollmentLinks   EnrollmentApplication[] @relation("EnrollmentStudent")
+  profileActivities StudentActivity[]
+  financeAccount    StudentFinanceAccount?
+  tuitionPayments   TuitionPayment[]
 
   @@index([classId])
+}
+
+model StudentActivity {
+  id         String   @id @default(cuid())
+  studentId  String
+  type       String
+  title      String
+  detail     String?
+  occurredAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, occurredAt])
+}
+
+model StudentFinanceAccount {
+  id                   String   @id @default(cuid())
+  studentId            String   @unique
+  monthlyAmountCents   Int      @default(0)
+  dueDay               Int      @default(10)
+  discountPercent      Float    @default(0)
+  expectedInstallments Int      @default(10)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  student  Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  payments TuitionPayment[]
+}
+
+model TuitionPayment {
+  id           String   @id @default(cuid())
+  accountId    String
+  studentId    String
+  amountCents  Int
+  dueDate      DateTime
+  paidAt       DateTime @default(now())
+  method       String   @default("manual")
+  receiptCode  String   @unique
+  awardedXp    Int      @default(0)
+  awardedCoins Int      @default(0)
+  note         String?
+  createdAt    DateTime @default(now())
+
+  account StudentFinanceAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  student Student               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, paidAt])
 }
 
 model Grade {

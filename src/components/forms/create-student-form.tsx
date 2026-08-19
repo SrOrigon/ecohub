@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
 import { FormMessage } from "@/components/ui/form-utils";
 import { Modal } from "@/components/ui/modal";
+import { StudentProfileFields } from "@/components/forms/student-profile-fields";
 
 interface ClassOption {
   id: string;
@@ -51,7 +52,7 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
   return (
     <>
       <Button onClick={() => setOpen(true)}>+ Novo aluno</Button>
-      <Modal open={open} onClose={closeModal} title="Cadastrar aluno">
+      <Modal open={open} onClose={closeModal} title="Cadastrar aluno" size="lg">
         {created ? (
           <div className="space-y-3 text-sm">
             <p className="font-medium text-emerald-800 dark:text-emerald-200">Aluno cadastrado e pronto para entrar.</p>
@@ -78,15 +79,8 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
             </Button>
           </div>
         ) : (
-          <form action={formAction} className="space-y-4">
-            <div>
-              <Label htmlFor="fullName">Nome completo</Label>
-              <Input id="fullName" name="fullName" required />
-            </div>
-            <div>
-              <Label htmlFor="birthDate">Data de nascimento</Label>
-              <Input id="birthDate" name="birthDate" type="date" required />
-            </div>
+          <form action={formAction} className="space-y-4" encType="multipart/form-data">
+            <StudentProfileFields idPrefix="new-student" birthDateRequired collapsibleExtras />
             <div>
               <Label htmlFor="accountMode">Tipo de conta</Label>
               <Select

@@ -85,6 +85,13 @@ export type SchoolSettings = {
   diary: {
     notifyParentsOnOccurrence: boolean;
   };
+  finance: {
+    tuitionXp: number;
+    tuitionCoins: number;
+    perfectAttendanceXp: number;
+    perfectAttendanceCoins: number;
+    minSchoolDaysForPerfectMonth: number;
+  };
   trails: {
     enabled: boolean;
     completionXpBonus: number;
@@ -215,6 +222,13 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
   },
   diary: {
     notifyParentsOnOccurrence: true,
+  },
+  finance: {
+    tuitionXp: 80,
+    tuitionCoins: 25,
+    perfectAttendanceXp: 60,
+    perfectAttendanceCoins: 15,
+    minSchoolDaysForPerfectMonth: 10,
   },
   trails: {
     enabled: true,

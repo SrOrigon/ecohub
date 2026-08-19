@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Gift, Star, Trophy, Coins, FileText, PenLine, ChevronRight, History } from "lucide-react";
+import { Gift, Star, Trophy, Coins, FileText, PenLine, ChevronRight, History, User } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getRanking, getMissionsForStudent } from "@/lib/queries";
@@ -125,6 +125,12 @@ export default async function AlunoPortalPage() {
         description={`${student.classGroup?.name ?? "Sem turma"} · Matrícula ${student.enrollmentCode}`}
       >
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Link href={`/dashboard/alunos/${student.id}`} className="w-full sm:w-auto">
+            <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
+              <User className="h-5 w-5" aria-hidden="true" />
+              Meu perfil 360°
+            </Button>
+          </Link>
           <Link href={`/dashboard/alunos/${student.id}/boletim`} className="w-full sm:w-auto">
             <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
               <FileText className="h-5 w-5" aria-hidden="true" />

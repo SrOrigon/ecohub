@@ -29,6 +29,7 @@ import { hasPermission } from "@/lib/permissions";
 import { validatePassword, hashPassword, normalizePassword, verifyPassword } from "@/lib/security/password-policy";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 import { parseBirthDate } from "@/lib/student-age";
+import { parseStudentProfileForm, STUDENT_ACTIVITY_TYPES } from "@/lib/student-profile";
 import { resolveAvatarFromForm } from "@/lib/avatar";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 import {
@@ -91,6 +92,8 @@ async function createStudentActionImpl(formData: FormData) {
   const birthDateStr = String(formData.get("birthDate") ?? "").trim();
   const accountMode = String(formData.get("accountMode") ?? "standard");
   const customPin = String(formData.get("pin") ?? "").trim();
+  const profile = parseStudentProfileForm(formData);
+  if ("error" in profile) return { error: profile.error };
 
   if (!fullName || !enrollmentCode || !birthDateStr) {
     return { error: "Nome, matrícula e data de nascimento são obrigatórios." };
@@ -139,8 +142,21 @@ async function createStudentActionImpl(formData: FormData) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "E-mail já cadastrado." };
 
+  if (profile.data.username) {
+    const existingUsername = await prisma.user.findUnique({
+      where: { username: profile.data.username },
+      select: { id: true },
+    });
+    if (existingUsername) return { error: "Nome de usuário já está em uso." };
+  }
+
   const existingCode = await prisma.student.findUnique({ where: { enrollmentCode } });
   if (existingCode) return { error: "Matrícula já em uso." };
+
+  const avatarResult = await resolveAvatarFromForm(formData, null);
+  if (avatarResult && typeof avatarResult === "object" && "error" in avatarResult) {
+    return { error: avatarResult.error };
+  }
 
   let createdUser: { id: string };
   try {
@@ -151,6 +167,8 @@ async function createStudentActionImpl(formData: FormData) {
         fullName,
         role: "student",
         schoolId: user.schoolId,
+        avatarUrl: avatarResult as string | null,
+        ...profile.data,
         student: {
           create: {
             enrollmentCode,
@@ -900,9 +918,14 @@ export async function updateStudentAction(formData: FormData) {
 
   const studentId = String(formData.get("studentId") ?? "");
   const classId = String(formData.get("classId") ?? "") || null;
+  const fullName = String(formData.get("fullName") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = normalizePassword(String(formData.get("password") ?? ""));
+  const birthDateStr = String(formData.get("birthDate") ?? "").trim();
 
   const student = await prisma.student.findFirst({
     where: { id: studentId, user: { schoolId: user.schoolId } },
+    include: { user: { select: { id: true, email: true, avatarUrl: true } } },
   });
   if (!student) return { error: "Aluno não encontrado." };
 
@@ -911,9 +934,112 @@ export async function updateStudentAction(formData: FormData) {
     if (!scope.ok) return { error: scope.error };
   }
 
-  await prisma.student.update({ where: { id: studentId }, data: { classId } });
+  const isProfileUpdate = formData.has("fullName");
+  if (!isProfileUpdate) {
+    await prisma.student.update({ where: { id: studentId }, data: { classId } });
+    revalidateGroups("core", "people", "gamification", "analytics");
+    revalidatePath("/dashboard/alunos");
+    revalidatePath(`/dashboard/alunos/${studentId}`);
+    return { success: true };
+  }
+
+  if (!fullName) return { error: "Nome completo é obrigatório." };
+
+  const profile = parseStudentProfileForm(formData);
+  if ("error" in profile) return { error: profile.error };
+
+  let birthDate = student.birthDate;
+  if (birthDateStr) {
+    const parsed = parseBirthDate(birthDateStr);
+    if (!parsed) return { error: "Data de nascimento inválida." };
+    birthDate = parsed;
+  }
+
+  if (profile.data.username) {
+    const existingUsername = await prisma.user.findFirst({
+      where: { username: profile.data.username, NOT: { id: student.userId } },
+      select: { id: true },
+    });
+    if (existingUsername) return { error: "Nome de usuário já está em uso." };
+  }
+
+  let nextEmail = student.user.email;
+  if (email && email !== student.user.email) {
+    const existingEmail = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    if (existingEmail) return { error: "E-mail já cadastrado." };
+    nextEmail = email;
+  }
+
+  const avatarResult = await resolveAvatarFromForm(formData, student.user.avatarUrl);
+  if (avatarResult && typeof avatarResult === "object" && "error" in avatarResult) {
+    return { error: avatarResult.error };
+  }
+
+  const userUpdate: {
+    fullName: string;
+    email: string;
+    avatarUrl: string | null;
+    passwordHash?: string;
+  } & typeof profile.data = {
+    fullName,
+    email: nextEmail,
+    avatarUrl: avatarResult as string | null,
+    ...profile.data,
+  };
+
+  if (password) {
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.ok) return { error: passwordCheck.error };
+    userUpdate.passwordHash = await hashPassword(password);
+  }
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: student.userId },
+      data: userUpdate,
+    }),
+    prisma.student.update({
+      where: { id: studentId },
+      data: {
+        classId,
+        birthDate,
+        status: String(formData.get("status") ?? student.status) === "inactive" ? "inactive" : "active",
+      },
+    }),
+  ]);
+
   revalidateGroups("core", "people", "gamification", "analytics");
   revalidatePath("/dashboard/alunos");
+  revalidatePath(`/dashboard/alunos/${studentId}`);
+  return { success: true };
+}
+
+export async function createStudentActivityAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "secretary", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const studentId = String(formData.get("studentId") ?? "");
+  const type = String(formData.get("type") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const detail = String(formData.get("detail") ?? "").trim() || null;
+  const occurredAtStr = String(formData.get("occurredAt") ?? "").trim();
+
+  if (!studentId || !title) return { error: "Informe o aluno e o título da atividade." };
+  if (!STUDENT_ACTIVITY_TYPES.some((item) => item.value === type)) {
+    return { error: "Tipo de atividade inválido." };
+  }
+
+  const scope = await assertStudentInScope(user, studentId);
+  if (!scope.ok) return { error: scope.error };
+
+  const occurredAt = occurredAtStr ? parseBirthDate(occurredAtStr) : new Date();
+  if (!occurredAt) return { error: "Data da atividade inválida." };
+
+  await prisma.studentActivity.create({
+    data: { studentId, type, title, detail, occurredAt },
+  });
+
+  revalidateGroups("people", "analytics");
   revalidatePath(`/dashboard/alunos/${studentId}`);
   return { success: true };
 }

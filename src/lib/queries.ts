@@ -259,10 +259,26 @@ export async function getStudentById(id: string, schoolId: string | null) {
         user: true,
         classGroup: true,
         grades: { orderBy: { createdAt: "desc" } },
-        attendance: { orderBy: { date: "desc" }, take: 30 },
-        xpTransactions: { orderBy: { createdAt: "desc" }, take: 20 },
+        attendance: { orderBy: { date: "desc" }, take: 90 },
+        xpTransactions: { orderBy: { createdAt: "desc" }, take: 40 },
         studentMissions: { include: { mission: true } },
         studentBadges: { include: { badge: true } },
+        profileActivities: { orderBy: { occurredAt: "desc" }, take: 40 },
+        parentLinks: {
+          include: { parent: { select: { fullName: true, email: true, phone: true } } },
+        },
+        rewardRedemptions: {
+          include: { reward: { select: { name: true } } },
+          orderBy: { redeemedAt: "desc" },
+          take: 12,
+        },
+        trailProgress: {
+          include: { trail: { select: { title: true } } },
+          orderBy: { createdAt: "desc" },
+        },
+        financeAccount: {
+          include: { payments: { orderBy: { paidAt: "desc" } } },
+        },
       },
     });
   } catch (err) {

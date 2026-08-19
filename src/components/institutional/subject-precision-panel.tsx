@@ -30,27 +30,37 @@ const RESOURCE_ICONS: Record<ResourceKind, typeof BookOpen> = {
 export function SubjectPrecisionPanel({
   data,
   passGrade,
+  variant = "school",
 }: {
   data: SubjectPrecisionOverview;
   passGrade: number;
+  variant?: "school" | "student";
 }) {
+  const precisionTitle =
+    variant === "student" ? "Precisão pedagógica deste aluno" : "Precisão pedagógica por disciplina";
+  const precisionCaption =
+    variant === "student"
+      ? "Os mesmos indicadores da instituição, calculados só com os dados deste aluno"
+      : "Indicador de confiabilidade dos dados e efetividade do ensino  -  por matéria e por recurso";
+  const scoreLabel = variant === "student" ? "Precisão individual" : "Precisão institucional";
+
   return (
     <div className="space-y-6">
       <Card className="border-teal-100 bg-gradient-to-br from-teal-50/80 to-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5 text-teal-600" aria-hidden="true" />
-            Precisão pedagógica por disciplina
+            {precisionTitle}
           </CardTitle>
           <CardDescription>
-            Indicador de confiabilidade dos dados e efetividade do ensino  -  por matéria e por recurso
+            {precisionCaption}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Precisão institucional
+                {scoreLabel}
               </p>
               <p className="text-4xl font-bold text-teal-700">{data.overallPrecision}</p>
               <Badge className={cn("mt-1", getPrecisionColor(data.overallLabel))}>

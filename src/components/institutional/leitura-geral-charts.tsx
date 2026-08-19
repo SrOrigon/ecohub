@@ -64,7 +64,12 @@ interface HealthGaugeProps {
   label: string;
 }
 
-export function InstitutionalHealthGauge({ score, label }: HealthGaugeProps) {
+export function InstitutionalHealthGauge({
+  score,
+  label,
+  title = "Saúde pedagógica institucional",
+  hint = "Combina notas, frequência, engajamento e alertas de risco",
+}: HealthGaugeProps & { title?: string; hint?: string }) {
   const safeScore = isNaN(score) || score == null ? 0 : Math.min(100, Math.max(0, Math.round(score)));
   const color =
     safeScore >= 80 ? "text-emerald-600" : safeScore >= 65 ? "text-indigo-600" : safeScore >= 50 ? "text-amber-600" : "text-red-600";
@@ -73,7 +78,7 @@ export function InstitutionalHealthGauge({ score, label }: HealthGaugeProps) {
 
   return (
     <div className={`rounded-2xl border bg-gradient-to-br p-6 ${bg} border-slate-200`}>
-      <p className="text-sm font-medium text-slate-500">Saúde pedagógica institucional</p>
+      <p className="text-sm font-medium text-slate-500">{title}</p>
       <p className={`mt-2 text-5xl font-bold tabular-nums ${color}`}>{safeScore}</p>
       <p className={`mt-1 text-lg font-semibold ${color}`}>{label || "Atenção"}</p>
       <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
@@ -82,9 +87,7 @@ export function InstitutionalHealthGauge({ score, label }: HealthGaugeProps) {
           style={{ width: `${safeScore}%` }}
         />
       </div>
-      <p className="mt-2 text-xs text-slate-500">
-        Combina notas, frequência, engajamento e alertas de risco
-      </p>
+      <p className="mt-2 text-xs text-slate-500">{hint}</p>
     </div>
   );
 }

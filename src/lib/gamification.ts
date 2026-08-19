@@ -164,6 +164,41 @@ export async function processAttendanceXp(
       settings
     );
   }
+
+  await maybeAwardPerfectAttendance(studentId, settings);
+}
+
+export async function maybeAwardPerfectAttendance(
+  studentId: string,
+  settings?: Awaited<ReturnType<typeof getSchoolSettingsForStudent>>
+) {
+  const rules = settings ?? (await getSchoolSettingsForStudent(studentId));
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const reason = `Frequência 100% em ${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+
+  const already = await prisma.xpTransaction.findFirst({
+    where: { studentId, reason },
+    select: { id: true },
+  });
+  if (already) return;
+
+  const records = await prisma.attendance.findMany({
+    where: { studentId, date: { gte: start, lte: end } },
+    select: { status: true },
+  });
+  if (records.length < rules.finance.minSchoolDaysForPerfectMonth) return;
+  if (records.some((record) => record.status === "absent")) return;
+
+  await awardXp(
+    studentId,
+    rules.finance.perfectAttendanceXp,
+    reason,
+    "attendance",
+    rules.finance.perfectAttendanceCoins,
+    rules
+  );
 }
 
 export async function completeMission(studentId: string, missionId: string) {

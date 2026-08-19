@@ -11,12 +11,14 @@ export function Modal({
   title,
   children,
   footer,
+  size = "md",
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  size?: "md" | "lg";
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -81,7 +83,8 @@ export function Modal({
         aria-labelledby="modal-title"
         className={cn(
           "relative z-10 flex max-h-[92dvh] w-full flex-col safe-area-bottom",
-          "rounded-t-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-md)] sm:max-h-[90dvh] sm:max-w-xl sm:rounded-xl"
+          "rounded-t-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-md)] sm:max-h-[90dvh] sm:rounded-xl",
+          size === "lg" ? "sm:max-w-2xl" : "sm:max-w-xl"
         )}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3 sm:px-6 sm:py-4">

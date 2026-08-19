@@ -109,12 +109,36 @@ function matchExerciseToSubject(title: string, description: string | null, subje
   return list.some((a) => hay.includes(a));
 }
 
-function buildRecommendations(entry: Omit<SubjectPrecisionEntry, "recommendations">): string[] {
+function buildRecommendations(
+  entry: Omit<SubjectPrecisionEntry, "recommendations">,
+  audience: "school" | "student" = "school"
+): string[] {
   const tips: string[] = [];
   const gradesRes = entry.resources.find((r) => r.kind === "grades");
   const diaryRes = entry.resources.find((r) => r.kind === "diary");
   const scheduleRes = entry.resources.find((r) => r.kind === "schedule");
   const exerciseRes = entry.resources.find((r) => r.kind === "exercises");
+
+  if (audience === "student") {
+    if (entry.gradeCount === 0) {
+      tips.push("Ainda não há notas deste aluno nesta disciplina.");
+    } else if (entry.teachingEffectiveness < 55) {
+      tips.push("Desempenho abaixo da meta  -  considere reforço, trilhas ou missões individuais.");
+    }
+    if (gradesRes && gradesRes.precisionScore < 55 && entry.gradeCount > 0) {
+      tips.push("Lance avaliações com regularidade para acompanhar a evolução deste aluno.");
+    }
+    if (exerciseRes && exerciseRes.count === 0) {
+      tips.push("Nenhuma entrega de exercício identificada nesta matéria.");
+    }
+    if (entry.teachingEffectiveness >= 80 && entry.gradeCount >= 2) {
+      tips.push("Bom desempenho nesta disciplina  -  mantenha o ritmo e registre as práticas que funcionam.");
+    }
+    if (tips.length === 0) {
+      tips.push("Continue registrando notas e atividades para refinar o acompanhamento individual.");
+    }
+    return tips.slice(0, 4);
+  }
 
   if (entry.dataConfidence < 50) {
     tips.push("Amplie o lançamento de notas para mais alunos  -  a cobertura ainda é baixa para análises confiáveis.");
@@ -144,7 +168,8 @@ function buildRecommendations(entry: Omit<SubjectPrecisionEntry, "recommendation
 }
 
 export async function getSubjectPrecisionOverview(
-  schoolId: string | null
+  schoolId: string | null,
+  options?: { studentId?: string }
 ): Promise<SubjectPrecisionOverview> {
   if (!schoolId) return emptyOverview();
 
@@ -152,11 +177,28 @@ export async function getSubjectPrecisionOverview(
     const settings = await getSchoolSettings(schoolId);
     const passGrade = settings.academic?.passGrade ?? 7;
     const configuredSubjects = settings.academic?.subjects ?? [];
+    const studentId = options?.studentId;
+    const audience = studentId ? "student" : "school";
+
+    let classId: string | null = null;
+    if (studentId) {
+      const scoped = await prisma.student.findFirst({
+        where: { id: studentId, user: { schoolId } },
+        select: { classId: true },
+      });
+      if (!scoped) return emptyOverview();
+      classId = scoped.classId;
+    }
 
     const [totalStudents, grades, diaryEntries, scheduleSlots, exercises] = await Promise.all([
-      prisma.student.count({ where: { user: { schoolId } } }).catch(() => 0),
+      studentId
+        ? Promise.resolve(1)
+        : prisma.student.count({ where: { user: { schoolId } } }).catch(() => 0),
       prisma.grade.findMany({
-        where: { student: { user: { schoolId } } },
+        where: {
+          student: { user: { schoolId } },
+          ...(studentId ? { studentId } : {}),
+        },
         select: {
           subject: true,
           value: true,
@@ -165,16 +207,27 @@ export async function getSubjectPrecisionOverview(
         },
       }).catch(() => []),
       prisma.classDiaryEntry.findMany({
-        where: { classGroup: { schoolId } },
+        where: classId ? { classId } : { classGroup: { schoolId } },
         select: { subject: true, date: true, createdAt: true },
       }).catch(() => []),
       prisma.classScheduleSlot.findMany({
-        where: { schoolId },
+        where: { schoolId, ...(classId ? { classId } : {}) },
         select: { subject: true },
       }).catch(() => []),
       prisma.exercise.findMany({
-        where: { schoolId, isActive: true },
-        select: { title: true, description: true, createdAt: true },
+        where: {
+          schoolId,
+          isActive: true,
+          ...(classId ? { OR: [{ classId }, { classId: null }] } : {}),
+        },
+        select: {
+          title: true,
+          description: true,
+          createdAt: true,
+          submissions: studentId
+            ? { where: { studentId }, select: { id: true }, take: 1 }
+            : false,
+        },
       }).catch(() => []),
     ]);
 
@@ -261,9 +314,12 @@ export async function getSubjectPrecisionOverview(
 
       const diary = diaryBySubject.get(subject) ?? { count: 0, lastAt: null };
       const schedule = scheduleBySubject.get(subject) ?? { count: 0 };
-      const exerciseMatches = exercises.filter((e) =>
-        matchExerciseToSubject(e.title, e.description, subject)
-      );
+      const exerciseMatches = exercises.filter((e) => {
+        if (!matchExerciseToSubject(e.title, e.description, subject)) return false;
+        if (!studentId) return true;
+        const submitted = Array.isArray(e.submissions) && e.submissions.length > 0;
+        return submitted;
+      });
       const exerciseLast =
         exerciseMatches.length > 0
           ? exerciseMatches.reduce(
@@ -360,8 +416,12 @@ export async function getSubjectPrecisionOverview(
           lastActivityAt: exerciseLast?.toISOString() ?? null,
           detail:
             exerciseMatches.length > 0
-              ? `${exerciseMatches.length} exercício(s) vinculado(s)`
-              : "Nenhum exercício identificado",
+              ? studentId
+                ? `${exerciseMatches.length} entrega(s) deste aluno`
+                : `${exerciseMatches.length} exercício(s) vinculado(s)`
+              : studentId
+                ? "Nenhuma entrega identificada"
+                : "Nenhum exercício identificado",
         },
       ];
 
@@ -398,7 +458,7 @@ export async function getSubjectPrecisionOverview(
 
       entries.push({
         ...partial,
-        recommendations: buildRecommendations(partial),
+        recommendations: buildRecommendations(partial, audience),
       });
     }
 
@@ -416,7 +476,9 @@ export async function getSubjectPrecisionOverview(
     const strong = entries.filter((e) => e.precisionScore >= 75);
 
     const insights: string[] = [
-      `Precisão institucional média: ${overallPrecision}/100 (${precisionLabel(overallPrecision)}).`,
+      audience === "student"
+        ? `Precisão individual média: ${overallPrecision}/100 (${precisionLabel(overallPrecision)}).`
+        : `Precisão institucional média: ${overallPrecision}/100 (${precisionLabel(overallPrecision)}).`,
     ];
     if (strong.length > 0) {
       insights.push(
@@ -425,7 +487,9 @@ export async function getSubjectPrecisionOverview(
     }
     if (weak.length > 0) {
       insights.push(
-        `${weak.length} disciplina(s) com precisão baixa  -  reforce registros de notas, diário e horários.`
+        audience === "student"
+          ? `${weak.length} disciplina(s) pedem atenção neste aluno  -  veja notas, exercícios e frequência.`
+          : `${weak.length} disciplina(s) com precisão baixa  -  reforce registros de notas, diário e horários.`
       );
     }
     const unconfiguredWithData = entries.filter((e) => !e.configured && e.gradeCount > 0);
@@ -438,7 +502,7 @@ export async function getSubjectPrecisionOverview(
     return {
       overallPrecision,
       overallLabel: precisionLabel(overallPrecision),
-      summary: buildOverallSummary(overallPrecision, entries.length, totalStudents),
+      summary: buildOverallSummary(overallPrecision, entries.length, totalStudents, audience),
       totalStudents,
       configuredSubjects,
       entries,
@@ -450,9 +514,25 @@ export async function getSubjectPrecisionOverview(
   }
 }
 
-function buildOverallSummary(precision: number, subjectCount: number, students: number) {
+function buildOverallSummary(
+  precision: number,
+  subjectCount: number,
+  students: number,
+  audience: "school" | "student" = "school"
+) {
   if (subjectCount === 0) {
-    return "Configure disciplinas e lance dados para gerar indicadores de precisão por matéria.";
+    return audience === "student"
+      ? "Lance notas e atividades deste aluno para gerar o desempenho individual por disciplina."
+      : "Configure disciplinas e lance dados para gerar indicadores de precisão por matéria.";
+  }
+  if (audience === "student") {
+    if (precision >= 75) {
+      return `Acompanhamento sólido em ${subjectCount} disciplina(s)  -  o desempenho individual está bem monitorado.`;
+    }
+    if (precision >= 55) {
+      return "Precisão moderada neste aluno  -  complete notas e entregas para um retrato mais fiel.";
+    }
+    return "Ainda há poucos registros individuais  -  priorize notas e exercícios deste aluno.";
   }
   if (precision >= 75) {
     return `Monitoramento pedagógico sólido em ${subjectCount} disciplina(s)  -  indicadores confiáveis para ${students} aluno(s).`;

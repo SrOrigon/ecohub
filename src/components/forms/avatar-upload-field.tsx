@@ -13,13 +13,15 @@ export function AvatarUploadField({
   previewName = "Professor",
   label = "Foto do professor",
   hint = "Envie uma foto ou informe um link (opcional).",
+  currentAvatarUrl = null,
 }: {
   previewName?: string;
   label?: string;
   hint?: string;
+  currentAvatarUrl?: string | null;
 }) {
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl);
   const [previewLoadFailed, setPreviewLoadFailed] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [compressing, setCompressing] = useState(false);
