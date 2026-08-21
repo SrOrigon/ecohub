@@ -40,6 +40,7 @@ import {
 import { confirmUserPersisted, persistGoldenBackupNow } from "@/lib/persistence-guard";
 import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 import { formatCrudError } from "@/lib/action-errors";
+import { userExistsByEmail } from "@/lib/user-lookup";
 
 function revalidatePaths(paths: string[]) {
   for (const p of paths) revalidatePath(p);
@@ -142,7 +143,7 @@ async function createStudentActionImpl(formData: FormData) {
     passwordHash = await hashPassword(password);
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await userExistsByEmail(email);
   if (existing) return { error: "E-mail já cadastrado." };
 
   if (profile.data.username) {
@@ -1088,7 +1089,7 @@ async function createTeacherActionImpl(formData: FormData) {
   const passwordCheck = validatePassword(password);
   if (!passwordCheck.ok) return { error: passwordCheck.error };
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await userExistsByEmail(email);
   if (existing) return { error: "E-mail já cadastrado." };
 
   const avatarResult = await resolveAvatarFromForm(formData, null);
@@ -1096,8 +1097,14 @@ async function createTeacherActionImpl(formData: FormData) {
     return { error: avatarResult.error };
   }
 
+  let avatarUrl = avatarResult as string | null;
+  if (avatarUrl && avatarUrl.length > 400_000) {
+    console.warn("[crud] avatar grande demais; professor será cadastrado sem foto.");
+    avatarUrl = null;
+  }
+
   const passwordHash = await hashPassword(password);
-  let createdTeacher: { id: string };
+  let createdTeacher: { id: string; email: string };
   try {
     createdTeacher = await prisma.user.create({
       data: {
@@ -1106,57 +1113,34 @@ async function createTeacherActionImpl(formData: FormData) {
         fullName,
         role: "teacher",
         schoolId: user.schoolId,
-        avatarUrl: avatarResult as string | null,
+        avatarUrl,
         city: city || null,
         state: state || null,
       },
+      select: { id: true, email: true },
     });
   } catch (error) {
     console.error("[crud] createTeacherAction falhou:", error);
-    return { error: formatCrudError(error, "Não foi possível cadastrar o professor. Verifique o e-mail informado.") };
+    return { error: formatCrudError(error, "Não foi possível gravar o professor no banco.") };
   }
 
-  const persisted = await confirmUserPersisted(
+  void confirmUserPersisted(
     (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
     createdTeacher.id
-  );
-  if (!persisted) {
-    const stillThere = await prisma.user.findUnique({
-      where: { id: createdTeacher.id },
-      select: { id: true, role: true },
-    });
-    if (!stillThere || stillThere.role !== "teacher") {
-      return { error: "Não foi possível confirmar o cadastro no banco. Tente novamente." };
-    }
-  }
-
-  const stored = await prisma.user.findUnique({
-    where: { id: createdTeacher.id },
-    select: { passwordHash: true, role: true },
+  ).catch((error) => {
+    console.error("[persistência] pós-cadastro professor:", error);
   });
-  if (!stored || stored.role !== "teacher") {
-    console.error("[crud] professor recém-criado não encontrado após persistência:", createdTeacher.id);
-    return { error: "Não foi possível confirmar o cadastro do professor. Tente novamente." };
-  }
-  if (!(await verifyPassword(password, stored.passwordHash))) {
-    console.warn("[crud] verificação imediata de senha falhou (conta gravada):", createdTeacher.id);
-  }
 
-  revalidatePath("/dashboard/professores");
-  invalidateSchoolCaches(user.schoolId);
-
-  const verified = await prisma.user.findFirst({
-    where: { id: createdTeacher.id, schoolId: user.schoolId, role: "teacher" },
-    select: { id: true, email: true },
-  });
-  if (!verified) {
-    console.error("[crud] professor não encontrado após create:", createdTeacher.id);
-    return { error: "Não foi possível confirmar o cadastro no banco. Tente novamente." };
+  try {
+    revalidatePath("/dashboard/professores");
+    invalidateSchoolCaches(user.schoolId);
+  } catch (error) {
+    console.warn("[crud] revalidate professor ignorado:", error);
   }
 
   return {
     success: true,
-    email: verified.email,
+    email: createdTeacher.email,
     loginPath: "/login/professor",
   };
 }

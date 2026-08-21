@@ -2,6 +2,7 @@
 
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
+import { userExistsByEmail } from "@/lib/user-lookup";
 import { prisma } from "@/lib/db";
 import { requireSessionResult } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
@@ -164,8 +165,9 @@ async function acceptTeacherInviteActionImpl(formData: FormData) {
     return { error: "Use o e-mail para o qual o convite foi enviado." };
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: "Não foi possível criar a conta. Verifique os dados." };
+  if (await userExistsByEmail(email)) {
+    return { error: "Não foi possível criar a conta. Verifique os dados." };
+  }
 
   const passwordHash = await hashPassword(password);
 

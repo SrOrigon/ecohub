@@ -14,6 +14,7 @@ import { restoreDatabaseIfNeeded } from "./restore-db-from-backup.mjs";
 import { updateGoldenBackup } from "./golden-backup.mjs";
 import { countUsersInDatabase } from "./lib/db-user-count.mjs";
 import { isPostgresUrl } from "./lib/database-mode.mjs";
+import { ensurePostgresSchema } from "./ensure-postgres-schema.mjs";
 import { syncPrismaSchema } from "./sync-prisma-schema.mjs";
 import {
   isInstitutionalMode,
@@ -92,6 +93,15 @@ async function bootstrapPostgres() {
         "[ecohub] migrate deploy falhou com contas existentes — NÃO será feito db push para proteger dados."
       );
     }
+  }
+
+  try {
+    await ensurePostgresSchema(process.env.DATABASE_URL);
+  } catch (error) {
+    console.warn(
+      "[ecohub] Patch de schema Postgres ignorado:",
+      error instanceof Error ? error.message : error
+    );
   }
 
   try {
