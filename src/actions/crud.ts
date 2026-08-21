@@ -39,6 +39,7 @@ import {
 } from "@/lib/student-pin";
 import { confirmUserPersisted, persistGoldenBackupNow } from "@/lib/persistence-guard";
 import { invalidateSchoolCaches } from "@/lib/runtime-cache";
+import { formatCrudError } from "@/lib/action-errors";
 
 function revalidatePaths(paths: string[]) {
   for (const p of paths) revalidatePath(p);
@@ -74,7 +75,9 @@ export async function createStudentAction(formData: FormData) {
     return await createStudentActionImpl(formData);
   } catch (error) {
     console.error("[crud] createStudentAction falhou:", error);
-    return { error: "Não foi possível cadastrar o aluno. Verifique matrícula, e-mail e senha." };
+    return {
+      error: formatCrudError(error, "Não foi possível cadastrar o aluno. Verifique matrícula, e-mail e senha."),
+    };
   }
 }
 
@@ -1062,7 +1065,9 @@ export async function createTeacherAction(formData: FormData) {
     return await createTeacherActionImpl(formData);
   } catch (error) {
     console.error("[crud] createTeacherAction falhou:", error);
-    return { error: "Não foi possível cadastrar o professor. Verifique o e-mail e a senha." };
+    return {
+      error: formatCrudError(error, "Não foi possível cadastrar o professor. Tente novamente."),
+    };
   }
 }
 
@@ -1108,13 +1113,22 @@ async function createTeacherActionImpl(formData: FormData) {
     });
   } catch (error) {
     console.error("[crud] createTeacherAction falhou:", error);
-    return { error: "Não foi possível cadastrar o professor. Verifique o e-mail informado." };
+    return { error: formatCrudError(error, "Não foi possível cadastrar o professor. Verifique o e-mail informado.") };
   }
 
-  await confirmUserPersisted(
+  const persisted = await confirmUserPersisted(
     (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
     createdTeacher.id
   );
+  if (!persisted) {
+    const stillThere = await prisma.user.findUnique({
+      where: { id: createdTeacher.id },
+      select: { id: true, role: true },
+    });
+    if (!stillThere || stillThere.role !== "teacher") {
+      return { error: "Não foi possível confirmar o cadastro no banco. Tente novamente." };
+    }
+  }
 
   const stored = await prisma.user.findUnique({
     where: { id: createdTeacher.id },

@@ -186,15 +186,27 @@ export async function persistGoldenBackupNow(): Promise<void> {
   console.log(`[persistência] Backup dourado salvo (${userCount} usuário(s)).`);
 }
 
-/** Confirma que o usuário foi gravado no banco após create. */
+const PERSISTENCE_RETRY_MS = [0, 40, 80, 120, 200];
+
+function wait(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+/** Confirma que o usuário foi gravado no banco após create (com retentativas). */
 export async function confirmUserPersisted(
   findUser: (id: string) => Promise<{ id: string } | null>,
   userId: string
-): Promise<void> {
-  const saved = await findUser(userId);
+): Promise<boolean> {
+  let saved: { id: string } | null = null;
+  for (const delayMs of PERSISTENCE_RETRY_MS) {
+    if (delayMs > 0) await wait(delayMs);
+    saved = await findUser(userId);
+    if (saved) break;
+  }
+
   if (!saved) {
     console.error("[persistência] CRÍTICO: usuário criado mas não encontrado no banco:", userId);
-    throw new Error("USER_NOT_PERSISTED");
+    return false;
   }
 
   try {
@@ -210,4 +222,6 @@ export async function confirmUserPersisted(
   } catch (error) {
     console.error("[persistência] Snapshot institucional falhou (conta gravada):", error);
   }
+
+  return true;
 }

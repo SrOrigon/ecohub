@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createTeacherAction } from "@/actions/crud";
 import { runServerAction } from "@/lib/run-server-action";
+import { buildMultipartFormData } from "@/lib/build-multipart-form-data";
 import { AvatarUploadField } from "@/components/forms/avatar-upload-field";
 import { LocationFields } from "@/components/forms/location-fields";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,9 @@ export function CreateTeacherForm() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [clientError, setClientError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ email: string; loginPath: string } | null>(null);
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean; email?: string; loginPath?: string } | null, formData: FormData) => {
@@ -26,6 +30,9 @@ export function CreateTeacherForm() {
           loginPath: result.loginPath ?? "/login/professor",
         });
         setFullName("");
+        setEmail("");
+        setPassword("");
+        setClientError(null);
       }
       return result;
     },
@@ -36,7 +43,47 @@ export function CreateTeacherForm() {
     setOpen(false);
     setCreated(null);
     setFullName("");
+    setEmail("");
+    setPassword("");
+    setClientError(null);
   }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const emailValue = email.trim().toLowerCase();
+    const passwordValue = password;
+
+    if (!fullName.trim() || !emailValue || !passwordValue) {
+      setClientError("Nome, e-mail e senha são obrigatórios.");
+      return;
+    }
+    if (passwordValue.length < 8) {
+      setClientError("A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+    if (!/[a-zA-Z]/.test(passwordValue) || !/[0-9]/.test(passwordValue)) {
+      setClientError("A senha deve conter letras e números.");
+      return;
+    }
+
+    setClientError(null);
+    const formData = buildMultipartFormData(form, [
+      "fullName",
+      "email",
+      "password",
+      "city",
+      "state",
+      "avatarUrl",
+      "removeAvatar",
+    ]);
+    formData.set("fullName", fullName.trim());
+    formData.set("email", emailValue);
+    formData.set("password", passwordValue);
+    formAction(formData);
+  }
+
+  const displayError = clientError ?? state?.error;
 
   return (
     <>
@@ -61,7 +108,7 @@ export function CreateTeacherForm() {
             </Button>
           </div>
         ) : (
-        <form action={formAction} className="space-y-4" encType="multipart/form-data">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="fullName">Nome completo</Label>
             <Input
@@ -74,7 +121,15 @@ export function CreateTeacherForm() {
           </div>
           <div>
             <Label htmlFor="email">E-mail</Label>
-            <Input id="email" name="email" type="email" required />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div>
             <Label htmlFor="password">Senha inicial</Label>
@@ -84,6 +139,9 @@ export function CreateTeacherForm() {
               type="password"
               minLength={8}
               required
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Mín. 8 caracteres, letras e números"
             />
           </div>
@@ -92,7 +150,7 @@ export function CreateTeacherForm() {
 
           <LocationFields />
 
-          {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {displayError && <p className="text-sm text-red-600">{displayError}</p>}
           <Button type="submit" disabled={pending} className="w-full">
             {pending ? "Salvando..." : "Cadastrar"}
           </Button>

@@ -36,15 +36,19 @@ export async function resolveAvatarFromForm(
 
   const avatarFile = formData.get("avatarFile");
   if (avatarFile instanceof File && avatarFile.size > 0) {
-    if (!isAllowedAvatarMime(avatarFile.type)) {
-      return { error: "Formato de imagem não suportado. Use JPG, PNG, WebP ou GIF." };
+    try {
+      if (!isAllowedAvatarMime(avatarFile.type)) {
+        return { error: "Formato de imagem não suportado. Use JPG, PNG, WebP ou GIF." };
+      }
+      if (avatarFile.size > AVATAR_MAX_BYTES) {
+        return { error: "A foto deve ter no máximo 300 KB." };
+      }
+      const dataUrl = await fileToAvatarDataUrl(avatarFile);
+      if (typeof dataUrl === "object") return dataUrl;
+      return dataUrl;
+    } catch {
+      return { error: "Não foi possível processar a foto enviada. Tente outro arquivo." };
     }
-    if (avatarFile.size > AVATAR_MAX_BYTES) {
-      return { error: "A foto deve ter no máximo 300 KB." };
-    }
-    const dataUrl = await fileToAvatarDataUrl(avatarFile);
-    if (typeof dataUrl === "object") return dataUrl;
-    return dataUrl;
   }
 
   const avatarUrlField = String(formData.get("avatarUrl") ?? "").trim();
