@@ -25,12 +25,19 @@ export function AcceptTeacherInviteForm({
   presetEmail?: string | null;
 }) {
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string } | null, formData: FormData) => {
+    async (
+      _prev: { error?: string; success?: boolean; loginRequired?: boolean; message?: string } | null,
+      formData: FormData
+    ) => {
       formData.set("token", token);
       return runServerAction(async () => (await acceptTeacherInviteAction(formData)) ?? null);
     },
     null
   );
+
+  const formError = state && "error" in state ? state.error : undefined;
+  const registrationComplete =
+    state != null && "success" in state && state.success && state.loginRequired;
 
   return (
     <Card className={AUTH_CARD_CLASS}>
@@ -67,14 +74,29 @@ export function AcceptTeacherInviteForm({
 
           <LocationFields />
 
-          {state?.error && (
+          {formError && (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-200">
-              {state.error}
+              {formError}
             </p>
           )}
+          {registrationComplete && (
+            <div className="space-y-3 rounded-lg bg-emerald-50 px-3 py-3 text-sm text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+              <p className="font-medium">
+                {"message" in state! ? state.message : "Conta criada com sucesso."}
+              </p>
+              <Link
+                href={portalLoginPath("professor", schoolSlug)}
+                className="inline-block font-medium text-indigo-700 hover:underline dark:text-indigo-300"
+              >
+                Ir para o login de professor
+              </Link>
+            </div>
+          )}
+          {!registrationComplete && (
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "Criando conta..." : "Aceitar convite e entrar"}
           </Button>
+          )}
         </form>
         <p className="mt-4 text-center text-sm">
           <Link href={portalLoginPath("professor", schoolSlug)} className="text-indigo-600 hover:underline">

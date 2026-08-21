@@ -38,6 +38,7 @@ yarn-error.log*
 # database (local only)
 prisma/*.db
 prisma/*.db-journal
+prisma/prisma/
 .prisma-build.db
 prisma/schema.deploy.prisma
 

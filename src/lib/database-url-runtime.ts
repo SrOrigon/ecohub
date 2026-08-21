@@ -5,7 +5,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
-import { applyDurableDatabaseUrl, isPostgresUrl, isSqliteFileUrl } from "@/lib/database-mode";
+import {
+  applyDurableDatabaseUrl,
+  isPostgresUrl,
+  isSqliteFileUrl,
+  normalizeSqliteDatabaseUrl,
+} from "@/lib/database-mode";
 import { PRODUCTION_DATABASE_URL } from "@/lib/production-database";
 
 const DATABASE_URL_FILE =
@@ -34,7 +39,10 @@ export function persistDatabaseUrl(url: string) {
 
 export function ensureDatabaseUrlAtRuntime(): string {
   if (process.env.NODE_ENV !== "production") {
-    return process.env.DATABASE_URL?.trim() || "file:./prisma/dev.db";
+    const dev = process.env.DATABASE_URL?.trim() || "file:./dev.db";
+    const normalized = isSqliteFileUrl(dev) ? normalizeSqliteDatabaseUrl(dev) : dev;
+    process.env.DATABASE_URL = normalized;
+    return normalized;
   }
 
   const fromEnv = applyDurableDatabaseUrl();

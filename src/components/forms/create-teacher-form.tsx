@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createTeacherAction } from "@/actions/crud";
 import { runServerAction } from "@/lib/run-server-action";
 import { AvatarUploadField } from "@/components/forms/avatar-upload-field";
@@ -11,6 +12,7 @@ import { Label } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/modal";
 
 export function CreateTeacherForm() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState("");
   const [created, setCreated] = useState<{ email: string; loginPath: string } | null>(null);
@@ -18,6 +20,7 @@ export function CreateTeacherForm() {
     async (_prev: { error?: string; success?: boolean; email?: string; loginPath?: string } | null, formData: FormData) => {
       const result = await runServerAction(async () => createTeacherAction(formData));
       if (result && "success" in result && result.success) {
+        router.refresh();
         setCreated({
           email: result.email ?? "",
           loginPath: result.loginPath ?? "/login/professor",

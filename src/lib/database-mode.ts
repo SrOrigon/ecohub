@@ -25,18 +25,34 @@ export function isSqliteFileUrl(url?: string | null): boolean {
   return !!url?.trim().startsWith("file:");
 }
 
+/**
+ * Prisma resolve caminhos SQLite relativos à pasta do schema (`prisma/`).
+ * `file:./prisma/dev.db` acabava em `prisma/prisma/dev.db` (banco vazio, dados "sumiam").
+ */
+export function normalizeSqliteDatabaseUrl(url: string): string {
+  const trimmed = url.trim();
+  if (
+    trimmed === "file:./prisma/dev.db" ||
+    trimmed === "file:prisma/dev.db" ||
+    trimmed === "file:./prisma\\dev.db"
+  ) {
+    return "file:./dev.db";
+  }
+  return trimmed;
+}
+
 export function resolveDurableDatabaseUrl(sqliteFallback = "file:/data/prod.db"): string {
   const postgres = collectPostgresUrl();
   if (postgres) return postgres;
 
   const current = process.env.DATABASE_URL?.trim();
-  if (current && isSqliteFileUrl(current)) return current;
+  if (current && isSqliteFileUrl(current)) return normalizeSqliteDatabaseUrl(current);
   if (current && !isPostgresUrl(current) && !isSqliteFileUrl(current)) {
     return current;
   }
 
   if (process.env.NODE_ENV === "production") return sqliteFallback;
-  return current || "file:./prisma/dev.db";
+  return current ? normalizeSqliteDatabaseUrl(current) : "file:./dev.db";
 }
 
 export function applyDurableDatabaseUrl(): string {

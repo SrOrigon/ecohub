@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createStudentAction } from "@/actions/crud";
 import { runServerAction } from "@/lib/run-server-action";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ interface ClassOption {
 }
 
 export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [created, setCreated] = useState<{
     pin?: string;
@@ -30,6 +32,7 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
     async (_prev: { error?: string; success?: boolean; pin?: string; enrollmentCode?: string; email?: string; loginPath?: string; accountType?: string } | null, formData: FormData) => {
       const result = await runServerAction(async () => createStudentAction(formData));
       if (result && "success" in result && result.success) {
+        router.refresh();
         setCreated({
           pin: result.pin,
           enrollmentCode: result.enrollmentCode ?? "",

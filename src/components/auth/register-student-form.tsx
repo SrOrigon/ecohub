@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { registerStudentAction, listClassesForSignupAction } from "@/actions/auth";
 import { runServerAction } from "@/lib/run-server-action";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { AUTH_BACK_LINK_CLASS, AUTH_CARD_CLASS } from "@/components/auth/auth-sh
 import { ArrowLeft } from "lucide-react";
 
 export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolSlug?: string }) {
+  const router = useRouter();
   const [schoolSlug, setSchoolSlug] = useState(initialSchoolSlug);
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [schoolName, setSchoolName] = useState<string | null>(null);
@@ -19,10 +21,18 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
   const [loadingClasses, startLoad] = useTransition();
 
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string } | null, formData: FormData) =>
-      runServerAction(async () => (await registerStudentAction(formData)) ?? null),
+    async (
+      _prev: { error?: string; success?: boolean; loginRequired?: boolean; message?: string } | null,
+      formData: FormData
+    ) => runServerAction(async () => (await registerStudentAction(formData)) ?? null),
     null
   );
+
+  useEffect(() => {
+    if (state && "success" in state && state.success && state.loginRequired) {
+      router.refresh();
+    }
+  }, [state, router]);
 
   const lookupSeq = useRef(0);
 
@@ -45,6 +55,10 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
     }, 400);
     return () => clearTimeout(t);
   }, [schoolSlug]);
+
+  const formError = state && "error" in state ? state.error : undefined;
+  const registrationComplete =
+    state != null && "success" in state && state.success && state.loginRequired;
 
   return (
     <Card className={AUTH_CARD_CLASS}>
@@ -123,9 +137,20 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
             <Label htmlFor="enrollmentCode">Matrícula (opcional)</Label>
             <Input id="enrollmentCode" name="enrollmentCode" placeholder="Gerada automaticamente se vazio" />
           </div>
-          {state?.error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
+          {formError && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>
           )}
+          {registrationComplete && (
+            <div className="space-y-3 rounded-lg bg-emerald-50 px-3 py-3 text-sm text-emerald-900">
+              <p className="font-medium">
+                {"message" in state! ? state.message : "Conta criada com sucesso."}
+              </p>
+              <Link href="/login/aluno" className="inline-block font-medium text-indigo-700 hover:underline">
+                Ir para o login de aluno
+              </Link>
+            </div>
+          )}
+          {!registrationComplete && (
           <Button
             type="submit"
             className="w-full"
@@ -133,6 +158,7 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
           >
             {pending ? "Criando..." : "Criar conta de aluno"}
           </Button>
+          )}
         </form>
         <p className="mt-4 text-center text-sm">
           <Link href="/login/aluno" className="text-indigo-600 hover:underline">

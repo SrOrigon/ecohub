@@ -207,8 +207,11 @@ async function acceptTeacherInviteActionImpl(formData: FormData) {
   const session = await safeEstablishSession(user, { tenantSlug: inviteData.school.slug });
   if (!session.ok) {
     return {
-      error:
-        "Conta criada, mas não foi possível iniciar a sessão automaticamente. Faça login em /login/professor.",
+      success: true,
+      loginRequired: true,
+      email,
+      message:
+        "Conta criada com sucesso. Faça login em /login/professor com seu e-mail e senha.",
     };
   }
 

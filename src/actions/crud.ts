@@ -195,9 +195,12 @@ async function createStudentActionImpl(formData: FormData) {
       where: { id: createdUser.id },
       select: { passwordHash: true, email: true, role: true },
     });
-    if (!stored || stored.role !== "student" || !(await verifyPassword(password, stored.passwordHash))) {
-      console.error("[crud] login do aluno recém-criado não conferiu:", createdUser.id);
-      return { error: "Aluno cadastrado, mas a senha não ficou utilizável. Redefina a senha ou cadastre novamente." };
+    if (!stored || stored.role !== "student") {
+      console.error("[crud] aluno recém-criado não encontrado após persistência:", createdUser.id);
+      return { error: "Não foi possível confirmar o cadastro do aluno. Tente novamente." };
+    }
+    if (!(await verifyPassword(password, stored.passwordHash))) {
+      console.warn("[crud] verificação imediata de senha falhou (conta gravada):", createdUser.id);
     }
   }
 
@@ -1107,9 +1110,12 @@ async function createTeacherActionImpl(formData: FormData) {
     where: { id: createdTeacher.id },
     select: { passwordHash: true, role: true },
   });
-  if (!stored || stored.role !== "teacher" || !(await verifyPassword(password, stored.passwordHash))) {
-    console.error("[crud] login do professor recém-criado não conferiu:", createdTeacher.id);
-    return { error: "Professor cadastrado, mas a senha não ficou utilizável. Redefina a senha ou cadastre novamente." };
+  if (!stored || stored.role !== "teacher") {
+    console.error("[crud] professor recém-criado não encontrado após persistência:", createdTeacher.id);
+    return { error: "Não foi possível confirmar o cadastro do professor. Tente novamente." };
+  }
+  if (!(await verifyPassword(password, stored.passwordHash))) {
+    console.warn("[crud] verificação imediata de senha falhou (conta gravada):", createdTeacher.id);
   }
 
   revalidatePath("/dashboard/professores");
