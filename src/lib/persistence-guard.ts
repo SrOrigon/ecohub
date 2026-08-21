@@ -225,3 +225,20 @@ export async function confirmUserPersisted(
 
   return true;
 }
+
+/** Confirma persistência ou devolve mensagem de erro para o usuário. */
+export async function ensureUserPersistedOrFail(
+  findUser: (id: string) => Promise<{ id: string } | null>,
+  userId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const persisted = await confirmUserPersisted(findUser, userId);
+  if (persisted) return { ok: true };
+
+  const stillThere = await findUser(userId);
+  if (stillThere) return { ok: true };
+
+  return {
+    ok: false,
+    error: "Não foi possível confirmar o cadastro no banco. Aguarde 1 minuto e tente novamente.",
+  };
+}

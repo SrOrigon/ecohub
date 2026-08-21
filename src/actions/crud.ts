@@ -37,10 +37,11 @@ import {
   hashStudentPin,
   syntheticStudentEmail,
 } from "@/lib/student-pin";
-import { confirmUserPersisted, persistGoldenBackupNow } from "@/lib/persistence-guard";
+import { ensureUserPersistedOrFail, persistGoldenBackupNow } from "@/lib/persistence-guard";
 import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 import { formatCrudError } from "@/lib/action-errors";
 import { userExistsByEmail } from "@/lib/user-lookup";
+import { findUserByEmailForLogin } from "@/lib/auth-credentials";
 
 function revalidatePaths(paths: string[]) {
   for (const p of paths) revalidatePath(p);
@@ -189,10 +190,11 @@ async function createStudentActionImpl(formData: FormData) {
     return { error: "Não foi possível cadastrar o aluno. Verifique matrícula e e-mail." };
   }
 
-  await confirmUserPersisted(
+  const persisted = await ensureUserPersistedOrFail(
     (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
     createdUser.id
   );
+  if (!persisted.ok) return { error: persisted.error };
 
   if (accountMode !== "pin_only") {
     const stored = await prisma.user.findUnique({
@@ -1124,12 +1126,20 @@ async function createTeacherActionImpl(formData: FormData) {
     return { error: formatCrudError(error, "Não foi possível gravar o professor no banco.") };
   }
 
-  void confirmUserPersisted(
+  const persisted = await ensureUserPersistedOrFail(
     (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
     createdTeacher.id
-  ).catch((error) => {
-    console.error("[persistência] pós-cadastro professor:", error);
-  });
+  );
+  if (!persisted.ok) return { error: persisted.error };
+
+  const loginUser = await findUserByEmailForLogin(createdTeacher.email);
+  if (!loginUser || !(await verifyPassword(password, loginUser.passwordHash))) {
+    console.error("[crud] professor criado mas login imediato falhou:", createdTeacher.email);
+    return {
+      error:
+        "Professor gravado, mas o login ainda não pôde ser validado. Aguarde 1 minuto e entre em /login/professor.",
+    };
+  }
 
   try {
     revalidatePath("/dashboard/professores");

@@ -13,15 +13,40 @@ function enabled() {
 }
 
 async function buildSnapshot(prisma) {
-  const [schools, users, students, classGroups, parentStudents] = await Promise.all([
+  const [schools, users, students, classGroups, parentStudents, teacherInvites] = await Promise.all([
     prisma.school.findMany(),
-    prisma.user.findMany(),
+    prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        fullName: true,
+        role: true,
+        avatarUrl: true,
+        displayName: true,
+        username: true,
+        phone: true,
+        gender: true,
+        pronouns: true,
+        bio: true,
+        interests: true,
+        socialLinks: true,
+        city: true,
+        state: true,
+        zipCode: true,
+        latitude: true,
+        longitude: true,
+        schoolId: true,
+        createdAt: true,
+      },
+    }),
     prisma.student.findMany(),
     prisma.classGroup.findMany(),
     prisma.parentStudent.findMany(),
+    prisma.teacherInvite.findMany(),
   ]);
   return {
-    version: 1,
+    version: 2,
     savedAt: new Date().toISOString(),
     userCount: users.length,
     schools,
@@ -29,6 +54,7 @@ async function buildSnapshot(prisma) {
     students,
     classGroups,
     parentStudents,
+    teacherInvites,
   };
 }
 
@@ -90,7 +116,10 @@ export async function restoreInstitutionalSnapshotIfDegraded() {
       }
 
       for (const user of snapshot.users) {
-        const existing = await tx.user.findUnique({ where: { email: user.email } });
+        const existing = await tx.user.findFirst({
+          where: { email: user.email },
+          select: { id: true },
+        });
         if (!existing) await tx.user.create({ data: user });
       }
 
@@ -112,6 +141,14 @@ export async function restoreInstitutionalSnapshotIfDegraded() {
           where: { parentId: link.parentId, studentId: link.studentId },
         });
         if (!existing) await tx.parentStudent.create({ data: link });
+      }
+
+      for (const invite of snapshot.teacherInvites ?? []) {
+        const existing = await tx.teacherInvite.findFirst({
+          where: { OR: [{ id: invite.id }, { token: invite.token }] },
+          select: { id: true },
+        });
+        if (!existing) await tx.teacherInvite.create({ data: invite });
       }
     });
 

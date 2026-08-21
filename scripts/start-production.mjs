@@ -124,6 +124,17 @@ async function bootstrapPostgres() {
     console.error("[ecohub] CRÍTICO: PostgreSQL inacessível após bootstrap.");
   } else {
     console.log(`[ecohub] PostgreSQL pronto: ${users} usuário(s)`);
+    if (users > 0) {
+      try {
+        const { saveInstitutionalSnapshot } = await import("./institutional-snapshot.mjs");
+        await saveInstitutionalSnapshot("bootstrap");
+      } catch (error) {
+        console.warn(
+          "[ecohub] Snapshot pós-bootstrap ignorado:",
+          error instanceof Error ? error.message : error
+        );
+      }
+    }
   }
   if (before > 0 && users === 0) {
     console.error(

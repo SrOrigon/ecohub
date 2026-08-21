@@ -13,13 +13,14 @@ import {
 import { isNextRedirect } from "@/lib/run-server-action";
 import {
   assertProductionDatabasePersistent,
-  confirmUserPersisted,
+  ensureUserPersistedOrFail,
 } from "@/lib/persistence-guard";
 import { loginHubPath } from "@/lib/login-paths";
 import { TENANT_COOKIE } from "@/lib/tenant";
 import { findUserByEmailForLogin, verifyAndUpgradePassword } from "@/lib/auth-credentials";
 import { findStudentForPinLogin } from "@/lib/student-pin";
 import { invalidateSchoolCaches } from "@/lib/runtime-cache";
+import { userExistsByEmail } from "@/lib/user-lookup";
 import { prisma } from "@/lib/db";
 import { ensureDefaultBadges, ensureDefaultRewards } from "@/lib/school-setup";
 import { notifyInitialSchoolVerification } from "@/lib/sync-school-verification";
@@ -269,8 +270,7 @@ async function registerSchoolActionImpl(formData: FormData): Promise<RegisterSch
     };
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
+  if (await userExistsByEmail(email)) {
     return {
       error:
         "Este e-mail já está cadastrado. Faça login em /login/escola com a senha definida no cadastro.",
@@ -308,10 +308,11 @@ async function registerSchoolActionImpl(formData: FormData): Promise<RegisterSch
     return { school: createdSchool, user: createdUser };
   });
 
-  await confirmUserPersisted(
+  const persisted = await ensureUserPersistedOrFail(
     (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
     user.id
   );
+  if (!persisted.ok) return { error: persisted.error };
 
   invalidateSchoolCaches(school.id, school.slug);
 
@@ -425,8 +426,7 @@ async function registerStudentActionImpl(formData: FormData) {
     enrollmentCode = `ALU-${Date.now().toString(36).toUpperCase()}`;
   }
 
-  const existingEmail = await prisma.user.findUnique({ where: { email } });
-  if (existingEmail) return { error: GENERIC_REGISTER_ERROR };
+  if (await userExistsByEmail(email)) return { error: GENERIC_REGISTER_ERROR };
 
   const existingCode = await prisma.student.findUnique({ where: { enrollmentCode } });
   if (existingCode) return { error: "Matrícula já em uso. Escolha outra." };
@@ -451,10 +451,11 @@ async function registerStudentActionImpl(formData: FormData) {
     return { error: "E-mail ou matrícula já cadastrados. Tente novamente." };
   }
 
-  await confirmUserPersisted(
+  const persisted = await ensureUserPersistedOrFail(
     (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
     user.id
   );
+  if (!persisted.ok) return { error: persisted.error };
 
   revalidatePath("/dashboard/alunos");
   revalidatePath("/dashboard/turmas");
@@ -534,8 +535,7 @@ async function registerParentActionImpl(formData: FormData) {
     return { error: "Matrícula do aluno não encontrada nesta escola." };
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: GENERIC_REGISTER_ERROR };
+  if (await userExistsByEmail(email)) return { error: GENERIC_REGISTER_ERROR };
 
   const passwordHash = await hashPassword(password);
   // Conta e vínculo criados juntos: sem transação, uma falha deixaria o
@@ -556,10 +556,11 @@ async function registerParentActionImpl(formData: FormData) {
     return created;
   });
 
-  await confirmUserPersisted(
+  const persisted = await ensureUserPersistedOrFail(
     (id) => prisma.user.findUnique({ where: { id }, select: { id: true } }),
     parent.id
   );
+  if (!persisted.ok) return { error: persisted.error };
 
   invalidateSchoolCaches(school.id, school.slug);
   await establishSession(parent, { tenantSlug: school.slug });

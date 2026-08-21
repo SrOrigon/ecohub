@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { isManagedPostgres, isPostgresUrl } from "@/lib/database-mode";
 
 const SNAPSHOT_KEY = "INSTITUTIONAL_SNAPSHOT";
-const SNAPSHOT_VERSION = 1;
+const SNAPSHOT_VERSION = 2;
 
 export type InstitutionalSnapshot = {
   version: number;
@@ -17,6 +17,7 @@ export type InstitutionalSnapshot = {
   students: Awaited<ReturnType<typeof fetchStudents>>;
   classGroups: Awaited<ReturnType<typeof fetchClassGroups>>;
   parentStudents: Awaited<ReturnType<typeof fetchParentStudents>>;
+  teacherInvites: Awaited<ReturnType<typeof fetchTeacherInvites>>;
 };
 
 async function fetchSchools() {
@@ -63,6 +64,10 @@ async function fetchParentStudents() {
   return prisma.parentStudent.findMany();
 }
 
+async function fetchTeacherInvites() {
+  return prisma.teacherInvite.findMany();
+}
+
 export function isSnapshotStorageEnabled(): boolean {
   if (process.env.NODE_ENV !== "production") return false;
   const url = process.env.DATABASE_URL?.trim() ?? "";
@@ -70,12 +75,13 @@ export function isSnapshotStorageEnabled(): boolean {
 }
 
 export async function buildInstitutionalSnapshot(): Promise<InstitutionalSnapshot> {
-  const [schools, users, students, classGroups, parentStudents] = await Promise.all([
+  const [schools, users, students, classGroups, parentStudents, teacherInvites] = await Promise.all([
     fetchSchools(),
     fetchUsers(),
     fetchStudents(),
     fetchClassGroups(),
     fetchParentStudents(),
+    fetchTeacherInvites(),
   ]);
 
   return {
@@ -87,6 +93,7 @@ export async function buildInstitutionalSnapshot(): Promise<InstitutionalSnapsho
     students,
     classGroups,
     parentStudents,
+    teacherInvites,
   };
 }
 
@@ -173,7 +180,10 @@ export async function restoreInstitutionalSnapshotIfDegraded(): Promise<{
     }
 
     for (const user of snapshot.users) {
-      const existing = await tx.user.findUnique({ where: { email: user.email } });
+      const existing = await tx.user.findFirst({
+        where: { email: user.email },
+        select: { id: true },
+      });
       if (!existing) {
         await tx.user.create({ data: user });
       }
@@ -202,6 +212,16 @@ export async function restoreInstitutionalSnapshotIfDegraded(): Promise<{
       });
       if (!existing) {
         await tx.parentStudent.create({ data: link });
+      }
+    }
+
+    for (const invite of snapshot.teacherInvites ?? []) {
+      const existing = await tx.teacherInvite.findFirst({
+        where: { OR: [{ id: invite.id }, { token: invite.token }] },
+        select: { id: true },
+      });
+      if (!existing) {
+        await tx.teacherInvite.create({ data: invite });
       }
     }
   });

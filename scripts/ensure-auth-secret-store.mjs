@@ -30,7 +30,7 @@ export async function ensureAuthSecretInDatabase() {
       "[ecohub] AppMeta indisponível para AUTH_SECRET:",
       error instanceof Error ? error.message : error
     );
-    return secret;
+    return ensureAuthSecret();
   } finally {
     await prisma.$disconnect();
   }
