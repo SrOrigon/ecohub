@@ -194,6 +194,17 @@ export async function ensureProductionPersistence(options = {}) {
 
   if (postgres) {
     log("info", `PostgreSQL pronto (${userCount ?? "?"} usuário(s)).`);
+    if (runBackup && (userCount ?? 0) > 0) {
+      try {
+        const { saveInstitutionalSnapshot } = await import("./institutional-snapshot.mjs");
+        await saveInstitutionalSnapshot("background-maintenance");
+      } catch (error) {
+        log(
+          "aviso",
+          `Snapshot institucional falhou: ${error instanceof Error ? error.message : error}`
+        );
+      }
+    }
   } else if (volumeWritable && isPersistentDatabasePath(dbPath)) {
     log("info", `Dados persistentes em ${dbPath} (${userCount ?? "?"} usuário(s)).`);
     if (lastBackup) log("info", `Backup automático: ${lastBackup}`);

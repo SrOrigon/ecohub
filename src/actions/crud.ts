@@ -206,10 +206,20 @@ async function createStudentActionImpl(formData: FormData) {
 
   revalidateGroups("core", "people", "gamification", "analytics", "alerts");
   invalidateSchoolCaches(user.schoolId);
+
+  const verified = await prisma.user.findFirst({
+    where: { id: createdUser.id, schoolId: user.schoolId, role: "student" },
+    include: { student: { select: { enrollmentCode: true } } },
+  });
+  if (!verified?.student) {
+    console.error("[crud] aluno não encontrado após create:", createdUser.id);
+    return { error: "Não foi possível confirmar o cadastro no banco. Tente novamente." };
+  }
+
   return {
     success: true,
     pin: pin ?? undefined,
-    enrollmentCode,
+    enrollmentCode: verified.student.enrollmentCode,
     accountType,
     email,
     loginPath: accountMode === "pin_only" ? "/entrar" : "/login/aluno",
@@ -1120,7 +1130,21 @@ async function createTeacherActionImpl(formData: FormData) {
 
   revalidatePath("/dashboard/professores");
   invalidateSchoolCaches(user.schoolId);
-  return { success: true, email, loginPath: "/login/professor" };
+
+  const verified = await prisma.user.findFirst({
+    where: { id: createdTeacher.id, schoolId: user.schoolId, role: "teacher" },
+    select: { id: true, email: true },
+  });
+  if (!verified) {
+    console.error("[crud] professor não encontrado após create:", createdTeacher.id);
+    return { error: "Não foi possível confirmar o cadastro no banco. Tente novamente." };
+  }
+
+  return {
+    success: true,
+    email: verified.email,
+    loginPath: "/login/professor",
+  };
 }
 
 export async function deleteStudentAction(formData: FormData) {

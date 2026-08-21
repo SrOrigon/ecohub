@@ -82,10 +82,31 @@ async function bootstrapPostgres() {
   }
 
   const schema = syncPrismaSchema();
-  // Nunca usar --accept-data-loss: se o schema exigir drop, o push falha e as contas ficam.
-  const pushed = run(`npx prisma db push --skip-generate --schema="${schema}"`, { optional: true });
-  if (!pushed) {
-    console.error("[ecohub] prisma db push no PostgreSQL falhou — login pode falhar até o schema existir.");
+  const migrated = run(`npx prisma migrate deploy --schema="${schema}"`, { optional: true });
+  if (!migrated) {
+    console.warn("[ecohub] migrate deploy falhou — tentando db push (somente se banco vazio).");
+    if (before === 0) {
+      run(`npx prisma db push --skip-generate --schema="${schema}"`, { optional: true });
+    } else {
+      console.error(
+        "[ecohub] migrate deploy falhou com contas existentes — NÃO será feito db push para proteger dados."
+      );
+    }
+  }
+
+  try {
+    const { restoreInstitutionalSnapshotIfDegraded } = await import("./institutional-snapshot.mjs");
+    const restore = await restoreInstitutionalSnapshotIfDegraded();
+    if (restore.restored) {
+      console.log(
+        `[ecohub] Snapshot institucional restaurou contas: ${restore.usersBefore} → ${restore.usersAfter}`
+      );
+    }
+  } catch (error) {
+    console.warn(
+      "[ecohub] Restauração via snapshot ignorada:",
+      error instanceof Error ? error.message : error
+    );
   }
 
   const users = await countUsersInDatabase(process.env.DATABASE_URL);

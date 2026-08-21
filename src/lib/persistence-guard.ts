@@ -203,4 +203,11 @@ export async function confirmUserPersisted(
     // A conta já foi gravada; falha no backup não deve bloquear o cadastro.
     console.error("[persistência] Backup pós-cadastro falhou (conta gravada):", error);
   }
+
+  try {
+    const { saveInstitutionalSnapshot } = await import("@/lib/institutional-snapshot");
+    await saveInstitutionalSnapshot("user-persisted");
+  } catch (error) {
+    console.error("[persistência] Snapshot institucional falhou (conta gravada):", error);
+  }
 }

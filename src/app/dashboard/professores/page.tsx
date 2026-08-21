@@ -20,7 +20,7 @@ export default async function ProfessoresPage() {
   if (!user) redirect("/login");
   if (user.role !== "admin" && user.role !== "director") redirect("/dashboard");
 
-  const teachers = await getTeachers(user.schoolId).catch(() => []);
+  const teachers = await getTeachers(user.schoolId);
   const invites = user.schoolId ? await fetchTeacherInvitesForSchool(user, user.schoolId).catch(() => []) : [];
 
   const teachersWithClasses = await Promise.all(
