@@ -9,7 +9,65 @@ export const DEMO_STUDENT_ENROLLMENT = "DEMO9001";
 export const DEMO_STUDENT_PIN = "900142";
 export const DEMO_STUDENT_NAME = "Aluno Demo SAO";
 export const DEMO_PARENT_EMAIL = "demo.responsavel@ecohub.temp";
+export const DEMO_TEACHER_EMAIL = "demo.professor@ecohub.temp";
+export const DEMO_CLASS_NAME = "Turma Demo SAO";
 export const DEMO_HOME_TASK_TITLE = "DEMO-SAO: Teste Congratulations!!";
+export const DEMO_EXERCISE_PREFIX = "DEMO-SAO:";
+
+const DEMO_EXERCISES = [
+  {
+    title: `${DEMO_EXERCISE_PREFIX} Verdadeiro ou falso`,
+    description: "Responda e envie para ver a animação Congratulations!!",
+    kind: "homework" as const,
+    xpReward: 30,
+    coinReward: 5,
+    questions: [
+      {
+        prompt: "2 + 2 = 4?",
+        type: "true_false",
+        points: 1,
+        options: [
+          { id: "true", text: "Verdadeiro", isCorrect: true },
+          { id: "false", text: "Falso", isCorrect: false },
+        ],
+      },
+    ],
+  },
+  {
+    title: `${DEMO_EXERCISE_PREFIX} Quiz rápido`,
+    description: "Uma pergunta de múltipla escolha para testar.",
+    kind: "homework" as const,
+    xpReward: 40,
+    coinReward: 8,
+    questions: [
+      {
+        prompt: "Qual planeta é conhecido como Planeta Vermelho?",
+        type: "choice",
+        points: 1,
+        options: [
+          { id: "marte", text: "Marte", isCorrect: true },
+          { id: "venus", text: "Vênus", isCorrect: false },
+          { id: "jupiter", text: "Júpiter", isCorrect: false },
+        ],
+      },
+    ],
+  },
+  {
+    title: `${DEMO_EXERCISE_PREFIX} Flashcard SAO`,
+    description: "Vire o card, marque se sabia e envie.",
+    kind: "homework" as const,
+    xpReward: 25,
+    coinReward: 5,
+    questions: [
+      {
+        prompt: "O que significa SAO no estilo da animação?",
+        type: "flashcard",
+        points: 1,
+        options: [{ id: "back", text: "Sword Art Online — vitória épica!", isCorrect: true }],
+      },
+    ],
+  },
+];
 
 async function hashPassword(password: string) {
   return bcrypt.hash(normalizePassword(password), BCRYPT_ROUNDS);
@@ -66,6 +124,111 @@ async function ensureDemoHomeTask(studentId: string, parentId: string) {
   return task.id;
 }
 
+async function ensureDemoTeacher(schoolId: string, passwordHash: string) {
+  const existing = await prisma.user.findUnique({
+    where: { email: DEMO_TEACHER_EMAIL },
+    select: { id: true, schoolId: true },
+  });
+
+  if (existing) {
+    if (existing.schoolId !== schoolId) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { schoolId, role: "teacher" },
+      });
+    }
+    return existing.id;
+  }
+
+  const teacher = await prisma.user.create({
+    data: {
+      email: DEMO_TEACHER_EMAIL,
+      passwordHash,
+      fullName: "Professor Demo SAO",
+      role: "teacher",
+      schoolId,
+    },
+    select: { id: true },
+  });
+  return teacher.id;
+}
+
+async function ensureDemoClass(schoolId: string, teacherId: string) {
+  const existing = await prisma.classGroup.findFirst({
+    where: { schoolId, name: DEMO_CLASS_NAME },
+    select: { id: true, teacherId: true },
+  });
+
+  if (existing) {
+    if (existing.teacherId !== teacherId) {
+      await prisma.classGroup.update({
+        where: { id: existing.id },
+        data: { teacherId },
+      });
+    }
+    return existing.id;
+  }
+
+  const classGroup = await prisma.classGroup.create({
+    data: {
+      schoolId,
+      name: DEMO_CLASS_NAME,
+      gradeLevel: "Demo",
+      year: new Date().getFullYear(),
+      teacherId,
+    },
+    select: { id: true },
+  });
+  return classGroup.id;
+}
+
+async function ensureDemoExercises(schoolId: string, classId: string, teacherId: string, studentId: string) {
+  const exerciseIds: string[] = [];
+
+  for (const spec of DEMO_EXERCISES) {
+    let exercise = await prisma.exercise.findFirst({
+      where: { schoolId, classId, title: spec.title },
+      select: { id: true },
+    });
+
+    if (!exercise) {
+      exercise = await prisma.exercise.create({
+        data: {
+          schoolId,
+          classId,
+          teacherId,
+          title: spec.title,
+          description: spec.description,
+          kind: spec.kind,
+          maxPoints: spec.questions.reduce((sum, q) => sum + q.points, 0),
+          xpReward: spec.xpReward,
+          coinReward: spec.coinReward,
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          isActive: true,
+          questions: {
+            create: spec.questions.map((q, i) => ({
+              prompt: q.prompt,
+              type: q.type,
+              points: q.points,
+              sortOrder: i,
+              options: JSON.stringify(q.options),
+            })),
+          },
+        },
+        select: { id: true },
+      });
+    }
+
+    exerciseIds.push(exercise.id);
+
+    await prisma.exerciseSubmission.deleteMany({
+      where: { exerciseId: exercise.id, studentId },
+    });
+  }
+
+  return exerciseIds;
+}
+
 export async function ensureDemoStudent() {
   const school = await resolveSchool();
   if (!school) {
@@ -105,6 +268,10 @@ export async function ensureDemoStudent() {
   });
 
   let studentId: string;
+  let classId: string;
+
+  const teacherId = await ensureDemoTeacher(school.id, passwordHash);
+  classId = await ensureDemoClass(school.id, teacherId);
 
   if (existingUser?.student) {
     studentId = existingUser.student.id;
@@ -124,6 +291,7 @@ export async function ensureDemoStudent() {
         accessPinHash: pinHash,
         accountType: "standard",
         status: "active",
+        classId,
       },
     });
   } else {
@@ -143,6 +311,7 @@ export async function ensureDemoStudent() {
             coins: 100,
             xpTotal: 0,
             level: 1,
+            classId,
           },
         },
       },
@@ -158,6 +327,7 @@ export async function ensureDemoStudent() {
   });
 
   const homeTaskId = await ensureDemoHomeTask(studentId, parent.id);
+  const exerciseIds = await ensureDemoExercises(school.id, classId, teacherId, studentId);
 
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
@@ -180,7 +350,9 @@ export async function ensureDemoStudent() {
       studentDashboard: `${baseUrl}/dashboard/aluno`,
     },
     homeTaskId,
-    hint: "Em /dashboard/aluno, conclua a tarefa DEMO-SAO para ver Congratulations!!",
+    exerciseIds,
+    exercisesUrl: `${baseUrl}/dashboard/exercicios`,
+    hint: "Em /dashboard/exercicios, responda um exercício DEMO-SAO para ver Congratulations!!",
   };
 }
 
@@ -195,12 +367,35 @@ export async function removeDemoStudent() {
   });
 
   let removedTasks = 0;
+  let removedExercises = 0;
+
   if (demoUser?.student) {
     const deleted = await prisma.homeTask.deleteMany({
       where: { studentId: demoUser.student.id, title: DEMO_HOME_TASK_TITLE },
     });
     removedTasks = deleted.count;
+
+    const demoExercises = await prisma.exercise.findMany({
+      where: { title: { startsWith: DEMO_EXERCISE_PREFIX } },
+      select: { id: true },
+    });
+    if (demoExercises.length > 0) {
+      const ids = demoExercises.map((e) => e.id);
+      await prisma.exerciseSubmission.deleteMany({ where: { exerciseId: { in: ids } } });
+      const deletedEx = await prisma.exercise.deleteMany({ where: { id: { in: ids } } });
+      removedExercises = deletedEx.count;
+    }
   }
+
+  const demoTeacher = await prisma.user.findUnique({
+    where: { email: DEMO_TEACHER_EMAIL },
+    select: { id: true },
+  });
+
+  const demoClass = await prisma.classGroup.findFirst({
+    where: { name: DEMO_CLASS_NAME },
+    select: { id: true },
+  });
 
   if (demoUser) {
     await prisma.user.delete({ where: { id: demoUser.id } });
@@ -208,12 +403,19 @@ export async function removeDemoStudent() {
   if (demoParent) {
     await prisma.user.delete({ where: { id: demoParent.id } });
   }
+  if (demoClass) {
+    await prisma.classGroup.delete({ where: { id: demoClass.id } }).catch(() => {});
+  }
+  if (demoTeacher) {
+    await prisma.user.delete({ where: { id: demoTeacher.id } }).catch(() => {});
+  }
 
   return {
     ok: true as const,
     removedStudent: !!demoUser,
     removedParent: !!demoParent,
     removedTasks,
+    removedExercises,
   };
 }
 
@@ -225,4 +427,5 @@ export function logDemoCredentials(result: Awaited<ReturnType<typeof ensureDemoS
   console.log(`  Senha:  ${result.student.password}`);
   console.log(`  Matrícula/PIN: ${result.student.enrollmentCode} / ${result.student.pin}`);
   console.log(`  Login: ${result.login.emailPassword}`);
+  console.log(`  Exercícios: ${result.exercisesUrl} (${result.exerciseIds.length} disponíveis)`);
 }
