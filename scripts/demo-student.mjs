@@ -16,11 +16,13 @@ export async function ensureDemoStudent() {
   return { ok: true };
 }
 
-export async function removeDemoStudent() {
+export async function removeDemoStudent(databaseUrl) {
+  const env = { ...process.env };
+  if (databaseUrl) env.DATABASE_URL = databaseUrl;
   execSync("npx tsx scripts/demo-student.ts --remove", {
     cwd: ROOT,
     stdio: "inherit",
-    env: process.env,
+    env,
   });
   return { ok: true };
 }

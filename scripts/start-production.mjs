@@ -104,26 +104,15 @@ async function bootstrapPostgres() {
     );
   }
 
-  if (process.env.ECOHUB_DEMO_STUDENT !== "0") {
-    try {
-      const { ensureDemoStudent } = await import("./demo-student.mjs");
-      await ensureDemoStudent(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn(
-        "[ecohub] Conta demo temporária ignorada:",
-        error instanceof Error ? error.message : error
-      );
-    }
-  } else {
-    try {
-      const { removeDemoStudent } = await import("./demo-student.mjs");
-      await removeDemoStudent(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn(
-        "[ecohub] Remoção da conta demo ignorada:",
-        error instanceof Error ? error.message : error
-      );
-    }
+  try {
+    const { removeDemoStudent } = await import("./demo-student.mjs");
+    await removeDemoStudent(process.env.DATABASE_URL);
+    console.log("[ecohub] Limpeza de conta demo concluída.");
+  } catch (error) {
+    console.warn(
+      "[ecohub] Remoção da conta demo ignorada:",
+      error instanceof Error ? error.message : error
+    );
   }
 
   try {

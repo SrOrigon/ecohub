@@ -356,7 +356,7 @@ export async function ensureDemoStudent() {
   };
 }
 
-export async function removeDemoStudent() {
+export async function removeDemoStudent(_databaseUrl?: string) {
   const demoUser = await prisma.user.findUnique({
     where: { email: DEMO_STUDENT_EMAIL },
     include: { student: true },
