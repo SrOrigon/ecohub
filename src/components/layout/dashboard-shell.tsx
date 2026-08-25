@@ -25,6 +25,7 @@ export function DashboardShell({
   permissions,
   features,
   showPlatformAdmin,
+  creatorJourney,
 }: {
   children: React.ReactNode;
   userName: string;
@@ -36,6 +37,7 @@ export function DashboardShell({
   permissions: SchoolSettings["permissions"];
   features?: { trailsEnabled: boolean };
   showPlatformAdmin?: boolean;
+  creatorJourney?: import("@/lib/creator-journey").CreatorJourneySnapshot | null;
 }) {
   const pathname = usePathname();
   const kidFriendly = isKidFriendlyRole(role);
@@ -63,6 +65,7 @@ export function DashboardShell({
           permissions={permissions}
           features={features}
           showPlatformAdmin={showPlatformAdmin}
+          creatorJourney={creatorJourney}
           tagline={branding.tagline}
           mobileOpen={mobileMenuOpen}
           onMobileOpenChange={setMobileMenuOpen}

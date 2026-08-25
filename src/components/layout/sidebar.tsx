@@ -48,6 +48,8 @@ import {
   type NavPermission,
 } from "@/lib/permissions";
 import type { SchoolSettings } from "@/lib/school-settings";
+import type { CreatorJourneySnapshot } from "@/lib/creator-journey";
+import { CreatorJourneyProgress } from "@/components/creator/creator-journey-progress";
 import { logoutAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
@@ -272,6 +274,7 @@ export function Sidebar({
   mobileOpen,
   onMobileOpenChange,
   showPlatformAdmin,
+  creatorJourney,
 }: {
   pathname: string;
   userName: string;
@@ -286,6 +289,7 @@ export function Sidebar({
   mobileOpen: boolean;
   onMobileOpenChange: (open: boolean) => void;
   showPlatformAdmin?: boolean;
+  creatorJourney?: CreatorJourneySnapshot | null;
 }) {
   const mobilePanelRef = useRef<HTMLElement>(null);
 
@@ -364,6 +368,7 @@ export function Sidebar({
               tagline={tagline}
               kidFriendly={kidFriendly}
               showPlatformAdmin={showPlatformAdmin}
+              creatorJourney={creatorJourney}
               onNavigate={() => onMobileOpenChange(false)}
             />
           </aside>
@@ -386,6 +391,7 @@ export function Sidebar({
           tagline={tagline}
           kidFriendly={kidFriendly}
           showPlatformAdmin={showPlatformAdmin}
+          creatorJourney={creatorJourney}
         />
       </aside>
     </>
@@ -404,6 +410,7 @@ function SidebarContent({
   tagline,
   kidFriendly,
   showPlatformAdmin,
+  creatorJourney,
   onNavigate,
 }: {
   pathname: string;
@@ -417,6 +424,7 @@ function SidebarContent({
   tagline?: string;
   kidFriendly: boolean;
   showPlatformAdmin?: boolean;
+  creatorJourney?: CreatorJourneySnapshot | null;
   onNavigate?: () => void;
 }) {
   return (
@@ -432,6 +440,11 @@ function SidebarContent({
         <p className="border-b border-[var(--border-subtle)] px-4 py-2 text-xs text-[var(--muted-foreground)]">
           {tagline}
         </p>
+      )}
+      {creatorJourney && creatorJourney.completed < creatorJourney.total && (
+        <div className="border-b border-[var(--border-subtle)] px-3 py-3">
+          <CreatorJourneyProgress journey={creatorJourney} compact />
+        </div>
       )}
       <SidebarNavRegion>
         <NavLinks

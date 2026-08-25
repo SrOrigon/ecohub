@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import { createMissionAction } from "@/actions/crud";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +16,14 @@ export function CreateMissionForm({
   classes,
   defaultXp = 100,
   defaultCoins = 30,
+  trigger,
+  hideDefaultTrigger = false,
 }: {
   classes: ClassOption[];
   defaultXp?: number;
   defaultCoins?: number;
+  trigger?: ReactNode;
+  hideDefaultTrigger?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -33,7 +37,13 @@ export function CreateMissionForm({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>+ Nova missão</Button>
+      {trigger ? (
+        <button type="button" className="inline-flex w-full border-0 bg-transparent p-0 text-left" onClick={() => setOpen(true)}>
+          {trigger}
+        </button>
+      ) : hideDefaultTrigger ? null : (
+        <Button onClick={() => setOpen(true)}>+ Nova missão</Button>
+      )}
       <Modal open={open} onClose={() => setOpen(false)} title="Criar missão">
         <form action={formAction} className="space-y-4">
           <div>

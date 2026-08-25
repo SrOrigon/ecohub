@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { completeHomeTaskAction } from "@/actions/home-tasks";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SaoVictoryOverlay } from "@/components/celebration/sao-victory-overlay";
 import { Home, CheckCircle2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -21,21 +23,44 @@ type HomeTaskItem = {
 };
 
 function CompleteHomeTaskButton({ taskId, kidFriendly }: { taskId: string; kidFriendly?: boolean }) {
+  const router = useRouter();
+  const [victoryOpen, setVictoryOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) =>
       completeHomeTaskAction(formData),
     null
   );
 
+  useEffect(() => {
+    if (state?.success) setVictoryOpen(true);
+  }, [state?.success]);
+
+  if (state?.success && !victoryOpen) {
+    return (
+      <p className="text-sm font-semibold text-emerald-700" role="status">
+        Concluída!
+      </p>
+    );
+  }
+
   return (
-    <form action={formAction}>
-      <input type="hidden" name="taskId" value={taskId} />
-      <Button type="submit" size={kidFriendly ? "lg" : "sm"} disabled={pending} className="gap-1">
-        <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-        {pending ? "..." : "Concluí!"}
-      </Button>
-      {state?.error && <p className="mt-1 text-xs text-red-600">{state.error}</p>}
-    </form>
+    <>
+      <SaoVictoryOverlay
+        open={victoryOpen}
+        onProceed={() => {
+          setVictoryOpen(false);
+          router.refresh();
+        }}
+      />
+      <form action={formAction}>
+        <input type="hidden" name="taskId" value={taskId} />
+        <Button type="submit" size={kidFriendly ? "lg" : "sm"} disabled={pending || victoryOpen} className="gap-1">
+          <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+          {pending ? "..." : "Concluí!"}
+        </Button>
+        {state?.error && <p className="mt-1 text-xs text-red-600">{state.error}</p>}
+      </form>
+    </>
   );
 }
 

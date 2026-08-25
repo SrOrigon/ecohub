@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useEffect, useState } from "react";
+import { parseFlashcardBack, parseOptions, FLASHCARD_SELF_OPTIONS } from "@/lib/exercises";
+import { useActionState } from "react";
 import { submitExerciseAction } from "@/actions/exercises";
 import { Button } from "@/components/ui/button";
 import { Label, Textarea } from "@/components/ui/form-fields";
 import { FormMessage } from "@/components/ui/form-utils";
-import { parseOptions } from "@/lib/exercises";
-import { ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { SaoVictoryOverlay } from "@/components/celebration/sao-victory-overlay";
+import { ChevronLeft, ChevronRight, Send, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Question = {
@@ -21,9 +23,75 @@ type Question = {
 type Answer = { textAnswer?: string; selectedOptionId?: string };
 
 function isAnswered(question: Question, answer: Answer | undefined) {
-  return question.type === "choice"
-    ? !!answer?.selectedOptionId
-    : !!answer?.textAnswer?.trim();
+  if (question.type === "choice" || question.type === "true_false" || question.type === "flashcard") {
+    return !!answer?.selectedOptionId;
+  }
+  return !!answer?.textAnswer?.trim();
+}
+
+function FlashcardStep({
+  question,
+  answer,
+  onAnswer,
+  kidFriendly,
+}: {
+  question: Question;
+  answer: Answer | undefined;
+  onAnswer: (id: string) => void;
+  kidFriendly?: boolean;
+}) {
+  const [flipped, setFlipped] = useState(false);
+  const back = parseFlashcardBack(question.options);
+
+  return (
+    <div className="space-y-4">
+      <button
+        type="button"
+        onClick={() => setFlipped((f) => !f)}
+        className={cn(
+          "creator-flashcard w-full text-left transition-transform",
+          flipped && "creator-flashcard-flipped",
+          kidFriendly && "min-h-40"
+        )}
+      >
+        <div className="creator-flashcard-inner">
+          <div className="creator-flashcard-face creator-flashcard-front">
+            <p className={cn("font-semibold text-slate-900", kidFriendly && "text-xl")}>{question.prompt}</p>
+            <p className="mt-2 text-xs text-slate-500">Toque para virar</p>
+          </div>
+          <div className="creator-flashcard-face creator-flashcard-back">
+            <p className={cn("font-medium text-violet-900", kidFriendly && "text-lg")}>{back || "—"}</p>
+          </div>
+        </div>
+      </button>
+      {flipped && (
+        <div className="flex flex-wrap gap-2">
+          {FLASHCARD_SELF_OPTIONS.map((opt) => {
+            const selected = answer?.selectedOptionId === opt.id;
+            return (
+              <Button
+                key={opt.id}
+                type="button"
+                variant={selected ? "default" : "outline"}
+                className={cn(
+                  "flex-1",
+                  opt.id === "knew" && selected && "bg-emerald-600 hover:bg-emerald-700"
+                )}
+                onClick={() => onAnswer(opt.id)}
+              >
+                {opt.text}
+              </Button>
+            );
+          })}
+        </div>
+      )}
+      {!flipped && (
+        <Button type="button" variant="outline" size="sm" className="gap-1" onClick={() => setFlipped(true)}>
+          <RotateCcw className="h-4 w-4" /> Virar cartão
+        </Button>
+      )}
+    </div>
+  );
 }
 
 export function ExerciseSubmitForm({
@@ -53,6 +121,8 @@ export function ExerciseSubmitForm({
     }
   );
   const [step, setStep] = useState(0);
+  const [victoryOpen, setVictoryOpen] = useState(false);
+  const [resultVisible, setResultVisible] = useState(false);
 
   const [state, formAction, pending] = useActionState(
     async (
@@ -71,6 +141,13 @@ export function ExerciseSubmitForm({
     },
     null
   );
+
+  useEffect(() => {
+    if (state?.success) {
+      setVictoryOpen(true);
+      setResultVisible(false);
+    }
+  }, [state?.success]);
 
   const answeredCount = questions.filter((q) => isAnswered(q, answers[q.id])).length;
   const progress = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
@@ -91,9 +168,15 @@ export function ExerciseSubmitForm({
             >
               <p className="font-medium">{i + 1}. {q.prompt}</p>
               <p className="mt-2 text-slate-600">
-                {q.type === "choice"
+                {q.type === "choice" || q.type === "true_false"
                   ? opts.find((o) => o.id === a?.selectedOptionId)?.text ?? " - "
-                  : a?.textAnswer ?? " - "}
+                  : q.type === "flashcard"
+                    ? a?.selectedOptionId === "knew"
+                      ? "Eu sabia!"
+                      : a?.selectedOptionId === "review"
+                        ? "Vou revisar"
+                        : " - "
+                    : a?.textAnswer ?? " - "}
               </p>
             </div>
           );
@@ -105,16 +188,27 @@ export function ExerciseSubmitForm({
   if (state?.success) {
     const auto = "autoGraded" in state && state.autoGraded;
     return (
-      <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-6 py-8 text-center" role="status">
-        <p className={cn("font-bold text-emerald-800", kidFriendly && "text-xl")}>
-          {auto ? "Corrigido na hora!" : "Respostas enviadas com sucesso!"}
-        </p>
-        <p className="mt-2 text-slate-700">
-          {auto && "score" in state && state.score != null && "maxScore" in state
-            ? `Sua nota: ${Number(state.score).toFixed(1)}/${Number(state.maxScore).toFixed(1)} pts. XP e moedas já foram creditados!`
-            : "Seu professor vai corrigir em breve. Você receberá uma notificação quando a nota sair."}
-        </p>
-      </div>
+      <>
+        <SaoVictoryOverlay
+          open={victoryOpen}
+          onProceed={() => {
+            setVictoryOpen(false);
+            setResultVisible(true);
+          }}
+        />
+        {resultVisible && (
+          <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-6 py-8 text-center" role="status">
+            <p className={cn("font-bold text-emerald-800", kidFriendly && "text-xl")}>
+              {auto ? "Corrigido na hora!" : "Respostas enviadas com sucesso!"}
+            </p>
+            <p className="mt-2 text-slate-700">
+              {auto && "score" in state && state.score != null && "maxScore" in state
+                ? `Sua nota: ${Number(state.score).toFixed(1)}/${Number(state.maxScore).toFixed(1)} pts. XP e moedas já foram creditados!`
+                : "Seu professor vai corrigir em breve. Você receberá uma notificação quando a nota sair."}
+            </p>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -123,8 +217,7 @@ export function ExerciseSubmitForm({
 
   function canAdvance() {
     if (!q) return false;
-    const a = answers[q.id];
-    return q.type === "choice" ? !!a?.selectedOptionId : !!a?.textAnswer?.trim();
+    return isAnswered(q, answers[q.id]);
   }
 
   return (
@@ -170,11 +263,13 @@ export function ExerciseSubmitForm({
               )}
             </div>
           </div>
-          <Label className={cn("mt-2 block", kidFriendly ? "text-xl font-bold" : "text-base font-medium")}>
-            {q.prompt}
-          </Label>
+          {q.type !== "flashcard" && (
+            <Label className={cn("mt-2 block", kidFriendly ? "text-xl font-bold" : "text-base font-medium")}>
+              {q.prompt}
+            </Label>
+          )}
 
-          {q.type === "choice" ? (
+          {q.type === "choice" || q.type === "true_false" ? (
             <div className="mt-4 space-y-2">
               {opts.map((opt, oi) => {
                 const selected = answers[q.id]?.selectedOptionId === opt.id;
@@ -193,21 +288,38 @@ export function ExerciseSubmitForm({
                       selected
                         ? "border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200"
                         : "border-slate-200 hover:border-indigo-300 hover:bg-slate-50",
-                      kidFriendly && "min-h-14 text-lg"
+                      kidFriendly && "min-h-14 text-lg",
+                      q.type === "true_false" && "justify-center font-semibold"
                     )}
                   >
-                    <span
-                      className={cn(
-                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                        selected ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700"
-                      )}
-                    >
-                      {String.fromCharCode(65 + oi)}
-                    </span>
+                    {q.type === "choice" && (
+                      <span
+                        className={cn(
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold",
+                          selected ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700"
+                        )}
+                      >
+                        {String.fromCharCode(65 + oi)}
+                      </span>
+                    )}
                     <span>{opt.text}</span>
                   </button>
                 );
               })}
+            </div>
+          ) : q.type === "flashcard" ? (
+            <div className="mt-4">
+              <FlashcardStep
+                question={q}
+                answer={answers[q.id]}
+                kidFriendly={kidFriendly}
+                onAnswer={(id) =>
+                  setAnswers((prev) => ({
+                    ...prev,
+                    [q.id]: { ...prev[q.id], selectedOptionId: id },
+                  }))
+                }
+              />
             </div>
           ) : (
             <Textarea

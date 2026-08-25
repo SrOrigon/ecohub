@@ -11,7 +11,14 @@ import {
   notifyStudentParents,
   notifyUser,
 } from "@/lib/notifications";
-import { parseOptions, type ChoiceOption, type ExerciseKind, type QuestionType } from "@/lib/exercises";
+import {
+  parseOptions,
+  isAutoGradableQuestionType,
+  questionTypeNeedsOptions,
+  type ChoiceOption,
+  type ExerciseKind,
+  type QuestionType,
+} from "@/lib/exercises";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { exerciseBulletinMeta, upsertExerciseBulletinGrade } from "@/lib/exercise-bulletin";
 import { hasPermission } from "@/lib/permissions";
@@ -102,7 +109,7 @@ export async function createExerciseAction(formData: FormData) {
             points: q.points,
             xpReward: Math.max(0, q.xpReward ?? 0),
             sortOrder: i,
-            options: q.type === "choice" ? JSON.stringify(q.options ?? []) : null,
+            options: questionTypeNeedsOptions(q.type) ? JSON.stringify(q.options ?? []) : null,
           })),
         },
       },
@@ -189,7 +196,7 @@ export async function updateExerciseAction(formData: FormData) {
             points: q.points,
             xpReward: Math.max(0, q.xpReward ?? 0),
             sortOrder: i,
-            options: q.type === "choice" ? JSON.stringify(q.options ?? []) : null,
+            options: questionTypeNeedsOptions(q.type) ? JSON.stringify(q.options ?? []) : null,
           })),
         });
       }
@@ -247,9 +254,9 @@ export async function submitExerciseAction(formData: FormData) {
   }
 
   const settings = await getSchoolSettings(user.schoolId);
-  const allChoice =
+  const allAutoGradable =
     settings.exercises.autoGradeEnabled &&
-    exercise.questions.every((q) => q.type === "choice");
+    exercise.questions.every((q) => isAutoGradableQuestionType(q.type));
   const maxScore = exercise.questions.reduce((s, q) => s + q.points, 0);
   const maxGrade = settings.academic.maxGrade;
 
@@ -258,10 +265,13 @@ export async function submitExerciseAction(formData: FormData) {
     let isCorrect: boolean | null = null;
     let pointsAwarded: number | null = null;
 
-    if (q.type === "choice") {
+    if (q.type === "choice" || q.type === "true_false") {
       const opts = parseOptions(q.options);
       const correct = opts.find((o) => o.isCorrect);
       isCorrect = correct ? a.selectedOptionId === correct.id : false;
+      pointsAwarded = isCorrect ? q.points : 0;
+    } else if (q.type === "flashcard") {
+      isCorrect = a.selectedOptionId === "knew";
       pointsAwarded = isCorrect ? q.points : 0;
     }
 
@@ -274,7 +284,7 @@ export async function submitExerciseAction(formData: FormData) {
     };
   });
 
-  const autoScore = allChoice
+  const autoScore = allAutoGradable
     ? answerRows.reduce((s, r) => s + (r.pointsAwarded ?? 0), 0)
     : null;
 
@@ -285,7 +295,7 @@ export async function submitExerciseAction(formData: FormData) {
       await tx.exerciseAnswer.deleteMany({ where: { submissionId: existing.id } });
       await tx.exerciseSubmission.update({
         where: { id: existing.id },
-        data: allChoice
+        data: allAutoGradable
           ? {
               status: "graded",
               submittedAt: new Date(),
@@ -313,12 +323,12 @@ export async function submitExerciseAction(formData: FormData) {
         data: {
           exerciseId,
           studentId: student.id,
-          status: allChoice ? "graded" : "submitted",
+          status: allAutoGradable ? "graded" : "submitted",
           maxScore,
           score: autoScore,
-          gradedAt: allChoice ? new Date() : null,
-          gradedById: allChoice ? exercise.teacherId : null,
-          feedback: allChoice ? "Correção automática (múltipla escolha)." : null,
+          gradedAt: allAutoGradable ? new Date() : null,
+          gradedById: allAutoGradable ? exercise.teacherId : null,
+          feedback: allAutoGradable ? "Correção automática (múltipla escolha)." : null,
         },
       });
       await tx.exerciseAnswer.createMany({
@@ -327,7 +337,7 @@ export async function submitExerciseAction(formData: FormData) {
       submissionId = sub.id;
     }
 
-    if (allChoice && autoScore != null && settings.exercises.postGradeToBulletin) {
+    if (allAutoGradable && autoScore != null && settings.exercises.postGradeToBulletin) {
       const { subject, period } = exerciseBulletinMeta(exercise, settings.academic.periods);
       await upsertExerciseBulletinGrade(tx, {
         studentId: student.id,
@@ -342,7 +352,7 @@ export async function submitExerciseAction(formData: FormData) {
 
   const studentName = user.fullName;
 
-  if (allChoice && autoScore != null) {
+  if (allAutoGradable && autoScore != null) {
     const sumQuestionXp = exercise.questions.reduce((s, q) => s + (q.xpReward ?? 0), 0);
     const ratio = maxScore > 0 ? autoScore / maxScore : 0;
     const xp = sumQuestionXp > 0
@@ -411,7 +421,7 @@ export async function submitExerciseAction(formData: FormData) {
 
   return {
     success: true,
-    autoGraded: allChoice,
+    autoGraded: allAutoGradable,
     score: autoScore,
     maxScore,
     submissionId,

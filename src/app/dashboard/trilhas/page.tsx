@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
 import { CheckCircle2, Circle } from "lucide-react";
+import { TrailsStaffEmptyState } from "@/components/creator/trails-staff-empty-state";
 
 export default async function TrilhasPage() {
   const user = await getSessionUser();
@@ -142,15 +143,21 @@ export default async function TrilhasPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Trilhas de aprendizagem"
+        title="Trilhas"
         description="Encadeie missões, exercícios e recompensas em uma jornada gamificada."
       >
-        <CreateTrailForm options={{ missions, exercises, rewards, classes }} />
+        {trails.length > 0 && <CreateTrailForm options={{ missions, exercises, rewards, classes }} />}
       </PageHeader>
 
-      <div className="grid gap-4">
-        {trails.map((trail) => (
-          <Card key={trail.id}>
+      {trails.length === 0 ? (
+        <TrailsStaffEmptyState
+          canCreate={true}
+          trailOptions={{ missions, exercises, rewards, classes }}
+        />
+      ) : (
+        <div className="grid gap-4">
+          {trails.map((trail) => (
+            <Card key={trail.id} className="border-slate-200/80 shadow-sm transition-shadow hover:shadow-md">
             <CardHeader>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
@@ -184,7 +191,8 @@ export default async function TrilhasPage() {
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

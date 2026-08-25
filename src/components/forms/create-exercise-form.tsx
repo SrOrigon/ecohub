@@ -9,7 +9,13 @@ import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import { FormMessage } from "@/components/ui/form-utils";
 import { Modal } from "@/components/ui/modal";
 import type { QuestionType } from "@/lib/exercises";
+import {
+  flashcardBackOption,
+  trueFalseOptions,
+  QUESTION_TYPE_LABELS,
+} from "@/lib/exercises";
 import { ChevronLeft, ChevronRight, PenLine, Sparkles } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface ClassOption {
   id: string;
@@ -25,6 +31,15 @@ type DraftQuestion = {
 };
 
 function newQuestion(type: QuestionType = "choice", points = 2, xpReward = 20): DraftQuestion {
+  if (type === "true_false") {
+    return { prompt: "", type, points, xpReward, options: trueFalseOptions() };
+  }
+  if (type === "flashcard") {
+    return { prompt: "", type, points, xpReward, options: flashcardBackOption() };
+  }
+  if (type === "text") {
+    return { prompt: "", type, points, xpReward, options: [] };
+  }
   return {
     prompt: "",
     type,
@@ -55,15 +70,27 @@ export function CreateExerciseForm({
   classes,
   presets = DEFAULT_PRESETS,
   subjects = [],
+  trigger,
+  hideDefaultTrigger = false,
+  defaultQuestionType = "choice",
+  defaultTitle = "",
+  defaultKind = "homework",
+  modalTitle = "Nova atividade pedagógica",
 }: {
   classes: ClassOption[];
   presets?: Preset[];
   subjects?: string[];
+  trigger?: ReactNode;
+  hideDefaultTrigger?: boolean;
+  defaultQuestionType?: QuestionType;
+  defaultTitle?: string;
+  defaultKind?: "homework" | "exam";
+  modalTitle?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
-  const [kind, setKind] = useState<"homework" | "exam">("homework");
-  const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion()]);
+  const [kind, setKind] = useState<"homework" | "exam">(defaultKind);
+  const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion(defaultQuestionType)]);
   const mid = presets[1] ?? presets[0] ?? DEFAULT_PRESETS[1];
   const [rewards, setRewards] = useState({
     xp: mid.xp,
@@ -106,6 +133,13 @@ export function CreateExerciseForm({
 
   function updateQuestion(i: number, patch: Partial<DraftQuestion>) {
     setQuestions((qs) => qs.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
+  }
+
+  function openModal() {
+    setOpen(true);
+    setStep(1);
+    setKind(defaultKind);
+    setQuestions([newQuestion(defaultQuestionType)]);
   }
 
   function closeModal() {
@@ -161,11 +195,17 @@ export function CreateExerciseForm({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} size="lg" className="gap-2">
-        <PenLine className="h-4 w-4" aria-hidden="true" />
-        Publicar para a turma
-      </Button>
-      <Modal open={open} onClose={closeModal} title="Nova atividade pedagógica">
+      {trigger ? (
+        <button type="button" className="inline-flex border-0 bg-transparent p-0 text-left" onClick={openModal}>
+          {trigger}
+        </button>
+      ) : hideDefaultTrigger ? null : (
+        <Button onClick={openModal} size="lg" className="gap-2">
+          <PenLine className="h-4 w-4" aria-hidden="true" />
+          Publicar para a turma
+        </Button>
+      )}
+      <Modal open={open} onClose={closeModal} title={modalTitle}>
         <div className="mb-4 flex gap-2">
           {[1, 2, 3].map((s) => (
             <div
@@ -185,7 +225,7 @@ export function CreateExerciseForm({
             <>
               <div>
                 <Label htmlFor="title">Título da atividade</Label>
-                <Input id="title" name="title" required placeholder="Ex.: Frações Equivalentes  -  Exercício Semanal" />
+                <Input id="title" name="title" required placeholder="Ex.: Frações Equivalentes  -  Exercício Semanal" defaultValue={defaultTitle} />
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
@@ -394,16 +434,25 @@ export function CreateExerciseForm({
                       </span>
                       <Select
                         value={q.type}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const nextType = e.target.value as QuestionType;
                           updateQuestion(i, {
-                            type: e.target.value as QuestionType,
-                            options: e.target.value === "choice" ? newQuestion("choice").options : [],
-                          })
-                        }
+                            type: nextType,
+                            options:
+                              nextType === "true_false"
+                                ? trueFalseOptions()
+                                : nextType === "flashcard"
+                                  ? flashcardBackOption()
+                                  : nextType === "choice"
+                                    ? newQuestion("choice").options
+                                    : [],
+                          });
+                        }}
                         className="w-full min-w-0 sm:w-auto sm:min-w-[10rem]"
                       >
-                        <option value="choice">Múltipla escolha (Auto-correção)</option>
-                        <option value="text">Resposta aberta (Correção manual)</option>
+                        {(Object.keys(QUESTION_TYPE_LABELS) as QuestionType[]).map((t) => (
+                          <option key={t} value={t}>{QUESTION_TYPE_LABELS[t]}</option>
+                        ))}
                       </Select>
                     </div>
 
@@ -446,7 +495,11 @@ export function CreateExerciseForm({
                   <Input
                     value={q.prompt}
                     onChange={(e) => updateQuestion(i, { prompt: e.target.value })}
-                    placeholder="Digite o enunciado da questão..."
+                    placeholder={
+                      q.type === "flashcard"
+                        ? "Frente do cartão (pergunta ou termo)..."
+                        : "Digite o enunciado da questão..."
+                    }
                     required
                   />
                   {q.type === "choice" && (
@@ -482,6 +535,44 @@ export function CreateExerciseForm({
                           />
                         </div>
                       ))}
+                    </div>
+                  )}
+                  {q.type === "true_false" && (
+                    <div className="space-y-2 pl-2 border-l-2 border-emerald-100">
+                      <p className="text-xs font-medium text-slate-500">Resposta correta:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {q.options.map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() =>
+                              updateQuestion(i, {
+                                options: trueFalseOptions(opt.id === "true" ? "true" : "false"),
+                              })
+                            }
+                            className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                              opt.isCorrect
+                                ? "border-emerald-600 bg-emerald-50 text-emerald-800"
+                                : "border-slate-200 text-slate-600 hover:border-emerald-300"
+                            }`}
+                          >
+                            {opt.text}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {q.type === "flashcard" && (
+                    <div className="space-y-2 pl-2 border-l-2 border-violet-100">
+                      <p className="text-xs font-medium text-slate-500">Verso do cartão (resposta):</p>
+                      <Input
+                        value={q.options[0]?.text ?? ""}
+                        onChange={(e) =>
+                          updateQuestion(i, { options: flashcardBackOption(e.target.value) })
+                        }
+                        placeholder="Resposta ou definição que aparece ao virar o cartão..."
+                        required
+                      />
                     </div>
                   )}
                 </div>

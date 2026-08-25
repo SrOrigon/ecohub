@@ -3,13 +3,20 @@ import { teacherClassWhere } from "@/lib/teacher-classes";
 import type { SessionUser } from "@/lib/auth";
 
 export type ExerciseKind = "homework" | "exam";
-export type QuestionType = "choice" | "text";
+export type QuestionType = "choice" | "text" | "true_false" | "flashcard";
 
 export interface ChoiceOption {
   id: string;
   text: string;
   isCorrect: boolean;
 }
+
+export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
+  choice: "Múltipla escolha",
+  text: "Resposta aberta",
+  true_false: "Verdadeiro ou falso",
+  flashcard: "Flashcard",
+};
 
 export function parseOptions(json: string | null): ChoiceOption[] {
   if (!json) return [];
@@ -19,6 +26,39 @@ export function parseOptions(json: string | null): ChoiceOption[] {
     return [];
   }
 }
+
+export function isSelectableQuestionType(type: string): boolean {
+  return type === "choice" || type === "true_false" || type === "flashcard";
+}
+
+export function isAutoGradableQuestionType(type: string): boolean {
+  return isSelectableQuestionType(type);
+}
+
+export function questionTypeNeedsOptions(type: string): boolean {
+  return type !== "text";
+}
+
+export function trueFalseOptions(correct: "true" | "false" = "true"): ChoiceOption[] {
+  return [
+    { id: "true", text: "Verdadeiro", isCorrect: correct === "true" },
+    { id: "false", text: "Falso", isCorrect: correct === "false" },
+  ];
+}
+
+export function flashcardBackOption(back = ""): ChoiceOption[] {
+  return [{ id: "back", text: back, isCorrect: true }];
+}
+
+export function parseFlashcardBack(options: string | null): string {
+  const opts = parseOptions(options);
+  return opts.find((o) => o.id === "back")?.text ?? opts[0]?.text ?? "";
+}
+
+export const FLASHCARD_SELF_OPTIONS: ChoiceOption[] = [
+  { id: "knew", text: "Eu sabia!", isCorrect: true },
+  { id: "review", text: "Vou revisar", isCorrect: false },
+];
 
 export async function getTeacherClasses(user: SessionUser) {
   if (!user.schoolId) return [];
@@ -193,9 +233,4 @@ export async function getExerciseById(id: string, user: SessionUser) {
 export const EXERCISE_KIND_LABELS: Record<ExerciseKind, string> = {
   homework: "Exercício de casa",
   exam: "Prova",
-};
-
-export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
-  choice: "Múltipla escolha",
-  text: "Resposta digitada",
 };

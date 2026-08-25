@@ -3,6 +3,8 @@ import { getRanking } from "@/lib/queries";
 import { getExerciseSummariesForTeacher, getTeacherClasses } from "@/lib/exercises";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
+import { buildCreatorJourney } from "@/lib/creator-journey";
+import { CreatorHub } from "@/components/creator/creator-hub";
 import { SchoolCalendarWidget } from "@/components/school/school-calendar-widget";
 import { TodayAgendaWidget } from "@/components/school/today-agenda-widget";
 import { getTodayAgendaForTeacher } from "@/lib/today-agenda";
@@ -65,15 +67,36 @@ export default async function TeacherDashboardPage() {
   }
 
   const totalStudents = myClasses.reduce((s, c) => s + c._count.students, 0);
-  const [ranking, exercises, settings, agenda, teacherClasses, dayOverview, pendingMissions] = await Promise.all([
+  const [ranking, exercises, settings, agenda, teacherClasses, dayOverview, pendingMissions, trailCount] = await Promise.all([
     getRanking(user.schoolId, undefined, 5).catch(() => []),
     getExerciseSummariesForTeacher(user).catch(() => []),
-    getSchoolSettings(user.schoolId).catch(() => ({ academic: { subjects: [] }, xp: {}, exercises: {}, missions: {} } as unknown as Awaited<ReturnType<typeof getSchoolSettings>>)),
+    getSchoolSettings(user.schoolId).catch(() => ({ academic: { subjects: [] }, xp: {}, exercises: {}, missions: {}, trails: { enabled: false } } as unknown as Awaited<ReturnType<typeof getSchoolSettings>>)),
     getTodayAgendaForTeacher(user, user.schoolId).catch(() => ({ items: [], dayStatus: null, classCount: 0 })),
     getTeacherClasses(user).catch(() => []),
     user.schoolId ? getTeacherDayOverview(user.schoolId, user.id).catch(() => []) : Promise.resolve([]),
     user.schoolId ? getPendingMissionConfirmations(user.schoolId, user.id).catch(() => []) : Promise.resolve([]),
+    user.schoolId
+      ? prisma.learningTrail.count({ where: { schoolId: user.schoolId } }).catch(() => 0)
+      : Promise.resolve(0),
   ]);
+
+  const [trailMissions, trailExercises, trailRewards] =
+    user.schoolId && settings.trails.enabled
+      ? await Promise.all([
+          prisma.mission.findMany({ where: { schoolId: user.schoolId, isActive: true }, select: { id: true, title: true } }),
+          prisma.exercise.findMany({ where: { schoolId: user.schoolId, isActive: true }, select: { id: true, title: true } }),
+          prisma.reward.findMany({ where: { schoolId: user.schoolId, isActive: true }, select: { id: true, name: true } }),
+        ]).catch(() => [[], [], []] as const)
+      : [[], [], []] as const;
+
+  const creatorJourney = buildCreatorJourney({
+    hasClass: myClasses.length > 0,
+    hasStudents: totalStudents > 0,
+    hasTrail: trailCount > 0,
+  });
+
+  const canCreateTrail =
+    settings.trails.enabled && hasPermission(user.role, settings, "teacher.createTrails");
 
   const pendingItems = pendingMissions.map((pm) => ({
     studentId: pm.studentId,
@@ -97,9 +120,30 @@ export default async function TeacherDashboardPage() {
 
   return (
     <div className="space-y-6">
+      <CreatorHub
+        userName={user.fullName}
+        journey={creatorJourney}
+        classes={teacherClasses}
+        subjects={settings.academic.subjects}
+        exercisePresets={settings.exercises.presets}
+        missionDefaults={{ xp: settings.missions.defaultXp, coins: settings.missions.defaultCoins }}
+        trailOptions={
+          canCreateTrail
+            ? {
+                missions: [...trailMissions],
+                exercises: [...trailExercises],
+                rewards: [...trailRewards],
+                classes: teacherClasses,
+              }
+            : undefined
+        }
+        trailsEnabled={settings.trails.enabled}
+        canCreateTrail={canCreateTrail}
+      />
+
       <PageHeader
-        title="Painel do Professor"
-        description={`Olá, ${user.fullName}! Cadastre turmas e publique tarefas para todos os alunos.`}
+        title="Gestão do dia"
+        description="Turmas, correções e agenda de hoje."
       >
         <div className="flex flex-wrap gap-2">
           {canCreateClass && <CreateClassForm teacherMode />}

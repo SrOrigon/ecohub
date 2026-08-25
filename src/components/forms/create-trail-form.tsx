@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import { createTrailAction } from "@/actions/trails";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import { FormMessage } from "@/components/ui/form-utils";
 import { Modal } from "@/components/ui/modal";
 import { TRAIL_STEP_TYPES } from "@/lib/constants";
-import { Route } from "lucide-react";
+import { Route, Sparkles } from "lucide-react";
 
 type StepDraft = {
   stepType: string;
@@ -25,7 +25,17 @@ interface Options {
   classes: { id: string; name: string }[];
 }
 
-export function CreateTrailForm({ options }: { options: Options }) {
+export function CreateTrailForm({
+  options,
+  trigger,
+  hideDefaultTrigger = false,
+  aiSuggestTitle,
+}: {
+  options: Options;
+  trigger?: ReactNode;
+  hideDefaultTrigger?: boolean;
+  aiSuggestTitle?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [steps, setSteps] = useState<StepDraft[]>([{ stepType: "mission", title: "Etapa 1" }]);
 
@@ -48,12 +58,27 @@ export function CreateTrailForm({ options }: { options: Options }) {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="gap-2">
-        <Route className="h-4 w-4" aria-hidden="true" />
-        Nova trilha
-      </Button>
+      {trigger ? (
+        <button type="button" className="inline-flex border-0 bg-transparent p-0" onClick={() => setOpen(true)}>
+          {trigger}
+        </button>
+      ) : hideDefaultTrigger ? null : (
+        <Button onClick={() => setOpen(true)} className="gap-2">
+          <Route className="h-4 w-4" aria-hidden="true" />
+          Nova trilha
+        </Button>
+      )}
       <Modal open={open} onClose={() => setOpen(false)} title="Criar trilha de aprendizagem">
         <form action={formAction} className="space-y-4">
+          {aiSuggestTitle && (
+            <div className="rounded-xl border border-violet-200 bg-violet-50/80 p-3 text-sm text-violet-900">
+              <p className="flex items-center gap-2 font-semibold">
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                Sugestão da IA
+              </p>
+              <p className="mt-1">{aiSuggestTitle}</p>
+            </div>
+          )}
           <div>
             <Label htmlFor="trail-title">Título</Label>
             <Input id="trail-title" name="title" required placeholder="Ex.: Módulo Frações" />
