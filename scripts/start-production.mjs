@@ -105,17 +105,6 @@ async function bootstrapPostgres() {
   }
 
   try {
-    const { removeDemoStudent } = await import("./demo-student.mjs");
-    await removeDemoStudent(process.env.DATABASE_URL);
-    console.log("[ecohub] Limpeza de conta demo concluída.");
-  } catch (error) {
-    console.warn(
-      "[ecohub] Remoção da conta demo ignorada:",
-      error instanceof Error ? error.message : error
-    );
-  }
-
-  try {
     const { restoreInstitutionalSnapshotIfDegraded } = await import("./institutional-snapshot.mjs");
     const restore = await restoreInstitutionalSnapshotIfDegraded();
     if (restore.restored) {

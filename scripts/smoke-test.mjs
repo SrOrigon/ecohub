@@ -16,7 +16,7 @@ const checks = [
   { name: "Página inicial", path: "/", expectStatus: [200] },
   { name: "Login escola", path: "/login/escola", expectStatus: [200] },
   { name: "Registro escola", path: "/registro/escola", expectStatus: [200] },
-  { name: "Rotas demo removidas", path: "/demo/director", expectStatus: [307, 308] },
+  { name: "Rotas legado /demo bloqueadas", path: "/demo/director", expectStatus: [307, 308] },
 ];
 
 let failed = 0;
