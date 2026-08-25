@@ -21,6 +21,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 import { deleteExerciseAction } from "@/actions/exercises";
+import { SaoCelebrationLayer } from "@/components/celebration/sao-celebration-layer";
+import { saoCelebrationKey } from "@/lib/sao-celebration-storage";
 
 export default async function ExerciseDetailPage({
   params,
@@ -68,6 +70,9 @@ export default async function ExerciseDetailPage({
 
   return (
     <div className="space-y-6">
+      {user.role === "student" && (
+        <SaoCelebrationLayer celebrationKey={saoCelebrationKey("exercise", exercise.id)} />
+      )}
       <PageHeader
         backHref="/dashboard/exercicios"
         backLabel="Voltar aos exercícios"

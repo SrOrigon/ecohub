@@ -31,7 +31,7 @@ function revalidateExercises() {
     "/dashboard/aluno",
     "/dashboard/professor",
     "/dashboard/responsavel",
-  ].forEach((p) => revalidatePath(p));
+  ].forEach((p) => revalidatePath(p, "page"));
 }
 
 type QuestionInput = {
@@ -412,10 +412,7 @@ export async function submitExerciseAction(formData: FormData) {
     );
   }
 
-  revalidateExercises();
-  revalidatePath(`/dashboard/alunos/${student.id}/boletim`);
-  // Não revalidar a página do exercício aqui — o refresh roda após a animação SAO.
-
+  // Sem revalidate aqui — evita trocar a UI antes da animação SAO (router.refresh no cliente).
   await syncTrailAfterAction(student.id, "exercise", exerciseId);
   if (student.classId) await checkAndAwardClassGoals(student.classId);
 

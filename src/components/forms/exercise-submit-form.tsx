@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseFlashcardBack, parseOptions, FLASHCARD_SELF_OPTIONS } from "@/lib/exercises";
 import { useActionState } from "react";
@@ -8,7 +8,7 @@ import { submitExerciseAction } from "@/actions/exercises";
 import { Button } from "@/components/ui/button";
 import { Label, Textarea } from "@/components/ui/form-fields";
 import { FormMessage } from "@/components/ui/form-utils";
-import { SaoVictoryOverlay } from "@/components/celebration/sao-victory-overlay";
+import { markSaoCelebration, saoCelebrationKey } from "@/lib/sao-celebration-storage";
 import { ChevronLeft, ChevronRight, Send, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -108,7 +108,6 @@ export function ExerciseSubmitForm({
   existingAnswers?: Record<string, { textAnswer?: string | null; selectedOptionId?: string | null }>;
   kidFriendly?: boolean;
 }) {
-  const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, { textAnswer?: string; selectedOptionId?: string }>>(
     () => {
       const init: Record<string, { textAnswer?: string; selectedOptionId?: string }> = {};
@@ -123,7 +122,6 @@ export function ExerciseSubmitForm({
     }
   );
   const [step, setStep] = useState(0);
-  const [resultVisible, setResultVisible] = useState(false);
 
   const [state, formAction, pending] = useActionState(
     async (
@@ -138,14 +136,14 @@ export function ExerciseSubmitForm({
     ) => {
       formData.set("exerciseId", exerciseId);
       formData.set("answersJson", JSON.stringify(answers));
-      return (await submitExerciseAction(formData)) ?? null;
+      const result = (await submitExerciseAction(formData)) ?? null;
+      if (result?.success) {
+        markSaoCelebration(saoCelebrationKey("exercise", exerciseId));
+      }
+      return result;
     },
     null
   );
-
-  useEffect(() => {
-    if (state?.success) setResultVisible(false);
-  }, [state?.success]);
 
   const answeredCount = questions.filter((q) => isAnswered(q, answers[q.id])).length;
   const progress = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
@@ -186,27 +184,16 @@ export function ExerciseSubmitForm({
   if (state?.success) {
     const auto = "autoGraded" in state && state.autoGraded;
     return (
-      <>
-        <SaoVictoryOverlay
-          open={!resultVisible}
-          onProceed={() => {
-            setResultVisible(true);
-            router.refresh();
-          }}
-        />
-        {resultVisible && (
-          <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-6 py-8 text-center" role="status">
-            <p className={cn("font-bold text-emerald-800", kidFriendly && "text-xl")}>
-              {auto ? "Corrigido na hora!" : "Respostas enviadas com sucesso!"}
-            </p>
-            <p className="mt-2 text-slate-700">
-              {auto && "score" in state && state.score != null && "maxScore" in state
-                ? `Sua nota: ${Number(state.score).toFixed(1)}/${Number(state.maxScore).toFixed(1)} pts. XP e moedas já foram creditados!`
-                : "Seu professor vai corrigir em breve. Você receberá uma notificação quando a nota sair."}
-            </p>
-          </div>
-        )}
-      </>
+      <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-6 py-8 text-center" role="status">
+        <p className={cn("font-bold text-emerald-800", kidFriendly && "text-xl")}>
+          {auto ? "Corrigido na hora!" : "Respostas enviadas com sucesso!"}
+        </p>
+        <p className="mt-2 text-slate-700">
+          {auto && "score" in state && state.score != null && "maxScore" in state
+            ? `Sua nota: ${Number(state.score).toFixed(1)}/${Number(state.maxScore).toFixed(1)} pts. XP e moedas já foram creditados!`
+            : "Seu professor vai corrigir em breve. Você receberá uma notificação quando a nota sair."}
+        </p>
+      </div>
     );
   }
 

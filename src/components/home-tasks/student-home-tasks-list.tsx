@@ -1,12 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 import { completeHomeTaskAction } from "@/actions/home-tasks";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SaoVictoryOverlay } from "@/components/celebration/sao-victory-overlay";
+import { SaoCelebrationLayer } from "@/components/celebration/sao-celebration-layer";
+import { markSaoCelebration, saoCelebrationKey } from "@/lib/sao-celebration-storage";
 import { Home, CheckCircle2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -23,19 +23,18 @@ type HomeTaskItem = {
 };
 
 function CompleteHomeTaskButton({ taskId, kidFriendly }: { taskId: string; kidFriendly?: boolean }) {
-  const router = useRouter();
-  const [resultVisible, setResultVisible] = useState(false);
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string; success?: boolean } | null, formData: FormData) =>
-      completeHomeTaskAction(formData),
+    async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
+      const result = (await completeHomeTaskAction(formData)) ?? null;
+      if (result?.success) {
+        markSaoCelebration(saoCelebrationKey("homeTask", taskId));
+      }
+      return result;
+    },
     null
   );
 
-  useEffect(() => {
-    if (state?.success) setResultVisible(false);
-  }, [state?.success]);
-
-  if (state?.success && resultVisible) {
+  if (state?.success) {
     return (
       <p className="text-sm font-semibold text-emerald-700" role="status">
         Concluída!
@@ -45,21 +44,10 @@ function CompleteHomeTaskButton({ taskId, kidFriendly }: { taskId: string; kidFr
 
   return (
     <>
-      <SaoVictoryOverlay
-        open={!!state?.success && !resultVisible}
-        onProceed={() => {
-          setResultVisible(true);
-          router.refresh();
-        }}
-      />
+      <SaoCelebrationLayer celebrationKey={saoCelebrationKey("homeTask", taskId)} />
       <form action={formAction}>
         <input type="hidden" name="taskId" value={taskId} />
-        <Button
-          type="submit"
-          size={kidFriendly ? "lg" : "sm"}
-          disabled={pending || (!!state?.success && !resultVisible)}
-          className="gap-1"
-        >
+        <Button type="submit" size={kidFriendly ? "lg" : "sm"} disabled={pending} className="gap-1">
           <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
           {pending ? "..." : "Concluí!"}
         </Button>
