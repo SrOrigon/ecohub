@@ -109,7 +109,6 @@ export async function completeHomeTaskAction(formData: FormData) {
     `/dashboard/responsavel/filho/${student.id}`
   );
 
-  revalidateHomeTasks();
   return { success: true };
 }
 

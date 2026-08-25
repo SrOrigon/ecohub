@@ -24,7 +24,7 @@ type HomeTaskItem = {
 
 function CompleteHomeTaskButton({ taskId, kidFriendly }: { taskId: string; kidFriendly?: boolean }) {
   const router = useRouter();
-  const [victoryOpen, setVictoryOpen] = useState(false);
+  const [resultVisible, setResultVisible] = useState(false);
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) =>
       completeHomeTaskAction(formData),
@@ -32,10 +32,10 @@ function CompleteHomeTaskButton({ taskId, kidFriendly }: { taskId: string; kidFr
   );
 
   useEffect(() => {
-    if (state?.success) setVictoryOpen(true);
+    if (state?.success) setResultVisible(false);
   }, [state?.success]);
 
-  if (state?.success && !victoryOpen) {
+  if (state?.success && resultVisible) {
     return (
       <p className="text-sm font-semibold text-emerald-700" role="status">
         Concluída!
@@ -46,15 +46,20 @@ function CompleteHomeTaskButton({ taskId, kidFriendly }: { taskId: string; kidFr
   return (
     <>
       <SaoVictoryOverlay
-        open={victoryOpen}
+        open={!!state?.success && !resultVisible}
         onProceed={() => {
-          setVictoryOpen(false);
+          setResultVisible(true);
           router.refresh();
         }}
       />
       <form action={formAction}>
         <input type="hidden" name="taskId" value={taskId} />
-        <Button type="submit" size={kidFriendly ? "lg" : "sm"} disabled={pending || victoryOpen} className="gap-1">
+        <Button
+          type="submit"
+          size={kidFriendly ? "lg" : "sm"}
+          disabled={pending || (!!state?.success && !resultVisible)}
+          className="gap-1"
+        >
           <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
           {pending ? "..." : "Concluí!"}
         </Button>

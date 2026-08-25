@@ -414,7 +414,7 @@ export async function submitExerciseAction(formData: FormData) {
 
   revalidateExercises();
   revalidatePath(`/dashboard/alunos/${student.id}/boletim`);
-  revalidatePath(`/dashboard/exercicios/${exerciseId}`);
+  // Não revalidar a página do exercício aqui — o refresh roda após a animação SAO.
 
   await syncTrailAfterAction(student.id, "exercise", exerciseId);
   if (student.classId) await checkAndAwardClassGoals(student.classId);

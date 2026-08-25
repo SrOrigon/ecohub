@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { parseFlashcardBack, parseOptions, FLASHCARD_SELF_OPTIONS } from "@/lib/exercises";
 import { useActionState } from "react";
 import { submitExerciseAction } from "@/actions/exercises";
@@ -107,6 +108,7 @@ export function ExerciseSubmitForm({
   existingAnswers?: Record<string, { textAnswer?: string | null; selectedOptionId?: string | null }>;
   kidFriendly?: boolean;
 }) {
+  const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, { textAnswer?: string; selectedOptionId?: string }>>(
     () => {
       const init: Record<string, { textAnswer?: string; selectedOptionId?: string }> = {};
@@ -121,7 +123,6 @@ export function ExerciseSubmitForm({
     }
   );
   const [step, setStep] = useState(0);
-  const [victoryOpen, setVictoryOpen] = useState(false);
   const [resultVisible, setResultVisible] = useState(false);
 
   const [state, formAction, pending] = useActionState(
@@ -143,10 +144,7 @@ export function ExerciseSubmitForm({
   );
 
   useEffect(() => {
-    if (state?.success) {
-      setVictoryOpen(true);
-      setResultVisible(false);
-    }
+    if (state?.success) setResultVisible(false);
   }, [state?.success]);
 
   const answeredCount = questions.filter((q) => isAnswered(q, answers[q.id])).length;
@@ -190,10 +188,10 @@ export function ExerciseSubmitForm({
     return (
       <>
         <SaoVictoryOverlay
-          open={victoryOpen}
+          open={!resultVisible}
           onProceed={() => {
-            setVictoryOpen(false);
             setResultVisible(true);
+            router.refresh();
           }}
         />
         {resultVisible && (
