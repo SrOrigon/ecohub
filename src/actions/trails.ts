@@ -8,7 +8,9 @@ import { hasPermission } from "@/lib/permissions";
 import { TRAIL_STEP_TYPES } from "@/lib/constants";
 
 function revalidateTrails() {
+  revalidatePath("/dashboard");
   revalidatePath("/dashboard/trilhas");
+  revalidatePath("/dashboard/professor");
   revalidatePath("/dashboard/aluno");
   revalidatePath("/dashboard/gamificacao");
 }

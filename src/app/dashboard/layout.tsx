@@ -82,6 +82,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       features={{ trailsEnabled: settings.trails.enabled }}
       creatorJourney={creatorJourney}
       showPlatformAdmin={isPlatformAdmin(user.email)}
+      schoolId={user.schoolId}
     >
       {children}
     </DashboardShell>

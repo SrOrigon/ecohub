@@ -11,11 +11,7 @@ export function CreatorJourneyProgress({
   compact?: boolean;
 }) {
   if (journey.completed >= journey.total) {
-    return compact ? null : (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-800">
-        Jornada completa! Sua turma está pronta para aprender.
-      </div>
-    );
+    return null;
   }
 
   return (

@@ -8,6 +8,7 @@ import { SchoolThemeProvider } from "@/components/school/school-theme-provider";
 import { LiveMetricsProvider } from "@/components/metrics/live-metrics-provider";
 import { AttentionAlertsProvider } from "@/components/alerts/attention-alerts-provider";
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
+import { CreatorJourneyCelebration } from "@/components/creator/creator-journey-celebration";
 import { isKidFriendlyRole, type UserRole } from "@/lib/constants";
 import type { SchoolSettings } from "@/lib/school-settings";
 
@@ -26,6 +27,7 @@ export function DashboardShell({
   features,
   showPlatformAdmin,
   creatorJourney,
+  schoolId,
 }: {
   children: React.ReactNode;
   userName: string;
@@ -38,18 +40,23 @@ export function DashboardShell({
   features?: { trailsEnabled: boolean };
   showPlatformAdmin?: boolean;
   creatorJourney?: import("@/lib/creator-journey").CreatorJourneySnapshot | null;
+  schoolId?: string | null;
 }) {
   const pathname = usePathname();
   const kidFriendly = isKidFriendlyRole(role);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const needsLiveMetrics = LIVE_METRICS_ROLES.includes(role);
   const needsAttentionAlerts = ATTENTION_ALERTS_ROLES.includes(role);
+  const showCreatorJourneyCelebration = ["admin", "director", "teacher"].includes(role);
 
   const shell = (
         <div
           className="app-shell"
           data-audience={kidFriendly ? "student" : "staff"}
         >
+        {showCreatorJourneyCelebration && (
+          <CreatorJourneyCelebration journey={creatorJourney} schoolId={schoolId} />
+        )}
         <a href="#main-content" className="skip-link">
           Ir para o conteúdo principal
         </a>

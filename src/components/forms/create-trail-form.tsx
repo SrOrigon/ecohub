@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { createTrailAction } from "@/actions/trails";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ export function CreateTrailForm({
   hideDefaultTrigger?: boolean;
   aiSuggestTitle?: string;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [steps, setSteps] = useState<StepDraft[]>([{ stepType: "mission", title: "Etapa 1" }]);
 
@@ -46,6 +48,7 @@ export function CreateTrailForm({
       if (r.success) {
         setOpen(false);
         setSteps([{ stepType: "mission", title: "Etapa 1" }]);
+        router.refresh();
       }
       return r;
     },
