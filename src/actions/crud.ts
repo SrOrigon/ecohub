@@ -187,7 +187,12 @@ async function createStudentActionImpl(formData: FormData) {
     });
   } catch (error) {
     console.error("[crud] createStudentAction falhou:", error);
-    return { error: "Não foi possível cadastrar o aluno. Verifique matrícula e e-mail." };
+    return {
+      error: formatCrudError(
+        error,
+        "Não foi possível cadastrar o aluno. Verifique matrícula e e-mail."
+      ),
+    };
   }
 
   const persisted = await ensureUserPersistedOrFail(

@@ -4,5 +4,17 @@ export async function register() {
     const { ensureDatabaseUrlAtRuntime } = await import("@/lib/database-url-runtime");
     ensureDatabaseUrlAtRuntime();
     ensureAuthSecretAtRuntime();
+
+    if (process.env.NODE_ENV === "production") {
+      try {
+        const { ensurePostgresSchema } = await import("../scripts/ensure-postgres-schema.mjs");
+        await ensurePostgresSchema(process.env.DATABASE_URL);
+      } catch (error) {
+        console.warn(
+          "[ecohub] Patch de schema Postgres no startup ignorado:",
+          error instanceof Error ? error.message : error
+        );
+      }
+    }
   }
 }
