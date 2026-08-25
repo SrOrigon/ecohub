@@ -15,6 +15,19 @@ export async function register() {
           error instanceof Error ? error.message : error
         );
       }
+
+      if (process.env.ECOHUB_DEMO_STUDENT !== "0") {
+        try {
+          const { ensureDemoStudent, logDemoCredentials } = await import("@/lib/demo-student");
+          const result = await ensureDemoStudent();
+          if (result.ok) logDemoCredentials(result);
+        } catch (error) {
+          console.warn(
+            "[ecohub] Conta demo no startup ignorada:",
+            error instanceof Error ? error.message : error
+          );
+        }
+      }
     }
   }
 }
