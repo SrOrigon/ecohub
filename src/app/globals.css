@@ -770,8 +770,46 @@ input[type="radio"] {
 
 /* SAO victory — Congratulations!! overlay */
 .sao-victory-overlay {
-  background: transparent;
+  background:
+    radial-gradient(
+      ellipse 130% 90% at 50% 42%,
+      rgba(12, 36, 72, 0.94) 0%,
+      rgba(4, 14, 32, 0.97) 52%,
+      rgba(0, 0, 0, 0.98) 100%
+    );
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
   pointer-events: auto;
+}
+
+.light .sao-victory-overlay {
+  background:
+    radial-gradient(
+      ellipse 130% 90% at 50% 42%,
+      rgba(18, 52, 98, 0.96) 0%,
+      rgba(6, 18, 42, 0.98) 48%,
+      rgba(0, 0, 0, 0.99) 100%
+    );
+}
+
+.dark .sao-victory-overlay {
+  background:
+    radial-gradient(
+      ellipse 130% 90% at 50% 42%,
+      rgba(8, 28, 58, 0.95) 0%,
+      rgba(2, 10, 24, 0.98) 52%,
+      rgba(0, 0, 0, 0.99) 100%
+    );
+}
+
+.sao-victory-ui {
+  padding: 1.75rem 2rem 2rem;
+  border-radius: 1.25rem;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(140, 210, 255, 0.22);
+  box-shadow:
+    0 0 40px rgba(60, 160, 255, 0.18),
+    0 24px 48px rgba(0, 0, 0, 0.45);
 }
 
 .sao-victory-title {
@@ -779,13 +817,30 @@ input[type="radio"] {
   font-size: clamp(2rem, 7vw, 3.75rem);
   font-weight: 900;
   line-height: 1.05;
-  color: #ffffff;
+  color: #f8fcff;
   letter-spacing: 0.04em;
   text-shadow:
-    0 0 12px rgba(255, 255, 255, 0.95),
-    0 0 28px rgba(120, 220, 255, 0.75),
-    0 0 48px rgba(80, 180, 255, 0.45);
+    0 2px 0 rgba(0, 24, 48, 0.85),
+    0 0 16px rgba(120, 220, 255, 0.95),
+    0 0 36px rgba(80, 180, 255, 0.65),
+    0 0 64px rgba(40, 120, 255, 0.35);
   animation: sao-victory-title-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.light .sao-victory-title {
+  color: #ffffff;
+  text-shadow:
+    0 2px 4px rgba(0, 20, 50, 0.9),
+    0 0 20px rgba(100, 210, 255, 1),
+    0 0 44px rgba(60, 170, 255, 0.75);
+}
+
+.dark .sao-victory-title {
+  color: #eef8ff;
+  text-shadow:
+    0 0 14px rgba(180, 235, 255, 0.95),
+    0 0 32px rgba(100, 200, 255, 0.7),
+    0 0 56px rgba(60, 150, 255, 0.4);
 }
 
 .sao-victory-bar {
@@ -801,10 +856,14 @@ input[type="radio"] {
 .sao-victory-bar-segment {
   flex: 1;
   height: 0.45rem;
-  background: #ffffff;
+  background: linear-gradient(90deg, #b8ecff 0%, #ffffff 50%, #b8ecff 100%);
   box-shadow:
-    0 0 10px rgba(255, 255, 255, 0.85),
-    0 0 22px rgba(120, 220, 255, 0.55);
+    0 0 12px rgba(255, 255, 255, 0.95),
+    0 0 26px rgba(120, 220, 255, 0.65);
+}
+
+.dark .sao-victory-bar-segment {
+  background: linear-gradient(90deg, #7dd3fc 0%, #f0f9ff 50%, #7dd3fc 100%);
 }
 
 .sao-victory-bar-gap {
@@ -814,6 +873,33 @@ input[type="radio"] {
 
 .sao-victory-proceed {
   animation: sao-victory-proceed-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+}
+
+.sao-victory-proceed-btn {
+  border: 2px solid rgba(255, 255, 255, 0.92) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 0 24px rgba(120, 220, 255, 0.4),
+    inset 0 0 12px rgba(255, 255, 255, 0.06);
+}
+
+.sao-victory-proceed-btn:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.light .sao-victory-proceed-btn {
+  border-color: rgba(255, 255, 255, 0.95) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 20, 50, 0.5);
+}
+
+.dark .sao-victory-proceed-btn {
+  border-color: rgba(186, 230, 253, 0.9) !important;
+  color: #f0f9ff !important;
 }
 
 @keyframes sao-victory-title-in {

@@ -51,7 +51,7 @@ export function SaoVictoryOverlay({
           type="button"
           size="lg"
           onClick={onProceed}
-          className="sao-victory-proceed mt-10 min-w-[12rem] rounded-none border-2 border-white/90 bg-transparent px-8 py-3 text-base font-bold uppercase tracking-[0.2em] text-white shadow-[0_0_24px_rgba(120,220,255,0.35)] hover:bg-white/10"
+          className="sao-victory-proceed sao-victory-proceed-btn mt-10 min-w-[12rem] rounded-none px-8 py-3 text-base font-bold uppercase tracking-[0.2em]"
         >
           Prosseguir
         </Button>
