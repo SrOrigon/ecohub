@@ -8,6 +8,9 @@ import { isPostgresUrl } from "./lib/database-mode.mjs";
 const USER_COLUMN_PATCHES = [
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "city" TEXT`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "state" TEXT`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "street" TEXT`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "streetNumber" TEXT`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "addressComplement" TEXT`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "displayName" TEXT`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "username" TEXT`,
   `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phone" TEXT`,

@@ -1094,6 +1094,9 @@ async function createTeacherActionImpl(formData: FormData) {
   const fullName = String(formData.get("fullName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = normalizePassword(String(formData.get("password") ?? ""));
+  const street = String(formData.get("street") ?? "").trim();
+  const streetNumber = String(formData.get("streetNumber") ?? "").trim();
+  const addressComplement = String(formData.get("addressComplement") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
   const state = String(formData.get("state") ?? "").trim().toUpperCase();
 
@@ -1127,6 +1130,9 @@ async function createTeacherActionImpl(formData: FormData) {
         role: "teacher",
         schoolId: user.schoolId,
         avatarUrl,
+        street: street || null,
+        streetNumber: streetNumber || null,
+        addressComplement: addressComplement || null,
         city: city || null,
         state: state || null,
       },

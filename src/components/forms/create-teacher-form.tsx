@@ -6,7 +6,7 @@ import { createTeacherAction } from "@/actions/crud";
 import { runServerAction } from "@/lib/run-server-action";
 import { buildMultipartFormData } from "@/lib/build-multipart-form-data";
 import { AvatarUploadField } from "@/components/forms/avatar-upload-field";
-import { LocationFields } from "@/components/forms/location-fields";
+import { LocationFields, StreetAddressFields } from "@/components/forms/location-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form-fields";
@@ -72,6 +72,9 @@ export function CreateTeacherForm() {
       "fullName",
       "email",
       "password",
+      "street",
+      "streetNumber",
+      "addressComplement",
       "city",
       "state",
       "avatarUrl",
@@ -148,7 +151,11 @@ export function CreateTeacherForm() {
 
           <AvatarUploadField previewName={fullName || "Professor"} />
 
-          <LocationFields />
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-slate-800">Endereço</h3>
+            <StreetAddressFields idPrefix="new-teacher" />
+            <LocationFields idPrefix="new-teacher" />
+          </section>
 
           {displayError && <p className="text-sm text-red-600">{displayError}</p>}
           <Button type="submit" disabled={pending} className="w-full">

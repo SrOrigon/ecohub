@@ -1,7 +1,7 @@
 "use client";
 
 import { AvatarUploadField } from "@/components/forms/avatar-upload-field";
-import { LocationFields } from "@/components/forms/location-fields";
+import { LocationFields, StreetAddressFields } from "@/components/forms/location-fields";
 import { Input } from "@/components/ui/input";
 import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import {
@@ -21,6 +21,9 @@ export type StudentProfileFieldValues = {
   gender?: string | null;
   pronouns?: string | null;
   phone?: string | null;
+  street?: string | null;
+  streetNumber?: string | null;
+  addressComplement?: string | null;
   city?: string | null;
   state?: string | null;
   zipCode?: string | null;
@@ -170,6 +173,7 @@ export function StudentProfileFields({
   showBirthDate = true,
   birthDateRequired = false,
   collapsibleExtras = false,
+  showStreetAddress = false,
 }: {
   idPrefix: string;
   values?: StudentProfileFieldValues;
@@ -179,6 +183,7 @@ export function StudentProfileFields({
   showBirthDate?: boolean;
   birthDateRequired?: boolean;
   collapsibleExtras?: boolean;
+  showStreetAddress?: boolean;
 }) {
   const extras = <ExtraProfileFields idPrefix={idPrefix} values={values} />;
 
@@ -247,6 +252,18 @@ export function StudentProfileFields({
           />
           <p className="mt-1 text-xs text-slate-500">Usada para faixa etária e conformidade dos termos de uso.</p>
         </div>
+      )}
+
+      {showStreetAddress && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold text-slate-800">Endereço</h3>
+          <StreetAddressFields
+            idPrefix={idPrefix}
+            defaultStreet={values?.street ?? ""}
+            defaultStreetNumber={values?.streetNumber ?? ""}
+            defaultComplement={values?.addressComplement ?? ""}
+          />
+        </section>
       )}
 
       {collapsibleExtras ? (

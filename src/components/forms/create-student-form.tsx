@@ -93,6 +93,7 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
               birthDateRequired
               collapsibleExtras
               showUsername={false}
+              showStreetAddress
             />
             <div>
               <Label htmlFor="accountMode">Tipo de conta</Label>

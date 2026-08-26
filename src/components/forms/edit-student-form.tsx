@@ -48,7 +48,7 @@ export function EditStudentForm({
       <Modal open={open} onClose={() => setOpen(false)} title="Editar perfil do aluno" size="lg">
         <form action={formAction} className="space-y-4" encType="multipart/form-data">
           <input type="hidden" name="studentId" value={studentId} />
-          <StudentProfileFields idPrefix="edit-student" values={profile} />
+          <StudentProfileFields idPrefix="edit-student" values={profile} showStreetAddress />
           {accountType !== "pin_only" && (
             <div>
               <Label htmlFor="edit-student-email">E-mail</Label>

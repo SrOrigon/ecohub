@@ -95,7 +95,13 @@ export default async function StudentDetailPage({
   const interests = parseInterests(student.user.interests);
   const socialLinks = parseSocialLinks(student.user.socialLinks);
   const socialEntries = SOCIAL_NETWORKS.filter((network) => socialLinks[network.key]);
-  const locationParts = [student.user.city, student.user.state, student.user.zipCode].filter(Boolean);
+  const locationParts = [
+    [student.user.street, student.user.streetNumber].filter(Boolean).join(", "),
+    student.user.addressComplement,
+    student.user.city,
+    student.user.state,
+    student.user.zipCode,
+  ].filter(Boolean);
   const recordedActivities = student.profileActivities ?? [];
   const timeline = [
     ...recordedActivities.map((activity) => ({
@@ -200,6 +206,9 @@ export default async function StudentDetailPage({
                 gender: student.user.gender,
                 pronouns: student.user.pronouns,
                 phone: student.user.phone,
+                street: student.user.street,
+                streetNumber: student.user.streetNumber,
+                addressComplement: student.user.addressComplement,
                 city: student.user.city,
                 state: student.user.state,
                 zipCode: student.user.zipCode,

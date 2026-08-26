@@ -135,6 +135,9 @@ export type ParsedStudentProfile = {
   bio: string | null;
   interests: string;
   socialLinks: string;
+  street: string | null;
+  streetNumber: string | null;
+  addressComplement: string | null;
   city: string | null;
   state: string | null;
   zipCode: string | null;
@@ -176,6 +179,9 @@ export function parseStudentProfileForm(
       bio,
       interests: stringifyInterests(parseInterests(String(formData.get("interests") ?? ""))),
       socialLinks: stringifySocialLinks(social.links),
+      street: emptyToNull(String(formData.get("street") ?? "")),
+      streetNumber: emptyToNull(String(formData.get("streetNumber") ?? "")),
+      addressComplement: emptyToNull(String(formData.get("addressComplement") ?? "")),
       city: emptyToNull(String(formData.get("city") ?? "")),
       state: state ? state.toUpperCase() : null,
       zipCode: emptyToNull(String(formData.get("zipCode") ?? "")),
