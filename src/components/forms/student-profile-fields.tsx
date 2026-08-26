@@ -165,6 +165,7 @@ export function StudentProfileFields({
   idPrefix,
   values,
   showIdentityCore = true,
+  showUsername = true,
   showAvatar = true,
   showBirthDate = true,
   birthDateRequired = false,
@@ -173,6 +174,7 @@ export function StudentProfileFields({
   idPrefix: string;
   values?: StudentProfileFieldValues;
   showIdentityCore?: boolean;
+  showUsername?: boolean;
   showAvatar?: boolean;
   showBirthDate?: boolean;
   birthDateRequired?: boolean;
@@ -204,19 +206,23 @@ export function StudentProfileFields({
               placeholder="Como o nome aparece no perfil"
             />
           </div>
-          <div>
-            <Label htmlFor={`${idPrefix}-username`}>Nome de usuário (opcional)</Label>
-            <Input
-              id={`${idPrefix}-username`}
-              name="username"
-              defaultValue={values?.username ? `@${values.username}` : ""}
-              placeholder="@usuario"
-              autoComplete="username"
-            />
-            <p className="mt-1 text-xs text-slate-500">
-              Identificador único para menções e busca. Use letras, números ou _.
-            </p>
-          </div>
+          {showUsername && (
+            <div>
+              <Label htmlFor={`${idPrefix}-username`}>Nome de usuário (opcional)</Label>
+              <Input
+                id={`${idPrefix}-username`}
+                name="username"
+                defaultValue={values?.username ? `@${values.username}` : ""}
+                placeholder="@usuario"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Identificador único para menções e busca. Use letras minúsculas, números ou _.
+              </p>
+            </div>
+          )}
         </section>
       )}
 

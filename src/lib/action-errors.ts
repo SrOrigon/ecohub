@@ -26,6 +26,9 @@ export function formatCrudError(error: unknown, fallback: string): string {
   if (message.includes("column") && message.toLowerCase().includes("does not exist")) {
     return "Banco desatualizado. Aguarde 2 minutos após o deploy e tente novamente.";
   }
+  if (message.toLowerCase().includes("enrollmentcode") || message.includes("Student_enrollmentCode")) {
+    return "Matrícula já em uso.";
+  }
 
   return fallback;
 }

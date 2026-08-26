@@ -127,6 +127,9 @@ const ALL_PATCHES = [
 const CRITICAL_COLUMNS = [
   { table: "User", column: "displayName" },
   { table: "User", column: "username" },
+  { table: "User", column: "interests" },
+  { table: "User", column: "socialLinks" },
+  { table: "Student", column: "birthDate" },
   { table: "Student", column: "accessPinHash" },
   { table: "Student", column: "accountType" },
   { table: "Student", column: "status" },

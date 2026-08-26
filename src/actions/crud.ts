@@ -29,7 +29,11 @@ import { hasPermission } from "@/lib/permissions";
 import { validatePassword, hashPassword, normalizePassword, verifyPassword } from "@/lib/security/password-policy";
 import { BCRYPT_ROUNDS } from "@/lib/security/constants";
 import { parseBirthDate } from "@/lib/student-age";
-import { parseStudentProfileForm, STUDENT_ACTIVITY_TYPES } from "@/lib/student-profile";
+import {
+  parseEnrollmentCode,
+  parseStudentProfileForm,
+  STUDENT_ACTIVITY_TYPES,
+} from "@/lib/student-profile";
 import { resolveAvatarFromForm } from "@/lib/avatar";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 import {
@@ -91,7 +95,9 @@ async function createStudentActionImpl(formData: FormData) {
 
   const fullName = String(formData.get("fullName") ?? "").trim();
   let email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const enrollmentCode = String(formData.get("enrollmentCode") ?? "").trim();
+  const enrollmentParsed = parseEnrollmentCode(String(formData.get("enrollmentCode") ?? ""));
+  if ("error" in enrollmentParsed) return { error: enrollmentParsed.error };
+  const enrollmentCode = enrollmentParsed.code;
   const classId = String(formData.get("classId") ?? "") || null;
   const password = normalizePassword(String(formData.get("password") ?? ""));
   const birthDateStr = String(formData.get("birthDate") ?? "").trim();
@@ -100,8 +106,8 @@ async function createStudentActionImpl(formData: FormData) {
   const profile = parseStudentProfileForm(formData);
   if ("error" in profile) return { error: profile.error };
 
-  if (!fullName || !enrollmentCode || !birthDateStr) {
-    return { error: "Nome, matrícula e data de nascimento são obrigatórios." };
+  if (!fullName || !birthDateStr) {
+    return { error: "Nome e data de nascimento são obrigatórios." };
   }
 
   const birthDate = parseBirthDate(birthDateStr);

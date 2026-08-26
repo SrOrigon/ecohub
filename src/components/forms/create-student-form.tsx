@@ -82,8 +82,18 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
             </Button>
           </div>
         ) : (
-          <form action={formAction} className="space-y-4" encType="multipart/form-data">
-            <StudentProfileFields idPrefix="new-student" birthDateRequired collapsibleExtras />
+          <form
+            action={formAction}
+            className="space-y-4"
+            encType="multipart/form-data"
+            autoComplete="off"
+          >
+            <StudentProfileFields
+              idPrefix="new-student"
+              birthDateRequired
+              collapsibleExtras
+              showUsername={false}
+            />
             <div>
               <Label htmlFor="accountMode">Tipo de conta</Label>
               <Select
@@ -98,15 +108,28 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
             </div>
             {accountMode === "standard" ? (
               <div>
-                <Label htmlFor="email">E-mail</Label>
-                <Input id="email" name="email" type="email" required />
+                <Label htmlFor="new-student-email">E-mail</Label>
+                <Input
+                  id="new-student-email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                />
               </div>
             ) : (
               <input type="hidden" name="email" value="" />
             )}
             <div>
               <Label htmlFor="enrollmentCode">Matrícula</Label>
-              <Input id="enrollmentCode" name="enrollmentCode" required />
+              <Input
+                id="enrollmentCode"
+                name="enrollmentCode"
+                required
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore
+              />
             </div>
             <div>
               <Label htmlFor="classId">Turma</Label>
@@ -119,8 +142,16 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
             </div>
             {accountMode === "standard" ? (
               <div>
-                <Label htmlFor="password">Senha inicial</Label>
-                <Input id="password" name="password" type="password" minLength={8} required placeholder="Mín. 8 caracteres, letras e números" />
+                <Label htmlFor="new-student-password">Senha inicial</Label>
+                <Input
+                  id="new-student-password"
+                  name="password"
+                  type="password"
+                  minLength={8}
+                  required
+                  autoComplete="new-password"
+                  placeholder="Mín. 8 caracteres, letras e números"
+                />
               </div>
             ) : (
               <>

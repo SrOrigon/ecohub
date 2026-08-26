@@ -39,7 +39,21 @@ export function normalizeUsername(raw: string): string {
   return raw.trim().replace(/^@+/, "").toLowerCase();
 }
 
+/** Valores típicos de autofill (e-mail, URL) no campo username — ignorar em vez de bloquear cadastro. */
+function looksLikeAutofillUsername(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (!trimmed) return false;
+  if (trimmed.includes("@")) return true;
+  if (/^https?:\/\//i.test(trimmed)) return true;
+  if (trimmed.includes(".") && trimmed.includes("@")) return true;
+  return false;
+}
+
 export function parseUsername(raw: string): { username: string | null; error?: string } {
+  const trimmed = raw.trim();
+  if (!trimmed) return { username: null };
+  if (looksLikeAutofillUsername(trimmed)) return { username: null };
+
   const username = normalizeUsername(raw);
   if (!username) return { username: null };
   if (!USERNAME_RE.test(username)) {
@@ -177,6 +191,24 @@ export function parseOptionalCoord(raw: string, label: string): { value: number 
   const value = Number(trimmed);
   if (!Number.isFinite(value)) return { value: null, error: `${label} inválida.` };
   return { value };
+}
+
+export function normalizeEnrollmentCode(raw: string): string {
+  return raw.trim().replace(/\s+/g, "");
+}
+
+export function parseEnrollmentCode(raw: string): { code: string } | { error: string } {
+  const code = normalizeEnrollmentCode(raw);
+  if (!code) return { error: "Matrícula é obrigatória." };
+  if (code.length < 2 || code.length > 32) {
+    return { error: "Matrícula deve ter entre 2 e 32 caracteres." };
+  }
+  if (!/^[a-zA-Z0-9._-]+$/.test(code)) {
+    return {
+      error: "Matrícula só pode conter letras, números, ponto, hífen ou sublinhado.",
+    };
+  }
+  return { code };
 }
 
 export function emptyToNull(raw: string): string | null {
