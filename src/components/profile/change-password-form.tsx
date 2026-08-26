@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
 import { changePasswordAction } from "@/actions/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,31 +35,18 @@ function PasswordField({
   autoComplete: string;
   onValueChange?: (value: string) => void;
 }) {
-  const [visible, setVisible] = useState(false);
-
   return (
     <div>
       <Label htmlFor={id}>{label}</Label>
-      <div className="relative">
-        <Input
-          id={id}
-          name={name}
-          type={visible ? "text" : "password"}
-          minLength={name === "newPassword" || name === "confirmPassword" ? 6 : undefined}
-          required
-          autoComplete={autoComplete}
-          className="pr-11"
-          onChange={(e) => onValueChange?.(e.target.value)}
-        />
-        <button
-          type="button"
-          onClick={() => setVisible((v) => !v)}
-          className="absolute right-2 top-1/2 flex min-h-9 min-w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
-          aria-label={visible ? "Ocultar senha" : "Mostrar senha"}
-        >
-          {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </button>
-      </div>
+      <Input
+        id={id}
+        name={name}
+        type="password"
+        minLength={name === "newPassword" || name === "confirmPassword" ? 6 : undefined}
+        required
+        autoComplete={autoComplete}
+        onChange={(e) => onValueChange?.(e.target.value)}
+      />
     </div>
   );
 }

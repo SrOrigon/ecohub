@@ -157,7 +157,15 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
               <>
                 <div>
                   <Label htmlFor="pin">PIN personalizado (opcional)</Label>
-                  <Input id="pin" name="pin" inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="6 dígitos  -  gerado se vazio" />
+                  <Input
+                    id="pin"
+                    name="pin"
+                    type="password"
+                    inputMode="numeric"
+                    pattern="\d{6}"
+                    maxLength={6}
+                    placeholder="6 dígitos  -  gerado se vazio"
+                  />
                 </div>
                 <input type="hidden" name="password" value="unused" />
               </>
