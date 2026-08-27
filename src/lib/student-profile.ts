@@ -200,20 +200,12 @@ export function parseOptionalCoord(raw: string, label: string): { value: number 
 }
 
 export function normalizeEnrollmentCode(raw: string): string {
-  return raw.trim().replace(/\s+/g, "");
+  return raw.trim();
 }
 
 export function parseEnrollmentCode(raw: string): { code: string } | { error: string } {
   const code = normalizeEnrollmentCode(raw);
   if (!code) return { error: "Matrícula é obrigatória." };
-  if (code.length < 2 || code.length > 32) {
-    return { error: "Matrícula deve ter entre 2 e 32 caracteres." };
-  }
-  if (!/^[a-zA-Z0-9._-]+$/.test(code)) {
-    return {
-      error: "Matrícula só pode conter letras, números, ponto, hífen ou sublinhado.",
-    };
-  }
   return { code };
 }
 
