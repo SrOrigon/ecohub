@@ -1,34 +1,205 @@
 ---
-description: Usar o MCP Headroom para gerenciar e otimizar contexto em tarefas complexas
+description: Verificar Headroom MCP + proxy em CADA prompt antes de qualquer outra ação
 alwaysApply: true
 ---
 
-# Diretrizes de Contexto e Ferramentas - Headroom MCP
+# Headroom — verificação obrigatória em cada prompt
 
-Você tem acesso ao servidor MCP **headroom** com estas ferramentas:
+Repositório: [headroomlabs-ai/headroom](https://github.com/headroomlabs-ai/headroom)
 
-- `headroom_compress` - comprime conteúdo extenso antes de analisar ou responder
-- `headroom_retrieve` - recupera o original completo pelo hash, quando precisar de detalhes
-- `headroom_stats` - consulta estatísticas de compressão da sessão
+**Objetivo desta rule:** em **todo** prompt do usuário, o agente deve **primeiro** certificar que o Headroom está **totalmente ativo e funcional** (MCP + proxy). Só depois executar a tarefa solicitada.
 
-## Quando usar (obrigatório)
+O Headroom comprime saídas de ferramentas, logs, arquivos e contexto antes de ir para o LLM. Duas camadas:
 
-Use o Headroom **proativamente** nestes casos:
+| Camada | Identificador | Função |
+|--------|---------------|--------|
+| **MCP** | namespace `user-headroom` | Compressão sob demanda pelo agente |
+| **Proxy** | `http://127.0.0.1:8787` | Compressão automática do tráfego LLM |
 
-1. **Explorar estrutura do projeto** - múltiplos arquivos, pastas grandes ou codebase desconhecida
-2. **Analisar arquivos grandes** - schemas, logs, outputs de busca, diffs extensos ou listagens longas
-3. **Tarefas complexas no Agent/Composer** - refatorações, debugging multi-arquivo, revisões amplas
-4. **Antes de responder** - quando o contexto acumulado for grande, comprima primeiro para liberar janela de contexto
+---
 
-## Fluxo recomendado
+## MCP — configuração completa
 
-1. Reúna o conteúdo relevante (buscas, leituras de arquivo, outputs de ferramentas)
-2. Chame `headroom_compress` com o conteúdo consolidado
-3. Trabalhe sobre o texto comprimido; use `headroom_retrieve` se precisar do original integral
-4. Em tarefas longas, consulte `headroom_stats` para acompanhar economia de tokens
+### Arquivo `~/.cursor/mcp.json` (obrigatório)
 
-## Prioridade
+```json
+{
+  "mcpServers": {
+    "headroom": {
+      "command": "C:\\Users\\DeadW\\AppData\\Local\\Python\\pythoncore-3.14-64\\Scripts\\headroom.exe",
+      "args": ["mcp", "serve", "--proxy-url", "http://127.0.0.1:8787"]
+    }
+  }
+}
+```
 
-- **Sempre** priorize comprimir contextos extensos via Headroom antes de raciocinar sobre eles
-- **Não** carregue centenas de linhas brutas na resposta quando a compressão for suficiente
-- **Não** pule o Headroom por preguiça operacional — ele existe para otimizar cada sessão
+> O binário **não** está no PATH do shell. Sempre usar caminho absoluto (`where headroom` ou `command -v headroom`).
+
+### Namespace e ferramentas MCP
+
+| Namespace | Status esperado | Ferramentas |
+|-----------|-----------------|-------------|
+| `user-headroom` | `ready` | `headroom_compress`, `headroom_retrieve`, `headroom_stats`, `mcp_auth` |
+
+### `headroom_compress`
+
+Comprime conteúdo grande antes de raciocinar sobre ele. O original fica em cache e pode ser recuperado via `headroom_retrieve`.
+
+```json
+{
+  "content": "texto, JSON, logs, resultados de busca, código, etc."
+}
+```
+
+Retorno esperado: `compressed`, `hash`, `original_tokens`, `compressed_tokens`, `tokens_saved`, `savings_percent`, `transforms`.
+
+### `headroom_retrieve`
+
+Recupera o conteúdo original por hash (retornado por `headroom_compress` ou marcadores `hash=abc123`).
+
+```json
+{
+  "hash": "abc123"
+}
+```
+
+### `headroom_stats`
+
+Sem parâmetros. Retorna estatísticas da sessão: compressões, tokens economizados, modo (cache/proxy), status do proxy.
+
+### `mcp_auth`
+
+Sem parâmetros. Autentica o servidor MCP quando `namespaceStatus` = `needsAuth`.
+
+### Invocação no Cursor
+
+- Descoberta: `GetDynamicTools` com `namespace: "user-headroom"`
+- Chamada: `CallDynamicTool` com `namespace: "user-headroom"` e `toolName` correspondente
+- **Nunca** simular compressão manualmente quando o MCP está disponível
+
+---
+
+## Proxy — configuração do projeto
+
+| Item | Valor |
+|------|-------|
+| Porta | `8787` |
+| Health | `GET http://127.0.0.1:8787/health` → `status: "healthy"` |
+| Iniciar | `.\scripts\start-headroom-proxy.ps1` ou `headroom proxy --port 8787` |
+| Diagnóstico | `headroom doctor` |
+
+### `.cursor/settings.json` (este projeto — Agent/Composer)
+
+```json
+{
+  "openai.baseUrl": "http://127.0.0.1:8787/p/Projeto-estudante/v1",
+  "anthropic.baseUrl": "http://127.0.0.1:8787/p/Projeto-estudante"
+}
+```
+
+URLs do proxy para Cursor (BYOK no painel Agent / Composer):
+
+- OpenAI-compat: `http://127.0.0.1:8787/p/Projeto-estudante/v1`
+- Anthropic: `http://127.0.0.1:8787/p/Projeto-estudante`
+
+### Composer / Agent (Ctrl+I)
+
+| Camada | Composer 2.5 / Grok (assinatura Cursor) | BYOK (Claude/GPT/Gemini) |
+|--------|----------------------------------------|---------------------------|
+| **MCP** (`headroom_compress`) | ✅ sempre | ✅ sempre |
+| **Proxy** (compressão automática LLM) | ❌ tráfego vai para infra Cursor | ✅ via `openai.baseUrl` / `anthropic.baseUrl` |
+
+- **Tab** (autocomplete) não usa Headroom.
+- Com override BYOK ativo, **Composer 2.5 explícito** pode falhar — use **Auto** ou desligue override (`Ctrl+Shift+0`) para Composer nativo.
+- Para máxima compressão no Agent: modelo **BYOK** + MCP ativo.
+
+---
+
+## CHECKLIST — executar em CADA prompt (sem exceção)
+
+**Antes de ler arquivos, buscar código ou responder ao usuário:**
+
+### Passo 1 — Verificar MCP
+
+1. Chamar `headroom_stats` via `CallDynamicTool` (`user-headroom`).
+2. Confirmar que o namespace responde (não erro de conexão).
+3. Se `namespaceStatus` = `loading` ou sem ferramentas → chamar `mcp_auth` → repetir `headroom_stats`.
+4. Se `namespaceStatus` = `needsAuth` → chamar `mcp_auth` → repetir `headroom_stats`.
+5. Se MCP ainda `loading` após `mcp_auth` → avisar usuário: recarregar MCP no Cursor (Settings → MCP).
+
+### Passo 2 — Verificar proxy
+
+Interpretar o retorno de `headroom_stats` **ou** testar `GET http://127.0.0.1:8787/health`.
+
+Critérios de proxy **funcional**:
+
+- Resposta HTTP 200
+- `status` = `"healthy"`
+- `ready` = `true`
+
+Se proxy **inacessível**:
+
+1. Avisar o usuário explicitamente.
+2. Sugerir: `.\scripts\start-headroom-proxy.ps1` (manter terminal aberto).
+3. Alternativa: `headroom proxy --port 8787`.
+4. Continuar a tarefa usando **só o MCP** (compressão manual via `headroom_compress`), mas informar que o proxy está offline.
+
+### Passo 3 — Declarar status ao usuário (breve)
+
+Quando o checklist termina, reportar em **1 linha** (só se relevante ou se algo falhou):
+
+- ✅ `Headroom OK — MCP ready, proxy healthy (vX.Y.Z)`
+- ⚠️ `Headroom parcial — MCP OK, proxy offline (compressão manual via MCP)`
+- ❌ `Headroom offline — MCP indisponível` + ação de reparo
+
+**Não** pular este checklist por “economia de passos”. É o primeiro passo de **todos** os prompts.
+
+### Passo 4 — Executar a tarefa do usuário
+
+Só após o checklist, prosseguir com o pedido. Comprimir contexto grande conforme abaixo.
+
+---
+
+## Quando comprimir (obrigatório após checklist)
+
+Chamar `headroom_compress` **antes** de raciocinar sobre:
+
+- Exploração de codebase (múltiplos arquivos, buscas longas)
+- Arquivos/schemas/logs com **> ~80 linhas** ou **> ~2.000 tokens**
+- Refatorações, debug multi-arquivo, revisões amplas
+- Várias leituras/buscas acumuladas — consolidar e comprimir uma vez
+
+Fluxo: reunir conteúdo → `headroom_compress` → trabalhar no texto comprimido → `headroom_retrieve` se precisar do original → `headroom_stats` em tarefas longas.
+
+---
+
+## Critérios — “totalmente ativo e funcional”
+
+| Componente | Funcional | Parcial | Offline |
+|------------|-----------|---------|---------|
+| MCP `user-headroom` | `headroom_stats` responde, ferramentas disponíveis | — | namespace erro / sem ferramentas |
+| Proxy | health `healthy` | — | timeout / connection refused |
+| **Total** | MCP + proxy OK | MCP OK, proxy offline | MCP offline |
+
+**Totalmente funcional** = MCP `ready` + proxy `healthy`. Nesse estado, usar MCP para compressão e proxy comprime tráfego LLM automaticamente.
+
+---
+
+## Regras de prioridade
+
+- **Nunca** pule o checklist inicial.
+- **Nunca** carregue centenas de linhas brutas quando `headroom_compress` bastar.
+- **Não** encerre o proxy sem necessidade durante o desenvolvimento.
+- Economia em **USD** pode aparecer como `$0` no Python 3.14; economia de **tokens** via MCP continua válida.
+
+## Diagnóstico rápido
+
+| Sintoma | Ação |
+|---------|------|
+| MCP `loading` / sem ferramentas | Recarregar MCP no Cursor ou `mcp_auth` |
+| Proxy `unreachable` | `.\scripts\start-headroom-proxy.ps1` |
+| `headroom` não encontrado | Corrigir caminho absoluto em `mcp.json` |
+| Instalação ausente | `pip install "headroom-ai[all]"` ou `uv tool install --python 3.13 "headroom-ai[all]"` |
+| Kompress `degraded` no health | Opcional — MCP e proxy funcionam sem o modelo ML |
+
+Docs: [headroom MCP](https://headroom-docs.vercel.app/docs/mcp) · [GitHub](https://github.com/headroomlabs-ai/headroom)

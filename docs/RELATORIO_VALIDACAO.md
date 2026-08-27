@@ -1,94 +1,119 @@
 # Relatório de Validação Ecohub
 
-**Data:** 2026-08-10
-**Ambiente local:** validado
-**Produção:** https://ecohub-production-b513.up.railway.app
+Gerado em: 2026-08-27T21:34:19.407Z
 
----
+## Resumo
 
-## Resumo executivo
+| Métrica | Valor |
+|---------|-------|
+| Etapas OK | 9 |
+| Etapas com falha | 0 |
+| Produção | https://eduhub-production-b513.up.railway.app |
 
-| Fase | Status | Detalhe |
-|------|--------|---------|
-| 1  -  Infraestrutura | ✅ | Build, migrate, backup, health check |
-| 2  -  Piloto automatizado | ✅ | **26/26 testes** passaram |
-| 3  -  Go-live | ✅ | Produção online  -  smoke 4/4, health 200 |
+## Fases executadas
 
----
+- [x] Fase 1  -  migrate
+- [x] Fase 1  -  build
+- [x] Fase 1  -  backup
+- [x] Fase 2  -  seed-pilot
+- [x] Fase 2  -  smoke-local
+- [x] Fase 2  -  health-local
+- [x] Fase 2  -  institutional-suite
+- [x] Fase 3  -  smoke-prod
+- [x] Fase 3  -  health-prod
 
-## Testes automatizados (Fase 2)
+## Health local
 
-### Banco e multi-escola
-- 3 escolas (demo + análise + piloto)
-- 13 usuários
-- Isolamento entre escolas confirmado
-
-### Acadêmico
-- Notas, frequência, exercícios presentes
-
-### Suite institucional
-- Matrículas, autorizações, comunicados OK
-
-### Ecohub IA
-- Aluno **bloqueado** de gerar questões ✅
-- Aluno **bloqueado** de gabarito ✅
-- Professor **pode** gerar questões ✅
-- Explicações pedagógicas para alunos ✅
-
-### Papéis
-- director, secretary, teacher, student, parent  -  todos presentes
-
-### Smoke local
-- `/api/health` → 200, database ok
-- `/`, `/login/escola`, `/registro/escola` → 200
-
----
-
-## Escola piloto criada
-
-| Campo | Valor |
-|-------|-------|
-| Slug | `escola-piloto-validacao` |
-| Diretor | `diretor.piloto@instituicao.local` / `Piloto2026!` |
-| Aluno PIN | matrícula `PILOTO001` / PIN `654321` |
-
----
-
-## Comandos de validação
-
-```bash
-npm run db:migrate      # aplicar migrations
-npm run db:seed         # dados demo
-npm run db:pilot        # escola piloto idempotente
-npm run test:validation # 26 testes Prisma + IA
-npm run test:smoke -- https://sua-url
-npm run test:full       # orquestrador completo
-npm run db:backup       # backup SQLite
+```json
+{
+  "status": "ok",
+  "service": "ecohub",
+  "version": "0.1.0",
+  "uptime": 168.5221513,
+  "checks": {
+    "database": "ok",
+    "authSecret": "ok",
+    "persistence": "ok"
+  },
+  "persistence": {
+    "engine": "sqlite",
+    "databasePath": "./dev.db",
+    "onPersistentVolume": false,
+    "volumeMounted": true,
+    "volumeMountPath": "/data",
+    "volumeSource": "local",
+    "volumeReason": null,
+    "volumeWritable": true,
+    "accounts": {
+      "users": 13,
+      "schools": 3,
+      "persisted": true,
+      "store": "sqlite",
+      "goldenBackup": false
+    },
+    "cache": {
+      "entries": 0,
+      "hits": 0,
+      "misses": 0,
+      "hitRate": 0,
+      "maxEntries": 800,
+      "durable": false,
+      "note": "Cache só acelera leitura. Contas ficam no Postgres."
+    },
+    "lastBackup": null
+  },
+  "mode": "institutional",
+  "responseMs": 5
+}
 ```
 
----
+## Health produção
 
-## Produção (2026-08-10)
-
+```json
+{
+  "status": "ok",
+  "service": "ecohub",
+  "version": "0.1.0",
+  "uptime": 1459.964507793,
+  "checks": {
+    "database": "ok",
+    "authSecret": "ok",
+    "persistence": "ok"
+  },
+  "persistence": {
+    "engine": "postgresql",
+    "databasePath": "postgresql",
+    "onPersistentVolume": true,
+    "volumeMounted": true,
+    "volumeMountPath": null,
+    "volumeSource": "postgresql",
+    "volumeReason": null,
+    "volumeWritable": true,
+    "accounts": {
+      "users": 20,
+      "schools": 1,
+      "persisted": true,
+      "store": "postgresql",
+      "goldenBackup": true
+    },
+    "cache": {
+      "entries": 2,
+      "hits": 7,
+      "misses": 24,
+      "hitRate": 22.6,
+      "maxEntries": 800,
+      "durable": false,
+      "note": "Cache só acelera leitura. Contas ficam no Postgres."
+    },
+    "lastBackup": null
+  },
+  "mode": "institutional",
+  "responseMs": 4
+}
 ```
-GET /api/health → 200
-status: ok, database: ok, authSecret: ok
-Smoke: /, /login/escola, /registro/escola → 200
-URL: https://ecohub-production-b513.up.railway.app
-```
 
----
+## Próximos passos manuais
 
-## Próximos passos (manual)
-
-1. **Instituição real:** `ECOHUB_INSTITUTIONAL=1` + `AUTH_SECRET` forte + volume `/data`
-2. Checklist manual: `docs/GUIA_INSTITUICOES.md` seção 6
-3. Treinamento presencial: `docs/TREINAMENTO_INSTITUICOES.md`
-
----
-
-## Documentação
-
-- `DEPLOY.md`  -  variáveis e Railway
-- `docs/GUIA_INSTITUICOES.md`  -  checklist go-live
-- `docs/TREINAMENTO_INSTITUICOES.md`  -  treinamento 2h
+1. Railway: `ECOHUB_INSTITUTIONAL=1` + `AUTH_SECRET` + volume `/data`
+2. Checklist completo: `docs/GUIA_INSTITUICOES.md`
+3. Treinamento: `docs/TREINAMENTO_INSTITUICOES.md`

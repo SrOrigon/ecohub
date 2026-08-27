@@ -22,16 +22,29 @@ export type FinanceSnapshot = {
   status: FinanceStatus;
   statusLabel: string;
   netAmountCents: number;
-  payments: {
-    id: string;
-    amountCents: number;
-    paidAt: string;
-    dueDate: string;
-    receiptCode: string;
-    awardedXp: number;
-    awardedCoins: number;
-    method: string;
-  }[];
+  payments: FinancePaymentRecord[];
+};
+
+type FinancePaymentInput = {
+  id: string;
+  amountCents: number;
+  paidAt: Date;
+  dueDate: Date;
+  receiptCode: string;
+  awardedXp: number;
+  awardedCoins: number;
+  method: string;
+};
+
+export type FinancePaymentRecord = {
+  id: string;
+  amountCents: number;
+  paidAt: string;
+  dueDate: string;
+  receiptCode: string;
+  awardedXp: number;
+  awardedCoins: number;
+  method: string;
 };
 
 function startOfDay(d: Date) {
@@ -48,16 +61,7 @@ export function buildFinanceSnapshot(input: {
   dueDay: number;
   discountPercent: number;
   expectedInstallments: number;
-  payments: {
-    id: string;
-    amountCents: number;
-    paidAt: Date;
-    dueDate: Date;
-    receiptCode: string;
-    awardedXp: number;
-    awardedCoins: number;
-    method: string;
-  }[];
+  payments: FinancePaymentInput[];
   now?: Date;
 }): FinanceSnapshot {
   const now = input.now ?? new Date();
@@ -112,16 +116,7 @@ export function buildFinanceSnapshot(input: {
   };
 }
 
-function serializePayments(payments: FinanceSnapshot["payments"] extends infer _ ? {
-  id: string;
-  amountCents: number;
-  paidAt: Date;
-  dueDate: Date;
-  receiptCode: string;
-  awardedXp: number;
-  awardedCoins: number;
-  method: string;
-}[] : never) {
+function serializePayments(payments: FinancePaymentInput[]): FinancePaymentRecord[] {
   return payments
     .slice()
     .sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime())

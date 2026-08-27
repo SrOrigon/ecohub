@@ -7,7 +7,7 @@ import { execSync, spawn } from "node:child_process";
 import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const prodUrl = process.argv[2] ?? "https://ecohub-production-b513.up.railway.app";
+const prodUrl = process.argv[2] ?? "https://eduhub-production-b513.up.railway.app";
 const localPort = process.env.VALIDATION_PORT ?? "3099";
 const localUrl = `http://localhost:${localPort}`;
 const reportPath = join("docs", "RELATORIO_VALIDACAO.md");

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "headroom": {
+      "type": "stdio",
+      "command": "C:\\Users\\DeadW\\AppData\\Local\\Python\\pythoncore-3.14-64\\Scripts\\headroom.exe",
+      "args": ["mcp", "serve", "--proxy-url", "http://127.0.0.1:8787"]
+    }
+  }
+}

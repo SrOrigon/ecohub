@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SaoVictoryOverlay } from "@/components/celebration/sao-victory-overlay";
 import {
@@ -14,10 +14,10 @@ export function SaoCelebrationLayer({ celebrationKey }: { celebrationKey: string
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  useLayoutEffect(() => {
-    if (hasSaoCelebration(celebrationKey)) {
-      setOpen(true);
-    }
+  useEffect(() => {
+    if (!hasSaoCelebration(celebrationKey)) return;
+    const frame = requestAnimationFrame(() => setOpen(true));
+    return () => cancelAnimationFrame(frame);
   }, [celebrationKey]);
 
   useEffect(() => {

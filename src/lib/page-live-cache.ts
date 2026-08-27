@@ -87,8 +87,11 @@ export function useCachedLiveSource<T>(options: {
   const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchRef = useRef(fetchSnapshot);
   const versionFnRef = useRef(getVersion);
-  fetchRef.current = fetchSnapshot;
-  versionFnRef.current = getVersion;
+
+  useEffect(() => {
+    fetchRef.current = fetchSnapshot;
+    versionFnRef.current = getVersion;
+  });
 
   const applySnapshot = useCallback(
     (data: T, fromNetwork: boolean) => {
@@ -127,15 +130,24 @@ export function useCachedLiveSource<T>(options: {
   useEffect(() => {
     mountedRef.current = true;
     const cached = readCache<T>(storageKey);
-    if (cached?.data) {
+    if (!cached?.data) {
+      return () => {
+        mountedRef.current = false;
+        if (flashRef.current) clearTimeout(flashRef.current);
+      };
+    }
+
+    const frame = requestAnimationFrame(() => {
+      if (!mountedRef.current) return;
       versionRef.current = versionFnRef.current(cached.data);
       setSnapshot(cached.data);
       setLastUpdated(new Date(cached.savedAt));
       setStatus("live");
-    }
+    });
 
     return () => {
       mountedRef.current = false;
+      cancelAnimationFrame(frame);
       if (flashRef.current) clearTimeout(flashRef.current);
     };
   }, [storageKey]);

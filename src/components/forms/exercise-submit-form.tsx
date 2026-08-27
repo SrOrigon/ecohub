@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { parseFlashcardBack, parseOptions, FLASHCARD_SELF_OPTIONS } from "@/lib/exercises";
 import { useActionState } from "react";
 import { submitExerciseAction } from "@/actions/exercises";

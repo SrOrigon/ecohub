@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sparkles, Route, Plus } from "lucide-react";
+import { Sparkles, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreateTrailForm } from "@/components/forms/create-trail-form";
 

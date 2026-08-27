@@ -27,7 +27,8 @@ export function CreatorJourneyCelebration({
       return;
     }
 
-    setOpen(true);
+    const frame = requestAnimationFrame(() => setOpen(true));
+    return () => cancelAnimationFrame(frame);
   }, [journey, schoolId]);
 
   function handleProceed() {
