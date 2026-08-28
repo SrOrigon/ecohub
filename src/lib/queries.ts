@@ -4,6 +4,7 @@ import type { SessionUser } from "@/lib/auth";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 import { studentInClassFilter } from "@/lib/student-enrollments";
 import { CACHE_TTL, cacheGetOrSet } from "@/lib/runtime-cache";
+import { sortByTextPt, sortStudentsByName, sortTeachersByName } from "@/lib/sort-order";
 
 export const getDashboardStats = cache(async (schoolId: string | null) => {
   const empty = {
@@ -250,11 +251,13 @@ export async function getStudents(schoolId: string | null) {
 
     const avgMap = new Map(gradeAvgs.map((row) => [row.studentId, row._avg.value ?? 0]));
 
-    return students.map((student) => ({
-      ...student,
-      classEnrollments: student.classEnrollments ?? [],
-      grades: avgMap.has(student.id) ? [{ value: avgMap.get(student.id)! }] : [],
-    }));
+    return sortStudentsByName(
+      students.map((student) => ({
+        ...student,
+        classEnrollments: sortByTextPt(student.classEnrollments ?? [], (item) => item.classGroup.name),
+        grades: avgMap.has(student.id) ? [{ value: avgMap.get(student.id)! }] : [],
+      }))
+    );
   } catch (err) {
     console.error("[getStudents] Erro com matrículas — tentando consulta básica:", err);
     try {
@@ -271,11 +274,13 @@ export async function getStudents(schoolId: string | null) {
         }),
       ]);
       const avgMap = new Map(gradeAvgs.map((row) => [row.studentId, row._avg.value ?? 0]));
-      return students.map((student) => ({
-        ...student,
-        classEnrollments: [],
-        grades: avgMap.has(student.id) ? [{ value: avgMap.get(student.id)! }] : [],
-      }));
+      return sortStudentsByName(
+        students.map((student) => ({
+          ...student,
+          classEnrollments: [],
+          grades: avgMap.has(student.id) ? [{ value: avgMap.get(student.id)! }] : [],
+        }))
+      );
     } catch (fallbackErr) {
       console.error("[getStudents] Falha total:", fallbackErr);
       return [];
@@ -346,8 +351,28 @@ export async function getClasses(schoolId: string | null, teacherId?: string) {
     },
   } as const;
 
+  const sortClassRoster = <
+    T extends {
+      name: string;
+      students: Array<{ user: { fullName: string } }>;
+      enrollments?: Array<{ student: { user: { fullName: string } } }>;
+    },
+  >(
+    classes: T[]
+  ) =>
+    sortByTextPt(
+      classes.map((turma) => ({
+        ...turma,
+        students: sortByTextPt(turma.students, (student) => student.user.fullName),
+        enrollments: turma.enrollments
+          ? sortByTextPt(turma.enrollments, (enrollment) => enrollment.student.user.fullName)
+          : turma.enrollments,
+      })),
+      (turma) => turma.name
+    );
+
   try {
-    return await prisma.classGroup.findMany({
+    const classes = await prisma.classGroup.findMany({
       where,
       include: {
         ...baseInclude,
@@ -371,6 +396,7 @@ export async function getClasses(schoolId: string | null, teacherId?: string) {
       },
       orderBy: { name: "asc" },
     });
+    return sortClassRoster(classes);
   } catch (err) {
     console.error("[getClasses] Erro com matrículas — tentando consulta básica:", err);
     try {
@@ -379,7 +405,7 @@ export async function getClasses(schoolId: string | null, teacherId?: string) {
         include: baseInclude,
         orderBy: { name: "asc" },
       });
-      return classes.map((turma) => ({ ...turma, enrollments: [] }));
+      return sortClassRoster(classes.map((turma) => ({ ...turma, enrollments: [] })));
     } catch (fallbackErr) {
       console.error("[getClasses] Falha total:", fallbackErr);
       return [];
@@ -499,10 +525,12 @@ export async function getRecentXp(schoolId: string | null, limit = 10) {
 export async function getTeachers(schoolId: string | null) {
   if (!schoolId) return [];
   try {
-    return await prisma.user.findMany({
+    const teachers = await prisma.user.findMany({
       where: { schoolId, role: "teacher" },
       select: { id: true, fullName: true, email: true, avatarUrl: true, city: true, state: true },
+      orderBy: { fullName: "asc" },
     });
+    return sortTeachersByName(teachers);
   } catch (err) {
     console.error("[getTeachers] Error:", err);
     return [];

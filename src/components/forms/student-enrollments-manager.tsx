@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label, Select } from "@/components/ui/form-fields";
 import { enrollmentStatusLabel } from "@/lib/student-enrollments";
+import { sortByTextPt } from "@/lib/sort-order";
 import { X } from "lucide-react";
 
 type ClassOption = { id: string; name: string };
@@ -36,7 +37,10 @@ export function StudentEnrollmentsManager({
   const [pending, startTransition] = useTransition();
 
   const enrolledClassIds = new Set(enrollments.map((item) => item.classId));
-  const availableClasses = classes.filter((item) => !enrolledClassIds.has(item.id));
+  const availableClasses = sortByTextPt(
+    classes.filter((item) => !enrolledClassIds.has(item.id)),
+    (item) => item.name
+  );
 
   function enroll(classId: string) {
     const formData = new FormData();
@@ -72,7 +76,11 @@ export function StudentEnrollmentsManager({
     });
   }
 
-  const activeEnrollments = enrollments.filter((item) => item.status === "active" || item.status === "locked");
+  const activeEnrollments = sortByTextPt(
+    enrollments.filter((item) => item.status === "active" || item.status === "locked"),
+    (item) => item.classGroup.name
+  );
+  const sortedEnrollments = sortByTextPt(enrollments, (item) => item.classGroup.name);
 
   if (compact) {
     return (
@@ -128,10 +136,10 @@ export function StudentEnrollmentsManager({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        {enrollments.length === 0 ? (
+        {sortedEnrollments.length === 0 ? (
           <p className="text-sm text-slate-500">Nenhuma turma ou curso vinculado a este aluno.</p>
         ) : (
-          enrollments.map((item) => (
+          sortedEnrollments.map((item) => (
             <div
               key={item.classId}
               className="flex flex-col gap-2 rounded-lg border border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between"

@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { UserIdentity } from "@/components/profile/user-identity";
 import { formatUserLocation } from "@/lib/constants";
+import { sortByTextPt, sortTeachersByName } from "@/lib/sort-order";
 import { UserCog, MapPin } from "lucide-react";
 import { redirect } from "next/navigation";
 import { CreateTeacherForm } from "@/components/forms/create-teacher-form";
@@ -23,18 +24,27 @@ export default async function ProfessoresPage() {
   const teachers = await getTeachers(user.schoolId);
   const invites = user.schoolId ? await fetchTeacherInvitesForSchool(user, user.schoolId).catch(() => []) : [];
 
-  const teachersWithClasses = await Promise.all(
-    teachers.map(async (t) => {
-      try {
-        const classes = user.schoolId ? await prisma.classGroup.findMany({
-          where: { schoolId: user.schoolId, ...teacherClassWhere(t.id) },
-          select: { name: true },
-        }) : [];
-        return { ...t, classes, location: formatUserLocation(t.city, t.state) };
-      } catch {
-        return { ...t, classes: [], location: formatUserLocation(t.city, t.state) };
-      }
-    })
+  const teachersWithClasses = sortTeachersByName(
+    await Promise.all(
+      teachers.map(async (t) => {
+        try {
+          const classes = user.schoolId
+            ? await prisma.classGroup.findMany({
+                where: { schoolId: user.schoolId, ...teacherClassWhere(t.id) },
+                select: { name: true },
+                orderBy: { name: "asc" },
+              })
+            : [];
+          return {
+            ...t,
+            classes: sortByTextPt(classes, (turma) => turma.name),
+            location: formatUserLocation(t.city, t.state),
+          };
+        } catch {
+          return { ...t, classes: [], location: formatUserLocation(t.city, t.state) };
+        }
+      })
+    )
   );
 
   return (

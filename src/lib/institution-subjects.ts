@@ -1,5 +1,7 @@
 /** Disciplinas cadastradas manualmente pela instituição  -  fonte única do sistema. */
 
+import { compareTextPt } from "@/lib/sort-order";
+
 export function normalizeSubjectName(value: string): string {
   return value.trim().replace(/\s+/g, " ");
 }
@@ -52,13 +54,13 @@ export function assertInstitutionSubject(
 export function mergeSubjectLists(configured: string[], fromData: string[]): string[] {
   const merged = dedupeSubjects([...configured, ...fromData.filter(Boolean)]);
   if (configured.length === 0) {
-    return merged.sort((a, b) => a.localeCompare(b, "pt-BR"));
+    return merged.sort((a, b) => compareTextPt(a, b));
   }
   const order = new Map(configured.map((subject, index) => [subject.toLocaleLowerCase("pt-BR"), index]));
   return merged.sort((a, b) => {
     const ia = order.get(a.toLocaleLowerCase("pt-BR")) ?? 999;
     const ib = order.get(b.toLocaleLowerCase("pt-BR")) ?? 999;
     if (ia !== ib) return ia - ib;
-    return a.localeCompare(b, "pt-BR");
+    return compareTextPt(a, b);
   });
 }

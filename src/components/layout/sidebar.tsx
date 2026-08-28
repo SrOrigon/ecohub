@@ -54,6 +54,7 @@ import { logoutAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import { useNotificationsOptional } from "@/components/notifications/notifications-provider";
+import { sortByTextPt } from "@/lib/sort-order";
 
 type NavItem = {
   href: string;
@@ -168,7 +169,19 @@ function NavLinks({
   showPlatformAdmin?: boolean;
   onNavigate?: () => void;
 }) {
-  const items = filterNav(role, permissions, features);
+  let items = filterNav(role, permissions, features);
+  if (showPlatformAdmin) {
+    items = [
+      ...items,
+      {
+        href: "/dashboard/plataforma",
+        label: "Plataforma",
+        icon: Shield,
+        roles: [role],
+      },
+    ];
+  }
+  items = sortByTextPt(items, (item) => item.label);
   const notifications = useNotificationsOptional();
   const unreadCount = notifications?.unreadCount ?? 0;
 
@@ -199,20 +212,6 @@ function NavLinks({
           </Link>
         );
       })}
-      {showPlatformAdmin && (
-        <Link
-          href="/dashboard/plataforma"
-          onClick={onNavigate}
-          className={cn(
-            "nav-link flex items-center gap-3 rounded-xl font-medium",
-            kidFriendly ? "min-h-12 px-4 py-3 text-base" : "min-h-11 px-3 py-2.5 text-sm",
-            pathname.startsWith("/dashboard/plataforma") ? "nav-link-active" : "nav-link-inactive"
-          )}
-        >
-          <Shield className={cn("shrink-0", kidFriendly ? "h-6 w-6" : "h-5 w-5")} aria-hidden="true" />
-          <span className="truncate">Plataforma</span>
-        </Link>
-      )}
     </nav>
   );
 }

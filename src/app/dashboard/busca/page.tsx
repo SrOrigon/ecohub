@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { UserIdentity } from "@/components/profile/user-identity";
 import { Search } from "lucide-react";
+import { sortByTextPt, sortStudentsByName } from "@/lib/sort-order";
 
 export default async function BuscaPage({
   searchParams,
@@ -46,11 +47,14 @@ export default async function BuscaPage({
 
   if (user.role === "parent") {
     const children = await fetchParentChildren(user, user.id);
-    const matches = children.filter(({ student }) => {
-      const name = student.user.fullName.toLowerCase();
-      const code = student.enrollmentCode.toLowerCase();
-      return name.includes(query) || code.includes(query);
-    });
+    const matches = sortByTextPt(
+      children.filter(({ student }) => {
+        const name = student.user.fullName.toLowerCase();
+        const code = student.enrollmentCode.toLowerCase();
+        return name.includes(query) || code.includes(query);
+      }),
+      ({ student }) => student.user.fullName
+    );
 
     return (
       <div className="space-y-6">
@@ -156,10 +160,12 @@ export default async function BuscaPage({
         ],
       },
       include: { user: true, classGroup: true },
+      orderBy: { user: { fullName: "asc" } },
       take: 10,
     }),
     prisma.classGroup.findMany({
       where: { schoolId: user.schoolId, name: { contains: query } },
+      orderBy: { name: "asc" },
       take: 10,
     }),
     prisma.mission.findMany({
@@ -167,21 +173,25 @@ export default async function BuscaPage({
         schoolId: user.schoolId,
         OR: [{ title: { contains: query } }, { description: { contains: query } }],
       },
+      orderBy: { title: "asc" },
       take: 10,
     }),
   ]);
 
-  const total = students.length + classes.length + missions.length;
+  const sortedStudents = sortStudentsByName(students);
+  const sortedClasses = sortByTextPt(classes, (turma) => turma.name);
+  const sortedMissions = sortByTextPt(missions, (mission) => mission.title);
+  const total = sortedStudents.length + sortedClasses.length + sortedMissions.length;
 
   return (
     <div className="space-y-6">
       <PageHeader title={`Resultados para "${q}"`} description={`${total} resultado(s) encontrado(s)`} />
 
-      {students.length > 0 && (
+      {sortedStudents.length > 0 && (
         <Card>
           <CardHeader><CardTitle>Alunos</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {students.map((s) => (
+            {sortedStudents.map((s) => (
               <Link
                 key={s.id}
                 href={`/dashboard/alunos/${s.id}`}
@@ -200,11 +210,11 @@ export default async function BuscaPage({
         </Card>
       )}
 
-      {classes.length > 0 && (
+      {sortedClasses.length > 0 && (
         <Card>
           <CardHeader><CardTitle>Turmas</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {classes.map((c) => (
+            {sortedClasses.map((c) => (
               <Link
                 key={c.id}
                 href="/dashboard/turmas"
@@ -217,11 +227,11 @@ export default async function BuscaPage({
         </Card>
       )}
 
-      {missions.length > 0 && (
+      {sortedMissions.length > 0 && (
         <Card>
           <CardHeader><CardTitle>Missões</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {missions.map((m) => (
+            {sortedMissions.map((m) => (
               <Link
                 key={m.id}
                 href="/dashboard/gamificacao"

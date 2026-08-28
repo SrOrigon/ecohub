@@ -3,6 +3,7 @@ import { getSchoolSettings } from "@/lib/school-settings";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubjectsManagerForm } from "@/components/school/subjects-manager-form";
+import { sortStringsPt } from "@/lib/sort-order";
 import { redirect } from "next/navigation";
 
 export default async function DisciplinasPage() {
@@ -13,7 +14,7 @@ export default async function DisciplinasPage() {
   const settings = await getSchoolSettings(user.schoolId);
   const canManage = user.role === "admin" || user.role === "director";
 
-  const subjects = settings?.academic?.subjects ?? [];
+  const subjects = sortStringsPt(settings?.academic?.subjects ?? []);
 
   return (
     <div className="space-y-6">
