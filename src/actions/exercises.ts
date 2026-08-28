@@ -49,11 +49,27 @@ function parseQuestionsJson(raw: string): QuestionInput[] {
     if (!Array.isArray(parsed) || parsed.length === 0) {
       throw new Error("Adicione pelo menos uma questão.");
     }
-    for (const q of parsed) {
-      if (!q.prompt?.trim()) throw new Error("Todas as questões precisam de enunciado.");
-    }
+    parsed.forEach((q, index) => {
+      if (!q.prompt?.trim()) {
+        throw new Error(`A questão ${index + 1} precisa de enunciado.`);
+      }
+      if (q.type === "choice") {
+        const options = q.options ?? [];
+        const filled = options.filter((option) => option.text?.trim());
+        if (filled.length < 2) {
+          throw new Error(`A questão ${index + 1} precisa de pelo menos duas alternativas.`);
+        }
+        if (!options.some((option) => option.isCorrect && option.text?.trim())) {
+          throw new Error(`Marque a alternativa correta na questão ${index + 1}.`);
+        }
+      }
+      if (q.type === "flashcard" && !q.options?.[0]?.text?.trim()) {
+        throw new Error(`Informe o verso do cartão na questão ${index + 1}.`);
+      }
+    });
     return parsed;
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message) throw error;
     throw new Error("Formato de questões inválido.");
   }
 }

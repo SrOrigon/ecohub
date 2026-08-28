@@ -66,6 +66,19 @@ const EXAM_PRESETS: Preset[] = [
   { label: "Simulado Oficial", xp: 250, coins: 60, points: 10 },
 ];
 
+function parseBoundedInt(value: string, fallback = 0) {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return fallback;
+  const parsed = parseInt(digits, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function parseBoundedFloat(value: string, fallback = 0) {
+  const normalized = value.replace(/[^\d.,]/g, "").replace(",", ".");
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export function CreateExerciseForm({
   classes,
   presets = DEFAULT_PRESETS,
@@ -90,6 +103,13 @@ export function CreateExerciseForm({
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [kind, setKind] = useState<"homework" | "exam">(defaultKind);
+  const [basics, setBasics] = useState({
+    title: defaultTitle,
+    classId: "",
+    description: "",
+    dueDate: "",
+  });
+  const [clientError, setClientError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion(defaultQuestionType)]);
   const mid = presets[1] ?? presets[0] ?? DEFAULT_PRESETS[1];
   const [rewards, setRewards] = useState({
@@ -115,6 +135,11 @@ export function CreateExerciseForm({
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
+      formData.set("title", basics.title.trim());
+      formData.set("classId", basics.classId);
+      formData.set("kind", kind);
+      formData.set("description", basics.description.trim());
+      formData.set("dueDate", basics.dueDate);
       formData.set("questionsJson", JSON.stringify(questions));
       formData.set("xpReward", String(rewards.xp));
       formData.set("coinReward", String(rewards.coins));
@@ -123,6 +148,8 @@ export function CreateExerciseForm({
       if (result.success) {
         setOpen(false);
         setStep(1);
+        setBasics({ title: defaultTitle, classId: "", description: "", dueDate: "" });
+        setClientError(null);
         setQuestions([newQuestion()]);
         setRewards({ xp: mid.xp, coins: mid.coins, maxPoints: mid.points });
       }
@@ -130,6 +157,69 @@ export function CreateExerciseForm({
     },
     null
   );
+
+  function validateStep1() {
+    if (!basics.title.trim()) return "Informe o título da atividade.";
+    if (!basics.classId) return "Selecione uma turma.";
+    return null;
+  }
+
+  function validateQuestions() {
+    if (questions.length === 0) return "Adicione pelo menos uma questão.";
+    for (let index = 0; index < questions.length; index += 1) {
+      const question = questions[index];
+      if (!question.prompt.trim()) {
+        return `A questão ${index + 1} precisa de enunciado.`;
+      }
+      if (question.type === "choice") {
+        const filledOptions = question.options.filter((option) => option.text.trim());
+        if (filledOptions.length < 2) {
+          return `A questão ${index + 1} precisa de pelo menos duas alternativas.`;
+        }
+        if (!question.options.some((option) => option.isCorrect && option.text.trim())) {
+          return `Marque a alternativa correta na questão ${index + 1}.`;
+        }
+      }
+      if (question.type === "flashcard" && !question.options[0]?.text.trim()) {
+        return `Informe o verso do cartão na questão ${index + 1}.`;
+      }
+    }
+    return null;
+  }
+
+  function goToNextStep() {
+    if (step === 1) {
+      const error = validateStep1();
+      if (error) {
+        setClientError(error);
+        return;
+      }
+    }
+    if (step === 2 && (rewards.maxPoints <= 0 || Number.isNaN(rewards.maxPoints))) {
+      setClientError("Informe uma pontuação máxima válida.");
+      return;
+    }
+    setClientError(null);
+    setStep((current) => current + 1);
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const step1Error = validateStep1();
+    if (step1Error) {
+      setClientError(step1Error);
+      setStep(1);
+      return;
+    }
+    const questionsError = validateQuestions();
+    if (questionsError) {
+      setClientError(questionsError);
+      return;
+    }
+    setClientError(null);
+    const formData = new FormData(event.currentTarget);
+    formAction(formData);
+  }
 
   function updateQuestion(i: number, patch: Partial<DraftQuestion>) {
     setQuestions((qs) => qs.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
@@ -139,12 +229,15 @@ export function CreateExerciseForm({
     setOpen(true);
     setStep(1);
     setKind(defaultKind);
+    setBasics({ title: defaultTitle, classId: "", description: "", dueDate: "" });
+    setClientError(null);
     setQuestions([newQuestion(defaultQuestionType)]);
   }
 
   function closeModal() {
     setOpen(false);
     setStep(1);
+    setClientError(null);
   }
 
   function distributeXpEvenly() {
@@ -220,12 +313,19 @@ export function CreateExerciseForm({
           {step === 1 ? "Informações básicas" : step === 2 ? "Configurar Pontuação & Gamificação" : "Elaboração de Questões"}
         </p>
 
-        <form action={formAction} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {step === 1 && (
             <>
               <div>
                 <Label htmlFor="title">Título da atividade</Label>
-                <Input id="title" name="title" required placeholder="Ex.: Frações Equivalentes  -  Exercício Semanal" defaultValue={defaultTitle} />
+                <Input
+                  id="title"
+                  name="title"
+                  required
+                  placeholder="Ex.: Frações Equivalentes  -  Exercício Semanal"
+                  value={basics.title}
+                  onChange={(event) => setBasics((current) => ({ ...current, title: event.target.value }))}
+                />
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
@@ -248,7 +348,13 @@ export function CreateExerciseForm({
                 </div>
                 <div>
                   <Label htmlFor="classId">Turma</Label>
-                  <Select id="classId" name="classId" required>
+                  <Select
+                    id="classId"
+                    name="classId"
+                    required
+                    value={basics.classId}
+                    onChange={(event) => setBasics((current) => ({ ...current, classId: event.target.value }))}
+                  >
                     <option value="">Selecione a turma...</option>
                     {classes.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
@@ -263,11 +369,19 @@ export function CreateExerciseForm({
                   name="description"
                   placeholder="Explique o objetivo, critérios de correção ou materiais de apoio necessários..."
                   rows={3}
+                  value={basics.description}
+                  onChange={(event) => setBasics((current) => ({ ...current, description: event.target.value }))}
                 />
               </div>
               <div>
                 <Label htmlFor="dueDate">Prazo de entrega</Label>
-                <Input id="dueDate" name="dueDate" type="datetime-local" />
+                <Input
+                  id="dueDate"
+                  name="dueDate"
+                  type="datetime-local"
+                  value={basics.dueDate}
+                  onChange={(event) => setBasics((current) => ({ ...current, dueDate: event.target.value }))}
+                />
               </div>
             </>
           )}
@@ -308,7 +422,7 @@ export function CreateExerciseForm({
                     type="number"
                     step="0.5"
                     value={rewards.maxPoints}
-                    onChange={(e) => setRewards((r) => ({ ...r, maxPoints: parseFloat(e.target.value) || 10 }))}
+                    onChange={(e) => setRewards((r) => ({ ...r, maxPoints: parseBoundedFloat(e.target.value, 10) }))}
                     required
                   />
                 </div>
@@ -319,7 +433,7 @@ export function CreateExerciseForm({
                     name="xpReward"
                     type="number"
                     value={rewards.xp}
-                    onChange={(e) => setRewards((r) => ({ ...r, xp: parseInt(e.target.value, 10) || 0 }))}
+                    onChange={(e) => setRewards((r) => ({ ...r, xp: parseBoundedInt(e.target.value, 0) }))}
                   />
                 </div>
                 <div>
@@ -329,7 +443,7 @@ export function CreateExerciseForm({
                     name="coinReward"
                     type="number"
                     value={rewards.coins}
-                    onChange={(e) => setRewards((r) => ({ ...r, coins: parseInt(e.target.value, 10) || 0 }))}
+                    onChange={(e) => setRewards((r) => ({ ...r, coins: parseBoundedInt(e.target.value, 0) }))}
                   />
                 </div>
               </div>
@@ -350,6 +464,15 @@ export function CreateExerciseForm({
 
           {step === 3 && (
             <div className="space-y-4">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                <p>
+                  <strong>Título:</strong> {basics.title.trim() || "—"}
+                </p>
+                <p>
+                  <strong>Turma:</strong>{" "}
+                  {classes.find((item) => item.id === basics.classId)?.name ?? "—"}
+                </p>
+              </div>
               <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 p-3">
                 <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-indigo-900">
                   <Sparkles className="h-4 w-4 text-indigo-600" aria-hidden="true" />
@@ -464,7 +587,9 @@ export function CreateExerciseForm({
                           step="0.5"
                           className="h-7 w-16 text-center text-xs font-bold"
                           value={q.points}
-                          onChange={(e) => updateQuestion(i, { points: parseFloat(e.target.value) || 0 })}
+                          onChange={(e) => updateQuestion(i, { points: parseBoundedFloat(e.target.value, 0) })}
+                          min={0}
+                          inputMode="decimal"
                           aria-label="Pontos da questão"
                         />
                       </div>
@@ -474,7 +599,9 @@ export function CreateExerciseForm({
                           type="number"
                           className="h-7 w-16 text-center text-xs font-bold"
                           value={q.xpReward}
-                          onChange={(e) => updateQuestion(i, { xpReward: parseInt(e.target.value, 10) || 0 })}
+                          onChange={(e) => updateQuestion(i, { xpReward: parseBoundedInt(e.target.value, 0) })}
+                          min={0}
+                          inputMode="numeric"
                           aria-label="XP da questão"
                         />
                       </div>
@@ -580,16 +707,29 @@ export function CreateExerciseForm({
             </div>
           )}
 
-          <FormMessage message={state} />
+          {(clientError || state?.error) && (
+            <p className="text-sm text-red-600" role="alert">
+              {clientError ?? state?.error}
+            </p>
+          )}
+          {state?.success && !clientError && <FormMessage message={state} />}
 
           <div className="mobile-action-row pt-2">
             {step > 1 && (
-              <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)} className="w-full gap-1 sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setClientError(null);
+                  setStep((current) => current - 1);
+                }}
+                className="w-full gap-1 sm:w-auto"
+              >
                 <ChevronLeft className="h-4 w-4" /> Voltar
               </Button>
             )}
             {step < 3 ? (
-              <Button type="button" className="w-full gap-1 sm:ml-auto sm:w-auto" onClick={() => setStep((s) => s + 1)}>
+              <Button type="button" className="w-full gap-1 sm:ml-auto sm:w-auto" onClick={goToNextStep}>
                 Continuar <ChevronRight className="h-4 w-4" />
               </Button>
             ) : (
