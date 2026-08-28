@@ -2,11 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { enrollStudentInClassAction, updateStudentEnrollmentStatusAction } from "@/actions/student-enrollments";
+import {
+  enrollStudentInClassAction,
+  removeStudentFromClassAction,
+  updateStudentEnrollmentStatusAction,
+} from "@/actions/student-enrollments";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label, Select } from "@/components/ui/form-fields";
 import { enrollmentStatusLabel } from "@/lib/student-enrollments";
+import { X } from "lucide-react";
 
 type ClassOption = { id: string; name: string };
 
@@ -54,6 +59,19 @@ export function StudentEnrollmentsManager({
     });
   }
 
+  function remove(classId: string, className: string) {
+    const confirmed = window.confirm(`Remover este aluno da turma "${className}"?`);
+    if (!confirmed) return;
+
+    const formData = new FormData();
+    formData.set("studentId", studentId);
+    formData.set("classId", classId);
+    startTransition(async () => {
+      await removeStudentFromClassAction(formData);
+      router.refresh();
+    });
+  }
+
   const activeEnrollments = enrollments.filter((item) => item.status === "active" || item.status === "locked");
 
   if (compact) {
@@ -64,8 +82,22 @@ export function StudentEnrollmentsManager({
             <span className="text-sm text-slate-400">Sem turma</span>
           ) : (
             activeEnrollments.map((item) => (
-              <Badge key={item.classId} variant="secondary" className="text-xs">
-                {item.classGroup.name}
+              <Badge
+                key={item.classId}
+                variant="secondary"
+                className="inline-flex items-center gap-1 pr-1 text-xs"
+              >
+                <span>{item.classGroup.name}</span>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => remove(item.classId, item.classGroup.name)}
+                  className="rounded p-0.5 text-slate-500 hover:bg-slate-200 hover:text-red-600 disabled:opacity-50"
+                  aria-label={`Remover de ${item.classGroup.name}`}
+                  title={`Remover de ${item.classGroup.name}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </Badge>
             ))
           )}
@@ -149,9 +181,9 @@ export function StudentEnrollmentsManager({
                       variant="outline"
                       className="text-red-600"
                       disabled={pending}
-                      onClick={() => updateStatus(item.classId, "cancelled")}
+                      onClick={() => remove(item.classId, item.classGroup.name)}
                     >
-                      Cancelar
+                      Remover
                     </Button>
                   </>
                 )}

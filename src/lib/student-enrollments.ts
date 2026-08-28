@@ -89,6 +89,31 @@ export async function setStudentEnrollmentStatus(
   await syncPrimaryClassId(studentId);
 }
 
+/** Remove o aluno da turma (cancela matrícula sem apagar histórico). */
+export async function removeStudentFromClass(studentId: string, classId: string) {
+  const enrollment = await prisma.studentClassEnrollment.findUnique({
+    where: { studentId_classId: { studentId, classId } },
+    select: { id: true },
+  });
+
+  if (enrollment) {
+    await setStudentEnrollmentStatus(studentId, classId, "cancelled");
+    return;
+  }
+
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { classId: true },
+  });
+  if (student?.classId === classId) {
+    await prisma.student.update({
+      where: { id: studentId },
+      data: { classId: null },
+    });
+    await syncPrimaryClassId(studentId);
+  }
+}
+
 export async function getStudentActiveEnrollments(studentId: string) {
   return prisma.studentClassEnrollment.findMany({
     where: { studentId, ...activeEnrollmentWhere() },
