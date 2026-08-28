@@ -102,7 +102,7 @@ export function CreateExerciseForm({
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
       formData.set("title", basics.title.trim());
-      formData.set("classId", classFilter);
+      formData.set("preferredClassId", classFilter);
       formData.set("kind", kind);
       formData.set("description", basics.description.trim());
       formData.set("dueDate", basics.dueDate);

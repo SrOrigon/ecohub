@@ -4,7 +4,12 @@ import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { assertClassInScope } from "@/lib/tenant-guards";
-import { studentsInClassWhere } from "@/lib/student-enrollments";
+import {
+  activeEnrollmentWhere,
+  ensureStudentsHavePrimaryClass,
+  formatStudentClasses,
+  studentsInClassWhere,
+} from "@/lib/student-enrollments";
 import { studentInTeacherClassWhere } from "@/lib/teacher-classes";
 import { sortStudentsByName } from "@/lib/sort-order";
 
@@ -13,60 +18,65 @@ export type ClassStudentExerciseOption = {
   fullName: string;
   enrollmentCode: string;
   classLabel: string | null;
+  primaryClassId: string | null;
+  hasClass: boolean;
   average: number | null;
   lowPerformance: boolean;
 };
-
-function studentClassLabel(student: {
-  classGroup: { name: string } | null;
-  classEnrollments: Array<{ classGroup: { name: string } }>;
-}) {
-  return student.classGroup?.name ?? student.classEnrollments[0]?.classGroup.name ?? null;
-}
-
-function mapStudentRows(
-  students: Array<{
-    id: string;
-    enrollmentCode: string;
-    user: { fullName: string };
-    grades: Array<{ value: number }>;
-    classGroup: { name: string } | null;
-    classEnrollments: Array<{ classGroup: { name: string } }>;
-  }>
-) {
-  return sortStudentsByName(students).map((student) => {
-    const values = student.grades.map((grade) => grade.value).filter((value) => Number.isFinite(value));
-    const average =
-      values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
-    return {
-      id: student.id,
-      fullName: student.user.fullName,
-      enrollmentCode: student.enrollmentCode,
-      classLabel: studentClassLabel(student),
-      average,
-      lowPerformance: average !== null && average < 6,
-    } satisfies ClassStudentExerciseOption;
-  });
-}
 
 async function fetchStudents(where: Prisma.StudentWhereInput) {
   const students = await prisma.student.findMany({
     where,
     select: {
       id: true,
+      classId: true,
       enrollmentCode: true,
       user: { select: { fullName: true } },
       grades: { select: { value: true } },
       classGroup: { select: { name: true } },
       classEnrollments: {
-        where: { status: { in: ["active", "locked"] } },
-        select: { classGroup: { select: { name: true } } },
-        orderBy: { enrolledAt: "asc" },
-        take: 1,
+        where: activeEnrollmentWhere(),
+        select: { classId: true, classGroup: { select: { name: true } } },
+        orderBy: [{ enrolledAt: "asc" }, { createdAt: "asc" }],
       },
     },
   });
-  return mapStudentRows(students);
+
+  await ensureStudentsHavePrimaryClass(students.map((student) => student.id));
+
+  const syncedClassIds = new Map(
+    (
+      await prisma.student.findMany({
+        where: { id: { in: students.map((student) => student.id) } },
+        select: { id: true, classId: true },
+      })
+    ).map((student) => [student.id, student.classId] as const)
+  );
+
+  const refreshed = students.map((student) => {
+    const primaryClassId =
+      syncedClassIds.get(student.id) ?? student.classEnrollments[0]?.classId ?? null;
+    const hasClass = Boolean(primaryClassId);
+    const classLabel = hasClass ? formatStudentClasses(student.classEnrollments, student.classGroup) : null;
+    const values = student.grades.map((grade) => grade.value).filter((value) => Number.isFinite(value));
+    const average =
+      values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+
+    return {
+      id: student.id,
+      fullName: student.user.fullName,
+      enrollmentCode: student.enrollmentCode,
+      classLabel,
+      primaryClassId,
+      hasClass,
+      average,
+      lowPerformance: average !== null && average < 6,
+    } satisfies ClassStudentExerciseOption;
+  });
+
+  return sortStudentsByName(refreshed.map((row) => ({ ...row, user: { fullName: row.fullName } }))).map(
+    ({ user: _user, ...row }) => row
+  );
 }
 
 export async function getStudentsForExerciseAction(classId?: string) {

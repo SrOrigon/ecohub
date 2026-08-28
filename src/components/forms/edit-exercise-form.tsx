@@ -104,7 +104,7 @@ export function EditExerciseForm({
       formData.set("title", title.trim());
       formData.set("description", description.trim());
       formData.set("kind", kind);
-      formData.set("classId", classFilter);
+      formData.set("preferredClassId", classFilter);
       formData.set("audienceType", "personalized");
       formData.set("maxPoints", String(maxPoints));
       formData.set("xpReward", String(xpReward));

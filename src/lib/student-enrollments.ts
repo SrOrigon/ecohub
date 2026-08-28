@@ -138,6 +138,7 @@ export async function getStudentClassIds(studentId: string) {
   const enrollments = await prisma.studentClassEnrollment.findMany({
     where: { studentId, ...activeEnrollmentWhere() },
     select: { classId: true },
+    orderBy: [{ enrolledAt: "asc" }, { createdAt: "asc" }],
   });
   if (enrollments.length > 0) {
     return enrollments.map((item) => item.classId);
@@ -147,4 +148,99 @@ export async function getStudentClassIds(studentId: string) {
     select: { classId: true },
   });
   return student?.classId ? [student.classId] : [];
+}
+
+function classIdsFromStudentRecord(student: {
+  classId: string | null;
+  classEnrollments: Array<{ classId: string }>;
+}) {
+  const ids = new Set<string>();
+  if (student.classId) ids.add(student.classId);
+  for (const enrollment of student.classEnrollments) {
+    ids.add(enrollment.classId);
+  }
+  return [...ids];
+}
+
+function intersectClassIds(classIdLists: string[][]) {
+  if (classIdLists.length === 0) return [] as string[];
+  let intersection = new Set(classIdLists[0]);
+  for (let index = 1; index < classIdLists.length; index += 1) {
+    const next = new Set(classIdLists[index]);
+    intersection = new Set([...intersection].filter((classId) => next.has(classId)));
+  }
+  return [...intersection];
+}
+
+/** Garante Student.classId alinhado às matrículas ativas antes de vincular exercícios. */
+export async function ensureStudentsHavePrimaryClass(studentIds: string[]) {
+  for (const studentId of studentIds) {
+    await syncPrimaryClassId(studentId);
+  }
+}
+
+/**
+ * Define a turma do exercício personalizado:
+ * - usa turma preferida (filtro) se todos os alunos pertencem a ela;
+ * - senão, turma em comum entre os selecionados;
+ * - senão, turma principal do único aluno;
+ * - alunos de turmas diferentes podem ficar com classId nulo (visibilidade via targets).
+ */
+export async function resolvePersonalizedExerciseClassId(
+  schoolId: string,
+  studentIds: string[],
+  preferredClassId?: string | null
+) {
+  if (studentIds.length === 0) {
+    return { classId: null as string | null, unassignedStudentIds: [] as string[] };
+  }
+
+  await ensureStudentsHavePrimaryClass(studentIds);
+
+  const students = await prisma.student.findMany({
+    where: { id: { in: studentIds }, user: { schoolId } },
+    select: {
+      id: true,
+      classId: true,
+      classEnrollments: {
+        where: activeEnrollmentWhere(),
+        select: { classId: true },
+        orderBy: [{ enrolledAt: "asc" }, { createdAt: "asc" }],
+      },
+    },
+  });
+
+  const unassignedStudentIds: string[] = [];
+  const classIdLists: string[][] = [];
+
+  for (const studentId of studentIds) {
+    const student = students.find((row) => row.id === studentId);
+    if (!student) {
+      unassignedStudentIds.push(studentId);
+      continue;
+    }
+    const classIds = classIdsFromStudentRecord(student);
+    if (classIds.length === 0) unassignedStudentIds.push(studentId);
+    else classIdLists.push(classIds);
+  }
+
+  if (unassignedStudentIds.length > 0) {
+    return { classId: null, unassignedStudentIds };
+  }
+
+  const preferred = preferredClassId?.trim() || null;
+  if (preferred && classIdLists.every((classIds) => classIds.includes(preferred))) {
+    return { classId: preferred, unassignedStudentIds: [] };
+  }
+
+  const shared = intersectClassIds(classIdLists);
+  if (shared.length > 0) {
+    return { classId: preferred && shared.includes(preferred) ? preferred : shared[0], unassignedStudentIds: [] };
+  }
+
+  if (studentIds.length === 1) {
+    return { classId: classIdLists[0][0], unassignedStudentIds: [] };
+  }
+
+  return { classId: null, unassignedStudentIds: [] };
 }

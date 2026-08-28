@@ -3,10 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { requireSession, type SessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { studentsInClassWhere } from "@/lib/student-enrollments";
+import {
+  ensureStudentsHavePrimaryClass,
+  getStudentClassIds,
+  resolvePersonalizedExerciseClassId,
+  studentsInClassWhere,
+} from "@/lib/student-enrollments";
 import type { ExerciseAudienceType } from "@/lib/exercise-audience";
 import { studentHasExerciseAccess, studentClassIds } from "@/lib/exercise-audience";
-import { assertClassInScope } from "@/lib/tenant-guards";
+import { assertClassInScope, assertStudentInScope } from "@/lib/tenant-guards";
 import { awardXp } from "@/lib/gamification";
 import {
   canNotifyTeacherSubmission,
@@ -90,23 +95,30 @@ function parseStudentTargetIds(formData: FormData) {
   return [...new Set(formData.getAll("studentTargetIds").map((value) => String(value)).filter(Boolean))];
 }
 
-async function assertStudentTargetsInClass(classId: string, studentIds: string[]) {
+async function assertPersonalizedStudentTargets(user: SessionUser, studentIds: string[]) {
   if (studentIds.length === 0) {
     throw new Error("Selecione pelo menos um aluno para o exercício personalizado.");
   }
-  const validStudents = await prisma.student.findMany({
-    where: { id: { in: studentIds }, ...studentsInClassWhere(classId) },
-    select: { id: true },
-  });
-  if (validStudents.length !== studentIds.length) {
-    throw new Error("Um ou mais alunos selecionados não pertencem à turma escolhida.");
+
+  await ensureStudentsHavePrimaryClass(studentIds);
+
+  for (const studentId of studentIds) {
+    const scope = await assertStudentInScope(user, studentId);
+    if (!scope.ok) throw new Error(scope.error);
+
+    const classIds = await getStudentClassIds(studentId);
+    if (classIds.length === 0) {
+      throw new Error(
+        "Um ou mais alunos selecionados não estão matriculados em turma. Vincule o aluno a uma turma antes de publicar."
+      );
+    }
   }
 }
 
 async function notifyExerciseAudience(
   exercise: { id: string; kind: string; title: string; classGroup?: { name: string | null } | null },
   audienceType: ExerciseAudienceType,
-  classId: string,
+  classId: string | null,
   studentTargetIds: string[]
 ) {
   const students =
@@ -116,7 +128,7 @@ async function notifyExerciseAudience(
           select: { id: true },
         })
       : await prisma.student.findMany({
-          where: studentsInClassWhere(classId),
+          where: classId ? studentsInClassWhere(classId) : { id: { in: [] } },
           select: { id: true },
         });
 
@@ -140,26 +152,18 @@ async function notifyExerciseAudience(
 
 async function resolveExerciseClassId(
   schoolId: string,
-  classId: string | null,
+  preferredClassId: string | null,
   studentTargetIds: string[]
 ) {
-  if (classId) return classId;
-  if (studentTargetIds.length === 0) return null;
-
-  const student = await prisma.student.findFirst({
-    where: { id: studentTargetIds[0], user: { schoolId } },
-    select: {
-      classId: true,
-      classEnrollments: {
-        where: { status: { in: ["active", "locked"] } },
-        orderBy: { enrolledAt: "asc" },
-        take: 1,
-        select: { classId: true },
-      },
-    },
-  });
-
-  return student?.classId ?? student?.classEnrollments[0]?.classId ?? null;
+  const resolved = await resolvePersonalizedExerciseClassId(
+    schoolId,
+    studentTargetIds,
+    preferredClassId
+  );
+  if (resolved.unassignedStudentIds.length > 0) {
+    return null;
+  }
+  return resolved.classId;
 }
 
 export async function createExerciseAction(formData: FormData) {
@@ -170,6 +174,7 @@ export async function createExerciseAction(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim() || null;
   const kind = String(formData.get("kind") ?? "homework") as ExerciseKind;
   let classId = String(formData.get("classId") ?? "") || null;
+  const preferredClassId = String(formData.get("preferredClassId") ?? classId ?? "") || null;
   const maxPoints = parseFloat(String(formData.get("maxPoints") ?? "10"));
   const xpReward = parseInt(String(formData.get("xpReward") ?? "0"), 10);
   const coinReward = parseInt(String(formData.get("coinReward") ?? "0"), 10);
@@ -196,11 +201,17 @@ export async function createExerciseAction(formData: FormData) {
 
   try {
     if (audienceType === "personalized") {
-      classId = await resolveExerciseClassId(user.schoolId, classId, studentTargetIds);
-      if (!classId) {
-        return { error: "Não foi possível vincular turma ao aluno selecionado. Matricule-o em uma turma primeiro." };
+      await assertPersonalizedStudentTargets(user, studentTargetIds);
+      classId = await resolveExerciseClassId(user.schoolId, preferredClassId, studentTargetIds);
+      if (studentTargetIds.length === 1 && !classId) {
+        return {
+          error:
+            "Não foi possível vincular turma ao aluno selecionado. Matricule-o em uma turma primeiro.",
+        };
       }
-      await assertStudentTargetsInClass(classId, studentTargetIds);
+      if (classId) {
+        await assertTeacherCanManageClass(user, classId);
+      }
     } else {
       await assertTeacherCanManageClass(user, classId);
     }
@@ -241,7 +252,7 @@ export async function createExerciseAction(formData: FormData) {
       include: { classGroup: { select: { name: true } } },
     });
 
-    await notifyExerciseAudience(exercise, audienceType, classId!, studentTargetIds);
+    await notifyExerciseAudience(exercise, audienceType, classId, studentTargetIds);
 
     revalidateExercises();
     return { success: true, id: exercise.id };
@@ -272,6 +283,8 @@ export async function updateExerciseAction(formData: FormData) {
   const isActive = formData.get("isActive") !== "false";
   const questionsJson = String(formData.get("questionsJson") ?? "");
   const classIdInput = String(formData.get("classId") ?? exercise.classId ?? "") || null;
+  const preferredClassId =
+    String(formData.get("preferredClassId") ?? classIdInput ?? "") || null;
   let classId = classIdInput;
   const studentTargetIds = parseStudentTargetIds(formData);
   const audienceType =
@@ -288,11 +301,14 @@ export async function updateExerciseAction(formData: FormData) {
 
   try {
     if (audienceType === "personalized") {
-      classId = await resolveExerciseClassId(user.schoolId, classId, studentTargetIds);
-      if (!classId) {
+      await assertPersonalizedStudentTargets(user, studentTargetIds);
+      classId = await resolveExerciseClassId(user.schoolId, preferredClassId, studentTargetIds);
+      if (studentTargetIds.length === 1 && !classId) {
         return { error: "Não foi possível vincular turma ao aluno selecionado." };
       }
-      await assertStudentTargetsInClass(classId, studentTargetIds);
+      if (classId) {
+        await assertTeacherCanManageClass(user, classId);
+      }
     } else {
       await assertTeacherCanManageClass(user, classId);
     }

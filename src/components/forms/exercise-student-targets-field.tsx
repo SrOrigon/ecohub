@@ -30,6 +30,8 @@ export function ExerciseStudentPicker({
       fullName: string;
       enrollmentCode: string;
       classLabel: string | null;
+      primaryClassId: string | null;
+      hasClass: boolean;
       average: number | null;
       lowPerformance: boolean;
     }>
@@ -69,6 +71,8 @@ export function ExerciseStudentPicker({
   const lowPerformers = useMemo(() => students.filter((student) => student.lowPerformance), [students]);
 
   function toggleStudent(studentId: string) {
+    const student = students.find((row) => row.id === studentId);
+    if (student && !student.hasClass) return;
     onSelectedStudentIdsChange(
       selectedStudentIds.includes(studentId)
         ? selectedStudentIds.filter((id) => id !== studentId)
@@ -93,7 +97,10 @@ export function ExerciseStudentPicker({
           <Select
             id="student-class-filter"
             value={classFilter}
-            onChange={(event) => onClassFilterChange(event.target.value)}
+            onChange={(event) => {
+              onClassFilterChange(event.target.value);
+              onSelectedStudentIdsChange([]);
+            }}
           >
             <option value="">Todos os alunos disponíveis</option>
             {classes.map((turma) => (
@@ -111,7 +118,9 @@ export function ExerciseStudentPicker({
           size="sm"
           variant="outline"
           disabled={filteredStudents.length === 0}
-          onClick={() => onSelectedStudentIdsChange(filteredStudents.map((student) => student.id))}
+          onClick={() =>
+            onSelectedStudentIdsChange(filteredStudents.filter((student) => student.hasClass).map((student) => student.id))
+          }
         >
           Selecionar visíveis ({filteredStudents.length})
         </Button>
@@ -146,12 +155,17 @@ export function ExerciseStudentPicker({
         ) : (
           filteredStudents.map((student) => {
             const checked = selectedStudentIds.includes(student.id);
+            const disabled = !student.hasClass;
             return (
               <label
                 key={student.id}
                 className={cn(
-                  "flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2 text-sm transition-colors",
-                  checked ? "border-indigo-300 bg-indigo-50" : "border-transparent hover:bg-slate-50"
+                  "flex items-start gap-3 rounded-lg border px-3 py-2 text-sm transition-colors",
+                  disabled
+                    ? "cursor-not-allowed border-amber-200 bg-amber-50/80 opacity-80"
+                    : checked
+                      ? "cursor-pointer border-indigo-300 bg-indigo-50"
+                      : "cursor-pointer border-transparent hover:bg-slate-50"
                 )}
               >
                 <input
@@ -159,6 +173,7 @@ export function ExerciseStudentPicker({
                   name="studentTargetIds"
                   value={student.id}
                   checked={checked}
+                  disabled={disabled}
                   onChange={() => toggleStudent(student.id)}
                   className="mt-1"
                 />
@@ -166,7 +181,7 @@ export function ExerciseStudentPicker({
                   <span className="font-medium text-slate-900">{student.fullName}</span>
                   <span className="mt-0.5 block text-xs text-slate-500">
                     {student.enrollmentCode}
-                    {student.classLabel ? ` · ${student.classLabel}` : ""}
+                    {student.hasClass && student.classLabel ? ` · ${student.classLabel}` : " · Sem turma vinculada"}
                     {student.average !== null ? ` · Média ${student.average.toFixed(1)}` : ""}
                   </span>
                 </span>
