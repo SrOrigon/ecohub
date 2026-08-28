@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   enrollStudentInClassAction,
   removeStudentFromClassAction,
@@ -9,7 +9,8 @@ import {
 } from "@/actions/student-enrollments";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Label, Select } from "@/components/ui/form-fields";
+import { Label } from "@/components/ui/form-fields";
+import { ScrollablePicker } from "@/components/ui/scrollable-picker";
 import { enrollmentStatusLabel } from "@/lib/student-enrollments";
 import { sortByTextPt } from "@/lib/sort-order";
 import { X } from "lucide-react";
@@ -35,6 +36,7 @@ export function StudentEnrollmentsManager({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [pickedClassId, setPickedClassId] = useState("");
 
   const enrolledClassIds = new Set(enrollments.map((item) => item.classId));
   const availableClasses = sortByTextPt(
@@ -48,6 +50,7 @@ export function StudentEnrollmentsManager({
     formData.set("classId", classId);
     startTransition(async () => {
       await enrollStudentInClassAction(formData);
+      setPickedClassId("");
       router.refresh();
     });
   }
@@ -111,23 +114,18 @@ export function StudentEnrollmentsManager({
           )}
         </div>
         {availableClasses.length > 0 && (
-          <Select
-            value=""
+          <ScrollablePicker
+            placeholder="+ Adicionar turma"
             disabled={pending}
+            placement="top"
             aria-label="Adicionar turma ou curso"
-            onChange={(event) => {
-              const classId = event.target.value;
-              if (classId) enroll(classId);
-            }}
-            className="min-w-[10rem] text-sm"
-          >
-            <option value="">+ Adicionar turma</option>
-            {availableClasses.map((turma) => (
-              <option key={turma.id} value={turma.id}>
-                {turma.name}
-              </option>
-            ))}
-          </Select>
+            options={availableClasses.map((turma) => ({
+              value: turma.id,
+              label: turma.name,
+            }))}
+            onSelect={(classId) => enroll(classId)}
+            className="min-w-[12rem] max-w-[20rem] text-sm"
+          />
         )}
       </div>
     );
@@ -206,23 +204,24 @@ export function StudentEnrollmentsManager({
           className="flex flex-wrap items-end gap-3"
           onSubmit={(event) => {
             event.preventDefault();
-            const form = event.currentTarget;
-            const classId = new FormData(form).get("classId");
-            if (typeof classId === "string" && classId) enroll(classId);
+            if (pickedClassId) enroll(pickedClassId);
           }}
         >
           <div className="min-w-[14rem] flex-1">
             <Label htmlFor={`add-class-${studentId}`}>Matricular em nova turma / curso</Label>
-            <Select id={`add-class-${studentId}`} name="classId" required disabled={pending}>
-              <option value="">Selecione...</option>
-              {availableClasses.map((turma) => (
-                <option key={turma.id} value={turma.id}>
-                  {turma.name}
-                </option>
-              ))}
-            </Select>
+            <ScrollablePicker
+              placeholder="Selecione..."
+              value={pickedClassId}
+              disabled={pending}
+              aria-label="Selecionar turma ou curso"
+              options={availableClasses.map((turma) => ({
+                value: turma.id,
+                label: turma.name,
+              }))}
+              onSelect={setPickedClassId}
+            />
           </div>
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" disabled={pending || !pickedClassId}>
             {pending ? "Salvando..." : "Matricular"}
           </Button>
         </form>
