@@ -88,7 +88,9 @@ export function StudentEnrollmentsManager({
   if (compact) {
     return (
       <div className="space-y-2">
-        <div className="flex flex-wrap gap-1">
+        <div
+          className="flex max-h-[calc(2.75rem*5+0.5rem)] flex-wrap gap-1 overflow-y-auto overscroll-contain pr-1"
+        >
           {activeEnrollments.length === 0 ? (
             <span className="text-sm text-slate-400">Sem turma</span>
           ) : (
