@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
-import { EXERCISE_KIND_LABELS } from "@/lib/exercises";
+import { EXERCISE_KIND_LABELS, personalizationTagLabel, EXERCISE_AUDIENCE_LABELS } from "@/lib/exercises";
 import { ExerciseRewardPills } from "@/components/exercises/exercise-status-badge";
 import { ChevronRight, AlertCircle } from "lucide-react";
 import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
@@ -16,6 +16,8 @@ type ExerciseItem = {
   id: string;
   title: string;
   kind: string;
+  audienceType?: string;
+  personalizationTag?: string | null;
   maxPoints: number;
   xpReward: number;
   coinReward: number;
@@ -25,6 +27,7 @@ type ExerciseItem = {
   teacher: { fullName: string };
   questions: unknown[];
   submissions: { status: string }[];
+  studentTargets?: Array<{ studentId?: string; student?: { user: { fullName: string } } }>;
 };
 
 export function TeacherExercisesList({ exercises }: { exercises: ExerciseItem[] }) {
@@ -79,7 +82,16 @@ export function TeacherExercisesList({ exercises }: { exercises: ExerciseItem[] 
                   <p className="mt-1 text-sm text-slate-500">
                     {EXERCISE_KIND_LABELS[ex.kind as keyof typeof EXERCISE_KIND_LABELS] ?? ex.kind}
                     {ex.classGroup && ` · ${ex.classGroup.name}`}
+                    {ex.audienceType === "personalized" && " · Personalizado"}
                   </p>
+                  {ex.audienceType === "personalized" && (
+                    <p className="mt-1 text-xs text-indigo-700">
+                      {personalizationTagLabel(ex.personalizationTag ?? null) ?? "Alunos selecionados"}
+                      {ex.studentTargets && ex.studentTargets.length > 0
+                        ? ` · ${ex.studentTargets.length} aluno(s)`
+                        : ""}
+                    </p>
+                  )}
                 </div>
                 <ExerciseRewardPills xp={ex.xpReward} coins={ex.coinReward} points={ex.maxPoints} />
               </CardHeader>
@@ -90,6 +102,11 @@ export function TeacherExercisesList({ exercises }: { exercises: ExerciseItem[] 
                     <Badge variant="warning">{pending} para corrigir</Badge>
                   )}
                   {!ex.isActive && <Badge variant="danger">Inativo</Badge>}
+                  {ex.audienceType === "personalized" && (
+                    <Badge variant="secondary">
+                      {EXERCISE_AUDIENCE_LABELS.personalized}
+                    </Badge>
+                  )}
                   {ex.dueDate && (
                     <span className="text-slate-500">Prazo: {formatDate(ex.dueDate)}</span>
                   )}

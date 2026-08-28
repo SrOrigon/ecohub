@@ -43,6 +43,21 @@ const REWARD_COLUMN_PATCHES = [
 
 const EXERCISE_COLUMN_PATCHES = [
   `ALTER TABLE "ExerciseQuestion" ADD COLUMN IF NOT EXISTS "xpReward" INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE "Exercise" ADD COLUMN IF NOT EXISTS "audienceType" TEXT NOT NULL DEFAULT 'class'`,
+  `ALTER TABLE "Exercise" ADD COLUMN IF NOT EXISTS "personalizationTag" TEXT`,
+  `CREATE TABLE IF NOT EXISTS "ExerciseStudentTarget" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "exerciseId" TEXT NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "note" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ExerciseStudentTarget_exerciseId_fkey" FOREIGN KEY ("exerciseId") REFERENCES "Exercise" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "ExerciseStudentTarget_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "ExerciseStudentTarget_exerciseId_studentId_key" ON "ExerciseStudentTarget"("exerciseId", "studentId")`,
+  `CREATE INDEX IF NOT EXISTS "ExerciseStudentTarget_studentId_idx" ON "ExerciseStudentTarget"("studentId")`,
+  `CREATE INDEX IF NOT EXISTS "ExerciseStudentTarget_exerciseId_idx" ON "ExerciseStudentTarget"("exerciseId")`,
+  `CREATE INDEX IF NOT EXISTS "Exercise_audienceType_idx" ON "Exercise"("audienceType")`,
 ];
 
 const TABLE_PATCHES = [

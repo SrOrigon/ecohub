@@ -195,6 +195,7 @@ model Student {
   rewardRedemptions RewardRedemption[]
   parentLinks       ParentStudent[]
   exerciseSubmissions ExerciseSubmission[]
+  exerciseTargets     ExerciseStudentTarget[]
   trailProgress     StudentTrailProgress[]
   occurrences       Occurrence[]
   homeTasks         HomeTask[]
@@ -451,31 +452,50 @@ model ParentStudent {
 }
 
 model Exercise {
-  id          String    @id @default(cuid())
-  schoolId    String
-  classId     String?
-  teacherId   String
-  title       String
-  description String?
-  kind        String    @default("homework")
-  maxPoints   Float     @default(10)
-  xpReward    Int       @default(0)
-  coinReward  Int       @default(0)
-  dueDate     DateTime?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                   String    @id @default(cuid())
+  schoolId             String
+  classId              String?
+  teacherId            String
+  title                String
+  description          String?
+  kind                 String    @default("homework")
+  audienceType         String    @default("class")
+  personalizationTag   String?
+  maxPoints            Float     @default(10)
+  xpReward             Int       @default(0)
+  coinReward           Int       @default(0)
+  dueDate              DateTime?
+  isActive             Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
-  school       School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  classGroup   ClassGroup?          @relation(fields: [classId], references: [id], onDelete: SetNull)
-  teacher      User                 @relation("ExerciseTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
-  questions    ExerciseQuestion[]
-  submissions  ExerciseSubmission[]
-  trailSteps   TrailStep[]
+  school         School                 @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classGroup     ClassGroup?            @relation(fields: [classId], references: [id], onDelete: SetNull)
+  teacher        User                   @relation("ExerciseTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  questions      ExerciseQuestion[]
+  submissions    ExerciseSubmission[]
+  studentTargets ExerciseStudentTarget[]
+  trailSteps     TrailStep[]
 
   @@index([schoolId])
   @@index([classId])
   @@index([teacherId])
+  @@index([audienceType])
+}
+
+model ExerciseStudentTarget {
+  id         String   @id @default(cuid())
+  exerciseId String
+  studentId  String
+  note       String?
+  createdAt  DateTime @default(now())
+
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  student  Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, studentId])
+  @@index([studentId])
+  @@index([exerciseId])
 }
 
 model ExerciseQuestion {

@@ -14,42 +14,21 @@ import {
   trueFalseOptions,
   QUESTION_TYPE_LABELS,
 } from "@/lib/exercises";
+import type { ExerciseAudienceType } from "@/lib/exercise-audience";
+import {
+  newQuestion,
+  parseBoundedFloat,
+  parseBoundedInt,
+  validateDraftQuestions,
+  type DraftQuestion,
+} from "@/lib/exercise-draft";
+import { ExerciseStudentTargetsField } from "@/components/forms/exercise-student-targets-field";
 import { ChevronLeft, ChevronRight, PenLine, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 
 interface ClassOption {
   id: string;
   name: string;
-}
-
-type DraftQuestion = {
-  prompt: string;
-  type: QuestionType;
-  points: number;
-  xpReward: number;
-  options: { id: string; text: string; isCorrect: boolean }[];
-};
-
-function newQuestion(type: QuestionType = "choice", points = 2, xpReward = 20): DraftQuestion {
-  if (type === "true_false") {
-    return { prompt: "", type, points, xpReward, options: trueFalseOptions() };
-  }
-  if (type === "flashcard") {
-    return { prompt: "", type, points, xpReward, options: flashcardBackOption() };
-  }
-  if (type === "text") {
-    return { prompt: "", type, points, xpReward, options: [] };
-  }
-  return {
-    prompt: "",
-    type,
-    points,
-    xpReward,
-    options: [
-      { id: "a", text: "", isCorrect: true },
-      { id: "b", text: "", isCorrect: false },
-    ],
-  };
 }
 
 type Preset = { label: string; xp: number; coins: number; points: number };
@@ -65,19 +44,6 @@ const EXAM_PRESETS: Preset[] = [
   { label: "Prova Bimestral", xp: 200, coins: 50, points: 10 },
   { label: "Simulado Oficial", xp: 250, coins: 60, points: 10 },
 ];
-
-function parseBoundedInt(value: string, fallback = 0) {
-  const digits = value.replace(/\D/g, "");
-  if (!digits) return fallback;
-  const parsed = parseInt(digits, 10);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function parseBoundedFloat(value: string, fallback = 0) {
-  const normalized = value.replace(/[^\d.,]/g, "").replace(",", ".");
-  const parsed = parseFloat(normalized);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
 
 export function CreateExerciseForm({
   classes,
@@ -121,6 +87,9 @@ export function CreateExerciseForm({
   const [aiSubject, setAiSubject] = useState("");
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiPending, startAiTransition] = useTransition();
+  const [audienceType, setAudienceType] = useState<ExerciseAudienceType>("class");
+  const [personalizationTag, setPersonalizationTag] = useState("");
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
   const effectiveAiSubject = aiSubject && subjects.includes(aiSubject) ? aiSubject : (subjects[0] ?? "");
 
@@ -140,6 +109,9 @@ export function CreateExerciseForm({
       formData.set("kind", kind);
       formData.set("description", basics.description.trim());
       formData.set("dueDate", basics.dueDate);
+      formData.set("audienceType", audienceType);
+      formData.set("personalizationTag", personalizationTag);
+      selectedStudentIds.forEach((studentId) => formData.append("studentTargetIds", studentId));
       formData.set("questionsJson", JSON.stringify(questions));
       formData.set("xpReward", String(rewards.xp));
       formData.set("coinReward", String(rewards.coins));
@@ -149,6 +121,9 @@ export function CreateExerciseForm({
         setOpen(false);
         setStep(1);
         setBasics({ title: defaultTitle, classId: "", description: "", dueDate: "" });
+        setAudienceType("class");
+        setPersonalizationTag("");
+        setSelectedStudentIds([]);
         setClientError(null);
         setQuestions([newQuestion()]);
         setRewards({ xp: mid.xp, coins: mid.coins, maxPoints: mid.points });
@@ -161,30 +136,14 @@ export function CreateExerciseForm({
   function validateStep1() {
     if (!basics.title.trim()) return "Informe o título da atividade.";
     if (!basics.classId) return "Selecione uma turma.";
+    if (audienceType === "personalized" && selectedStudentIds.length === 0) {
+      return "Selecione pelo menos um aluno para o exercício personalizado.";
+    }
     return null;
   }
 
   function validateQuestions() {
-    if (questions.length === 0) return "Adicione pelo menos uma questão.";
-    for (let index = 0; index < questions.length; index += 1) {
-      const question = questions[index];
-      if (!question.prompt.trim()) {
-        return `A questão ${index + 1} precisa de enunciado.`;
-      }
-      if (question.type === "choice") {
-        const filledOptions = question.options.filter((option) => option.text.trim());
-        if (filledOptions.length < 2) {
-          return `A questão ${index + 1} precisa de pelo menos duas alternativas.`;
-        }
-        if (!question.options.some((option) => option.isCorrect && option.text.trim())) {
-          return `Marque a alternativa correta na questão ${index + 1}.`;
-        }
-      }
-      if (question.type === "flashcard" && !question.options[0]?.text.trim()) {
-        return `Informe o verso do cartão na questão ${index + 1}.`;
-      }
-    }
-    return null;
+    return validateDraftQuestions(questions);
   }
 
   function goToNextStep() {
@@ -230,6 +189,9 @@ export function CreateExerciseForm({
     setStep(1);
     setKind(defaultKind);
     setBasics({ title: defaultTitle, classId: "", description: "", dueDate: "" });
+    setAudienceType("class");
+    setPersonalizationTag("");
+    setSelectedStudentIds([]);
     setClientError(null);
     setQuestions([newQuestion(defaultQuestionType)]);
   }
@@ -383,6 +345,15 @@ export function CreateExerciseForm({
                   onChange={(event) => setBasics((current) => ({ ...current, dueDate: event.target.value }))}
                 />
               </div>
+              <ExerciseStudentTargetsField
+                classId={basics.classId}
+                audienceType={audienceType}
+                onAudienceTypeChange={setAudienceType}
+                personalizationTag={personalizationTag}
+                onPersonalizationTagChange={setPersonalizationTag}
+                selectedStudentIds={selectedStudentIds}
+                onSelectedStudentIdsChange={setSelectedStudentIds}
+              />
             </>
           )}
 

@@ -1,5 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
-import { getExerciseById, EXERCISE_KIND_LABELS } from "@/lib/exercises";
+import { getExerciseById, EXERCISE_KIND_LABELS, getTeacherClasses, personalizationTagLabel, EXERCISE_AUDIENCE_LABELS } from "@/lib/exercises";
+import { classStudentCountWhere } from "@/lib/exercise-audience";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExerciseSubmitForm } from "@/components/forms/exercise-submit-form";
@@ -33,20 +34,25 @@ export default async function ExerciseDetailPage({
   if (!user) redirect("/login");
 
   const { id } = await params;
-  const [exercise, settings] = await Promise.all([
+  const isStaff =
+    user.role === "admin" || user.role === "director" || user.role === "teacher";
+  const [exercise, settings, classes] = await Promise.all([
     getExerciseById(id, user),
     getSchoolSettings(user.schoolId),
+    isStaff ? getTeacherClasses(user) : Promise.resolve([]),
   ]);
   if (!exercise) notFound();
 
   const classStudentCount = exercise.classId
-    ? await prisma.student.count({ where: { classId: exercise.classId } })
-    : 0;
+    ? exercise.audienceType === "personalized"
+      ? exercise.studentTargets.length
+      : await prisma.student.count({ where: { ...classStudentCountWhere(exercise.classId) } })
+    : exercise.audienceType === "personalized"
+      ? exercise.studentTargets.length
+      : 0;
 
   let studentRecord: { id: string } | null = null;
 
-  const isStaff =
-    user.role === "admin" || user.role === "director" || user.role === "teacher";
   const canEdit = isStaff && (user.role !== "teacher" || exercise.teacherId === user.id);
 
   let studentSubmission = null;
@@ -156,6 +162,33 @@ export default async function ExerciseDetailPage({
         </Card>
       )}
 
+      {isStaff && (
+        <Card className="border-indigo-100 bg-indigo-50/40">
+          <CardContent className="py-4 text-sm text-slate-700">
+            <p>
+              <strong>Destinatários:</strong>{" "}
+              {EXERCISE_AUDIENCE_LABELS[exercise.audienceType as keyof typeof EXERCISE_AUDIENCE_LABELS] ??
+                "Toda a turma"}
+            </p>
+            {exercise.audienceType === "personalized" && (
+              <>
+                {personalizationTagLabel(exercise.personalizationTag) && (
+                  <p className="mt-1">
+                    <strong>Etiqueta:</strong> {personalizationTagLabel(exercise.personalizationTag)}
+                  </p>
+                )}
+                <p className="mt-1">
+                  <strong>Alunos:</strong>{" "}
+                  {exercise.studentTargets.length > 0
+                    ? exercise.studentTargets.map((target) => target.student.user.fullName).join(", ")
+                    : "Nenhum aluno vinculado"}
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {isStaff && exercise.dueDate && (
         <p className="text-sm text-slate-600">
           Prazo de entrega: <strong>{formatDate(exercise.dueDate)}</strong>
@@ -233,12 +266,26 @@ export default async function ExerciseDetailPage({
                   title: exercise.title,
                   description: exercise.description,
                   kind: exercise.kind,
+                  classId: exercise.classId,
+                  audienceType: exercise.audienceType,
+                  personalizationTag: exercise.personalizationTag,
                   maxPoints: exercise.maxPoints,
                   xpReward: exercise.xpReward,
                   coinReward: exercise.coinReward,
                   dueDate: exercise.dueDate?.toISOString().slice(0, 16) ?? "",
                   isActive: exercise.isActive,
+                  questions: exercise.questions.map((question) => ({
+                    prompt: question.prompt,
+                    type: question.type,
+                    points: question.points,
+                    xpReward: question.xpReward,
+                    options: question.options,
+                  })),
+                  studentTargets: exercise.studentTargets.map((target) => ({
+                    studentId: target.studentId,
+                  })),
                 }}
+                classes={classes}
               />
               <div className="flex justify-end">
                 <DeleteConfirmButton

@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 import type { SessionUser } from "@/lib/auth";
+import { exerciseVisibleToStudentWhere, studentClassIds, studentHasExerciseAccess } from "@/lib/exercise-audience";
+import { personalizationTagLabel, EXERCISE_AUDIENCE_LABELS } from "@/lib/exercise-audience";
 
 export type ExerciseKind = "homework" | "exam";
 export type QuestionType = "choice" | "text" | "true_false" | "flashcard";
@@ -80,19 +82,29 @@ export async function getExercisesForUser(user: SessionUser) {
   if (!user.schoolId) return [];
 
   if (user.role === "student") {
-    const student = await prisma.student.findUnique({ where: { userId: user.id } });
-    if (!student?.classId) return [];
+    const student = await prisma.student.findUnique({
+      where: { userId: user.id },
+      include: {
+        classEnrollments: {
+          where: { status: { in: ["active", "locked"] } },
+          select: { classId: true, status: true },
+        },
+      },
+    });
+    if (!student) return [];
+    const classIds = studentClassIds(student);
     return prisma.exercise.findMany({
       where: {
         schoolId: user.schoolId,
         isActive: true,
-        classId: student.classId,
+        ...exerciseVisibleToStudentWhere(student.id, classIds),
       },
       include: {
         classGroup: { select: { name: true } },
         teacher: { select: { fullName: true } },
         questions: { orderBy: { sortOrder: "asc" } },
         submissions: { where: { studentId: student.id } },
+        studentTargets: { select: { studentId: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -118,6 +130,9 @@ export async function getExercisesForUser(user: SessionUser) {
       classGroup: { select: { name: true } },
       teacher: { select: { fullName: true } },
       questions: true,
+      studentTargets: {
+        include: { student: { include: { user: { select: { fullName: true } } } } },
+      },
       submissions: {
         include: {
           student: { include: { user: { select: { fullName: true } } } },
@@ -160,14 +175,22 @@ export async function getExerciseSummariesForTeacher(user: SessionUser) {
 
 export async function getExercisesForStudentId(studentId: string, schoolId: string | null) {
   if (!schoolId) return [];
-  const student = await prisma.student.findUnique({ where: { id: studentId } });
-  if (!student?.classId) return [];
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    include: {
+      classEnrollments: {
+        where: { status: { in: ["active", "locked"] } },
+        select: { classId: true, status: true },
+      },
+    },
+  });
+  if (!student) return [];
 
   return prisma.exercise.findMany({
     where: {
       schoolId,
       isActive: true,
-      classId: student.classId,
+      ...exerciseVisibleToStudentWhere(student.id, studentClassIds(student)),
     },
     include: {
       classGroup: { select: { name: true } },
@@ -195,13 +218,24 @@ export async function getExerciseById(id: string, user: SessionUser) {
         },
         orderBy: { submittedAt: "desc" },
       },
+      studentTargets: {
+        include: { student: { include: { user: { select: { fullName: true } } } } },
+      },
     },
   });
   if (!exercise) return null;
 
   if (user.role === "student") {
-    const student = await prisma.student.findUnique({ where: { userId: user.id } });
-    if (!student || exercise.classId !== student.classId) return null;
+    const student = await prisma.student.findUnique({
+      where: { userId: user.id },
+      include: {
+        classEnrollments: {
+          where: { status: { in: ["active", "locked"] } },
+          select: { classId: true, status: true },
+        },
+      },
+    });
+    if (!student || !(await studentHasExerciseAccess(exercise, student))) return null;
   } else if (user.role === "teacher") {
     if (exercise.teacherId !== user.id) {
       // Co-docentes também devem enxergar o exercício da turma que lecionam.
@@ -229,6 +263,8 @@ export async function getExerciseById(id: string, user: SessionUser) {
 
   return exercise;
 }
+
+export { EXERCISE_AUDIENCE_LABELS, personalizationTagLabel };
 
 export const EXERCISE_KIND_LABELS: Record<ExerciseKind, string> = {
   homework: "Exercício de casa",

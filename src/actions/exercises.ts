@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireSession, type SessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { studentsInClassWhere } from "@/lib/student-enrollments";
+import type { ExerciseAudienceType } from "@/lib/exercise-audience";
+import { studentHasExerciseAccess, studentClassIds } from "@/lib/exercise-audience";
 import { assertClassInScope } from "@/lib/tenant-guards";
 import { awardXp } from "@/lib/gamification";
 import {
@@ -80,6 +82,62 @@ async function assertTeacherCanManageClass(user: SessionUser, classId: string | 
   if (!scope.ok) throw new Error(scope.error);
 }
 
+function parseAudienceType(raw: string): ExerciseAudienceType {
+  return raw === "personalized" ? "personalized" : "class";
+}
+
+function parseStudentTargetIds(formData: FormData) {
+  return [...new Set(formData.getAll("studentTargetIds").map((value) => String(value)).filter(Boolean))];
+}
+
+async function assertStudentTargetsInClass(classId: string, studentIds: string[]) {
+  if (studentIds.length === 0) {
+    throw new Error("Selecione pelo menos um aluno para o exercício personalizado.");
+  }
+  const validStudents = await prisma.student.findMany({
+    where: { id: { in: studentIds }, ...studentsInClassWhere(classId) },
+    select: { id: true },
+  });
+  if (validStudents.length !== studentIds.length) {
+    throw new Error("Um ou mais alunos selecionados não pertencem à turma escolhida.");
+  }
+}
+
+async function notifyExerciseAudience(
+  exercise: { id: string; kind: string; title: string; classGroup?: { name: string | null } | null },
+  audienceType: ExerciseAudienceType,
+  classId: string,
+  studentTargetIds: string[]
+) {
+  const students =
+    audienceType === "personalized"
+      ? await prisma.student.findMany({
+          where: { id: { in: studentTargetIds } },
+          select: { id: true },
+        })
+      : await prisma.student.findMany({
+          where: studentsInClassWhere(classId),
+          select: { id: true },
+        });
+
+  const kind = exercise.kind;
+  for (const student of students) {
+    await notifyStudent(
+      student.id,
+      kind === "exam" ? "Nova prova disponível" : "Novo exercício disponível",
+      `${exercise.title} · ${exercise.classGroup?.name ?? "Turma"}`,
+      `/dashboard/exercicios/${exercise.id}`
+    );
+    await notifyStudentParents(
+      student.id,
+      kind === "exam" ? "Nova prova do filho(a)" : "Novo exercício do filho(a)",
+      `${exercise.title} · ${exercise.classGroup?.name ?? "Turma"}`,
+      `/dashboard/responsavel/filho/${student.id}`,
+      "exercise"
+    );
+  }
+}
+
 export async function createExerciseAction(formData: FormData) {
   const user = await requireSession(["admin", "director", "teacher"]);
   if (!user.schoolId) return { error: "Escola não configurada." };
@@ -93,9 +151,15 @@ export async function createExerciseAction(formData: FormData) {
   const coinReward = parseInt(String(formData.get("coinReward") ?? "0"), 10);
   const dueDateRaw = String(formData.get("dueDate") ?? "");
   const questionsJson = String(formData.get("questionsJson") ?? "");
+  const audienceType = parseAudienceType(String(formData.get("audienceType") ?? "class"));
+  const personalizationTag = String(formData.get("personalizationTag") ?? "").trim() || null;
+  const studentTargetIds = parseStudentTargetIds(formData);
 
   if (!title) return { error: "Título é obrigatório." };
   if (!classId) return { error: "Selecione uma turma." };
+  if (audienceType === "personalized" && studentTargetIds.length === 0) {
+    return { error: "Selecione pelo menos um aluno para o exercício personalizado." };
+  }
   if (isNaN(maxPoints) || maxPoints <= 0) return { error: "Pontuação máxima inválida." };
 
   const settings = await getSchoolSettings(user.schoolId);
@@ -105,6 +169,9 @@ export async function createExerciseAction(formData: FormData) {
 
   try {
     await assertTeacherCanManageClass(user, classId);
+    if (audienceType === "personalized") {
+      await assertStudentTargetsInClass(classId, studentTargetIds);
+    }
     const questions = parseQuestionsJson(questionsJson);
 
     const exercise = await prisma.exercise.create({
@@ -115,6 +182,8 @@ export async function createExerciseAction(formData: FormData) {
         title,
         description,
         kind,
+        audienceType,
+        personalizationTag,
         maxPoints,
         xpReward: Math.max(0, xpReward),
         coinReward: Math.max(0, coinReward),
@@ -129,30 +198,18 @@ export async function createExerciseAction(formData: FormData) {
             options: questionTypeNeedsOptions(q.type) ? JSON.stringify(q.options ?? []) : null,
           })),
         },
+        ...(audienceType === "personalized"
+          ? {
+              studentTargets: {
+                create: studentTargetIds.map((studentId) => ({ studentId })),
+              },
+            }
+          : {}),
       },
       include: { classGroup: { select: { name: true } } },
     });
 
-    const students = await prisma.student.findMany({
-      where: studentsInClassWhere(classId),
-      select: { id: true, userId: true },
-    });
-
-    for (const s of students) {
-      await notifyStudent(
-        s.id,
-        kind === "exam" ? "Nova prova disponível" : "Novo exercício disponível",
-        `${title} · ${exercise.classGroup?.name ?? "Turma"}`,
-        `/dashboard/exercicios/${exercise.id}`
-      );
-      await notifyStudentParents(
-        s.id,
-        kind === "exam" ? "Nova prova do filho(a)" : "Novo exercício do filho(a)",
-        `${title} · ${exercise.classGroup?.name ?? "Turma"}`,
-        `/dashboard/responsavel/filho/${s.id}`,
-        "exercise"
-      );
-    }
+    await notifyExerciseAudience(exercise, audienceType, classId, studentTargetIds);
 
     revalidateExercises();
     return { success: true, id: exercise.id };
@@ -182,10 +239,22 @@ export async function updateExerciseAction(formData: FormData) {
   const dueDateRaw = String(formData.get("dueDate") ?? "");
   const isActive = formData.get("isActive") !== "false";
   const questionsJson = String(formData.get("questionsJson") ?? "");
+  const classId = String(formData.get("classId") ?? exercise.classId ?? "") || null;
+  const audienceType = parseAudienceType(String(formData.get("audienceType") ?? exercise.audienceType ?? "class"));
+  const personalizationTag = String(formData.get("personalizationTag") ?? exercise.personalizationTag ?? "").trim() || null;
+  const studentTargetIds = parseStudentTargetIds(formData);
 
   if (!title) return { error: "Título é obrigatório." };
+  if (!classId) return { error: "Selecione uma turma." };
+  if (audienceType === "personalized" && studentTargetIds.length === 0) {
+    return { error: "Selecione pelo menos um aluno para o exercício personalizado." };
+  }
 
   try {
+    await assertTeacherCanManageClass(user, classId);
+    if (audienceType === "personalized") {
+      await assertStudentTargetsInClass(classId, studentTargetIds);
+    }
     const questions = questionsJson ? parseQuestionsJson(questionsJson) : null;
 
     await prisma.$transaction(async (tx) => {
@@ -195,6 +264,9 @@ export async function updateExerciseAction(formData: FormData) {
           title,
           description,
           kind,
+          classId,
+          audienceType,
+          personalizationTag,
           maxPoints,
           xpReward: Math.max(0, xpReward),
           coinReward: Math.max(0, coinReward),
@@ -202,6 +274,13 @@ export async function updateExerciseAction(formData: FormData) {
           isActive,
         },
       });
+
+      await tx.exerciseStudentTarget.deleteMany({ where: { exerciseId: id } });
+      if (audienceType === "personalized") {
+        await tx.exerciseStudentTarget.createMany({
+          data: studentTargetIds.map((studentId) => ({ exerciseId: id, studentId })),
+        });
+      }
 
       if (questions) {
         await tx.exerciseQuestion.deleteMany({ where: { exerciseId: id } });
@@ -234,23 +313,33 @@ export async function submitExerciseAction(formData: FormData) {
 
   if (!user.schoolId) return { error: "Escola não configurada." };
 
-  const student = await prisma.student.findUnique({ where: { userId: user.id } });
+  const student = await prisma.student.findUnique({
+    where: { userId: user.id },
+    include: {
+      classEnrollments: {
+        where: { status: { in: ["active", "locked"] } },
+        select: { classId: true, status: true },
+      },
+    },
+  });
   if (!student) return { error: "Perfil de aluno não encontrado." };
-  if (!student.classId) return { error: "Aluno sem turma atribuída." };
 
   const exercise = await prisma.exercise.findFirst({
     where: {
       id: exerciseId,
       isActive: true,
       schoolId: user.schoolId,
-      classId: student.classId,
     },
     include: {
       questions: { orderBy: { sortOrder: "asc" } },
       classGroup: { select: { name: true } },
+      studentTargets: { select: { studentId: true } },
     },
   });
   if (!exercise) return { error: "Exercício não encontrado." };
+  if (!(await studentHasExerciseAccess(exercise, student))) {
+    return { error: "Exercício não disponível para você." };
+  }
 
   if (exercise.dueDate && new Date() > exercise.dueDate) {
     return { error: "Prazo encerrado para este exercício." };
