@@ -19,6 +19,7 @@ import { BookOpen, FileText, Medal, MapPin, Target } from "lucide-react";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import { EditStudentForm } from "@/components/forms/edit-student-form";
 import { CreateStudentActivityForm } from "@/components/forms/create-student-activity-form";
+import { AdjustStudentPointsForm } from "@/components/forms/adjust-student-points-form";
 import { DeleteStudentButton } from "@/components/forms/delete-student-button";
 import { StudentPerformanceDashboard } from "@/components/students/student-performance-dashboard";
 import { Student360Nav, parseStudent360Tab } from "@/components/students/student-360-nav";
@@ -32,6 +33,10 @@ import {
   parseSocialLinks,
   SOCIAL_NETWORKS,
 } from "@/lib/student-profile";
+import { formatStudentClasses } from "@/lib/student-enrollments";
+import { StudentEnrollmentsManager } from "@/components/forms/student-enrollments-manager";
+import { hasPermission } from "@/lib/permissions";
+import { StudentDocumentsPanel } from "@/components/documents/student-documents-panel";
 
 function attendanceLabel(status: string) {
   return ATTENDANCE_LABELS[status as AttendanceStatus] ?? status;
@@ -53,7 +58,10 @@ export default async function StudentDetailPage({
   if (!user) redirect("/login");
 
   const { id } = await params;
-  const tab = parseStudent360Tab((await searchParams).aba);
+  const tabRaw = parseStudent360Tab((await searchParams).aba);
+  const canManageDocuments =
+    user.role === "admin" || user.role === "director" || user.role === "secretary";
+  const tab = tabRaw === "documentos" && !canManageDocuments ? "cadastro" : tabRaw;
 
   if (user.role === "parent") {
     const link = await fetchChildForParent(user, user.id, id);
@@ -84,6 +92,12 @@ export default async function StudentDetailPage({
     user.role === "secretary" ||
     user.role === "teacher";
   const canDelete = user.role === "admin" || user.role === "director" || user.role === "secretary";
+  const canAdjustPoints =
+    canManage &&
+    (user.role === "admin" ||
+      user.role === "director" ||
+      user.role === "secretary" ||
+      hasPermission(user.role, settings, "teacher.adjustPoints"));
 
   const avgGrade =
     student.grades.length > 0
@@ -134,7 +148,7 @@ export default async function StudentDetailPage({
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .slice(0, 40);
 
-  const canWriteFinance = user.role === "admin" || user.role === "director" || user.role === "secretary";
+  const canWriteFinance = canManageDocuments;
   const isActive = student.status !== "inactive";
   const attendancePresent = student.attendance.filter((a) => a.status === "present").length;
   const attendanceLate = student.attendance.filter((a) => a.status === "late").length;
@@ -170,7 +184,7 @@ export default async function StudentDetailPage({
         backHref="/dashboard/alunos"
         backLabel="Voltar aos alunos"
         title={displayName}
-        description={`Matrícula ${student.enrollmentCode} · ${student.classGroup?.name ?? "Sem turma"}`}
+        description={`Matrícula ${student.enrollmentCode} · ${formatStudentClasses(student.classEnrollments ?? [], student.classGroup)}`}
       >
         <div className="flex flex-wrap gap-2">
           <Badge variant={isActive ? "success" : "danger"}>{isActive ? "Ativo" : "Inativo"}</Badge>
@@ -192,8 +206,6 @@ export default async function StudentDetailPage({
           {canManage && (
             <EditStudentForm
               studentId={student.id}
-              currentClassId={student.classId}
-              classes={classOptions}
               currentEmail={student.user.email}
               accountType={student.accountType}
               currentStatus={student.status}
@@ -240,7 +252,7 @@ export default async function StudentDetailPage({
             </div>
             <div className="flex flex-wrap gap-2 text-sm">
               <Badge variant={isActive ? "success" : "danger"}>{isActive ? "Ativo" : "Inativo"}</Badge>
-              <Badge variant="secondary">Turma: {student.classGroup?.name ?? "Sem turma"}</Badge>
+              <Badge variant="secondary">Turmas: {formatStudentClasses(student.classEnrollments ?? [], student.classGroup)}</Badge>
               <Badge variant="secondary">Curso: {student.classGroup?.gradeLevel ?? "Não informado"}</Badge>
               <Badge variant="secondary">Matrícula em {formatDate(student.createdAt)}</Badge>
             </div>
@@ -260,10 +272,32 @@ export default async function StudentDetailPage({
         </CardContent>
       </Card>
 
-      <Student360Nav studentId={student.id} active={tab} />
+      <Student360Nav
+        studentId={student.id}
+        active={tab}
+        hiddenTabs={canManageDocuments ? [] : ["documentos"]}
+      />
 
       {tab === "cadastro" && (
         <div className="grid gap-6 lg:grid-cols-2">
+        {canManage && (
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Turmas e cursos matriculados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StudentEnrollmentsManager
+                studentId={student.id}
+                enrollments={(student.classEnrollments ?? []).map((item) => ({
+                  classId: item.classId,
+                  status: item.status,
+                  classGroup: item.classGroup,
+                }))}
+                classes={classOptions}
+              />
+            </CardContent>
+          </Card>
+        )}
         <Card>
           <CardHeader>
             <CardTitle>Identificação</CardTitle>
@@ -422,6 +456,19 @@ export default async function StudentDetailPage({
               </CardContent>
             </Card>
           </div>
+          {canAdjustPoints && (
+            <Card className="border-violet-200">
+              <CardHeader>
+                <CardTitle>Ajuste manual de pontos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AdjustStudentPointsForm
+                  students={[{ id: student.id, name: student.user.fullName, className: student.classGroup?.name }]}
+                  fixedStudentId={student.id}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -496,6 +543,10 @@ export default async function StudentDetailPage({
         />
       )}
 
+      {tab === "documentos" && canManageDocuments && user.schoolId && (
+        <StudentDocumentsPanel studentId={student.id} schoolId={user.schoolId} />
+      )}
+
       {tab === "historico" && (
       <Card>
         <CardHeader>
@@ -510,7 +561,10 @@ export default async function StudentDetailPage({
                 {student.xpTransactions.map((tx) => (
                   <li key={tx.id} className="flex justify-between border-b border-slate-100 py-2">
                     <span>{tx.reason}</span>
-                    <Badge variant="success">+{tx.amount}</Badge>
+                    <Badge variant={tx.amount >= 0 ? "success" : "danger"}>
+                      {tx.amount > 0 ? `+${tx.amount}` : tx.amount}
+                      {tx.amount === 0 ? " · moedas" : " XP"}
+                    </Badge>
                   </li>
                 ))}
               </ul>

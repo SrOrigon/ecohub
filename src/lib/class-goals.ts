@@ -2,11 +2,12 @@ import { prisma } from "@/lib/db";
 import { awardXp } from "@/lib/gamification";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { notifyStudent, notifyUser } from "@/lib/notifications";
+import { studentsInClassWhere } from "@/lib/student-enrollments";
 import type { ClassGoalMetric } from "@/lib/constants";
 
 export async function getClassGoalProgress(classId: string, metric: ClassGoalMetric) {
   const students = await prisma.student.findMany({
-    where: { classId },
+    where: studentsInClassWhere(classId),
     include: {
       studentMissions: { include: { mission: true } },
       exerciseSubmissions: true,
@@ -79,7 +80,7 @@ export async function checkAndAwardClassGoals(classId: string) {
     });
     if (claimed.count === 0) continue;
 
-    const students = await prisma.student.findMany({ where: { classId } });
+    const students = await prisma.student.findMany({ where: studentsInClassWhere(classId) });
 
     for (const student of students) {
       await awardXp(

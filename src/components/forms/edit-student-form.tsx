@@ -8,23 +8,14 @@ import { Label, Select } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/modal";
 import { StudentProfileFields, type StudentProfileFieldValues } from "@/components/forms/student-profile-fields";
 
-interface ClassOption {
-  id: string;
-  name: string;
-}
-
 export function EditStudentForm({
   studentId,
-  currentClassId,
-  classes,
   currentEmail,
   profile,
   accountType,
   currentStatus = "active",
 }: {
   studentId: string;
-  currentClassId: string | null;
-  classes: ClassOption[];
   currentEmail: string;
   profile: StudentProfileFieldValues;
   accountType?: string;
@@ -55,15 +46,9 @@ export function EditStudentForm({
               <Input id="edit-student-email" name="email" type="email" defaultValue={currentEmail} />
             </div>
           )}
-          <div>
-            <Label htmlFor="classId">Turma / curso</Label>
-            <Select id="classId" name="classId" defaultValue={currentClassId ?? ""}>
-              <option value="">Sem turma / curso</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </Select>
-          </div>
+          <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+            Para matricular em várias turmas ou cursos, use a seção &quot;Turmas e cursos matriculados&quot; na aba Cadastro.
+          </p>
           <div>
             <Label htmlFor="status">Status da matrícula</Label>
             <Select id="status" name="status" defaultValue={currentStatus === "inactive" ? "inactive" : "active"}>

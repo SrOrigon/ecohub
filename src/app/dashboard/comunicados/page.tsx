@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
 import { getAnnouncementsForUser } from "@/actions/announcements";
+import { getStudentClassIds } from "@/lib/student-enrollments";
 import { PageHeader } from "@/components/layout/page-header";
 import { AnnouncementBoard } from "@/components/forms/announcement-board";
 import { redirect } from "next/navigation";
@@ -12,26 +13,29 @@ export default async function ComunicadosPage() {
   if (!user) redirect("/login");
 
   const settings = await getSchoolSettings(user.schoolId);
-  const student = user.role === "student"
-    ? await prisma.student.findUnique({ where: { userId: user.id }, select: { classId: true } })
-    : null;
+  const studentRecord =
+    user.role === "student"
+      ? await prisma.student.findUnique({ where: { userId: user.id }, select: { id: true } })
+      : null;
 
-  const parentClassIds =
+  const parentStudentIds =
     user.role === "parent"
       ? (
           await prisma.parentStudent.findMany({
             where: { parentId: user.id },
-            include: { student: { select: { classId: true } } },
+            select: { studentId: true },
           })
-        )
-          .map((link) => link.student.classId)
-          .filter((id): id is string => Boolean(id))
-      : null;
+        ).map((link) => link.studentId)
+      : [];
 
   const classIds =
-    user.role === "student" && student?.classId
-      ? [student.classId]
-      : parentClassIds ?? undefined;
+    user.role === "student" && studentRecord
+      ? await getStudentClassIds(studentRecord.id)
+      : user.role === "parent"
+        ? (
+            await Promise.all(parentStudentIds.map((studentId) => getStudentClassIds(studentId)))
+          ).flat()
+        : undefined;
 
   const announcements = await getAnnouncementsForUser(user, user.id, user.schoolId, classIds);
 

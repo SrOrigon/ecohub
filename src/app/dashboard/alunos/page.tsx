@@ -3,7 +3,8 @@ import { getSchoolSettings } from "@/lib/school-settings";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateStudentForm } from "@/components/forms/create-student-form";
-import { StudentClassSelect } from "@/components/forms/student-class-select";
+import { formatStudentClasses } from "@/lib/student-enrollments";
+import { StudentEnrollmentsManager } from "@/components/forms/student-enrollments-manager";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
@@ -37,7 +38,7 @@ export default async function AlunosPage() {
     <div className="space-y-6">
       <PageHeader
         title="Alunos"
-        description="Cadastre alunos manualmente e vincule cada um à turma ou curso da instituição"
+        description="Cadastre alunos e matricule cada um em quantas turmas ou cursos forem necessários"
       >
         {canManage && <CreateStudentForm classes={classOptions} />}
       </PageHeader>
@@ -68,7 +69,7 @@ export default async function AlunosPage() {
                   <th className="pb-3 pr-4">Matrícula</th>
                   <th className="pb-3 pr-4">Nome</th>
                   <th className="hidden pb-3 pr-4 md:table-cell">E-mail</th>
-                  <th className="pb-3 pr-4">Turma / curso</th>
+                  <th className="pb-3 pr-4">Turmas / cursos</th>
                   <th className="pb-3 pr-4">Média</th>
                   <th className="pb-3 pr-4">Nível</th>
                   <th className="hidden pb-3 pr-4 lg:table-cell">XP</th>
@@ -91,7 +92,9 @@ export default async function AlunosPage() {
                           name={student.user?.fullName ?? "Aluno"}
                           avatarUrl={student.user?.avatarUrl}
                           href={`/dashboard/alunos/${student.id}`}
-                          subtitle={student.classGroup?.name ?? undefined}
+                          subtitle={
+                            formatStudentClasses(student.classEnrollments ?? [], student.classGroup) || undefined
+                          }
                           size="xs"
                         />
                       </td>
@@ -100,13 +103,18 @@ export default async function AlunosPage() {
                       </td>
                       <td className="py-3 pr-4">
                         {canManage ? (
-                          <StudentClassSelect
+                          <StudentEnrollmentsManager
                             studentId={student.id}
-                            currentClassId={student.classId}
+                            enrollments={(student.classEnrollments ?? []).map((item) => ({
+                              classId: item.classId,
+                              status: item.status,
+                              classGroup: item.classGroup,
+                            }))}
                             classes={classOptions}
+                            compact
                           />
                         ) : (
-                          student.classGroup?.name ?? "-"
+                          formatStudentClasses(student.classEnrollments ?? [], student.classGroup)
                         )}
                       </td>
                       <td className="py-3 pr-4">{avg !== null && !isNaN(avg) ? avg.toFixed(1) : "-"}</td>

@@ -88,6 +88,7 @@ const allNavItems: NavItem[] = [
   { href: "/dashboard/diario", label: "Diário de classe", icon: BookMarked, roles: ["admin", "director", "teacher"], permission: "teacher.manageDiary" },
   { href: "/dashboard/matriculas", label: "Matrículas", icon: FileCheck, roles: ["admin", "director", "secretary"] },
   { href: "/dashboard/autorizacoes", label: "Autorizações", icon: ClipboardPen, roles: ["admin", "director", "secretary", "parent"] },
+  { href: "/dashboard/contratos", label: "Contratos", icon: FileCheck, roles: ["admin", "director", "secretary"] },
   { href: "/dashboard/documentos", label: "Documentos", icon: FileText, roles: ["admin", "director", "secretary"] },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, roles: ["admin", "director", "secretary", "teacher", "parent"] },
   { href: "/dashboard/alertas", label: "Alertas de atenção", icon: AlertTriangle, roles: ["admin", "director", "secretary"] },
@@ -104,7 +105,7 @@ const allNavItems: NavItem[] = [
     href: "/dashboard/gamificacao",
     label: "Gamificação",
     icon: Target,
-    roles: ["admin", "director", "teacher"],
+    roles: ["admin", "director", "secretary", "teacher"],
     customCheck: (role, perms) => role !== "teacher" || canSeeGamificacao(role, perms),
   },
   {

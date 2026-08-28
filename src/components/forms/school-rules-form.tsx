@@ -714,6 +714,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
                       ["viewReports", "Ver relatórios"],
                       ["accessShop", "Ver loja"],
                       ["fulfillShop", "Entregar prêmios"],
+                      ["adjustPoints", "Ajustar pontos em aula"],
                     ] as const
                   ).map(([key, label]) => (
                     <Toggle
@@ -741,6 +742,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
                       ["editSettings", "Editar configurações"],
                       ["manageTeachers", "Gerenciar professores"],
                       ["manageRewards", "Gerenciar loja/prêmios"],
+                      ["adjustPoints", "Ajustar pontos manualmente"],
                     ] as const
                   ).map(([key, label]) => (
                     <Toggle

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireSession, type SessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { studentsInClassWhere } from "@/lib/student-enrollments";
 import { assertClassInScope } from "@/lib/tenant-guards";
 import { awardXp } from "@/lib/gamification";
 import {
@@ -117,7 +118,7 @@ export async function createExerciseAction(formData: FormData) {
     });
 
     const students = await prisma.student.findMany({
-      where: { classId },
+      where: studentsInClassWhere(classId),
       select: { id: true, userId: true },
     });
 

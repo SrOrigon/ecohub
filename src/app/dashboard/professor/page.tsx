@@ -20,6 +20,7 @@ import { UserIdentity } from "@/components/profile/user-identity";
 import { RankingList } from "@/components/profile/ranking-list";
 import { TeacherDayOverview } from "@/components/teacher/teacher-day-overview";
 import { BulkCompleteMissionsForm } from "@/components/forms/bulk-complete-missions-form";
+import { AdjustStudentPointsForm } from "@/components/forms/adjust-student-points-form";
 import { getTeacherDayOverview } from "@/lib/teacher-day";
 import { getPendingMissionConfirmations } from "@/lib/mission-requests";
 import { teacherClassWhere } from "@/lib/teacher-classes";
@@ -109,6 +110,15 @@ export default async function TeacherDashboardPage() {
   }));
 
   const canCreateClass = hasPermission(user.role, settings, "teacher.createClasses");
+  const canAdjustPoints = hasPermission(user.role, settings, "teacher.adjustPoints");
+
+  const adjustStudents = myClasses.flatMap((classGroup) =>
+    classGroup.students.map((student) => ({
+      id: student.id,
+      name: student.user.fullName,
+      className: classGroup.name,
+    }))
+  );
 
   const pendingGrades = exercises.reduce(
     (n, ex) => n + ex.submissions.filter((s) => s.status === "submitted").length,
@@ -185,6 +195,20 @@ export default async function TeacherDashboardPage() {
       />
 
       <TeacherDayOverview classes={dayOverview} />
+
+      {canAdjustPoints && adjustStudents.length > 0 && (
+        <Card className="border-violet-200 bg-violet-50/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Medal className="h-5 w-5 text-violet-600" aria-hidden="true" />
+              Pontos em atividade de sala
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AdjustStudentPointsForm students={adjustStudents} />
+          </CardContent>
+        </Card>
+      )}
 
       {pendingItems.length > 0 && (
         <Card className="border-indigo-200">

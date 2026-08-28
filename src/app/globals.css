@@ -646,6 +646,8 @@ input[type="radio"] {
   }
   .boletim-print,
   .boletim-print *,
+  .document-print,
+  .document-print *,
   body.report-print-mode .app-main,
   body.report-print-mode .app-main * {
     visibility: visible;
@@ -657,6 +659,18 @@ input[type="radio"] {
     width: 100%;
     padding: 0;
     margin: 0;
+  }
+  .document-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .document-print-shell .no-print {
+    display: none !important;
+    visibility: hidden !important;
   }
   body.report-print-mode .app-shell > aside,
   body.report-print-mode .header-bar,

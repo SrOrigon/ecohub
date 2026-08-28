@@ -62,6 +62,66 @@ export async function awardXp(
   });
 }
 
+/** Ajuste manual de XP/moedas (ganho ou perda) — atividades em sala, diretoria, etc. */
+export async function adjustStudentPoints(
+  studentId: string,
+  xpDelta: number,
+  coinDelta: number,
+  reason: string,
+  source: XpSource = "manual",
+  settings?: SchoolSettings
+) {
+  if (xpDelta === 0 && coinDelta === 0) {
+    throw new Error("Informe XP ou moedas para ajustar.");
+  }
+  if (!reason.trim()) {
+    throw new Error("Descreva a atividade ou motivo do ajuste.");
+  }
+
+  const rules = settings ?? (await getSchoolSettingsForStudent(studentId));
+  const xpPerLevel = rules.xp.xpPerLevel;
+
+  const coinNote =
+    coinDelta !== 0 ? ` (${coinDelta > 0 ? "+" : ""}${coinDelta} moedas)` : "";
+  const fullReason = `${reason.trim()}${coinNote}`;
+
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.student.findUnique({
+      where: { id: studentId },
+      select: { xpTotal: true, coins: true },
+    });
+    if (!current) throw new Error("Aluno não encontrado.");
+
+    const nextXp = current.xpTotal + xpDelta;
+    const nextCoins = current.coins + coinDelta;
+    if (nextXp < 0) throw new Error("O aluno não tem XP suficiente para esta dedução.");
+    if (nextCoins < 0) throw new Error("O aluno não tem moedas suficientes para esta dedução.");
+
+    await tx.xpTransaction.create({
+      data: {
+        studentId,
+        amount: xpDelta,
+        reason: fullReason,
+        source,
+      },
+    });
+
+    const student = await tx.student.update({
+      where: { id: studentId },
+      data: {
+        ...(xpDelta !== 0 ? { xpTotal: nextXp, level: calculateLevel(nextXp, xpPerLevel) } : {}),
+        ...(coinDelta !== 0 ? { coins: nextCoins } : {}),
+      },
+    });
+
+    if (xpDelta > 0) {
+      await checkAndAwardBadges(tx, studentId, student.xpTotal, rules);
+    }
+
+    return student;
+  });
+}
+
 async function checkAndAwardBadges(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   studentId: string,

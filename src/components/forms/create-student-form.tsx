@@ -133,9 +133,9 @@ export function CreateStudentForm({ classes }: { classes: ClassOption[] }) {
               />
             </div>
             <div>
-              <Label htmlFor="classId">Turma</Label>
+              <Label htmlFor="classId">Turma inicial (opcional)</Label>
               <Select id="classId" name="classId">
-                <option value="">Sem turma</option>
+                <option value="">Sem turma — pode adicionar depois</option>
                 {classes.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}

@@ -8,10 +8,20 @@ export function teacherClassWhere(teacherId: string): Prisma.ClassGroupWhereInpu
 }
 
 export function studentInTeacherClassWhere(teacherId: string): Prisma.StudentWhereInput {
+  const classTeacherFilter = {
+    OR: [{ teacherId }, { coTeachers: { some: { teacherId } } }],
+  };
   return {
     OR: [
-      { classGroup: { teacherId } },
-      { classGroup: { coTeachers: { some: { teacherId } } } },
+      { classGroup: classTeacherFilter },
+      {
+        classEnrollments: {
+          some: {
+            status: { in: ["active", "locked"] },
+            classGroup: classTeacherFilter,
+          },
+        },
+      },
     ],
   };
 }

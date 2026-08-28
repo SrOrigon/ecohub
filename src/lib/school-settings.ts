@@ -134,11 +134,13 @@ export type SchoolSettings = {
       createTrails: boolean;
       createClassGoals: boolean;
       createClasses: boolean;
+      adjustPoints: boolean;
     };
     director: {
       editSettings: boolean;
       manageTeachers: boolean;
       manageRewards: boolean;
+      adjustPoints: boolean;
     };
     student: {
       redeemShop: boolean;
@@ -270,11 +272,13 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
       createTrails: true,
       createClassGoals: true,
       createClasses: true,
+      adjustPoints: true,
     },
     director: {
       editSettings: true,
       manageTeachers: true,
       manageRewards: true,
+      adjustPoints: true,
     },
     student: {
       redeemShop: true,

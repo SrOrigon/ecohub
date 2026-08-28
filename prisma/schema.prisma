@@ -135,6 +135,7 @@ model ClassGroup {
   school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacher     User?        @relation("ClassTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
   students    Student[]
+  enrollments StudentClassEnrollment[]
   attendance  Attendance[]
   missions    Mission[]
   exercises   Exercise[]
@@ -146,6 +147,7 @@ model ClassGroup {
   announcements Announcement[]
   scheduleSlots ClassScheduleSlot[]
   authorizationForms AuthorizationForm[]
+  issuedDocuments IssuedDocument[]
 
   @@index([schoolId])
 }
@@ -184,6 +186,7 @@ model Student {
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   provisionedBy   User?             @relation("StudentProvisionedBy", fields: [provisionedById], references: [id], onDelete: SetNull)
   classGroup      ClassGroup?       @relation(fields: [classId], references: [id], onDelete: SetNull)
+  classEnrollments StudentClassEnrollment[]
   grades          Grade[]
   attendance      Attendance[]
   xpTransactions  XpTransaction[]
@@ -204,6 +207,25 @@ model Student {
   tuitionPayments   TuitionPayment[]
 
   @@index([classId])
+}
+
+model StudentClassEnrollment {
+  id         String    @id @default(cuid())
+  studentId  String
+  classId    String
+  status     String    @default("active")
+  enrolledAt DateTime  @default(now())
+  endedAt    DateTime?
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classGroup ClassGroup @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, classId])
+  @@index([classId, status])
+  @@index([studentId, status])
 }
 
 model StudentActivity {
@@ -831,18 +853,32 @@ model ClassScheduleSlot {
 }
 
 model IssuedDocument {
-  id         String   @id @default(cuid())
-  schoolId   String
-  studentId  String
-  type       String
-  title      String
-  body       String
-  issuedById String
-  issuedAt   DateTime @default(now())
+  id                String    @id @default(cuid())
+  schoolId          String
+  studentId         String
+  classId           String?
+  type              String    @default("contract")
+  title             String
+  body              String
+  contentHtml       String?
+  status            String    @default("draft")
+  contractNumber    String?
+  contractStatus    String    @default("vigente")
+  contractStartDate DateTime?
+  contractEndDate   DateTime?
+  issuedById        String
+  issuedAt          DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  issuedBy  User    @relation("DocIssuer", fields: [issuedById], references: [id], onDelete: Cascade)
+  school     School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student    Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classGroup ClassGroup? @relation(fields: [classId], references: [id], onDelete: SetNull)
+  issuedBy   User        @relation("DocIssuer", fields: [issuedById], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, studentId])
+  @@index([studentId, status])
+  @@index([schoolId, type, contractStatus])
+  @@index([classId])
 }
 
 model AppMeta {

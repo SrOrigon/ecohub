@@ -9,6 +9,7 @@ import { hasPermission } from "@/lib/permissions";
 import { notifyStudentParents } from "@/lib/notifications";
 import { OCCURRENCE_KINDS } from "@/lib/constants";
 import { assertClassInScope } from "@/lib/tenant-guards";
+import { studentsInClassWhere } from "@/lib/student-enrollments";
 
 function revalidateDiary() {
   revalidatePath("/dashboard/diario");
@@ -85,7 +86,7 @@ export async function createOccurrenceAction(formData: FormData) {
   if (studentId) {
     // O aluno precisa estar matriculado na turma informada.
     const enrolled = await prisma.student.findFirst({
-      where: { id: studentId, classId, user: { schoolId: user.schoolId } },
+      where: { id: studentId, ...studentsInClassWhere(classId), user: { schoolId: user.schoolId } },
       select: { id: true },
     });
     if (!enrolled) return { error: "Aluno não pertence a esta turma." };

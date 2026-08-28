@@ -21,7 +21,9 @@ import {
   getMissions,
   getMonthlyPerformance,
   getClassComparison,
+  getStudents,
 } from "@/lib/queries";
+import { AdjustStudentPointsForm } from "@/components/forms/adjust-student-points-form";
 import { formatPercent } from "@/lib/utils";
 import { RankingTableRows } from "@/components/profile/ranking-list";
 import { LiveActivityFeed, LiveStatsStrip } from "@/components/metrics/live-activity-feed";
@@ -46,7 +48,7 @@ export default async function DashboardPage() {
   if (user.role === "secretary") redirect("/dashboard/secretaria");
 
   const schoolId = user.schoolId;
-  const [stats, ranking, missions, monthlyData, classData] = await Promise.all([
+  const [stats, ranking, missions, monthlyData, classData, students] = await Promise.all([
     getDashboardStats(schoolId).catch(() => ({
       totalStudents: 0,
       totalClasses: 0,
@@ -59,7 +61,14 @@ export default async function DashboardPage() {
     getMissions(schoolId).catch(() => []),
     getMonthlyPerformance(schoolId).catch(() => []),
     getClassComparison(schoolId).catch(() => []),
+    getStudents(schoolId).catch(() => []),
   ]);
+
+  const adjustStudents = students.map((s) => ({
+    id: s.id,
+    name: s.user.fullName,
+    className: s.classGroup?.name ?? null,
+  }));
 
   const statCards = [
     { label: "Alunos", value: stats.totalStudents, icon: Users, color: "text-indigo-600" },
@@ -84,6 +93,17 @@ export default async function DashboardPage() {
       </PageHeader>
 
       <LiveStatsStrip />
+
+      {adjustStudents.length > 0 && (
+        <Card className="border-violet-200 bg-violet-50/40">
+          <CardHeader>
+            <CardTitle>Pontos em atividade de sala</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AdjustStudentPointsForm students={adjustStudents} />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="responsive-grid">
         {statCards.map(({ label, value, icon: Icon, color }) => (

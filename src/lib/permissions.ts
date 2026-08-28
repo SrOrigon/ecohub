@@ -16,9 +16,11 @@ export type PermissionKey =
   | "teacher.createTrails"
   | "teacher.createClassGoals"
   | "teacher.createClasses"
+  | "teacher.adjustPoints"
   | "director.editSettings"
   | "director.manageTeachers"
   | "director.manageRewards"
+  | "director.adjustPoints"
   | "student.redeemShop"
   | "student.requestMission"
   | "parent.viewChildData";
@@ -39,11 +41,13 @@ const DEFAULT_PERMISSIONS: SchoolSettings["permissions"] = {
     createTrails: true,
     createClassGoals: true,
     createClasses: true,
+    adjustPoints: true,
   },
   director: {
     editSettings: true,
     manageTeachers: true,
     manageRewards: true,
+    adjustPoints: true,
   },
   student: {
     redeemShop: true,

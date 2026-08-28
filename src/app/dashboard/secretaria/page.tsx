@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { computeRiskAlerts } from "@/lib/risk-alerts";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdjustStudentPointsForm } from "@/components/forms/adjust-student-points-form";
+import { getStudents } from "@/lib/queries";
 import { redirect } from "next/navigation";
 
 export default async function SecretariaPage() {
@@ -12,14 +14,21 @@ export default async function SecretariaPage() {
   if (!user?.schoolId) redirect("/login");
   if (user.role !== "secretary" && user.role !== "admin") redirect("/dashboard");
 
-  const [pendingEnrollments, pendingAuths, unreadThreads, alerts] = await Promise.all([
+  const [pendingEnrollments, pendingAuths, unreadThreads, alerts, students] = await Promise.all([
     prisma.enrollmentApplication.count({ where: { schoolId: user.schoolId, status: "pending" } }),
     prisma.authorizationForm.count({
       where: { schoolId: user.schoolId, responses: { none: {} } },
     }),
     prisma.chatThread.count({ where: { schoolId: user.schoolId } }),
     computeRiskAlerts(user.schoolId),
+    getStudents(user.schoolId),
   ]);
+
+  const adjustStudents = students.map((s) => ({
+    id: s.id,
+    name: s.user.fullName,
+    className: s.classGroup?.name ?? null,
+  }));
 
   const cards = [
     { label: "Matrículas pendentes", value: pendingEnrollments, href: "/dashboard/matriculas", icon: FileCheck },
@@ -57,6 +66,17 @@ export default async function SecretariaPage() {
           </Link>
         ))}
       </div>
+
+      {adjustStudents.length > 0 && (
+        <Card className="border-violet-200 bg-violet-50/40">
+          <CardHeader>
+            <CardTitle>Pontos em atividade de sala</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AdjustStudentPointsForm students={adjustStudents} />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

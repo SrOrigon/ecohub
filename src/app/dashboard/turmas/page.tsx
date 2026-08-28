@@ -57,7 +57,16 @@ export default async function TurmasPage() {
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {classes.map((turma) => (
+          {classes.map((turma) => {
+            const rosterMap = new Map<string, { id: string; user: { fullName: string; avatarUrl: string | null } }>();
+            for (const student of turma.students) rosterMap.set(student.id, student);
+            for (const enrollment of turma.enrollments ?? []) {
+              rosterMap.set(enrollment.student.id, enrollment.student);
+            }
+            const roster = [...rosterMap.values()];
+            const studentCount = roster.length;
+
+            return (
             <Card key={turma.id}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-3">
@@ -88,7 +97,7 @@ export default async function TurmasPage() {
                     <DeleteConfirmButton
                       label="Excluir turma"
                       iconOnly
-                      confirmMessage={`Excluir a turma "${turma.name}"? Os ${turma._count.students} aluno(s) serão desvinculados, mas não apagados. Esta ação não pode ser desfeita.`}
+                      confirmMessage={`Excluir a turma "${turma.name}"? Os ${studentCount} aluno(s) serão desvinculados, mas não apagados. Esta ação não pode ser desfeita.`}
                       hiddenFields={{ classId: turma.id }}
                       action={deleteClassAction}
                     />
@@ -96,9 +105,9 @@ export default async function TurmasPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="mb-3 text-sm font-medium">{turma._count.students} alunos matriculados</p>
+                <p className="mb-3 text-sm font-medium">{studentCount} alunos matriculados</p>
                 <ul className="space-y-2 text-sm text-slate-600">
-                  {turma.students.map((a) => (
+                  {roster.map((a) => (
                     <li key={a.id}>
                       <UserIdentity
                         name={a.user.fullName}
@@ -119,7 +128,8 @@ export default async function TurmasPage() {
                 )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

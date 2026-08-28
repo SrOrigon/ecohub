@@ -17,6 +17,7 @@ import {
 import { ATTENDANCE_LABELS, ATTENDANCE_STATUSES, type AttendanceStatus } from "@/lib/constants";
 import { parseDateOnlyOrToday } from "@/lib/date-only";
 import { assertClassInScope, assertStudentInScope, assertTeachersInSchool } from "@/lib/tenant-guards";
+import { enrollStudentInClass, studentsInClassWhere } from "@/lib/student-enrollments";
 import { assertInstitutionSubject, dedupeSubjects, normalizeSubjectName } from "@/lib/institution-subjects";
 import {
   getSchoolSettings,
@@ -206,6 +207,16 @@ async function createStudentActionImpl(formData: FormData) {
     createdUser.id
   );
   if (!persisted.ok) return { error: persisted.error };
+
+  if (classId) {
+    const createdStudent = await prisma.student.findUnique({
+      where: { userId: createdUser.id },
+      select: { id: true },
+    });
+    if (createdStudent) {
+      await enrollStudentInClass(createdStudent.id, classId);
+    }
+  }
 
   if (accountMode !== "pin_only") {
     const stored = await prisma.user.findUnique({
@@ -675,7 +686,7 @@ export async function createMissionAction(formData: FormData) {
 
   if (classId) {
     const classStudents = await prisma.student.findMany({
-      where: { classId },
+      where: studentsInClassWhere(classId),
       select: { id: true },
     });
     for (const s of classStudents) {
@@ -818,7 +829,7 @@ export async function bulkAttendanceAction(formData: FormData) {
   if (!scope.ok) return { error: scope.error };
 
   const students = await prisma.student.findMany({
-    where: { classId, user: { schoolId: user.schoolId } },
+    where: { ...studentsInClassWhere(classId), user: { schoolId: user.schoolId } },
     include: { user: { select: { fullName: true } } },
   });
 
@@ -966,7 +977,9 @@ export async function updateStudentAction(formData: FormData) {
 
   const isProfileUpdate = formData.has("fullName");
   if (!isProfileUpdate) {
-    await prisma.student.update({ where: { id: studentId }, data: { classId } });
+    if (classId) {
+      await enrollStudentInClass(studentId, classId);
+    }
     revalidateGroups("core", "people", "gamification", "analytics");
     revalidatePath("/dashboard/alunos");
     revalidatePath(`/dashboard/alunos/${studentId}`);
@@ -1031,12 +1044,15 @@ export async function updateStudentAction(formData: FormData) {
     prisma.student.update({
       where: { id: studentId },
       data: {
-        classId,
         birthDate,
         status: String(formData.get("status") ?? student.status) === "inactive" ? "inactive" : "active",
       },
     }),
   ]);
+
+  if (classId) {
+    await enrollStudentInClass(studentId, classId);
+  }
 
   revalidateGroups("core", "people", "gamification", "analytics");
   revalidatePath("/dashboard/alunos");

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { cache } from "react";
 import type { SessionUser } from "@/lib/auth";
 import { teacherClassWhere } from "@/lib/teacher-classes";
+import { studentInClassFilter } from "@/lib/student-enrollments";
 import { CACHE_TTL, cacheGetOrSet } from "@/lib/runtime-cache";
 
 export const getDashboardStats = cache(async (schoolId: string | null) => {
@@ -68,7 +69,7 @@ export async function getRanking(schoolId: string | null, classId?: string | nul
     const students = await prisma.student.findMany({
       where: {
         user: { schoolId },
-        ...(classId ? { classId } : {}),
+        ...(classId ? studentInClassFilter(classId) : {}),
       },
       include: {
         user: { select: { fullName: true, avatarUrl: true } },
@@ -228,6 +229,11 @@ export async function getStudents(schoolId: string | null) {
         include: {
           user: { select: { fullName: true, email: true, avatarUrl: true } },
           classGroup: { select: { id: true, name: true } },
+          classEnrollments: {
+            where: { status: { in: ["active", "locked"] } },
+            include: { classGroup: { select: { id: true, name: true } } },
+            orderBy: { enrolledAt: "asc" },
+          },
         },
         orderBy: { user: { fullName: "asc" } },
       }),
@@ -258,6 +264,10 @@ export async function getStudentById(id: string, schoolId: string | null) {
       include: {
         user: true,
         classGroup: true,
+        classEnrollments: {
+          include: { classGroup: true },
+          orderBy: { enrolledAt: "asc" },
+        },
         grades: { orderBy: { createdAt: "desc" } },
         attendance: { orderBy: { date: "desc" }, take: 90 },
         xpTransactions: { orderBy: { createdAt: "desc" }, take: 40 },
@@ -306,7 +316,23 @@ export async function getClasses(schoolId: string | null, teacherId?: string) {
             user: { select: { fullName: true, avatarUrl: true } },
           },
         },
-        _count: { select: { students: true } },
+        enrollments: {
+          where: { status: { in: ["active", "locked"] } },
+          include: {
+            student: {
+              select: {
+                id: true,
+                user: { select: { fullName: true, avatarUrl: true } },
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            students: true,
+            enrollments: { where: { status: { in: ["active", "locked"] } } },
+          },
+        },
       },
       orderBy: { name: "asc" },
     });

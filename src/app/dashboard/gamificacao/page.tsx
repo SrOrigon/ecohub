@@ -15,14 +15,16 @@ import { InstitutionShopManager } from "@/components/shop/institution-shop-manag
 import { RankingList } from "@/components/profile/ranking-list";
 import { LiveStatsStrip, LiveActivityFeed } from "@/components/metrics/live-activity-feed";
 import { BulkCompleteMissionsForm } from "@/components/forms/bulk-complete-missions-form";
+import { AdjustStudentPointsForm } from "@/components/forms/adjust-student-points-form";
 import { getPendingMissionConfirmations } from "@/lib/mission-requests";
+import { hasPermission } from "@/lib/permissions";
 
 import { requirePageAccess } from "@/lib/access-control";
 
 const iconMap = { clock: Clock, star: Star, target: Target };
 
 export default async function GamificacaoPage() {
-  const user = await requirePageAccess(["admin", "director", "teacher"]);
+  const user = await requirePageAccess(["admin", "director", "secretary", "teacher"]);
 
   const teacherFilter = user.role === "teacher" ? user.id : undefined;
 
@@ -47,14 +49,34 @@ export default async function GamificacaoPage() {
   }));
 
   const classOptions = classes.map((c) => ({ id: c.id, name: c.name }));
-  const isStaff = user.role === "director" || user.role === "teacher" || user.role === "admin";
+  const isStaff = user.role === "director" || user.role === "secretary" || user.role === "teacher" || user.role === "admin";
   const canManageShop = user.role === "director" || user.role === "admin";
+  const canAdjustPoints =
+    user.role === "admin" ||
+    user.role === "director" ||
+    user.role === "secretary" ||
+    (user.role === "teacher" && hasPermission(user.role, settings, "teacher.adjustPoints"));
+
+  const adjustStudents = students.map((s) => ({
+    id: s.id,
+    name: s.user.fullName,
+    className: s.classGroup?.name ?? null,
+  }));
 
   const rewards = canManageShop ? await getRewardsForSchool(user.schoolId) : [];
   const shopCategories = canManageShop ? await getRewardCategoriesForSchool(user.schoolId) : [];
 
   function studentsForMission(classId: string | null) {
-    const pool = classId ? students.filter((s) => s.classId === classId) : students;
+    const pool = classId
+      ? students.filter((student) => {
+          if (student.classId === classId) return true;
+          return student.classEnrollments?.some(
+            (enrollment) =>
+              enrollment.classId === classId &&
+              (enrollment.status === "active" || enrollment.status === "locked")
+          );
+        })
+      : students;
     return pool.map((s) => ({
       id: s.id,
       name: s.user.fullName,
@@ -75,6 +97,20 @@ export default async function GamificacaoPage() {
       </PageHeader>
 
       <LiveStatsStrip />
+
+      {canAdjustPoints && adjustStudents.length > 0 && (
+        <Card className="border-violet-200 bg-violet-50/40">
+          <CardHeader>
+            <CardTitle>Pontos em atividade de sala</CardTitle>
+            <CardDescription>
+              Ajuste manual de XP e moedas por participação, comportamento ou atividades em sala.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AdjustStudentPointsForm students={adjustStudents} />
+          </CardContent>
+        </Card>
+      )}
 
       {isStaff && pendingItems.length > 0 && (
         <Card className="border-indigo-200 dark:border-indigo-900">
