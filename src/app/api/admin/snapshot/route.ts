@@ -15,15 +15,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
-  const [userCount, schoolCount, snapshot] = await Promise.all([
+  const [userCount, schoolCount, studentCount, snapshot] = await Promise.all([
     prisma.user.count(),
     prisma.school.count(),
+    prisma.student.count(),
     loadInstitutionalSnapshot(),
   ]);
 
   return NextResponse.json({
     userCount,
     schoolCount,
+    studentCount,
     snapshot: snapshot
       ? {
           savedAt: snapshot.savedAt,
@@ -49,7 +51,7 @@ export async function POST(request: Request) {
     /* default save */
   }
 
-  if (body.action === "restore") {
+  if (body.action === "restore" || body.action === "force") {
     const result = await restoreInstitutionalSnapshotIfDegraded();
     return NextResponse.json(result);
   }

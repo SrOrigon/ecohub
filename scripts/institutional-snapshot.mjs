@@ -92,10 +92,18 @@ export async function restoreInstitutionalSnapshotIfDegraded() {
     const snapshot = JSON.parse(row.value);
     if (!snapshot?.users?.length) return { restored: false, usersBefore: 0, usersAfter: 0 };
 
-    const usersBefore = await prisma.user.count();
-    if (usersBefore >= snapshot.userCount) {
-      return { restored: false, usersBefore, usersAfter: usersBefore };
-    }
+  const usersBefore = await prisma.user.count();
+  const studentsBefore = await prisma.student.count();
+  const classGroupsBefore = await prisma.classGroup.count();
+
+  const needsRestore =
+    usersBefore < snapshot.userCount ||
+    studentsBefore < snapshot.students.length ||
+    classGroupsBefore < snapshot.classGroups.length;
+
+  if (!needsRestore) {
+    return { restored: false, usersBefore, usersAfter: usersBefore, studentsBefore, studentsAfter: studentsBefore };
+  }
 
     console.warn(
       `[snapshot] ALERTA: ${usersBefore} usuário(s) no banco, snapshot tem ${snapshot.userCount}. Restaurando...`
@@ -153,8 +161,9 @@ export async function restoreInstitutionalSnapshotIfDegraded() {
     });
 
     const usersAfter = await prisma.user.count();
-    console.log(`[snapshot] Restauração: ${usersBefore} → ${usersAfter} usuário(s).`);
-    return { restored: usersAfter > usersBefore, usersBefore, usersAfter };
+    const studentsAfter = await prisma.student.count();
+    console.log(`[snapshot] Restauração: ${usersBefore}→${usersAfter} usuário(s), ${studentsBefore}→${studentsAfter} aluno(s).`);
+    return { restored: usersAfter > usersBefore || studentsAfter > studentsBefore, usersBefore, usersAfter, studentsBefore, studentsAfter };
   } finally {
     await prisma.$disconnect();
   }

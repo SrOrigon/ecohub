@@ -52,11 +52,16 @@ export async function GET() {
   let dbOk = false;
   let userCount: number | null = null;
   let schoolCount: number | null = null;
+  let studentCount: number | null = null;
 
   try {
     await prisma.$queryRaw`SELECT 1`;
     dbOk = true;
-    [userCount, schoolCount] = await Promise.all([prisma.user.count(), prisma.school.count()]);
+    [userCount, schoolCount, studentCount] = await Promise.all([
+      prisma.user.count(),
+      prisma.school.count(),
+      prisma.student.count(),
+    ]);
   } catch {
     dbOk = false;
   }
@@ -134,6 +139,7 @@ export async function GET() {
             accounts: {
               users: userCount ?? manifest?.userCount ?? null,
               schools: schoolCount,
+              students: studentCount,
               persisted: durable && dbOk,
               store: postgres ? "postgresql" : "sqlite",
               goldenBackup: postgres ? durable && dbOk : goldenExists,

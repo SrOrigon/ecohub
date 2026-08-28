@@ -222,13 +222,17 @@ export const getClassComparison = cache(async (schoolId: string | null) => {
 
 export async function getStudents(schoolId: string | null) {
   if (!schoolId) return [];
+  const baseInclude = {
+    user: { select: { fullName: true, email: true, avatarUrl: true } },
+    classGroup: { select: { id: true, name: true } },
+  } as const;
+
   try {
     const [students, gradeAvgs] = await Promise.all([
       prisma.student.findMany({
         where: { user: { schoolId } },
         include: {
-          user: { select: { fullName: true, email: true, avatarUrl: true } },
-          classGroup: { select: { id: true, name: true } },
+          ...baseInclude,
           classEnrollments: {
             where: { status: { in: ["active", "locked"] } },
             include: { classGroup: { select: { id: true, name: true } } },
@@ -248,11 +252,34 @@ export async function getStudents(schoolId: string | null) {
 
     return students.map((student) => ({
       ...student,
+      classEnrollments: student.classEnrollments ?? [],
       grades: avgMap.has(student.id) ? [{ value: avgMap.get(student.id)! }] : [],
     }));
   } catch (err) {
-    console.error("[getStudents] Error:", err);
-    return [];
+    console.error("[getStudents] Erro com matrículas — tentando consulta básica:", err);
+    try {
+      const [students, gradeAvgs] = await Promise.all([
+        prisma.student.findMany({
+          where: { user: { schoolId } },
+          include: baseInclude,
+          orderBy: { user: { fullName: "asc" } },
+        }),
+        prisma.grade.groupBy({
+          by: ["studentId"],
+          where: { student: { user: { schoolId } } },
+          _avg: { value: true },
+        }),
+      ]);
+      const avgMap = new Map(gradeAvgs.map((row) => [row.studentId, row._avg.value ?? 0]));
+      return students.map((student) => ({
+        ...student,
+        classEnrollments: [],
+        grades: avgMap.has(student.id) ? [{ value: avgMap.get(student.id)! }] : [],
+      }));
+    } catch (fallbackErr) {
+      console.error("[getStudents] Falha total:", fallbackErr);
+      return [];
+    }
   }
 }
 

@@ -144,25 +144,58 @@ export async function restoreInstitutionalSnapshotIfDegraded(): Promise<{
   restored: boolean;
   usersBefore: number;
   usersAfter: number;
+  studentsBefore: number;
+  studentsAfter: number;
 }> {
   if (!isSnapshotStorageEnabled()) {
-    return { restored: false, usersBefore: 0, usersAfter: 0 };
+    return { restored: false, usersBefore: 0, usersAfter: 0, studentsBefore: 0, studentsAfter: 0 };
   }
 
   const snapshot = await loadInstitutionalSnapshot();
   if (!snapshot) {
-    return { restored: false, usersBefore: 0, usersAfter: 0 };
+    return { restored: false, usersBefore: 0, usersAfter: 0, studentsBefore: 0, studentsAfter: 0 };
   }
 
   const usersBefore = await prisma.user.count();
-  if (usersBefore >= snapshot.userCount) {
-    return { restored: false, usersBefore, usersAfter: usersBefore };
+  const studentsBefore = await prisma.student.count();
+  const classGroupsBefore = await prisma.classGroup.count();
+
+  const needsRestore =
+    usersBefore < snapshot.userCount ||
+    studentsBefore < snapshot.students.length ||
+    classGroupsBefore < snapshot.classGroups.length;
+
+  if (!needsRestore) {
+    return {
+      restored: false,
+      usersBefore,
+      usersAfter: usersBefore,
+      studentsBefore,
+      studentsAfter: studentsBefore,
+    };
   }
 
   console.warn(
-    `[snapshot] ALERTA: ${usersBefore} usuário(s) no banco, snapshot tem ${snapshot.userCount}. Restaurando...`
+    `[snapshot] ALERTA: banco degradado (usuários ${usersBefore}/${snapshot.userCount}, alunos ${studentsBefore}/${snapshot.students.length}). Restaurando...`
   );
 
+  await applyInstitutionalSnapshot(snapshot);
+
+  const usersAfter = await prisma.user.count();
+  const studentsAfter = await prisma.student.count();
+  console.log(
+    `[snapshot] Restauração: usuários ${usersBefore}→${usersAfter}, alunos ${studentsBefore}→${studentsAfter}.`
+  );
+  return {
+    restored: usersAfter > usersBefore || studentsAfter > studentsBefore,
+    usersBefore,
+    usersAfter,
+    studentsBefore,
+    studentsAfter,
+  };
+}
+
+async function applyInstitutionalSnapshot(snapshot: InstitutionalSnapshot) {
   await prisma.$transaction(async (tx) => {
     for (const school of snapshot.schools) {
       const existing = await tx.school.findFirst({
@@ -226,7 +259,25 @@ export async function restoreInstitutionalSnapshotIfDegraded(): Promise<{
     }
   });
 
-  const usersAfter = await prisma.user.count();
-  console.log(`[snapshot] Restauração concluída: ${usersBefore} → ${usersAfter} usuário(s).`);
-  return { restored: usersAfter > usersBefore, usersBefore, usersAfter };
+  await backfillClassEnrollmentsFromLegacyClassId();
+}
+
+/** Recria vínculos de turma a partir do campo legado classId após restauração. */
+async function backfillClassEnrollmentsFromLegacyClassId() {
+  try {
+    const students = await prisma.student.findMany({
+      where: { classId: { not: null } },
+      select: { id: true, classId: true },
+    });
+    for (const student of students) {
+      if (!student.classId) continue;
+      await prisma.studentClassEnrollment.upsert({
+        where: { studentId_classId: { studentId: student.id, classId: student.classId } },
+        create: { studentId: student.id, classId: student.classId, status: "active" },
+        update: { status: "active", endedAt: null },
+      });
+    }
+  } catch (error) {
+    console.warn("[snapshot] Backfill de matrículas ignorado:", error);
+  }
 }

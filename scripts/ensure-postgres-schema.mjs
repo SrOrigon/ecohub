@@ -117,12 +117,47 @@ const INDEX_PATCHES = [
   `CREATE INDEX IF NOT EXISTS "RewardRedemption_status_idx" ON "RewardRedemption"("status")`,
 ];
 
+const DOCUMENT_AND_ENROLLMENT_PATCHES = [
+  `ALTER TABLE "IssuedDocument" ADD COLUMN IF NOT EXISTS "contentHtml" TEXT`,
+  `ALTER TABLE "IssuedDocument" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'final'`,
+  `ALTER TABLE "IssuedDocument" ADD COLUMN IF NOT EXISTS "contractNumber" TEXT`,
+  `ALTER TABLE "IssuedDocument" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP`,
+  `ALTER TABLE "IssuedDocument" ADD COLUMN IF NOT EXISTS "classId" TEXT`,
+  `ALTER TABLE "IssuedDocument" ADD COLUMN IF NOT EXISTS "contractStatus" TEXT NOT NULL DEFAULT 'vigente'`,
+  `ALTER TABLE "IssuedDocument" ADD COLUMN IF NOT EXISTS "contractStartDate" TIMESTAMP(3)`,
+  `ALTER TABLE "IssuedDocument" ADD COLUMN IF NOT EXISTS "contractEndDate" TIMESTAMP(3)`,
+  `CREATE TABLE IF NOT EXISTS "StudentClassEnrollment" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "studentId" TEXT NOT NULL,
+    "classId" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'active',
+    "enrolledAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "endedAt" TIMESTAMP(3),
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "StudentClassEnrollment_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "StudentClassEnrollment_classId_fkey" FOREIGN KEY ("classId") REFERENCES "ClassGroup" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "StudentClassEnrollment_studentId_classId_key" ON "StudentClassEnrollment"("studentId", "classId")`,
+  `CREATE INDEX IF NOT EXISTS "StudentClassEnrollment_classId_status_idx" ON "StudentClassEnrollment"("classId", "status")`,
+  `CREATE INDEX IF NOT EXISTS "StudentClassEnrollment_studentId_status_idx" ON "StudentClassEnrollment"("studentId", "status")`,
+  `CREATE INDEX IF NOT EXISTS "IssuedDocument_schoolId_type_contractStatus_idx" ON "IssuedDocument"("schoolId", "type", "contractStatus")`,
+  `CREATE INDEX IF NOT EXISTS "IssuedDocument_classId_idx" ON "IssuedDocument"("classId")`,
+  `INSERT INTO "StudentClassEnrollment" ("id", "studentId", "classId", "status", "enrolledAt", "createdAt", "updatedAt")
+   SELECT "id" || ':' || "classId", "id", "classId", 'active', COALESCE("createdAt", CURRENT_TIMESTAMP), COALESCE("createdAt", CURRENT_TIMESTAMP), COALESCE("createdAt", CURRENT_TIMESTAMP)
+   FROM "Student"
+   WHERE "classId" IS NOT NULL
+   ON CONFLICT ("studentId", "classId") DO NOTHING`,
+];
+
 const ALL_PATCHES = [
   ...TABLE_PATCHES,
   ...USER_COLUMN_PATCHES,
   ...STUDENT_COLUMN_PATCHES,
   ...REWARD_COLUMN_PATCHES,
   ...EXERCISE_COLUMN_PATCHES,
+  ...DOCUMENT_AND_ENROLLMENT_PATCHES,
   ...INDEX_PATCHES,
 ];
 
