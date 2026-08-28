@@ -138,6 +138,30 @@ async function notifyExerciseAudience(
   }
 }
 
+async function resolveExerciseClassId(
+  schoolId: string,
+  classId: string | null,
+  studentTargetIds: string[]
+) {
+  if (classId) return classId;
+  if (studentTargetIds.length === 0) return null;
+
+  const student = await prisma.student.findFirst({
+    where: { id: studentTargetIds[0], user: { schoolId } },
+    select: {
+      classId: true,
+      classEnrollments: {
+        where: { status: { in: ["active", "locked"] } },
+        orderBy: { enrolledAt: "asc" },
+        take: 1,
+        select: { classId: true },
+      },
+    },
+  });
+
+  return student?.classId ?? student?.classEnrollments[0]?.classId ?? null;
+}
+
 export async function createExerciseAction(formData: FormData) {
   const user = await requireSession(["admin", "director", "teacher"]);
   if (!user.schoolId) return { error: "Escola não configurada." };
@@ -145,21 +169,24 @@ export async function createExerciseAction(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim() || null;
   const kind = String(formData.get("kind") ?? "homework") as ExerciseKind;
-  const classId = String(formData.get("classId") ?? "") || null;
+  let classId = String(formData.get("classId") ?? "") || null;
   const maxPoints = parseFloat(String(formData.get("maxPoints") ?? "10"));
   const xpReward = parseInt(String(formData.get("xpReward") ?? "0"), 10);
   const coinReward = parseInt(String(formData.get("coinReward") ?? "0"), 10);
   const dueDateRaw = String(formData.get("dueDate") ?? "");
   const questionsJson = String(formData.get("questionsJson") ?? "");
-  const audienceType = parseAudienceType(String(formData.get("audienceType") ?? "class"));
-  const personalizationTag = String(formData.get("personalizationTag") ?? "").trim() || null;
   const studentTargetIds = parseStudentTargetIds(formData);
+  const audienceType =
+    studentTargetIds.length > 0
+      ? "personalized"
+      : parseAudienceType(String(formData.get("audienceType") ?? "class"));
+  const personalizationTag = String(formData.get("personalizationTag") ?? "").trim() || null;
 
   if (!title) return { error: "Título é obrigatório." };
-  if (!classId) return { error: "Selecione uma turma." };
   if (audienceType === "personalized" && studentTargetIds.length === 0) {
-    return { error: "Selecione pelo menos um aluno para o exercício personalizado." };
+    return { error: "Selecione pelo menos um aluno." };
   }
+  if (audienceType === "class" && !classId) return { error: "Selecione uma turma." };
   if (isNaN(maxPoints) || maxPoints <= 0) return { error: "Pontuação máxima inválida." };
 
   const settings = await getSchoolSettings(user.schoolId);
@@ -168,9 +195,14 @@ export async function createExerciseAction(formData: FormData) {
   }
 
   try {
-    await assertTeacherCanManageClass(user, classId);
     if (audienceType === "personalized") {
+      classId = await resolveExerciseClassId(user.schoolId, classId, studentTargetIds);
+      if (!classId) {
+        return { error: "Não foi possível vincular turma ao aluno selecionado. Matricule-o em uma turma primeiro." };
+      }
       await assertStudentTargetsInClass(classId, studentTargetIds);
+    } else {
+      await assertTeacherCanManageClass(user, classId);
     }
     const questions = parseQuestionsJson(questionsJson);
 
@@ -209,7 +241,7 @@ export async function createExerciseAction(formData: FormData) {
       include: { classGroup: { select: { name: true } } },
     });
 
-    await notifyExerciseAudience(exercise, audienceType, classId, studentTargetIds);
+    await notifyExerciseAudience(exercise, audienceType, classId!, studentTargetIds);
 
     revalidateExercises();
     return { success: true, id: exercise.id };
@@ -239,21 +271,30 @@ export async function updateExerciseAction(formData: FormData) {
   const dueDateRaw = String(formData.get("dueDate") ?? "");
   const isActive = formData.get("isActive") !== "false";
   const questionsJson = String(formData.get("questionsJson") ?? "");
-  const classId = String(formData.get("classId") ?? exercise.classId ?? "") || null;
-  const audienceType = parseAudienceType(String(formData.get("audienceType") ?? exercise.audienceType ?? "class"));
-  const personalizationTag = String(formData.get("personalizationTag") ?? exercise.personalizationTag ?? "").trim() || null;
+  const classIdInput = String(formData.get("classId") ?? exercise.classId ?? "") || null;
+  let classId = classIdInput;
   const studentTargetIds = parseStudentTargetIds(formData);
+  const audienceType =
+    studentTargetIds.length > 0
+      ? "personalized"
+      : parseAudienceType(String(formData.get("audienceType") ?? exercise.audienceType ?? "class"));
+  const personalizationTag = String(formData.get("personalizationTag") ?? exercise.personalizationTag ?? "").trim() || null;
 
   if (!title) return { error: "Título é obrigatório." };
-  if (!classId) return { error: "Selecione uma turma." };
   if (audienceType === "personalized" && studentTargetIds.length === 0) {
-    return { error: "Selecione pelo menos um aluno para o exercício personalizado." };
+    return { error: "Selecione pelo menos um aluno." };
   }
+  if (audienceType === "class" && !classId) return { error: "Selecione uma turma." };
 
   try {
-    await assertTeacherCanManageClass(user, classId);
     if (audienceType === "personalized") {
+      classId = await resolveExerciseClassId(user.schoolId, classId, studentTargetIds);
+      if (!classId) {
+        return { error: "Não foi possível vincular turma ao aluno selecionado." };
+      }
       await assertStudentTargetsInClass(classId, studentTargetIds);
+    } else {
+      await assertTeacherCanManageClass(user, classId);
     }
     const questions = questionsJson ? parseQuestionsJson(questionsJson) : null;
 

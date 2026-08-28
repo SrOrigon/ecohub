@@ -14,7 +14,6 @@ import {
   trueFalseOptions,
   QUESTION_TYPE_LABELS,
 } from "@/lib/exercises";
-import type { ExerciseAudienceType } from "@/lib/exercise-audience";
 import {
   newQuestion,
   parseBoundedFloat,
@@ -22,7 +21,7 @@ import {
   validateDraftQuestions,
   type DraftQuestion,
 } from "@/lib/exercise-draft";
-import { ExerciseStudentTargetsField } from "@/components/forms/exercise-student-targets-field";
+import { ExerciseStudentPicker } from "@/components/forms/exercise-student-targets-field";
 import { ChevronLeft, ChevronRight, PenLine, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -71,10 +70,11 @@ export function CreateExerciseForm({
   const [kind, setKind] = useState<"homework" | "exam">(defaultKind);
   const [basics, setBasics] = useState({
     title: defaultTitle,
-    classId: "",
     description: "",
     dueDate: "",
   });
+  const [classFilter, setClassFilter] = useState("");
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [clientError, setClientError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion(defaultQuestionType)]);
   const mid = presets[1] ?? presets[0] ?? DEFAULT_PRESETS[1];
@@ -87,9 +87,6 @@ export function CreateExerciseForm({
   const [aiSubject, setAiSubject] = useState("");
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiPending, startAiTransition] = useTransition();
-  const [audienceType, setAudienceType] = useState<ExerciseAudienceType>("class");
-  const [personalizationTag, setPersonalizationTag] = useState("");
-  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
   const effectiveAiSubject = aiSubject && subjects.includes(aiSubject) ? aiSubject : (subjects[0] ?? "");
 
@@ -105,12 +102,11 @@ export function CreateExerciseForm({
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
       formData.set("title", basics.title.trim());
-      formData.set("classId", basics.classId);
+      formData.set("classId", classFilter);
       formData.set("kind", kind);
       formData.set("description", basics.description.trim());
       formData.set("dueDate", basics.dueDate);
-      formData.set("audienceType", audienceType);
-      formData.set("personalizationTag", personalizationTag);
+      formData.set("audienceType", "personalized");
       selectedStudentIds.forEach((studentId) => formData.append("studentTargetIds", studentId));
       formData.set("questionsJson", JSON.stringify(questions));
       formData.set("xpReward", String(rewards.xp));
@@ -120,9 +116,8 @@ export function CreateExerciseForm({
       if (result.success) {
         setOpen(false);
         setStep(1);
-        setBasics({ title: defaultTitle, classId: "", description: "", dueDate: "" });
-        setAudienceType("class");
-        setPersonalizationTag("");
+        setBasics({ title: defaultTitle, description: "", dueDate: "" });
+        setClassFilter("");
         setSelectedStudentIds([]);
         setClientError(null);
         setQuestions([newQuestion()]);
@@ -135,10 +130,7 @@ export function CreateExerciseForm({
 
   function validateStep1() {
     if (!basics.title.trim()) return "Informe o título da atividade.";
-    if (!basics.classId) return "Selecione uma turma.";
-    if (audienceType === "personalized" && selectedStudentIds.length === 0) {
-      return "Selecione pelo menos um aluno para o exercício personalizado.";
-    }
+    if (selectedStudentIds.length === 0) return "Selecione pelo menos um aluno.";
     return null;
   }
 
@@ -188,9 +180,8 @@ export function CreateExerciseForm({
     setOpen(true);
     setStep(1);
     setKind(defaultKind);
-    setBasics({ title: defaultTitle, classId: "", description: "", dueDate: "" });
-    setAudienceType("class");
-    setPersonalizationTag("");
+    setBasics({ title: defaultTitle, description: "", dueDate: "" });
+    setClassFilter("");
     setSelectedStudentIds([]);
     setClientError(null);
     setQuestions([newQuestion(defaultQuestionType)]);
@@ -257,7 +248,7 @@ export function CreateExerciseForm({
       ) : hideDefaultTrigger ? null : (
         <Button onClick={openModal} size="lg" className="gap-2">
           <PenLine className="h-4 w-4" aria-hidden="true" />
-          Publicar para a turma
+          Publicar atividade
         </Button>
       )}
       <Modal open={open} onClose={closeModal} title={modalTitle}>
@@ -308,21 +299,6 @@ export function CreateExerciseForm({
                     <option value="exam">Prova / Avaliação Oficial</option>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="classId">Turma</Label>
-                  <Select
-                    id="classId"
-                    name="classId"
-                    required
-                    value={basics.classId}
-                    onChange={(event) => setBasics((current) => ({ ...current, classId: event.target.value }))}
-                  >
-                    <option value="">Selecione a turma...</option>
-                    {classes.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </Select>
-                </div>
               </div>
               <div>
                 <Label htmlFor="description">Instruções para os Alunos</Label>
@@ -345,12 +321,10 @@ export function CreateExerciseForm({
                   onChange={(event) => setBasics((current) => ({ ...current, dueDate: event.target.value }))}
                 />
               </div>
-              <ExerciseStudentTargetsField
-                classId={basics.classId}
-                audienceType={audienceType}
-                onAudienceTypeChange={setAudienceType}
-                personalizationTag={personalizationTag}
-                onPersonalizationTagChange={setPersonalizationTag}
+              <ExerciseStudentPicker
+                classes={classes}
+                classFilter={classFilter}
+                onClassFilterChange={setClassFilter}
                 selectedStudentIds={selectedStudentIds}
                 onSelectedStudentIdsChange={setSelectedStudentIds}
               />
@@ -440,8 +414,10 @@ export function CreateExerciseForm({
                   <strong>Título:</strong> {basics.title.trim() || "—"}
                 </p>
                 <p>
-                  <strong>Turma:</strong>{" "}
-                  {classes.find((item) => item.id === basics.classId)?.name ?? "—"}
+                  <strong>Alunos:</strong>{" "}
+                  {selectedStudentIds.length === 0
+                    ? "—"
+                    : `${selectedStudentIds.length} selecionado(s)`}
                 </p>
               </div>
               <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 p-3">

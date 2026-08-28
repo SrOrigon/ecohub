@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/modal";
 import { ToggleExerciseButton } from "@/components/forms/toggle-exercise-button";
-import { ExerciseStudentTargetsField } from "@/components/forms/exercise-student-targets-field";
-import type { ExerciseAudienceType } from "@/lib/exercise-audience";
+import { ExerciseStudentPicker } from "@/components/forms/exercise-student-targets-field";
 import {
   newQuestion,
   parseBoundedFloat,
@@ -88,11 +87,7 @@ export function EditExerciseForm({
   const [title, setTitle] = useState(exercise.title);
   const [description, setDescription] = useState(exercise.description ?? "");
   const [kind, setKind] = useState(exercise.kind);
-  const [classId, setClassId] = useState(exercise.classId ?? "");
-  const [audienceType, setAudienceType] = useState<ExerciseAudienceType>(
-    exercise.audienceType === "personalized" ? "personalized" : "class"
-  );
-  const [personalizationTag, setPersonalizationTag] = useState(exercise.personalizationTag ?? "");
+  const [classFilter, setClassFilter] = useState(exercise.classId ?? "");
   const [selectedStudentIds, setSelectedStudentIds] = useState(
     exercise.studentTargets.map((target) => target.studentId)
   );
@@ -109,9 +104,8 @@ export function EditExerciseForm({
       formData.set("title", title.trim());
       formData.set("description", description.trim());
       formData.set("kind", kind);
-      formData.set("classId", classId);
-      formData.set("audienceType", audienceType);
-      formData.set("personalizationTag", personalizationTag);
+      formData.set("classId", classFilter);
+      formData.set("audienceType", "personalized");
       formData.set("maxPoints", String(maxPoints));
       formData.set("xpReward", String(xpReward));
       formData.set("coinReward", String(coinReward));
@@ -135,11 +129,7 @@ export function EditExerciseForm({
       setClientError("Informe o título.");
       return;
     }
-    if (!classId) {
-      setClientError("Selecione uma turma.");
-      return;
-    }
-    if (audienceType === "personalized" && selectedStudentIds.length === 0) {
+    if (selectedStudentIds.length === 0) {
       setClientError("Selecione pelo menos um aluno.");
       return;
     }
@@ -180,25 +170,12 @@ export function EditExerciseForm({
                 <option value="exam">Prova</option>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="edit-class">Turma</Label>
-              <Select id="edit-class" value={classId} onChange={(event) => setClassId(event.target.value)} required>
-                <option value="">Selecione...</option>
-                {classes.map((turma) => (
-                  <option key={turma.id} value={turma.id}>
-                    {turma.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
           </div>
 
-          <ExerciseStudentTargetsField
-            classId={classId}
-            audienceType={audienceType}
-            onAudienceTypeChange={setAudienceType}
-            personalizationTag={personalizationTag}
-            onPersonalizationTagChange={setPersonalizationTag}
+          <ExerciseStudentPicker
+            classes={classes}
+            classFilter={classFilter}
+            onClassFilterChange={setClassFilter}
             selectedStudentIds={selectedStudentIds}
             onSelectedStudentIdsChange={setSelectedStudentIds}
           />

@@ -69,7 +69,7 @@ export default async function ExerciciosPage() {
           title={isStaff ? "Nenhum exercício publicado" : "Nenhum exercício disponível"}
           description={
             isStaff
-              ? "Clique em Publicar atividade para enviar à turma ou personalizar para alunos específicos."
+              ? "Clique em Publicar atividade, selecione um ou mais alunos e envie o exercício só para eles."
               : "Quando o professor publicar, aparecerá aqui com XP e moedas para ganhar!"
           }
         />
