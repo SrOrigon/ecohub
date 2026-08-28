@@ -73,25 +73,37 @@ export async function getStudentsForExerciseAction(classId?: string) {
   const user = await requireSession(["admin", "director", "teacher"]);
   if (!user.schoolId) return { error: "Escola não configurada." as const };
 
-  if (classId) {
-    const scope = await assertClassInScope(user, classId);
-    if (!scope.ok) return { error: scope.error };
+  try {
+    if (classId) {
+      const scope = await assertClassInScope(user, classId);
+      if (!scope.ok) return { error: scope.error };
+
+      const students = await fetchStudents({
+        user: { schoolId: user.schoolId },
+        status: "active",
+        ...studentsInClassWhere(classId),
+      });
+      return { students };
+    }
 
     const students = await fetchStudents({
       user: { schoolId: user.schoolId },
       status: "active",
-      ...studentsInClassWhere(classId),
+      ...(user.role === "teacher" ? studentInTeacherClassWhere(user.id) : {}),
     });
+
     return { students };
+  } catch (error) {
+    console.error("[getStudentsForExerciseAction]", error);
+    return {
+      error:
+        error instanceof Error
+          ? error.message.includes("audienceType") || error.message.includes("ExerciseStudentTarget")
+            ? "Banco de dados desatualizado. Aguarde o deploy concluir ou contate o suporte."
+            : error.message
+          : "Erro ao carregar alunos.",
+    };
   }
-
-  const students = await fetchStudents({
-    user: { schoolId: user.schoolId },
-    status: "active",
-    ...(user.role === "teacher" ? studentInTeacherClassWhere(user.id) : {}),
-  });
-
-  return { students };
 }
 
 /** @deprecated Use getStudentsForExerciseAction */

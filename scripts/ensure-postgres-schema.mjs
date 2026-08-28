@@ -186,7 +186,10 @@ const CRITICAL_COLUMNS = [
   { table: "Student", column: "accessPinHash" },
   { table: "Student", column: "accountType" },
   { table: "Student", column: "status" },
+  { table: "Exercise", column: "audienceType" },
 ];
+
+const CRITICAL_TABLES = ["ExerciseStudentTarget", "StudentClassEnrollment"];
 
 async function columnExists(prisma, table, column) {
   const rows = await prisma.$queryRawUnsafe(
@@ -198,6 +201,18 @@ async function columnExists(prisma, table, column) {
      LIMIT 1`,
     table,
     column
+  );
+  return Array.isArray(rows) && rows.length > 0;
+}
+
+async function tableExists(prisma, table) {
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT 1 AS ok
+     FROM information_schema.tables
+     WHERE table_schema = 'public'
+       AND table_name = $1
+     LIMIT 1`,
+    table
   );
   return Array.isArray(rows) && rows.length > 0;
 }
@@ -216,6 +231,10 @@ export async function verifyPostgresSchema(databaseUrl = process.env.DATABASE_UR
     for (const { table, column } of CRITICAL_COLUMNS) {
       const exists = await columnExists(prisma, table, column);
       if (!exists) missing.push(`${table}.${column}`);
+    }
+    for (const table of CRITICAL_TABLES) {
+      const exists = await tableExists(prisma, table);
+      if (!exists) missing.push(`table:${table}`);
     }
     return { ok: missing.length === 0, missing };
   } finally {
@@ -250,7 +269,21 @@ export async function ensurePostgresSchema(databaseUrl = process.env.DATABASE_UR
 
     const verification = await verifyPostgresSchema(databaseUrl);
     if (!verification.ok) {
-      console.error("[ecohub] PostgreSQL ainda incompleto após patch:", verification.missing.join(", "));
+      console.warn("[ecohub] PostgreSQL incompleto após patch — reaplicando patches de exercício...");
+      for (const sql of EXERCISE_COLUMN_PATCHES) {
+        try {
+          await prisma.$executeRawUnsafe(sql);
+        } catch {
+          /* ignore */
+        }
+      }
+      const retry = await verifyPostgresSchema(databaseUrl);
+      if (!retry.ok) {
+        console.error("[ecohub] PostgreSQL ainda incompleto após patch:", retry.missing.join(", "));
+      } else {
+        console.log("[ecohub] PostgreSQL schema patch: colunas de exercício corrigidas.");
+      }
+      return { patched: true, applied, warnings, ...retry };
     } else {
       console.log(`[ecohub] PostgreSQL schema patch: ${applied} comando(s), colunas críticas OK.`);
     }

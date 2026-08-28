@@ -38,14 +38,19 @@ export function ExerciseStudentPicker({
 
   useEffect(() => {
     startTransition(async () => {
-      const result = await getStudentsForExerciseAction(classFilter || undefined);
-      if ("error" in result && result.error) {
-        setLoadError(result.error);
+      try {
+        const result = await getStudentsForExerciseAction(classFilter || undefined);
+        if ("error" in result && result.error) {
+          setLoadError(result.error);
+          setStudents([]);
+          return;
+        }
+        setLoadError(null);
+        setStudents(result.students ?? []);
+      } catch {
+        setLoadError("Erro ao carregar alunos. Tente novamente.");
         setStudents([]);
-        return;
       }
-      setLoadError(null);
-      setStudents(result.students ?? []);
     });
   }, [classFilter]);
 
