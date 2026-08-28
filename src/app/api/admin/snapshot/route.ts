@@ -15,10 +15,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
-  const [userCount, schoolCount, studentCount, snapshot] = await Promise.all([
+  const [userCount, schoolCount, studentCount, classGroupCount, snapshot] = await Promise.all([
     prisma.user.count(),
     prisma.school.count(),
     prisma.student.count(),
+    prisma.classGroup.count(),
     loadInstitutionalSnapshot(),
   ]);
 
@@ -26,6 +27,7 @@ export async function GET(request: Request) {
     userCount,
     schoolCount,
     studentCount,
+    classGroupCount,
     snapshot: snapshot
       ? {
           savedAt: snapshot.savedAt,
@@ -33,6 +35,7 @@ export async function GET(request: Request) {
           schools: snapshot.schools.length,
           teachers: snapshot.users.filter((u) => u.role === "teacher").length,
           students: snapshot.students.length,
+          classGroups: snapshot.classGroups.length,
         }
       : null,
   });

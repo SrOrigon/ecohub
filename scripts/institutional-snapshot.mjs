@@ -58,13 +58,59 @@ async function buildSnapshot(prisma) {
   };
 }
 
+function mergeById(previous, current) {
+  const map = new Map();
+  for (const item of previous) map.set(item.id, item);
+  for (const item of current) map.set(item.id, item);
+  return [...map.values()];
+}
+
+function mergeUsers(previous, current) {
+  const map = new Map();
+  for (const user of previous) map.set(user.email.toLowerCase(), user);
+  for (const user of current) map.set(user.email.toLowerCase(), user);
+  return [...map.values()];
+}
+
+function mergeParentStudents(previous, current) {
+  const map = new Map();
+  const key = (link) => `${link.parentId}:${link.studentId}`;
+  for (const link of previous) map.set(key(link), link);
+  for (const link of current) map.set(key(link), link);
+  return [...map.values()];
+}
+
+function mergeSnapshots(previous, current) {
+  const schools = mergeById(previous.schools, current.schools);
+  const users = mergeUsers(previous.users, current.users);
+  const students = mergeById(previous.students, current.students);
+  const classGroups = mergeById(previous.classGroups, current.classGroups);
+  const parentStudents = mergeParentStudents(previous.parentStudents, current.parentStudents);
+  const teacherInvites = mergeById(previous.teacherInvites ?? [], current.teacherInvites ?? []);
+  return {
+    version: Math.max(previous.version, current.version),
+    savedAt: current.savedAt,
+    userCount: Math.max(previous.userCount, users.length),
+    schools,
+    users,
+    students,
+    classGroups,
+    parentStudents,
+    teacherInvites,
+  };
+}
+
 export async function saveInstitutionalSnapshot(reason = "write") {
   if (!enabled()) return { saved: false };
 
   const prisma = new PrismaClient();
   try {
-    const snapshot = await buildSnapshot(prisma);
-    if (snapshot.userCount === 0) return { saved: false };
+    const current = await buildSnapshot(prisma);
+    if (current.userCount === 0) return { saved: false };
+
+    const row = await prisma.appMeta.findUnique({ where: { key: SNAPSHOT_KEY } });
+    const previous = row?.value ? JSON.parse(row.value) : null;
+    const snapshot = previous?.users?.length ? mergeSnapshots(previous, current) : current;
 
     await prisma.appMeta.upsert({
       where: { key: SNAPSHOT_KEY },
@@ -73,11 +119,87 @@ export async function saveInstitutionalSnapshot(reason = "write") {
     });
 
     console.log(
-      `[snapshot] Salvo (${reason}): ${snapshot.userCount} usuário(s), ${snapshot.schools.length} escola(s).`
+      `[snapshot] Salvo (${reason}): ${snapshot.userCount} usuário(s), ${snapshot.students.length} aluno(s), ${snapshot.classGroups.length} turma(s).`
     );
     return { saved: true, userCount: snapshot.userCount };
   } finally {
     await prisma.$disconnect();
+  }
+}
+
+async function repairMissingClassGroups(prisma, snapshot) {
+  const snapshotById = new Map(snapshot.classGroups.map((turma) => [turma.id, turma]));
+  const missingClassIds = new Set();
+
+  const studentsWithClass = await prisma.student.findMany({
+    where: { classId: { not: null } },
+    select: { classId: true },
+  });
+  for (const row of studentsWithClass) {
+    if (row.classId) missingClassIds.add(row.classId);
+  }
+
+  try {
+    const enrollments = await prisma.studentClassEnrollment.findMany({
+      select: { classId: true },
+      distinct: ["classId"],
+    });
+    for (const row of enrollments) missingClassIds.add(row.classId);
+  } catch {
+    /* opcional */
+  }
+
+  if (missingClassIds.size === 0) return 0;
+
+  const existing = await prisma.classGroup.findMany({
+    where: { id: { in: [...missingClassIds] } },
+    select: { id: true },
+  });
+  const existingIds = new Set(existing.map((row) => row.id));
+  const orphanIds = [...missingClassIds].filter((id) => !existingIds.has(id));
+  if (orphanIds.length === 0) return 0;
+
+  const defaultSchoolId =
+    snapshot.schools[0]?.id ??
+    (await prisma.school.findFirst({ select: { id: true }, orderBy: { createdAt: "asc" } }))?.id;
+  if (!defaultSchoolId) return 0;
+
+  for (const classId of orphanIds) {
+    const fromSnapshot = snapshotById.get(classId);
+    if (fromSnapshot) {
+      await prisma.classGroup.create({ data: fromSnapshot });
+    } else {
+      await prisma.classGroup.create({
+        data: {
+          id: classId,
+          schoolId: defaultSchoolId,
+          name: "Turma recuperada",
+          gradeLevel: "—",
+          year: new Date().getFullYear(),
+        },
+      });
+    }
+  }
+
+  return orphanIds.length;
+}
+
+async function backfillEnrollments(prisma) {
+  try {
+    const students = await prisma.student.findMany({
+      where: { classId: { not: null } },
+      select: { id: true, classId: true },
+    });
+    for (const student of students) {
+      if (!student.classId) continue;
+      await prisma.studentClassEnrollment.upsert({
+        where: { studentId_classId: { studentId: student.id, classId: student.classId } },
+        create: { studentId: student.id, classId: student.classId, status: "active" },
+        update: { status: "active", endedAt: null },
+      });
+    }
+  } catch {
+    /* opcional */
   }
 }
 
@@ -92,22 +214,20 @@ export async function restoreInstitutionalSnapshotIfDegraded() {
     const snapshot = JSON.parse(row.value);
     if (!snapshot?.users?.length) return { restored: false, usersBefore: 0, usersAfter: 0 };
 
-  const usersBefore = await prisma.user.count();
-  const studentsBefore = await prisma.student.count();
-  const classGroupsBefore = await prisma.classGroup.count();
+    const usersBefore = await prisma.user.count();
+    const studentsBefore = await prisma.student.count();
+    const classGroupsBefore = await prisma.classGroup.count();
 
-  const needsRestore =
-    usersBefore < snapshot.userCount ||
-    studentsBefore < snapshot.students.length ||
-    classGroupsBefore < snapshot.classGroups.length;
+    const needsRestore =
+      usersBefore < snapshot.userCount ||
+      studentsBefore < snapshot.students.length ||
+      classGroupsBefore < snapshot.classGroups.length;
 
-  if (!needsRestore) {
-    return { restored: false, usersBefore, usersAfter: usersBefore, studentsBefore, studentsAfter: studentsBefore };
-  }
-
-    console.warn(
-      `[snapshot] ALERTA: ${usersBefore} usuário(s) no banco, snapshot tem ${snapshot.userCount}. Restaurando...`
-    );
+    if (needsRestore) {
+      console.warn(
+        `[snapshot] ALERTA: usuários ${usersBefore}/${snapshot.userCount}, alunos ${studentsBefore}/${snapshot.students.length}, turmas ${classGroupsBefore}/${snapshot.classGroups.length}. Restaurando...`
+      );
+    }
 
     await prisma.$transaction(async (tx) => {
       for (const school of snapshot.schools) {
@@ -160,10 +280,27 @@ export async function restoreInstitutionalSnapshotIfDegraded() {
       }
     });
 
+    await repairMissingClassGroups(prisma, snapshot);
+    await backfillEnrollments(prisma);
+
     const usersAfter = await prisma.user.count();
     const studentsAfter = await prisma.student.count();
-    console.log(`[snapshot] Restauração: ${usersBefore}→${usersAfter} usuário(s), ${studentsBefore}→${studentsAfter} aluno(s).`);
-    return { restored: usersAfter > usersBefore || studentsAfter > studentsBefore, usersBefore, usersAfter, studentsBefore, studentsAfter };
+    const classGroupsAfter = await prisma.classGroup.count();
+    console.log(
+      `[snapshot] Sincronização: ${usersBefore}→${usersAfter} usuário(s), ${studentsBefore}→${studentsAfter} aluno(s), ${classGroupsBefore}→${classGroupsAfter} turma(s).`
+    );
+    return {
+      restored:
+        usersAfter > usersBefore ||
+        studentsAfter > studentsBefore ||
+        classGroupsAfter > classGroupsBefore,
+      usersBefore,
+      usersAfter,
+      studentsBefore,
+      studentsAfter,
+      classGroupsBefore,
+      classGroupsAfter,
+    };
   } finally {
     await prisma.$disconnect();
   }

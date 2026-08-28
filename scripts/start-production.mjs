@@ -109,7 +109,7 @@ async function bootstrapPostgres() {
     const restore = await restoreInstitutionalSnapshotIfDegraded();
     if (restore.restored) {
       console.log(
-        `[ecohub] Snapshot institucional restaurou contas: ${restore.usersBefore} → ${restore.usersAfter}`
+        `[ecohub] Snapshot institucional restaurou contas: ${restore.usersBefore} → ${restore.usersAfter} usuário(s), ${restore.studentsBefore ?? "?"} → ${restore.studentsAfter ?? "?"} aluno(s), ${restore.classGroupsBefore ?? "?"} → ${restore.classGroupsAfter ?? "?"} turma(s).`
       );
     }
   } catch (error) {

@@ -326,23 +326,31 @@ export async function getStudentById(id: string, schoolId: string | null) {
 
 export async function getClasses(schoolId: string | null, teacherId?: string) {
   if (!schoolId) return [];
+  const where = {
+    schoolId,
+    ...(teacherId ? teacherClassWhere(teacherId) : {}),
+  };
+  const baseInclude = {
+    teacher: { select: { id: true, fullName: true, avatarUrl: true } },
+    coTeachers: {
+      include: { teacher: { select: { id: true, fullName: true, avatarUrl: true } } },
+    },
+    students: {
+      select: {
+        id: true,
+        user: { select: { fullName: true, avatarUrl: true } },
+      },
+    },
+    _count: {
+      select: { students: true },
+    },
+  } as const;
+
   try {
     return await prisma.classGroup.findMany({
-      where: {
-        schoolId,
-        ...(teacherId ? teacherClassWhere(teacherId) : {}),
-      },
+      where,
       include: {
-        teacher: { select: { id: true, fullName: true, avatarUrl: true } },
-        coTeachers: {
-          include: { teacher: { select: { id: true, fullName: true, avatarUrl: true } } },
-        },
-        students: {
-          select: {
-            id: true,
-            user: { select: { fullName: true, avatarUrl: true } },
-          },
-        },
+        ...baseInclude,
         enrollments: {
           where: { status: { in: ["active", "locked"] } },
           include: {
@@ -364,8 +372,18 @@ export async function getClasses(schoolId: string | null, teacherId?: string) {
       orderBy: { name: "asc" },
     });
   } catch (err) {
-    console.error("[getClasses] Error:", err);
-    return [];
+    console.error("[getClasses] Erro com matrículas — tentando consulta básica:", err);
+    try {
+      const classes = await prisma.classGroup.findMany({
+        where,
+        include: baseInclude,
+        orderBy: { name: "asc" },
+      });
+      return classes.map((turma) => ({ ...turma, enrollments: [] }));
+    } catch (fallbackErr) {
+      console.error("[getClasses] Falha total:", fallbackErr);
+      return [];
+    }
   }
 }
 

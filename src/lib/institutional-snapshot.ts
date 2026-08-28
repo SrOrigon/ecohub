@@ -97,13 +97,70 @@ export async function buildInstitutionalSnapshot(): Promise<InstitutionalSnapsho
   };
 }
 
+function mergeById<T extends { id: string }>(previous: T[], current: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const item of previous) map.set(item.id, item);
+  for (const item of current) map.set(item.id, item);
+  return [...map.values()];
+}
+
+function mergeUsers(
+  previous: InstitutionalSnapshot["users"],
+  current: InstitutionalSnapshot["users"]
+): InstitutionalSnapshot["users"] {
+  const map = new Map<string, InstitutionalSnapshot["users"][number]>();
+  for (const user of previous) map.set(user.email.toLowerCase(), user);
+  for (const user of current) map.set(user.email.toLowerCase(), user);
+  return [...map.values()];
+}
+
+function mergeParentStudents(
+  previous: InstitutionalSnapshot["parentStudents"],
+  current: InstitutionalSnapshot["parentStudents"]
+): InstitutionalSnapshot["parentStudents"] {
+  const map = new Map<string, InstitutionalSnapshot["parentStudents"][number]>();
+  const key = (link: InstitutionalSnapshot["parentStudents"][number]) =>
+    `${link.parentId}:${link.studentId}`;
+  for (const link of previous) map.set(key(link), link);
+  for (const link of current) map.set(key(link), link);
+  return [...map.values()];
+}
+
+/** Une snapshot anterior com o estado atual — nunca descarta turmas/alunos já salvos. */
+export function mergeInstitutionalSnapshots(
+  previous: InstitutionalSnapshot,
+  current: InstitutionalSnapshot
+): InstitutionalSnapshot {
+  const schools = mergeById(previous.schools, current.schools);
+  const users = mergeUsers(previous.users, current.users);
+  const students = mergeById(previous.students, current.students);
+  const classGroups = mergeById(previous.classGroups, current.classGroups);
+  const parentStudents = mergeParentStudents(previous.parentStudents, current.parentStudents);
+  const teacherInvites = mergeById(previous.teacherInvites ?? [], current.teacherInvites ?? []);
+
+  return {
+    version: Math.max(previous.version, current.version),
+    savedAt: current.savedAt,
+    userCount: Math.max(previous.userCount, users.length),
+    schools,
+    users,
+    students,
+    classGroups,
+    parentStudents,
+    teacherInvites,
+  };
+}
+
 /** Grava snapshot após cadastros críticos (contas, turmas, vínculos). */
 export async function saveInstitutionalSnapshot(reason = "write"): Promise<void> {
   if (!isSnapshotStorageEnabled()) return;
 
   try {
-    const snapshot = await buildInstitutionalSnapshot();
-    if (snapshot.userCount === 0) return;
+    const current = await buildInstitutionalSnapshot();
+    if (current.userCount === 0) return;
+
+    const previous = await loadInstitutionalSnapshot();
+    const snapshot = previous ? mergeInstitutionalSnapshots(previous, current) : current;
 
     await prisma.appMeta.upsert({
       where: { key: SNAPSHOT_KEY },
@@ -117,7 +174,7 @@ export async function saveInstitutionalSnapshot(reason = "write"): Promise<void>
     });
 
     console.log(
-      `[snapshot] Salvo (${reason}): ${snapshot.userCount} usuário(s), ${snapshot.schools.length} escola(s).`
+      `[snapshot] Salvo (${reason}): ${snapshot.userCount} usuário(s), ${snapshot.students.length} aluno(s), ${snapshot.classGroups.length} turma(s).`
     );
   } catch (error) {
     console.error("[snapshot] Falha ao salvar backup institucional:", error);
@@ -146,14 +203,32 @@ export async function restoreInstitutionalSnapshotIfDegraded(): Promise<{
   usersAfter: number;
   studentsBefore: number;
   studentsAfter: number;
+  classGroupsBefore: number;
+  classGroupsAfter: number;
 }> {
   if (!isSnapshotStorageEnabled()) {
-    return { restored: false, usersBefore: 0, usersAfter: 0, studentsBefore: 0, studentsAfter: 0 };
+    return {
+      restored: false,
+      usersBefore: 0,
+      usersAfter: 0,
+      studentsBefore: 0,
+      studentsAfter: 0,
+      classGroupsBefore: 0,
+      classGroupsAfter: 0,
+    };
   }
 
   const snapshot = await loadInstitutionalSnapshot();
   if (!snapshot) {
-    return { restored: false, usersBefore: 0, usersAfter: 0, studentsBefore: 0, studentsAfter: 0 };
+    return {
+      restored: false,
+      usersBefore: 0,
+      usersAfter: 0,
+      studentsBefore: 0,
+      studentsAfter: 0,
+      classGroupsBefore: 0,
+      classGroupsAfter: 0,
+    };
   }
 
   const usersBefore = await prisma.user.count();
@@ -165,33 +240,36 @@ export async function restoreInstitutionalSnapshotIfDegraded(): Promise<{
     studentsBefore < snapshot.students.length ||
     classGroupsBefore < snapshot.classGroups.length;
 
-  if (!needsRestore) {
-    return {
-      restored: false,
-      usersBefore,
-      usersAfter: usersBefore,
-      studentsBefore,
-      studentsAfter: studentsBefore,
-    };
+  if (needsRestore) {
+    console.warn(
+      `[snapshot] ALERTA: banco degradado (usuários ${usersBefore}/${snapshot.userCount}, alunos ${studentsBefore}/${snapshot.students.length}, turmas ${classGroupsBefore}/${snapshot.classGroups.length}). Restaurando...`
+    );
   }
 
-  console.warn(
-    `[snapshot] ALERTA: banco degradado (usuários ${usersBefore}/${snapshot.userCount}, alunos ${studentsBefore}/${snapshot.students.length}). Restaurando...`
-  );
-
   await applyInstitutionalSnapshot(snapshot);
+  await repairMissingClassGroupsFromReferences(snapshot);
 
   const usersAfter = await prisma.user.count();
   const studentsAfter = await prisma.student.count();
-  console.log(
-    `[snapshot] Restauração: usuários ${usersBefore}→${usersAfter}, alunos ${studentsBefore}→${studentsAfter}.`
-  );
+  const classGroupsAfter = await prisma.classGroup.count();
+
+  if (needsRestore || classGroupsAfter > classGroupsBefore) {
+    console.log(
+      `[snapshot] Sincronização: usuários ${usersBefore}→${usersAfter}, alunos ${studentsBefore}→${studentsAfter}, turmas ${classGroupsBefore}→${classGroupsAfter}.`
+    );
+  }
+
   return {
-    restored: usersAfter > usersBefore || studentsAfter > studentsBefore,
+    restored:
+      usersAfter > usersBefore ||
+      studentsAfter > studentsBefore ||
+      classGroupsAfter > classGroupsBefore,
     usersBefore,
     usersAfter,
     studentsBefore,
     studentsAfter,
+    classGroupsBefore,
+    classGroupsAfter,
   };
 }
 
@@ -260,6 +338,68 @@ async function applyInstitutionalSnapshot(snapshot: InstitutionalSnapshot) {
   });
 
   await backfillClassEnrollmentsFromLegacyClassId();
+}
+
+/** Recria turmas ausentes a partir de classId em alunos/matrículas e do snapshot. */
+async function repairMissingClassGroupsFromReferences(snapshot: InstitutionalSnapshot) {
+  const snapshotById = new Map(snapshot.classGroups.map((turma) => [turma.id, turma]));
+  const missingClassIds = new Set<string>();
+
+  const studentsWithClass = await prisma.student.findMany({
+    where: { classId: { not: null } },
+    select: { classId: true },
+  });
+  for (const row of studentsWithClass) {
+    if (row.classId) missingClassIds.add(row.classId);
+  }
+
+  try {
+    const enrollments = await prisma.studentClassEnrollment.findMany({
+      select: { classId: true },
+      distinct: ["classId"],
+    });
+    for (const row of enrollments) missingClassIds.add(row.classId);
+  } catch {
+    /* tabela pode não existir ainda */
+  }
+
+  if (missingClassIds.size === 0) return;
+
+  const existing = await prisma.classGroup.findMany({
+    where: { id: { in: [...missingClassIds] } },
+    select: { id: true },
+  });
+  const existingIds = new Set(existing.map((row) => row.id));
+  const orphanIds = [...missingClassIds].filter((id) => !existingIds.has(id));
+  if (orphanIds.length === 0) return;
+
+  const defaultSchoolId =
+    snapshot.schools[0]?.id ??
+    (
+      await prisma.school.findFirst({ select: { id: true }, orderBy: { createdAt: "asc" } })
+    )?.id;
+
+  if (!defaultSchoolId) return;
+
+  for (const classId of orphanIds) {
+    const fromSnapshot = snapshotById.get(classId);
+    if (fromSnapshot) {
+      await prisma.classGroup.create({ data: fromSnapshot });
+      continue;
+    }
+
+    await prisma.classGroup.create({
+      data: {
+        id: classId,
+        schoolId: defaultSchoolId,
+        name: "Turma recuperada",
+        gradeLevel: "—",
+        year: new Date().getFullYear(),
+      },
+    });
+  }
+
+  console.log(`[snapshot] Turmas reparadas a partir de referências: ${orphanIds.length}.`);
 }
 
 /** Recria vínculos de turma a partir do campo legado classId após restauração. */
