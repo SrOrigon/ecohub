@@ -1258,6 +1258,118 @@ async function createTeacherActionImpl(formData: FormData) {
   };
 }
 
+export async function updateTeacherAction(formData: FormData) {
+  try {
+    return await updateTeacherActionImpl(formData);
+  } catch (error) {
+    console.error("[crud] updateTeacherAction falhou:", error);
+    return {
+      error: formatCrudError(error, "Não foi possível atualizar o professor. Tente novamente."),
+    };
+  }
+}
+
+async function updateTeacherActionImpl(formData: FormData) {
+  const session = await requireSessionResult(["admin", "director"]);
+  if (!session.ok) return { error: session.error };
+  const user = session.user;
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const teacherId = String(formData.get("teacherId") ?? "").trim();
+  const fullName = String(formData.get("fullName") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = normalizePassword(String(formData.get("password") ?? ""));
+  const street = String(formData.get("street") ?? "").trim();
+  const streetNumber = String(formData.get("streetNumber") ?? "").trim();
+  const addressComplement = String(formData.get("addressComplement") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const state = String(formData.get("state") ?? "").trim().toUpperCase();
+
+  if (!teacherId) return { error: "Professor inválido." };
+  if (!fullName || !email) return { error: "Nome e e-mail são obrigatórios." };
+
+  const teacher = await prisma.user.findFirst({
+    where: { id: teacherId, schoolId: user.schoolId, role: "teacher" },
+    select: { id: true, email: true, avatarUrl: true },
+  });
+  if (!teacher) return { error: "Professor não encontrado." };
+
+  if (email !== teacher.email) {
+    const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    if (existing) return { error: "E-mail já cadastrado." };
+  }
+
+  if (password) {
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.ok) return { error: passwordCheck.error };
+  }
+
+  const avatarResult = await resolveAvatarFromForm(formData, teacher.avatarUrl);
+  if (avatarResult && typeof avatarResult === "object" && "error" in avatarResult) {
+    return { error: avatarResult.error };
+  }
+
+  let avatarUrl = avatarResult as string | null;
+  if (avatarUrl && avatarUrl.length > 400_000) {
+    console.warn("[crud] avatar grande demais; professor será atualizado sem nova foto.");
+    avatarUrl = teacher.avatarUrl;
+  }
+
+  const updateData: {
+    fullName: string;
+    email: string;
+    avatarUrl: string | null;
+    street: string | null;
+    streetNumber: string | null;
+    addressComplement: string | null;
+    city: string | null;
+    state: string | null;
+    passwordHash?: string;
+  } = {
+    fullName,
+    email,
+    avatarUrl,
+    street: street || null,
+    streetNumber: streetNumber || null,
+    addressComplement: addressComplement || null,
+    city: city || null,
+    state: state || null,
+  };
+
+  if (password) {
+    updateData.passwordHash = await hashPassword(password);
+  }
+
+  await prisma.user.update({
+    where: { id: teacherId },
+    data: updateData,
+  });
+
+  if (password) {
+    const loginUser = await findUserByEmailForLogin(email);
+    if (!loginUser || !(await verifyPassword(password, loginUser.passwordHash))) {
+      return {
+        error:
+          "Dados salvos, mas o login com a nova senha ainda não pôde ser validado. Aguarde 1 minuto e tente /login/professor.",
+      };
+    }
+  }
+
+  try {
+    revalidatePath("/dashboard/professores");
+    revalidatePath("/dashboard/turmas");
+    invalidateSchoolCaches(user.schoolId);
+  } catch (error) {
+    console.warn("[crud] revalidate professor ignorado:", error);
+  }
+
+  return {
+    success: true,
+    email,
+    passwordUpdated: Boolean(password),
+  };
+}
+
 export async function deleteStudentAction(formData: FormData) {
   const studentId = String(formData.get("studentId") ?? "");
   const user = await requireSession(["admin", "director", "secretary"]);

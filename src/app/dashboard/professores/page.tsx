@@ -12,6 +12,7 @@ import { sortByTextPt, sortTeachersByName } from "@/lib/sort-order";
 import { UserCog, MapPin } from "lucide-react";
 import { redirect } from "next/navigation";
 import { CreateTeacherForm } from "@/components/forms/create-teacher-form";
+import { EditTeacherForm } from "@/components/forms/edit-teacher-form";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 import { deleteTeacherAction } from "@/actions/crud";
@@ -73,6 +74,20 @@ export default async function ProfessoresPage() {
                     subtitle={teacher.email}
                     size="md"
                   />
+                <div className="flex shrink-0 items-center gap-1">
+                  <EditTeacherForm
+                    teacher={{
+                      id: teacher.id,
+                      fullName: teacher.fullName,
+                      email: teacher.email,
+                      avatarUrl: teacher.avatarUrl,
+                      street: teacher.street,
+                      streetNumber: teacher.streetNumber,
+                      addressComplement: teacher.addressComplement,
+                      city: teacher.city,
+                      state: teacher.state,
+                    }}
+                  />
                   <DeleteConfirmButton
                     label="Excluir"
                     iconOnly
@@ -80,6 +95,7 @@ export default async function ProfessoresPage() {
                     hiddenFields={{ teacherId: teacher.id }}
                     action={deleteTeacherAction}
                   />
+                </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -92,9 +108,9 @@ export default async function ProfessoresPage() {
                 <div>
                   <p className="text-sm font-medium">{teacher.classes.length} turma(s)</p>
                   {teacher.classes.length > 0 && (
-                    <ul className="mt-2 space-y-1 text-sm text-slate-600">
-                      {teacher.classes.map((c, i) => (
-                        <li key={i} className="truncate">
+                    <ul className="mt-2 max-h-[calc(2.75rem*5+0.5rem)] space-y-1 overflow-y-auto overscroll-contain pr-1 text-sm text-slate-600">
+                      {teacher.classes.map((c) => (
+                        <li key={c.name} className="truncate">
                           • {c.name}
                         </li>
                       ))}

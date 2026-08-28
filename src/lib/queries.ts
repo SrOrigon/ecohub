@@ -527,7 +527,17 @@ export async function getTeachers(schoolId: string | null) {
   try {
     const teachers = await prisma.user.findMany({
       where: { schoolId, role: "teacher" },
-      select: { id: true, fullName: true, email: true, avatarUrl: true, city: true, state: true },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        avatarUrl: true,
+        city: true,
+        state: true,
+        street: true,
+        streetNumber: true,
+        addressComplement: true,
+      },
       orderBy: { fullName: "asc" },
     });
     return sortTeachersByName(teachers);
