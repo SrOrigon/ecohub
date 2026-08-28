@@ -1,6 +1,8 @@
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getClasses } from "@/lib/queries";
+import { getSchoolSettings } from "@/lib/school-settings";
+import { getContractTemplateHtml, hasInstitutionContractTemplate } from "@/lib/contract-template";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { createStudentDocumentAction } from "@/actions/student-documents";
 import { ContractStatusActions } from "@/components/contracts/contract-status-actions";
+import { InstitutionContractTemplatePanel } from "@/components/contracts/institution-contract-template";
 import {
   CONTRACT_STATUSES,
   contractStatusLabel,
@@ -41,7 +44,7 @@ export default async function ContratosPage({
   const statusFilter = params.situacao?.trim();
   const contractQuery = params.contrato?.trim().toLowerCase();
 
-  const [students, classes, contracts] = await Promise.all([
+  const [students, classes, contracts, settings] = await Promise.all([
     prisma.student.findMany({
       where: { user: { schoolId: user.schoolId } },
       include: { user: { select: { fullName: true } } },
@@ -64,7 +67,11 @@ export default async function ContratosPage({
       },
       take: 500,
     }),
+    getSchoolSettings(user.schoolId),
   ]);
+
+  const contractTemplateHtml = getContractTemplateHtml(settings);
+  const customTemplate = hasInstitutionContractTemplate(settings);
 
   const filteredContracts = contractQuery
     ? contracts.filter((item) => {
@@ -240,6 +247,20 @@ export default async function ContratosPage({
         </div>
 
         <aside className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Modelo de contrato da instituição</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <InstitutionContractTemplatePanel
+                hasCustomTemplate={customTemplate}
+                sourceName={settings.documents.contractTemplateSourceName}
+                updatedAt={settings.documents.contractTemplateUpdatedAt}
+                initialHtml={contractTemplateHtml}
+              />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Filtros rápidos</CardTitle>

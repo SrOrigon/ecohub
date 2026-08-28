@@ -3,8 +3,9 @@
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CONTRACT_STATUSES, type ContractStatus } from "@/lib/contract-types";
-import { DEFAULT_CONTRACT_HTML } from "@/lib/document-types";
-import { nextContractNumber, stripHtmlToText } from "@/lib/document-merge";
+import { getContractTemplateHtml } from "@/lib/contract-template";
+import { applyMergeTags, buildStudentMergeContext, nextContractNumber, stripHtmlToText } from "@/lib/document-merge";
+import { getSchoolSettings } from "@/lib/school-settings";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -55,7 +56,16 @@ export async function createStudentDocumentAction(formData: FormData): Promise<v
   }
 
   const contractNumber = type === "contract" ? await nextContractNumber(user.schoolId) : null;
-  const contentHtml = DEFAULT_CONTRACT_HTML;
+  const settings = await getSchoolSettings(user.schoolId);
+  const templateHtml = getContractTemplateHtml(settings);
+  const mergeContext = await buildStudentMergeContext(user.schoolId, studentId, {
+    contractNumber,
+    classId,
+    issuedAt: startDate,
+    contractStartDate: startDate,
+    contractEndDate: endDate,
+  });
+  const contentHtml = mergeContext ? applyMergeTags(templateHtml, mergeContext) : templateHtml;
   const body = stripHtmlToText(contentHtml);
 
   const document = await prisma.issuedDocument.create({

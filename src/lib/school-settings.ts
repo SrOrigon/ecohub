@@ -118,6 +118,12 @@ export type SchoolSettings = {
     studentSelfSignupMinAge: number;
     allowStudentPinLogin: boolean;
   };
+  documents: {
+    /** Modelo HTML exclusivo desta instituição (novos contratos). */
+    contractTemplateHtml: string | null;
+    contractTemplateSourceName: string | null;
+    contractTemplateUpdatedAt: string | null;
+  };
   permissions: {
     teacher: {
       createGrades: boolean;
@@ -255,6 +261,11 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
     teacherSignupMode: "invite_only",
     studentSelfSignupMinAge: 18,
     allowStudentPinLogin: true,
+  },
+  documents: {
+    contractTemplateHtml: null,
+    contractTemplateSourceName: null,
+    contractTemplateUpdatedAt: null,
   },
   permissions: {
     teacher: {
