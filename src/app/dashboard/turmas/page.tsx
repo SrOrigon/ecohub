@@ -3,6 +3,7 @@ import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateClassForm } from "@/components/forms/create-class-form";
+import { EditClassForm } from "@/components/forms/edit-class-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { UserIdentity } from "@/components/profile/user-identity";
@@ -22,6 +23,11 @@ export default async function TurmasPage() {
     user.role === "director" ||
     (isTeacher && hasPermission(user.role, settings, "teacher.createClasses"));
   const canDeleteClass = user.role === "admin" || user.role === "director";
+  const canEditClass =
+    user.role === "admin" ||
+    user.role === "director" ||
+    user.role === "secretary" ||
+    (isTeacher && hasPermission(user.role, settings, "teacher.createClasses"));
 
   const teacherFilter = isTeacher ? user.id : undefined;
 
@@ -76,14 +82,14 @@ export default async function TurmasPage() {
                       <UserIdentity
                         name={turma.teacher.fullName}
                         avatarUrl={turma.teacher.avatarUrl}
-                        subtitle={`${turma.gradeLevel}º ano · ${turma.year}`}
+                        subtitle={`${turma.gradeLevel} · ${turma.year}`}
                         size="xs"
                         className="mt-2"
                       />
                     )}
                     {!turma.teacher && (
                       <p className="text-sm text-slate-500">
-                        {turma.gradeLevel}º ano · {turma.year}
+                        {turma.gradeLevel} · {turma.year}
                         {!isTeacher && " · Prof. Não definido"}
                       </p>
                     )}
@@ -93,15 +99,31 @@ export default async function TurmasPage() {
                       </p>
                     )}
                   </div>
-                  {canDeleteClass && (
-                    <DeleteConfirmButton
-                      label="Excluir turma"
-                      iconOnly
-                      confirmMessage={`Excluir a turma "${turma.name}"? Os ${studentCount} aluno(s) serão desvinculados, mas não apagados. Esta ação não pode ser desfeita.`}
-                      hiddenFields={{ classId: turma.id }}
-                      action={deleteClassAction}
-                    />
-                  )}
+                  <div className="flex shrink-0 items-center gap-1">
+                    {canEditClass && (
+                      <EditClassForm
+                        turma={{
+                          id: turma.id,
+                          name: turma.name,
+                          gradeLevel: turma.gradeLevel,
+                          year: turma.year,
+                          teacherId: turma.teacher?.id ?? null,
+                          coTeacherIds: turma.coTeachers.map((ct) => ct.teacher.id),
+                        }}
+                        teachers={teachers}
+                        teacherMode={isTeacher}
+                      />
+                    )}
+                    {canDeleteClass && (
+                      <DeleteConfirmButton
+                        label="Excluir turma"
+                        iconOnly
+                        confirmMessage={`Excluir a turma "${turma.name}"? Os ${studentCount} aluno(s) serão desvinculados, mas não apagados. Esta ação não pode ser desfeita.`}
+                        hiddenFields={{ classId: turma.id }}
+                        action={deleteClassAction}
+                      />
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -117,7 +139,7 @@ export default async function TurmasPage() {
                     </li>
                   ))}
                 </ul>
-                {!isTeacher && teachers.length > 0 && (
+                {!isTeacher && teachers.length > 0 && !canEditClass && (
                   <ClassCoTeachersForm
                     classId={turma.id}
                     className={turma.name}

@@ -50,8 +50,8 @@ export function CreateClassForm({
             <Input id="name" name="name" placeholder="8º Ano A" required />
           </div>
           <div>
-            <Label htmlFor="gradeLevel">Série</Label>
-            <Input id="gradeLevel" name="gradeLevel" placeholder="8" required />
+            <Label htmlFor="gradeLevel">Série / período / horário</Label>
+            <Input id="gradeLevel" name="gradeLevel" placeholder="Sexta-feira · 08h às 10h" required />
           </div>
           <div>
             <Label htmlFor="year">Ano letivo</Label>

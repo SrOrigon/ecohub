@@ -308,6 +308,76 @@ export async function createClassAction(formData: FormData) {
   return { success: true };
 }
 
+export async function updateClassAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "secretary", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const settings = await getSchoolSettings(user.schoolId);
+  if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.createClasses")) {
+    return { error: "Sem permissão para editar turmas." };
+  }
+
+  const classId = String(formData.get("classId") ?? "").trim();
+  if (!classId) return { error: "Turma inválida." };
+
+  const scope = await assertClassInScope(user, classId);
+  if (!scope.ok) return { error: scope.error };
+
+  const existing = await prisma.classGroup.findFirst({
+    where: { id: classId, schoolId: user.schoolId },
+    select: { id: true, teacherId: true },
+  });
+  if (!existing) return { error: "Turma não encontrada." };
+
+  const name = String(formData.get("name") ?? "").trim();
+  const gradeLevel = String(formData.get("gradeLevel") ?? "").trim();
+  const year = parseInt(String(formData.get("year") ?? "2026"), 10);
+
+  if (!name || !gradeLevel) return { error: "Nome e série/período são obrigatórios." };
+  if (Number.isNaN(year)) return { error: "Ano letivo inválido." };
+
+  let teacherId = String(formData.get("teacherId") ?? "") || null;
+  if (user.role === "teacher") {
+    teacherId = existing.teacherId === user.id ? user.id : existing.teacherId;
+  }
+
+  const coTeacherIds = formData
+    .getAll("coTeacherIds")
+    .map((value) => String(value))
+    .filter(Boolean);
+  const uniqueCoTeachers = [...new Set(coTeacherIds)].filter((id) => id !== teacherId);
+
+  const staffOk = await assertTeachersInSchool(
+    user.schoolId,
+    [teacherId, ...uniqueCoTeachers].filter((id): id is string => !!id)
+  );
+  if (!staffOk) return { error: "Professor inválido para esta instituição." };
+
+  await prisma.$transaction(async (tx) => {
+    await tx.classGroup.update({
+      where: { id: classId },
+      data: { name, gradeLevel, year, teacherId },
+    });
+
+    if (user.role !== "teacher") {
+      await tx.classGroupCoTeacher.deleteMany({ where: { classId } });
+      if (uniqueCoTeachers.length > 0) {
+        await tx.classGroupCoTeacher.createMany({
+          data: uniqueCoTeachers.map((teacherIdValue) => ({ classId, teacherId: teacherIdValue })),
+        });
+      }
+    }
+  });
+
+  revalidateGroups("core", "people", "exercises");
+  revalidatePath("/dashboard/turmas");
+  revalidatePath("/dashboard/professor");
+  revalidatePath("/dashboard/exercicios");
+  revalidatePath("/dashboard/alunos");
+  invalidateSchoolCaches(user.schoolId);
+  return { success: true };
+}
+
 export async function createGradeAction(formData: FormData) {
   const user = await requireSession(["admin", "director", "teacher"]);
   if (!user.schoolId) return { error: "Escola não configurada." };
