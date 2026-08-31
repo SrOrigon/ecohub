@@ -10,6 +10,8 @@ import { AttentionAlertsProvider } from "@/components/alerts/attention-alerts-pr
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { CreatorJourneyCelebration } from "@/components/creator/creator-journey-celebration";
 import { CommandPalette } from "@/components/layout/command-palette";
+import { ScrollLayoutProbe } from "@/components/layout/scroll-layout-probe";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { isKidFriendlyRole, type UserRole } from "@/lib/constants";
 import type { SchoolSettings } from "@/lib/school-settings";
 
@@ -56,6 +58,7 @@ export function DashboardShell({
           data-audience={kidFriendly ? "student" : "staff"}
         >
         <CommandPalette userRole={role} />
+        <ScrollLayoutProbe />
         {showCreatorJourneyCelebration && (
           <CreatorJourneyCelebration journey={creatorJourney} schoolId={schoolId} />
         )}
@@ -92,10 +95,11 @@ export function DashboardShell({
             id="main-content"
             tabIndex={-1}
             aria-label="Conteúdo principal"
-            className="app-main focus:outline-none"
+            className="app-main focus:outline-none pb-24 md:pb-8"
           >
             {children}
           </main>
+          <MobileBottomNav role={role} />
         </div>
         </div>
   );

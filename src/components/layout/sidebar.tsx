@@ -376,7 +376,7 @@ export function Sidebar({
       )}
 
       <aside
-        className="sidebar-panel hidden h-dvh w-64 shrink-0 flex-col overflow-hidden border-r md:flex xl:w-72"
+        className="sidebar-panel hidden h-full max-h-dvh w-64 shrink-0 flex-col overflow-hidden border-r md:flex xl:w-72"
         aria-label="Menu lateral"
       >
         <SidebarContent
