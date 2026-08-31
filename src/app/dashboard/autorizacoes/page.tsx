@@ -8,6 +8,7 @@ import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import { createAuthorizationFormAction, signAuthorizationAction } from "@/actions/product-suite";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { layout } from "@/lib/layout-classes";
 
 export default async function AutorizacoesPage() {
   const user = await getSessionUser();
@@ -60,8 +61,8 @@ export default async function AutorizacoesPage() {
         <Card>
           <CardContent className="space-y-4 p-4">
             <p className="font-semibold text-slate-800">Nova autorização</p>
-            <form action={createAuthorizationFormAction} className="grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2">
+            <form action={createAuthorizationFormAction} className={`${layout.formGrid} gap-3`}>
+              <div className={layout.formGridFull}>
                 <Label htmlFor="title">Título</Label>
                 <Input id="title" name="title" required placeholder="Ex.: Autorização passeio ao museu" />
               </div>
@@ -80,7 +81,7 @@ export default async function AutorizacoesPage() {
                 <Label htmlFor="deadline">Prazo (opcional)</Label>
                 <Input id="deadline" name="deadline" type="date" />
               </div>
-              <div className="sm:col-span-2">
+              <div className={layout.formGridFull}>
                 <Label htmlFor="body">Texto da autorização</Label>
                 <Textarea id="body" name="body" rows={4} required placeholder="Descreva o evento e o consentimento..." />
               </div>

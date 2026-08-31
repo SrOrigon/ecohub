@@ -23,6 +23,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FileText, Plus, Printer } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { layout } from "@/lib/layout-classes";
 
 export default async function ContratosPage({
   searchParams,
@@ -96,8 +97,8 @@ export default async function ContratosPage({
         description="Gestão de contratos por aluno e turma — estilo Sponte, com situação, datas e impressão individual."
       />
 
-      <div className="layout-with-aside">
-        <div className="min-w-0 space-y-6">
+      <div className={layout.withAside}>
+        <div className={`${layout.main} space-y-6`}>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -106,7 +107,7 @@ export default async function ContratosPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form action={createStudentDocumentAction} className="grid gap-3 sm:grid-cols-2">
+              <form action={createStudentDocumentAction} className={`${layout.formGrid} gap-3`}>
                 <input type="hidden" name="type" value="contract" />
                 <input type="hidden" name="redirectTo" value="contratos" />
                 <div>
@@ -144,7 +145,7 @@ export default async function ContratosPage({
                   <Label htmlFor="contractEndDate">Data término</Label>
                   <Input id="contractEndDate" name="contractEndDate" type="date" />
                 </div>
-                <div className="sm:col-span-2">
+                <div className={layout.formGridFull}>
                   <Label htmlFor="title">Título (opcional)</Label>
                   <Input
                     id="title"
@@ -246,7 +247,7 @@ export default async function ContratosPage({
           </Card>
         </div>
 
-        <aside className="layout-with-aside-aside min-w-0 space-y-4">
+        <aside className={`${layout.aside} space-y-4`}>
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Modelo de contrato da instituição</CardTitle>

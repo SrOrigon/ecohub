@@ -25,6 +25,7 @@ import {
 } from "@/lib/queries";
 import { AdjustStudentPointsForm } from "@/components/forms/adjust-student-points-form";
 import { formatPercent } from "@/lib/utils";
+import { layout } from "@/lib/layout-classes";
 import { RankingTableRows } from "@/components/profile/ranking-list";
 import { LiveActivityFeed, LiveStatsStrip } from "@/components/metrics/live-activity-feed";
 import { LiveActivityTicker } from "@/components/dashboard/live-activity-ticker";
@@ -122,13 +123,13 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+      <div className={layout.grid2}>
         <PerformanceChart data={monthlyData} />
         <ClassComparisonChart data={classData} />
       </div>
 
-      <div className="grid min-w-0 gap-6 lg:grid-cols-3">
-        <Card className="min-w-0 xl:col-span-2">
+      <div className={layout.grid3}>
+        <Card className={`min-w-0 ${layout.span2}`}>
           <CardHeader>
             <CardTitle>Ranking de XP</CardTitle>
           </CardHeader>

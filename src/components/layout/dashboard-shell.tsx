@@ -93,7 +93,7 @@ export function DashboardShell({
             id="main-content"
             tabIndex={-1}
             aria-label="Conteúdo principal"
-            className="app-main focus:outline-none pb-24 md:pb-8"
+            className="app-main page-stack focus:outline-none pb-24 md:pb-8"
           >
             {children}
           </main>

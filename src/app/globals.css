@@ -30,10 +30,12 @@
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
   --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
   --touch-min: 44px;
-  --page-padding: clamp(0.75rem, 2vw, 1.5rem);
-  --content-max: 90rem;
+  --page-padding: clamp(0.625rem, 1.5vw + 0.25rem, 2rem);
+  --layout-gap: clamp(0.75rem, 1.5vw, 1.5rem);
+  --content-max: min(100%, 96rem);
+  --sidebar-width: clamp(13.5rem, 14vw, 17.5rem);
+  --aside-width: clamp(16rem, 20vw, 20rem);
   --app-header-offset: calc(3.5rem + env(safe-area-inset-top, 0px));
-  --app-header-offset-expanded: calc(3.5rem + env(safe-area-inset-top, 0px));
 }
 
 .dark {
@@ -65,13 +67,19 @@
 @media (min-width: 768px) {
   :root {
     --app-header-offset: calc(4rem + env(safe-area-inset-top, 0px));
-    --app-header-offset-expanded: var(--app-header-offset);
   }
 }
 
 @media (min-width: 1024px) {
   :root {
     --app-header-offset: calc(4rem + env(safe-area-inset-top, 0px));
+    --sidebar-width: clamp(14rem, 15vw, 18rem);
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --content-max: min(100%, 100rem);
   }
 }
 
@@ -196,9 +204,23 @@ button {
   margin-inline: auto;
   padding: var(--page-padding);
   padding-bottom: max(var(--page-padding), env(safe-area-inset-bottom, 0px));
+  container-type: inline-size;
+  container-name: page;
 }
 
-.app-main > * {
+.page-stack {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--layout-gap);
+}
+
+.page-stack > * {
+  min-width: 0;
+}
+
+/* Filhos de qualquer grid dentro do dashboard encolhem corretamente */
+.app-main :where(.grid) > * {
   min-width: 0;
 }
 
@@ -325,8 +347,127 @@ button {
 
 .responsive-grid {
   display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--layout-gap);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+.layout-grid {
+  display: grid;
+  gap: var(--layout-gap);
+  min-width: 0;
+}
+
+.layout-grid > * {
+  min-width: 0;
+}
+
+.layout-grid-2 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.layout-grid-3 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.layout-grid-4 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.form-grid {
+  display: grid;
+  gap: var(--layout-gap);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.form-grid-span-full {
+  grid-column: 1 / -1;
+}
+
+.table-region {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@container page (min-width: 32rem) {
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .layout-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container page (min-width: 40rem) {
+  .layout-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .responsive-table {
+    min-width: 32rem;
+  }
+}
+
+@container page (min-width: 52rem) {
+  .layout-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .layout-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .layout-span-2 {
+    grid-column: span 2;
+  }
+}
+
+@container page (min-width: 64rem) {
+  .layout-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .layout-with-aside {
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--aside-width));
+    align-items: start;
+  }
+
+  .layout-with-aside-aside {
+    position: sticky;
+    top: calc(var(--app-header-offset) + 0.75rem);
+    max-height: calc(100dvh - var(--app-header-offset) - 1.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .messages-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    align-items: stretch;
+    max-height: calc(100dvh - var(--app-header-offset) - 2.5rem);
+    min-height: min(36rem, calc(100dvh - var(--app-header-offset) - 2.5rem));
+  }
+
+  .messages-layout > * {
+    display: flex;
+    min-height: 0;
+    max-height: 100%;
+    flex-direction: column;
+  }
+}
+
+@container page (min-width: 72rem) {
+  .layout-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container page (max-width: 39.99rem) {
+  .responsive-table {
+    min-width: 28rem;
+  }
 }
 
 .auth-page {
@@ -370,6 +511,8 @@ button {
 .sidebar-panel {
   border-color: var(--border);
   background: var(--surface);
+  width: var(--sidebar-width);
+  max-width: min(var(--sidebar-width), 40vw);
 }
 
 .sidebar-nav-scroll {
@@ -614,64 +757,41 @@ input[type="radio"] {
 }
 
 .messages-layout {
+  display: grid;
+  gap: var(--layout-gap);
   min-width: 0;
 }
 
-@media (min-width: 1024px) {
-  .messages-layout {
-    align-items: stretch;
-    max-height: calc(100dvh - var(--app-header-offset) - 2.5rem);
-    min-height: min(36rem, calc(100dvh - var(--app-header-offset) - 2.5rem));
-  }
+.messages-layout .messages-panel-card {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
 
-  .messages-layout > * {
-    display: flex;
-    min-height: 0;
-    max-height: 100%;
-    flex-direction: column;
-  }
+.messages-layout .messages-panel-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-  .messages-layout .messages-panel-card {
-    display: flex;
-    min-height: 0;
-    flex: 1;
-    flex-direction: column;
-  }
-
-  .messages-layout .messages-panel-body {
-    display: flex;
-    min-height: 0;
-    flex: 1;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .messages-layout .messages-scroll-region {
-    min-height: 0;
-    flex: 1;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
+.messages-layout .messages-scroll-region {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .layout-with-aside {
   display: grid;
-  gap: 1.5rem;
+  gap: var(--layout-gap);
+  min-width: 0;
 }
 
-@media (min-width: 1536px) {
-  .layout-with-aside {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
-    align-items: start;
-  }
-
-  .layout-with-aside-aside {
-    position: sticky;
-    top: calc(var(--app-header-offset) + 0.75rem);
-    max-height: calc(100dvh - var(--app-header-offset) - 1.5rem);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
+.layout-with-aside > * {
+  min-width: 0;
 }
 
 .panel-chat {

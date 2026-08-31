@@ -20,7 +20,7 @@ export function MessagesLayout({
   const hasThread = Boolean(threadId);
 
   return (
-    <div className="messages-layout grid gap-4 lg:grid-cols-3 lg:gap-6">
+    <div className="messages-layout grid min-w-0 gap-4">
       <div className={cn("min-w-0 lg:col-span-1", hasThread && "hidden lg:block")}>{list}</div>
 
       <div className={cn("min-w-0 lg:col-span-2", !hasThread && "hidden lg:block")}>

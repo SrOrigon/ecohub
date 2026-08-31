@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChartSkeleton } from "@/components/ui/chart-skeleton";
 import { redirect } from "next/navigation";
+import { layout } from "@/lib/layout-classes";
 
 const PerformanceChart = dynamic(
   () => import("@/components/charts/performance-charts").then((mod) => mod.PerformanceChart),
@@ -89,11 +90,11 @@ export default async function LeituraGeralPage() {
         </div>
       </PageHeader>
 
-      <div className="layout-grid grid gap-6 lg:grid-cols-3">
-        <div className="min-w-0 lg:col-span-1">
+      <div className={layout.grid3}>
+        <div className="min-w-0">
           <InstitutionalHealthGauge score={data.healthScore} label={data.healthLabel} />
         </div>
-        <div className="layout-grid grid min-w-0 gap-4 sm:grid-cols-2 lg:col-span-2 lg:grid-cols-4">
+        <div className={`${layout.grid4} ${layout.span2} min-w-0`}>
           <MetricCard icon={Users} label="Alunos" value={String(data.totalStudents)} color="text-indigo-600" />
           <MetricCard icon={GraduationCap} label="Turmas" value={String(data.totalClasses)} color="text-violet-600" />
           <MetricCard icon={BookOpen} label="Média geral" value={data.averageGrade.toFixed(1)} sub={`Meta ${data.passGrade}`} color="text-emerald-600" />
