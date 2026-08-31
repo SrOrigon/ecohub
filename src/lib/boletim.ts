@@ -12,15 +12,20 @@ export type GradeRow = {
 };
 
 export function gradeVariant(value: number, passGrade: number, maxValue = 10) {
-  const normalized = maxValue > 0 ? (value / maxValue) * 10 : value;
-  if (normalized >= passGrade) return "success" as const;
-  if (normalized >= passGrade - 2) return "warning" as const;
+  const numValue = typeof value === "number" && !Number.isNaN(value) ? value : 0;
+  const numMax = typeof maxValue === "number" && !Number.isNaN(maxValue) ? maxValue : 10;
+  const numPass = typeof passGrade === "number" && !Number.isNaN(passGrade) ? passGrade : 6.0;
+  const normalized = numMax > 0 ? (numValue / numMax) * 10 : numValue;
+  if (normalized >= numPass) return "success" as const;
+  if (normalized >= numPass - 2) return "warning" as const;
   return "danger" as const;
 }
 
 export function formatGradeDisplay(value: number, maxValue: number, schoolMax = 10) {
-  if (maxValue === schoolMax) return value.toFixed(1);
-  return `${value.toFixed(1)}/${maxValue.toFixed(0)}`;
+  const numValue = typeof value === "number" && !Number.isNaN(value) ? value : 0;
+  const numMax = typeof maxValue === "number" && !Number.isNaN(maxValue) ? maxValue : schoolMax;
+  if (numMax === schoolMax) return numValue.toFixed(1);
+  return `${numValue.toFixed(1)}/${numMax.toFixed(0)}`;
 }
 
 export function sortPeriods(periods: string[], schoolPeriods: string[]) {

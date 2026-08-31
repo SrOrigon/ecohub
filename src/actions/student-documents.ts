@@ -89,7 +89,7 @@ export async function createStudentDocumentAction(formData: FormData): Promise<v
   revalidatePath("/dashboard/documentos");
   revalidatePath("/dashboard/contratos");
   revalidatePath(`/dashboard/alunos/${studentId}`);
-  redirect(formData.get("redirectTo") === "contratos" ? `/dashboard/documentos/${document.id}` : `/dashboard/documentos/${document.id}`);
+  redirect(formData.get("redirectTo") === "contratos" ? "/dashboard/contratos" : `/dashboard/documentos/${document.id}`);
 }
 
 export async function saveStudentDocumentAction(

@@ -27,6 +27,7 @@ import { AdjustStudentPointsForm } from "@/components/forms/adjust-student-point
 import { formatPercent } from "@/lib/utils";
 import { RankingTableRows } from "@/components/profile/ranking-list";
 import { LiveActivityFeed, LiveStatsStrip } from "@/components/metrics/live-activity-feed";
+import { LiveActivityTicker } from "@/components/dashboard/live-activity-ticker";
 import { redirect } from "next/navigation";
 
 const PerformanceChart = dynamic(
@@ -93,6 +94,8 @@ export default async function DashboardPage() {
       </PageHeader>
 
       <LiveStatsStrip />
+
+      <LiveActivityTicker />
 
       {adjustStudents.length > 0 && (
         <Card className="border-violet-200 bg-violet-50/40">

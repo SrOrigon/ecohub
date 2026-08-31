@@ -238,27 +238,47 @@ export async function maybeAwardPerfectAttendance(
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
   const reason = `Frequência 100% em ${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
 
-  const already = await prisma.xpTransaction.findFirst({
-    where: { studentId, reason },
-    select: { id: true },
-  });
-  if (already) return;
+  await prisma.$transaction(async (tx) => {
+    const already = await tx.xpTransaction.findFirst({
+      where: { studentId, reason },
+      select: { id: true },
+    });
+    if (already) return;
 
-  const records = await prisma.attendance.findMany({
-    where: { studentId, date: { gte: start, lte: end } },
-    select: { status: true },
-  });
-  if (records.length < rules.finance.minSchoolDaysForPerfectMonth) return;
-  if (records.some((record) => record.status === "absent")) return;
+    const records = await tx.attendance.findMany({
+      where: { studentId, date: { gte: start, lte: end } },
+      select: { status: true },
+    });
+    if (records.length < rules.finance.minSchoolDaysForPerfectMonth) return;
+    if (records.some((record) => record.status === "absent")) return;
 
-  await awardXp(
-    studentId,
-    rules.finance.perfectAttendanceXp,
-    reason,
-    "attendance",
-    rules.finance.perfectAttendanceCoins,
-    rules
-  );
+    const student = await tx.student.findUnique({
+      where: { id: studentId },
+      select: { xpTotal: true, coins: true },
+    });
+    if (!student) return;
+
+    await tx.xpTransaction.create({
+      data: {
+        studentId,
+        amount: rules.finance.perfectAttendanceXp,
+        reason,
+        source: "attendance",
+      },
+    });
+
+    await tx.student.update({
+      where: { id: studentId },
+      data: {
+        xpTotal: { increment: rules.finance.perfectAttendanceXp },
+        coins: { increment: rules.finance.perfectAttendanceCoins },
+        level: calculateLevel(
+          student.xpTotal + rules.finance.perfectAttendanceXp,
+          rules.xp.xpPerLevel
+        ),
+      },
+    });
+  });
 }
 
 export async function completeMission(studentId: string, missionId: string) {

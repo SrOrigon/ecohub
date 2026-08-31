@@ -35,11 +35,13 @@ if (-not $healthy) {
 
 $payload = [ordered]@{
     env = [ordered]@{
-        OPENAI_BASE_URL      = "$proxyUrl/v1"
-        ANTHROPIC_BASE_URL   = $proxyUrl
-        HEADROOM_PROXY       = $proxyUrl
+        OPENAI_BASE_URL        = "$proxyUrl/v1"
+        ANTHROPIC_BASE_URL     = $proxyUrl
+        HEADROOM_PROXY         = $proxyUrl
+        HEADROOM_BUDGET        = "10"
+        HEADROOM_BUDGET_PERIOD = "daily"
     }
-    additional_context = "Headroom ativo no Composer/Agent: MCP user-headroom (headroom_stats, headroom_compress, headroom_retrieve) comprime tool outputs em qualquer modelo. Proxy $proxyUrl comprime trafego BYOK (openai/anthropic.baseUrl). Composer 2.5/Grok usam infra Cursor: MCP sim, proxy nao. Verifique MCP e /health no inicio; comprima contexto grande com headroom_compress."
+    additional_context = "Headroom BYOK ativo: use modelo com chave propria (OpenAI/Anthropic) para trafego LLM passar pelo proxy $proxyUrl. MCP user-headroom sempre disponivel. Composer nativo Cursor (assinatura) NAO usa proxy — so MCP. Budget: USD 10/dia. Valide com .\scripts\validate-headroom.ps1"
 }
 
 $payload | ConvertTo-Json -Compress -Depth 5

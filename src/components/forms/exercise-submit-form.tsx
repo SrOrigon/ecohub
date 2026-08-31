@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { parseFlashcardBack, parseOptions, FLASHCARD_SELF_OPTIONS } from "@/lib/exercises";
 import { useActionState } from "react";
 import { submitExerciseAction } from "@/actions/exercises";
@@ -9,6 +9,8 @@ import { Label, Textarea } from "@/components/ui/form-fields";
 import { FormMessage } from "@/components/ui/form-utils";
 import { markSaoCelebration, saoCelebrationKey } from "@/lib/sao-celebration-storage";
 import { ChevronLeft, ChevronRight, Send, RotateCcw } from "lucide-react";
+import { SpeechSpeakButton } from "@/components/ui/speech-speak-button";
+import { playLevelUpSound, playQuestCompleteSound } from "@/lib/sound-effects";
 import { cn } from "@/lib/utils";
 
 type Question = {
@@ -147,6 +149,16 @@ export function ExerciseSubmitForm({
   const answeredCount = questions.filter((q) => isAnswered(q, answers[q.id])).length;
   const progress = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
 
+  useEffect(() => {
+    if (state?.success) {
+      if (state.autoGraded) {
+        playLevelUpSound();
+      } else {
+        playQuestCompleteSound();
+      }
+    }
+  }, [state?.success, state?.autoGraded]);
+
   if (readOnly) {
     return (
       <div className="space-y-4">
@@ -233,9 +245,12 @@ export function ExerciseSubmitForm({
           )}
         >
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
-            <p className="text-sm font-semibold text-indigo-600">
-              Questão {step + 1} de {questions.length}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-indigo-600">
+                Questão {step + 1} de {questions.length}
+              </p>
+              {q && <SpeechSpeakButton text={q.prompt} compact />}
+            </div>
             <div className="flex items-center gap-2 text-xs font-bold">
               <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-indigo-800">
                 🎯 {q.points} {q.points === 1 ? "ponto" : "pontos"}

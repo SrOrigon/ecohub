@@ -10,6 +10,7 @@ import { LiveConnectionBadge } from "@/components/metrics/live-connection-badge"
 import { AttentionAlertBadge } from "@/components/alerts/attention-alerts-panel";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { SoundToggle } from "@/components/theme/sound-toggle";
 
 export function Header({
   userName,
@@ -28,6 +29,10 @@ export function Header({
     role === "admin" || role === "director" || role === "teacher" || role === "parent" || role === "student";
   const firstName = userName.split(" ")[0];
 
+  function openSpotlight() {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+  }
+
   return (
     <header className="header-bar sticky top-0 z-30 border-b safe-area-top">
       <div className="flex min-h-14 items-center gap-2 px-3 py-2 md:gap-3 md:px-4 lg:min-h-16 lg:px-6">
@@ -40,11 +45,22 @@ export function Header({
           <Menu className="h-5 w-5" aria-hidden="true" />
         </button>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 flex items-center gap-3">
           {showSearch ? (
             <>
-              <div className="hidden md:block">
-                <SearchBar className="max-w-full lg:max-w-md" />
+              <div className="hidden md:flex items-center gap-2 flex-1 max-w-md">
+                <SearchBar className="w-full" />
+                <button
+                  type="button"
+                  onClick={openSpotlight}
+                  className="hidden lg:flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+                  title="Busca global rápida"
+                >
+                  <span>Buscar</span>
+                  <kbd className="rounded bg-white px-1 font-mono text-[10px] shadow-sm dark:bg-slate-800">
+                    ⌘K
+                  </kbd>
+                </button>
               </div>
               <div className="md:hidden">
                 <p className="truncate text-sm font-semibold text-[var(--foreground)]">{schoolName}</p>
@@ -63,15 +79,21 @@ export function Header({
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
           {showSearch && (
-            <Link href="/dashboard/busca" className="icon-btn md:hidden" aria-label="Abrir busca">
+            <button
+              type="button"
+              onClick={openSpotlight}
+              className="icon-btn md:hidden"
+              aria-label="Abrir busca rápida"
+            >
               <Search className="h-5 w-5 text-[var(--muted-foreground)]" aria-hidden="true" />
-            </Link>
+            </button>
           )}
+          <SoundToggle />
           <ThemeToggle compact />
           <LiveConnectionBadge />
           {role === "parent" && <AttentionAlertBadge />}
           <NotificationBell />
-            <Badge variant="secondary" className="hidden md:inline-flex">
+          <Badge variant="secondary" className="hidden md:inline-flex">
             {ROLE_LABELS[role]}
           </Badge>
           <Link

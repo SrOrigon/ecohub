@@ -6,14 +6,14 @@ import { cn } from "@/lib/utils";
 import { CosmeticFrame } from "@/components/cosmetics/cosmetic-frame";
 
 export function ProfileAvatar({
-  name,
+  name = "",
   avatarUrl,
   frameKey,
   size = "lg",
   className,
   onImageError,
 }: {
-  name: string;
+  name?: string | null;
   avatarUrl?: string | null;
   frameKey?: string | null;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
@@ -38,7 +38,8 @@ export function ProfileAvatar({
     xl: "ring-4",
   };
 
-  const initials = name
+  const safeName = (name ?? "").trim();
+  const initials = safeName
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
@@ -63,7 +64,7 @@ export function ProfileAvatar({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={avatarUrl!}
-            alt={`Foto de ${name}`}
+            alt={`Foto de ${safeName}`}
             className={cn(imageClass, "object-cover")}
             onError={() => {
               setFailedUrl(avatarUrl!);
@@ -77,7 +78,7 @@ export function ProfileAvatar({
         <div className={imageClass}>
           <Image
             src={avatarUrl!}
-            alt={`Foto de ${name}`}
+            alt={`Foto de ${safeName}`}
             fill
             className="object-cover"
             unoptimized
@@ -100,7 +101,7 @@ export function ProfileAvatar({
           className
         )}
         aria-hidden={initials ? true : undefined}
-        title={name}
+        title={safeName || undefined}
       >
         {initials || "?"}
       </div>

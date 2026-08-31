@@ -21,6 +21,8 @@ import { CosmeticBackgroundCard } from "@/components/cosmetics/cosmetic-backgrou
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import { UpdateProfileForm } from "@/components/profile/update-profile-form";
 import { ChangePasswordForm } from "@/components/profile/change-password-form";
+import { SkillsRadarChart } from "@/components/charts/skills-radar-chart";
+import { formatStudentClasses } from "@/lib/student-enrollments";
 import { ROLE_LABELS, type UserRole } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +51,9 @@ type ProfilePayload = {
     coins: number;
     equippedFrame?: string | null;
     equippedBackground?: string | null;
+    equippedPet?: string | null;
     classGroup: { name: string } | null;
+    classEnrollments?: Array<{ classGroup: { name: string } }>;
   } | null;
   parentLinks: {
     relation: string;
@@ -57,6 +61,7 @@ type ProfilePayload = {
       id: string;
       user: { fullName: string; avatarUrl: string | null };
       classGroup: { name: string } | null;
+      classEnrollments?: Array<{ classGroup: { name: string } }>;
     };
   }[];
   taughtClasses: { id: string; name: string }[];
@@ -278,12 +283,20 @@ function RoleStatsCard({ profile, role }: { profile: ProfilePayload; role: UserR
           </CardTitle>
         </CardHeader>
         <CardContent className="stat-grid gap-3">
-          <StatBox label="Turma" value={s.classGroup?.name ?? "Sem turma"} className="col-span-2 sm:col-span-1" />
+          <StatBox
+            label="Turma"
+            value={formatStudentClasses(s.classEnrollments ?? [], s.classGroup)}
+            className="col-span-2 sm:col-span-1"
+          />
           <StatBox label="Matrícula" value={s.enrollmentCode} mono />
           <StatBox label="Nível" value={`Nv. ${s.level}`} icon={Star} />
           <StatBox label="XP total" value={String(s.xpTotal)} icon={Star} />
           <StatBox label="Moedas" value={String(s.coins)} icon={Coins} className="col-span-2 sm:col-span-1" />
         </CardContent>
+
+        <div className="border-t border-slate-100 p-4 dark:border-slate-800">
+          <SkillsRadarChart studentName={profile.fullName} />
+        </div>
       </Card>
     );
   }
@@ -298,26 +311,32 @@ function RoleStatsCard({ profile, role }: { profile: ProfilePayload; role: UserR
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {profile.parentLinks.map((link) => (
-            <Link
-              key={link.student.id}
-              href={`/dashboard/responsavel/filho/${link.student.id}`}
-              className="flex min-h-12 items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 text-sm transition hover:bg-slate-50 active:bg-slate-100"
-            >
-              <ProfileAvatar
-                name={link.student.user.fullName}
-                avatarUrl={link.student.user.avatarUrl}
-                size="sm"
-              />
-              <div className="min-w-0 flex-1">
-                <span className="font-medium text-slate-900">{link.student.user.fullName}</span>
-                <span className="block text-slate-500">
-                  {relationLabels[link.relation] ?? link.relation}
-                  {link.student.classGroup?.name ? ` · ${link.student.classGroup.name}` : ""}
-                </span>
-              </div>
-            </Link>
-          ))}
+          {profile.parentLinks.map((link) => {
+            const childClass = formatStudentClasses(
+              link.student.classEnrollments ?? [],
+              link.student.classGroup
+            );
+            return (
+              <Link
+                key={link.student.id}
+                href={`/dashboard/responsavel/filho/${link.student.id}`}
+                className="flex min-h-12 items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 text-sm transition hover:bg-slate-50 active:bg-slate-100"
+              >
+                <ProfileAvatar
+                  name={link.student.user.fullName}
+                  avatarUrl={link.student.user.avatarUrl}
+                  size="sm"
+                />
+                <div className="min-w-0 flex-1">
+                  <span className="font-medium text-slate-900">{link.student.user.fullName}</span>
+                  <span className="block text-slate-500">
+                    {relationLabels[link.relation] ?? link.relation}
+                    {childClass && childClass !== "Sem turma" ? ` · ${childClass}` : ""}
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
         </CardContent>
       </Card>
     );

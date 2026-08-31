@@ -10,7 +10,7 @@ export function PageHeader({
   backHref,
   backLabel = "Voltar",
 }: {
-  title: string;
+  title: React.ReactNode;
   description?: string;
   children?: React.ReactNode;
   className?: string;

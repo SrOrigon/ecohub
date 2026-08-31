@@ -84,11 +84,19 @@ export default async function BoletimPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="boletim-print mx-auto w-full max-w-4xl space-y-6 bg-white p-4 text-slate-900 sm:p-8 print:p-0">
-      <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link href={backHref} className="text-sm font-medium text-indigo-600 hover:underline">
           {backLabel}
         </Link>
-        <PrintBoletimButton />
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/dashboard/alunos/${id}/boletim/imprimir`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          >
+            📄 Versão Oficial A4 (com QR Code)
+          </Link>
+          <PrintBoletimButton />
+        </div>
       </div>
 
       <header className="border-b-2 border-indigo-600 pb-4 text-center">

@@ -1,6 +1,6 @@
 export type UserRole = "admin" | "director" | "secretary" | "teacher" | "student" | "parent";
 export type AttendanceStatus = "present" | "absent" | "late" | "justified";
-export type XpSource = "grade" | "attendance" | "mission" | "badge" | "manual" | "exercise" | "trail" | "classGoal" | "occurrence" | "homeTask" | "tuition";
+export type XpSource = "grade" | "attendance" | "mission" | "badge" | "manual" | "exercise" | "trail" | "classGoal" | "occurrence" | "homeTask" | "tuition" | "focus_session" | "duel_win";
 
 export const HOME_TASK_DEFAULT_XP = 100;
 export const HOME_TASK_DEFAULT_COINS = 10;

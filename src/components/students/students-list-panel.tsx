@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Search, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,15 +71,6 @@ export function StudentsListPanel({
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
-
-  useEffect(() => {
-    setPage(0);
-  }, [query]);
-
-  useEffect(() => {
-    if (page > totalPages - 1) setPage(Math.max(0, totalPages - 1));
-  }, [page, totalPages]);
-
   const currentPage = Math.min(page, totalPages - 1);
   const pageStudents = filteredStudents.slice(
     currentPage * PAGE_SIZE,
@@ -113,7 +104,10 @@ export function StudentsListPanel({
           <Input
             id="student-list-search"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setPage(0);
+            }}
             placeholder="Buscar por nome, matrícula ou e-mail..."
             className="pl-9"
             autoComplete="off"

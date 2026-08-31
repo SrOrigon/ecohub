@@ -47,10 +47,8 @@ export async function adjustStudentPointsAction(formData: FormData) {
     return { error: "Sem permissão para ajustar pontos manualmente." };
   }
 
-  if (user.role === "teacher") {
-    const scope = await assertStudentInScope(user, studentId);
-    if (!scope.ok) return { error: scope.error };
-  }
+  const scope = await assertStudentInScope(user, studentId);
+  if (!scope.ok) return { error: scope.error };
 
   try {
     await adjustStudentPoints(

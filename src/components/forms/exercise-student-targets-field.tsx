@@ -149,6 +149,11 @@ export function ExerciseStudentPicker({
       {loadError && <p className="text-sm text-red-600">{loadError}</p>}
       {pending && <p className="text-sm text-slate-500">Carregando alunos...</p>}
 
+      {/* Hidden inputs to guarantee all selected students are sent regardless of current query filter */}
+      {selectedStudentIds.map((id) => (
+        <input key={id} type="hidden" name="studentTargetIds" value={id} />
+      ))}
+
       <div className="max-h-52 space-y-2 overflow-y-auto overscroll-contain rounded-lg border border-slate-200 bg-white p-2">
         {filteredStudents.length === 0 ? (
           <p className="px-2 py-3 text-sm text-slate-500">Nenhum aluno encontrado.</p>
@@ -170,7 +175,6 @@ export function ExerciseStudentPicker({
               >
                 <input
                   type="checkbox"
-                  name="studentTargetIds"
                   value={student.id}
                   checked={checked}
                   disabled={disabled}

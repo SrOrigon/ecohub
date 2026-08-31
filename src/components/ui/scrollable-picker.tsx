@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,14 @@ function listMaxHeight(visibleItems: number) {
   return `min(calc(${ITEM_HEIGHT_REM}rem * ${visibleItems} + 0.25rem), calc(100vh - 6rem))`;
 }
 
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
+
 export function ScrollablePicker({
   options,
   placeholder,
@@ -44,14 +52,12 @@ export function ScrollablePicker({
   "aria-label": ariaLabel,
 }: ScrollablePickerProps) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({});
   const rootRef = useRef<HTMLDivElement>(null);
   const listId = useId();
 
   const selectedLabel = options.find((item) => item.value === value)?.label;
-
-  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;

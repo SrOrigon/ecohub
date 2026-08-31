@@ -206,6 +206,8 @@ model Student {
   profileActivities StudentActivity[]
   financeAccount    StudentFinanceAccount?
   tuitionPayments   TuitionPayment[]
+  challengerMatches DuelMatch[] @relation("ChallengerStudent")
+  challengedMatches DuelMatch[] @relation("ChallengedStudent")
 
   @@index([classId])
 }
@@ -918,3 +920,51 @@ model AiChatLog {
 
   @@index([userId, createdAt])
 }
+
+model DuelSession {
+  id          String    @id @default(cuid())
+  schoolId    String
+  classId     String
+  teacherId   String
+  isActive    Boolean   @default(true)
+  maxBetCoins Int       @default(30)
+  maxBetXp    Int       @default(30)
+  pinCode     String?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  matches DuelMatch[]
+
+  @@index([classId, isActive])
+  @@index([schoolId])
+}
+
+model DuelMatch {
+  id                    String       @id @default(cuid())
+  schoolId              String
+  classId               String
+  sessionId             String?
+  challengerId          String
+  challengedId          String
+  betCoins              Int          @default(0)
+  betXp                 Int          @default(0)
+  status                String       @default("pending") // pending, active, completed, cancelled, rejected
+  winnerId              String?
+  questionsJson         String       @default("[]")
+  challengerAnswersJson String       @default("[]")
+  challengedAnswersJson String       @default("[]")
+  challengerScore       Int          @default(0)
+  challengedScore       Int          @default(0)
+  createdAt             DateTime     @default(now())
+  completedAt           DateTime?
+
+  session    DuelSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  challenger Student      @relation("ChallengerStudent", fields: [challengerId], references: [id], onDelete: Cascade)
+  challenged Student      @relation("ChallengedStudent", fields: [challengedId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([classId, status])
+  @@index([challengerId])
+  @@index([challengedId])
+}
+

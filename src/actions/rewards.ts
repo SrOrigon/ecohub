@@ -330,7 +330,8 @@ export async function redeemRewardAction(formData: FormData) {
       };
     }
     if (msg === "OUT_OF_STOCK") return { error: "Recompensa esgotada." };
-    throw e;
+    console.error("[redeemRewardAction]", e);
+    return { error: "Não foi possível concluir o resgate. Tente novamente." };
   }
 
   if (isCosmetic) {

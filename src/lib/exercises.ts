@@ -161,11 +161,17 @@ export async function getExerciseSummariesForTeacher(user: SessionUser) {
       coinReward: true,
       dueDate: true,
       isActive: true,
-      classGroup: { select: { name: true } },
+      audienceType: true,
+      classGroup: {
+        select: {
+          name: true,
+          _count: { select: { students: true } },
+        },
+      },
       teacher: { select: { fullName: true } },
+      studentTargets: { select: { studentId: true } },
       _count: { select: { questions: true } },
       submissions: {
-        where: { status: "submitted" },
         select: { status: true },
       },
     },

@@ -22,6 +22,17 @@ import { getHomeTasksForStudent } from "@/actions/home-tasks";
 import { StudentHomeTasksList } from "@/components/home-tasks/student-home-tasks-list";
 import { SchoolCalendarWidget } from "@/components/school/school-calendar-widget";
 import { LiveStudentStatsCard } from "@/components/metrics/live-activity-feed";
+import { calculateStudentStreak } from "@/lib/streaks";
+import { StreakBadge } from "@/components/student/streak-badge";
+import { PetCompanion } from "@/components/student/pet-companion";
+import { FloatingQuestTracker, type QuestItem } from "@/components/student/floating-quest-tracker";
+import { StudentDuelArena } from "@/components/duels/student-duel-arena";
+import { FocusTimer } from "@/components/student/focus-timer";
+import { SkillTree } from "@/components/student/skill-tree";
+import { getStudentUnlockedTalentKeys } from "@/actions/talents";
+import { SpacedFlashcardsDeck } from "@/components/student/spaced-flashcards-deck";
+import { WeeklyStudyPlanner } from "@/components/student/weekly-study-planner";
+import { buildWeeklyStudyPlan } from "@/lib/weekly-study-planner";
 import { formatDate } from "@/lib/utils";
 import { redirect } from "next/navigation";
 
@@ -37,7 +48,7 @@ export default async function AlunoPortalPage() {
       grades: { orderBy: { createdAt: "desc" } },
       studentMissions: { include: { mission: true } },
       studentBadges: { include: { badge: true } },
-      xpTransactions: { orderBy: { createdAt: "desc" }, take: 10 },
+      xpTransactions: { orderBy: { createdAt: "desc" }, take: 20 },
     },
   });
 
@@ -49,7 +60,19 @@ export default async function AlunoPortalPage() {
     );
   }
 
-  const [schoolRanking, classRanking, missions, exercises, settings, agenda, homeTasks] = await Promise.all([
+  const [
+    schoolRanking,
+    classRanking,
+    missions,
+    exercises,
+    settings,
+    agenda,
+    homeTasks,
+    classmates,
+    activeDuelSession,
+    pendingChallenges,
+    unlockedTalentKeys,
+  ] = await Promise.all([
     getRanking(user.schoolId).catch(() => []),
     getRanking(user.schoolId, student.classId).catch(() => []),
     getMissionsForStudent(user.schoolId, student.classId).catch(() => []),
@@ -57,6 +80,58 @@ export default async function AlunoPortalPage() {
     getSchoolSettings(user.schoolId).catch(() => ({ xp: { xpPerLevel: 1000 } } as unknown as Awaited<ReturnType<typeof getSchoolSettings>>)),
     getTodayAgendaForStudent(student.id, student.classId, user.schoolId, user).catch(() => ({ items: [], dayStatus: null })),
     getHomeTasksForStudent(student.id).catch(() => []),
+    student.classId
+      ? prisma.student.findMany({
+          where: { classId: student.classId, id: { not: student.id } },
+          select: {
+            id: true,
+            level: true,
+            coins: true,
+            xpTotal: true,
+            user: { select: { fullName: true } },
+          },
+        }).catch(() => [])
+      : Promise.resolve([]),
+    student.classId
+      ? prisma.duelSession.findFirst({
+          where: { classId: student.classId, isActive: true },
+          select: { id: true, maxBetCoins: true, maxBetXp: true },
+        }).catch(() => null)
+      : Promise.resolve(null),
+    prisma.duelMatch.findMany({
+      where: { challengedId: student.id, status: "pending" },
+      include: {
+        challenger: { include: { user: { select: { fullName: true } } } },
+        challenged: { include: { user: { select: { fullName: true } } } },
+      },
+    }).catch(() => []),
+    getStudentUnlockedTalentKeys(student.id).catch(() => []),
+  ]);
+
+  const classmateOptions = (classmates ?? []).map((c) => ({
+    id: c.id,
+    name: c.user.fullName,
+    level: c.level,
+    coins: c.coins,
+    xpTotal: c.xpTotal,
+  }));
+
+  const pendingChallengesFormatted = (pendingChallenges ?? []).map((c) => ({
+    id: c.id,
+    challengerId: c.challengerId,
+    challengerName: c.challenger.user.fullName,
+    challengedId: c.challengedId,
+    challengedName: c.challenged.user.fullName,
+    betCoins: c.betCoins,
+    betXp: c.betXp,
+    status: c.status,
+    winnerId: c.winnerId,
+    questionsJson: c.questionsJson,
+  }));
+
+  const streak = calculateStudentStreak([
+    ...student.xpTransactions.map((t) => t.createdAt),
+    ...student.grades.map((g) => g.createdAt),
   ]);
 
   const enrichedExercises = exercises.map((ex) => {
@@ -72,6 +147,35 @@ export default async function AlunoPortalPage() {
     (mission) =>
       !student.studentMissions.some((sm) => sm.missionId === mission.id && sm.completedAt)
   );
+
+  const activeQuests: QuestItem[] = [
+    ...pendingExercises.map((ex) => ({
+      id: `ex-${ex.id}`,
+      title: ex.title,
+      subtitle: ex.dueDate ? `Prazo: ${formatDate(ex.dueDate)}` : "Exercício / Prova",
+      href: `/dashboard/exercicios/${ex.id}`,
+      xpReward: ex.xpReward,
+      kind: "exercise" as const,
+    })),
+    ...openMissions.map((m) => ({
+      id: `mission-${m.id}`,
+      title: m.title,
+      subtitle: "Missão da turma",
+      href: "#missoes",
+      xpReward: m.xpReward,
+      kind: "mission" as const,
+    })),
+    ...homeTasks
+      .filter((t) => t.status === "pending")
+      .map((t) => ({
+        id: `task-${t.id}`,
+        title: t.title,
+        subtitle: "Tarefa de casa",
+        href: "#tarefas-casa",
+        xpReward: t.xpReward,
+        kind: "hometask" as const,
+      })),
+  ];
 
   const todayItems: TodayItem[] = [
     ...pendingExercises.map((ex) => ({
@@ -121,7 +225,12 @@ export default async function AlunoPortalPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title={`Olá, ${firstName}!`}
+        title={
+          <span className="flex flex-wrap items-center gap-3">
+            <span>Olá, {firstName}!</span>
+            <StreakBadge streak={streak.currentStreak} />
+          </span>
+        }
         description={`${student.classGroup?.name ?? "Sem turma"} · Matrícula ${student.enrollmentCode}`}
       >
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -157,6 +266,47 @@ export default async function AlunoPortalPage() {
           </Link>
         </div>
       </PageHeader>
+
+      {/* Mascote / Pet Companheiro Interativo */}
+      <PetCompanion
+        equippedPetKey={student.equippedPet}
+        studentName={user.fullName}
+        level={student.level}
+        streak={streak.currentStreak}
+      />
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Arena de Duelos 1v1 da Turma */}
+        <div className="lg:col-span-2">
+          <StudentDuelArena
+            myStudentId={student.id}
+            classmates={classmateOptions}
+            activeSession={activeDuelSession}
+            pendingChallenges={pendingChallengesFormatted}
+            myCoins={student.coins}
+            myXp={student.xpTotal}
+          />
+        </div>
+
+        {/* Modo Foco & Pomodoro */}
+        <div className="lg:col-span-1">
+          <FocusTimer />
+        </div>
+      </div>
+
+      {/* Planner Semanal de Estudos com IA */}
+      <WeeklyStudyPlanner
+        initialPlan={buildWeeklyStudyPlan(
+          exercises.map((e) => ({ id: e.id, title: e.title, xpReward: e.xpReward })),
+          homeTasks.map((t) => ({ id: t.id, title: t.title, xpReward: t.xpReward }))
+        )}
+      />
+
+      {/* Revisão Inteligente com Flashcards (Spaced Repetition) */}
+      <SpacedFlashcardsDeck />
+
+      {/* Árvore de Talentos & Habilidades Passivas */}
+      <SkillTree studentLevel={student.level} unlockedKeys={unlockedTalentKeys} />
 
       <TodayAgendaWidget
         items={agenda.items.length > 0 ? agenda.items : todayItems}
@@ -385,6 +535,9 @@ export default async function AlunoPortalPage() {
           </CardContent>
         </Card>
       </div>
+
+      <FloatingQuestTracker quests={activeQuests} />
     </div>
   );
 }
+

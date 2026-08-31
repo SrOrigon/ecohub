@@ -64,6 +64,9 @@ export async function updateStudentEnrollmentStatusAction(formData: FormData) {
   const studentScope = await assertStudentInScope(user, studentId);
   if (!studentScope.ok) return { error: studentScope.error };
 
+  const classScope = await assertClassInScope(user, classId);
+  if (!classScope.ok) return { error: classScope.error };
+
   const enrollment = await prisma.studentClassEnrollment.findFirst({
     where: {
       studentId,

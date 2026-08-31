@@ -10,7 +10,7 @@ import {
   studentsInClassWhere,
 } from "@/lib/student-enrollments";
 import type { ExerciseAudienceType } from "@/lib/exercise-audience";
-import { studentHasExerciseAccess, studentClassIds } from "@/lib/exercise-audience";
+import { studentHasExerciseAccess } from "@/lib/exercise-audience";
 import { assertClassInScope, assertStudentInScope } from "@/lib/tenant-guards";
 import { awardXp } from "@/lib/gamification";
 import {
@@ -451,71 +451,90 @@ export async function submitExerciseAction(formData: FormData) {
     ? answerRows.reduce((s, r) => s + (r.pointsAwarded ?? 0), 0)
     : null;
 
+  if (existing?.status === "graded") {
+    return { error: "Este exercício já foi corrigido." };
+  }
+
+  let shouldAwardXp = false;
   let submissionId = existing?.id ?? "";
 
-  await prisma.$transaction(async (tx) => {
-    if (existing) {
-      await tx.exerciseAnswer.deleteMany({ where: { submissionId: existing.id } });
-      await tx.exerciseSubmission.update({
-        where: { id: existing.id },
-        data: allAutoGradable
-          ? {
-              status: "graded",
-              submittedAt: new Date(),
-              score: autoScore,
-              maxScore,
-              gradedAt: new Date(),
-              gradedById: exercise.teacherId,
-              feedback: "Correção automática (múltipla escolha).",
-            }
-          : {
-              status: "submitted",
-              submittedAt: new Date(),
-              score: null,
-              gradedAt: null,
-              gradedById: null,
-              feedback: null,
-            },
-      });
-      await tx.exerciseAnswer.createMany({
-        data: answerRows.map((r) => ({ submissionId: existing.id, ...r })),
-      });
-      submissionId = existing.id;
-    } else {
-      const sub = await tx.exerciseSubmission.create({
-        data: {
-          exerciseId,
-          studentId: student.id,
-          status: allAutoGradable ? "graded" : "submitted",
-          maxScore,
-          score: autoScore,
-          gradedAt: allAutoGradable ? new Date() : null,
-          gradedById: allAutoGradable ? exercise.teacherId : null,
-          feedback: allAutoGradable ? "Correção automática (múltipla escolha)." : null,
-        },
-      });
-      await tx.exerciseAnswer.createMany({
-        data: answerRows.map((r) => ({ submissionId: sub.id, ...r })),
-      });
-      submissionId = sub.id;
-    }
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (existing) {
+        const claimed = await tx.exerciseSubmission.updateMany({
+          where: { id: existing.id, status: { not: "graded" } },
+          data: allAutoGradable
+            ? {
+                status: "graded",
+                submittedAt: new Date(),
+                score: autoScore,
+                maxScore,
+                gradedAt: new Date(),
+                gradedById: exercise.teacherId,
+                feedback: "Correção automática (múltipla escolha).",
+              }
+            : {
+                status: "submitted",
+                submittedAt: new Date(),
+                score: null,
+                gradedAt: null,
+                gradedById: null,
+                feedback: null,
+              },
+        });
+        if (claimed.count === 0) throw new Error("ALREADY_GRADED");
+        await tx.exerciseAnswer.deleteMany({ where: { submissionId: existing.id } });
+        await tx.exerciseAnswer.createMany({
+          data: answerRows.map((r) => ({ submissionId: existing.id, ...r })),
+        });
+        submissionId = existing.id;
+        shouldAwardXp = allAutoGradable;
+      } else {
+        const sub = await tx.exerciseSubmission.create({
+          data: {
+            exerciseId,
+            studentId: student.id,
+            status: allAutoGradable ? "graded" : "submitted",
+            maxScore,
+            score: autoScore,
+            gradedAt: allAutoGradable ? new Date() : null,
+            gradedById: allAutoGradable ? exercise.teacherId : null,
+            feedback: allAutoGradable ? "Correção automática (múltipla escolha)." : null,
+          },
+        });
+        await tx.exerciseAnswer.createMany({
+          data: answerRows.map((r) => ({ submissionId: sub.id, ...r })),
+        });
+        submissionId = sub.id;
+        shouldAwardXp = allAutoGradable;
+      }
 
-    if (allAutoGradable && autoScore != null && settings.exercises.postGradeToBulletin) {
-      const { subject, period } = exerciseBulletinMeta(exercise, settings.academic.periods);
-      await upsertExerciseBulletinGrade(tx, {
-        studentId: student.id,
-        subject,
-        period,
-        value: maxScore > 0 ? (autoScore / maxScore) * maxGrade : 0,
-        maxValue: maxGrade,
-        teacherId: exercise.teacherId,
-      });
+      if (allAutoGradable && autoScore != null && settings.exercises.postGradeToBulletin) {
+        const { subject, period } = exerciseBulletinMeta(exercise, settings.academic.periods);
+        await upsertExerciseBulletinGrade(tx, {
+          studentId: student.id,
+          subject,
+          period,
+          value: maxScore > 0 ? (autoScore / maxScore) * maxGrade : 0,
+          maxValue: maxGrade,
+          teacherId: exercise.teacherId,
+        });
+      }
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "ALREADY_GRADED") {
+      return { error: "Este exercício já foi corrigido." };
     }
-  });
+    const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
+    if (code === "P2002") {
+      return { error: "Envio simultâneo detectado. Atualize a página e tente novamente." };
+    }
+    throw error;
+  }
 
   const studentName = user.fullName;
 
-  if (allAutoGradable && autoScore != null) {
+  if (allAutoGradable && autoScore != null && shouldAwardXp) {
     const sumQuestionXp = exercise.questions.reduce((s, q) => s + (q.xpReward ?? 0), 0);
     const ratio = maxScore > 0 ? autoScore / maxScore : 0;
     const xp = sumQuestionXp > 0
@@ -621,11 +640,29 @@ export async function gradeSubmissionAction(formData: FormData) {
     return { error: "Notas inválidas." };
   }
 
+  if (submission.status === "graded") {
+    return { error: "Esta entrega já foi corrigida." };
+  }
+
   let totalScore = 0;
   const maxScore = submission.exercise.questions.reduce((s, q) => s + q.points, 0);
   const maxGrade = settings.academic.maxGrade;
+  let gradedNow = false;
 
   await prisma.$transaction(async (tx) => {
+    const claimed = await tx.exerciseSubmission.updateMany({
+      where: { id: submissionId, status: { not: "graded" } },
+      data: {
+        status: "graded",
+        maxScore,
+        feedback,
+        gradedAt: new Date(),
+        gradedById: user.id,
+      },
+    });
+    if (claimed.count === 0) return;
+    gradedNow = true;
+
     for (const answer of submission.answers) {
       const g = grades[answer.questionId];
       const pts = g ? Math.max(0, Math.min(g.points, submission.exercise.questions.find((q) => q.id === answer.questionId)?.points ?? 0)) : 0;
@@ -641,14 +678,7 @@ export async function gradeSubmissionAction(formData: FormData) {
 
     await tx.exerciseSubmission.update({
       where: { id: submissionId },
-      data: {
-        status: "graded",
-        score: totalScore,
-        maxScore,
-        feedback,
-        gradedAt: new Date(),
-        gradedById: user.id,
-      },
+      data: { score: totalScore },
     });
 
     if (settings.exercises.postGradeToBulletin) {
@@ -666,6 +696,10 @@ export async function gradeSubmissionAction(formData: FormData) {
       });
     }
   });
+
+  if (!gradedNow) {
+    return { error: "Esta entrega já foi corrigida." };
+  }
 
   const sumQuestionXp = submission.exercise.questions.reduce((s, q) => s + (q.xpReward ?? 0), 0);
   const ratio = maxScore > 0 ? totalScore / maxScore : 0;

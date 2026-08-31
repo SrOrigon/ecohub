@@ -19,7 +19,7 @@ export function CosmeticBackgroundCard({
     return (
       <div
         className={cn(
-          "overflow-hidden border-2 border-indigo-100 bg-gradient-to-br from-indigo-50/80 to-white transition-all duration-300",
+          "overflow-hidden rounded-2xl border-2 border-indigo-100 bg-gradient-to-br from-indigo-50/80 to-white transition-all duration-300",
           className
         )}
       >

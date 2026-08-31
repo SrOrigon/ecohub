@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import type { SessionUser } from "@/lib/auth";
 import { assertSelfOrSchoolStaff, assertSameSchool } from "@/lib/security/access-control";
+import { activeEnrollmentWhere } from "@/lib/student-enrollments";
 
 export async function fetchProfileData(actor: SessionUser, userId: string) {
   assertSelfOrSchoolStaff(actor, userId);
@@ -27,7 +28,13 @@ export async function fetchProfileData(actor: SessionUser, userId: string) {
           coins: true,
           equippedFrame: true,
           equippedBackground: true,
+          equippedPet: true,
           classGroup: { select: { name: true } },
+          classEnrollments: {
+            where: activeEnrollmentWhere(),
+            select: { classGroup: { select: { name: true } } },
+            orderBy: [{ enrolledAt: "asc" }, { createdAt: "asc" }],
+          },
         },
       },
       parentLinks: {
@@ -38,6 +45,11 @@ export async function fetchProfileData(actor: SessionUser, userId: string) {
               id: true,
               user: { select: { fullName: true, avatarUrl: true } },
               classGroup: { select: { name: true } },
+              classEnrollments: {
+                where: activeEnrollmentWhere(),
+                select: { classGroup: { select: { name: true } } },
+                orderBy: [{ enrolledAt: "asc" }, { createdAt: "asc" }],
+              },
             },
           },
         },
@@ -60,3 +72,4 @@ export async function fetchProfileData(actor: SessionUser, userId: string) {
 
   return profile;
 }
+

@@ -59,6 +59,25 @@ export async function enrollStudentInClass(
   options?: { notes?: string | null; status?: EnrollmentStatus }
 ) {
   const status = options?.status ?? "active";
+
+  const [student, classGroup] = await Promise.all([
+    prisma.student.findUnique({
+      where: { id: studentId },
+      select: { user: { select: { schoolId: true } } },
+    }),
+    prisma.classGroup.findUnique({
+      where: { id: classId },
+      select: { schoolId: true },
+    }),
+  ]);
+
+  if (!student?.user.schoolId || !classGroup?.schoolId) {
+    throw new Error("Aluno ou turma não encontrados.");
+  }
+  if (student.user.schoolId !== classGroup.schoolId) {
+    throw new Error("Aluno e turma devem pertencer à mesma escola.");
+  }
+
   await prisma.studentClassEnrollment.upsert({
     where: { studentId_classId: { studentId, classId } },
     create: {

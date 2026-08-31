@@ -9,6 +9,7 @@ import { LiveMetricsProvider } from "@/components/metrics/live-metrics-provider"
 import { AttentionAlertsProvider } from "@/components/alerts/attention-alerts-provider";
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { CreatorJourneyCelebration } from "@/components/creator/creator-journey-celebration";
+import { CommandPalette } from "@/components/layout/command-palette";
 import { isKidFriendlyRole, type UserRole } from "@/lib/constants";
 import type { SchoolSettings } from "@/lib/school-settings";
 
@@ -54,6 +55,7 @@ export function DashboardShell({
           className="app-shell"
           data-audience={kidFriendly ? "student" : "staff"}
         >
+        <CommandPalette userRole={role} />
         {showCreatorJourneyCelebration && (
           <CreatorJourneyCelebration journey={creatorJourney} schoolId={schoolId} />
         )}

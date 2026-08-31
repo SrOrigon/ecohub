@@ -10,6 +10,7 @@ import { CosmeticBackgroundCard } from "@/components/cosmetics/cosmetic-backgrou
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import { equipStudentCosmeticAction } from "@/actions/rewards";
 import { getCosmeticDefinition } from "@/lib/cosmetics-catalog";
+import { playCoinSound } from "@/lib/sound-effects";
 import { Sparkles, CheckCircle2, ShieldOff } from "lucide-react";
 
 type OwnedRedemption = {
@@ -64,12 +65,11 @@ export function StudentInventory({
 
   const handleEquip = (cosmeticType: "frame" | "background", cosmeticKey: string) => {
     startTransition(async () => {
+      playCoinSound();
       const formData = new FormData();
       formData.set("cosmeticType", cosmeticType);
       formData.set("cosmeticKey", cosmeticKey);
       await equipStudentCosmeticAction(formData);
-      // A action revalida no servidor, mas esta chamada não vem de <form action>,
-      // então as props só chegam atualizadas com um refresh explícito.
       router.refresh();
     });
   };

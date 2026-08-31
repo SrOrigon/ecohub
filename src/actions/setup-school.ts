@@ -95,7 +95,10 @@ export async function provisionRealSchoolSetupAction() {
       academic: {
         ...currentSettings.academic,
         subjects: mergedSubjects,
-        periods: ["1º Bimestre", "2º Bimestre", "3º Bimestre", "4º Bimestre"],
+        periods:
+          currentSettings.academic?.periods?.length
+            ? currentSettings.academic.periods
+            : ["1º Bimestre", "2º Bimestre", "3º Bimestre", "4º Bimestre"],
         passGrade: currentSettings.academic?.passGrade ?? 7.0,
         maxGrade: currentSettings.academic?.maxGrade ?? 10.0,
       },

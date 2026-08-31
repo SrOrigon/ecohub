@@ -16,6 +16,10 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { LiveExerciseMonitor } from "@/components/teacher/live-exercise-monitor";
+import { TeacherDuelControl } from "@/components/duels/teacher-duel-control";
+import { LearningDiagnosticsPanel } from "@/components/teacher/learning-diagnostics-panel";
+import { getTeacherDiagnosticsAction } from "@/actions/learning-diagnostics";
 import { UserIdentity } from "@/components/profile/user-identity";
 import { RankingList } from "@/components/profile/ranking-list";
 import { TeacherDayOverview } from "@/components/teacher/teacher-day-overview";
@@ -90,6 +94,13 @@ export default async function TeacherDashboardPage() {
         ]).catch(() => [[], [], []] as const)
       : [[], [], []] as const;
 
+  const [activeDuelSession, diagnostics] = await Promise.all([
+    prisma.duelSession.findFirst({
+      where: { teacherId: user.id, isActive: true },
+    }),
+    getTeacherDiagnosticsAction(),
+  ]);
+
   const creatorJourney = buildCreatorJourney({
     hasClass: myClasses.length > 0,
     hasStudents: totalStudents > 0,
@@ -128,6 +139,24 @@ export default async function TeacherDashboardPage() {
     ex.submissions.some((s) => s.status === "submitted")
   );
 
+  const monitorExercises = exercises.slice(0, 6).map((ex) => {
+    const totalTargetStudents =
+      ex.studentTargets.length > 0
+        ? ex.studentTargets.length
+        : ex.classGroup?._count?.students ?? 0;
+    return {
+      id: ex.id,
+      title: ex.title,
+      className: ex.classGroup?.name ?? "Alunos selecionados",
+      kind: ex.kind,
+      totalTargetStudents,
+      submittedCount: ex.submissions.length,
+      gradedCount: ex.submissions.filter((s) => s.status === "graded").length,
+      dueDate: ex.dueDate ? ex.dueDate.toISOString() : null,
+      isActive: ex.isActive,
+    };
+  });
+
   return (
     <div className="space-y-6">
       <CreatorHub
@@ -150,6 +179,33 @@ export default async function TeacherDashboardPage() {
         trailsEnabled={settings.trails.enabled}
         canCreateTrail={canCreateTrail}
       />
+
+      <TodayAgendaWidget
+        items={agenda.items}
+        dayStatus={agenda.dayStatus}
+        title="Sua agenda de hoje"
+        subtitle={`${agenda.classCount} turma(s) · ${agenda.items.filter((i) => !i.done).length} pendência(s)`}
+      />
+
+      <SchoolCalendarWidget settings={settings} compact />
+
+      <TeacherDayOverview classes={dayOverview} />
+
+      {/* Monitor em tempo real de atividades */}
+      <LiveExerciseMonitor exercises={monitorExercises} />
+
+      {/* Controle da Arena de Duelos 1v1 da Turma */}
+      <TeacherDuelControl
+        classes={myClasses.map((c) => ({
+          id: c.id,
+          name: c.name,
+          studentCount: c._count.students,
+        }))}
+        activeSession={activeDuelSession}
+      />
+
+      {/* Diagnóstico Pedagógico com IA e Heatmap de Erros */}
+      <LearningDiagnosticsPanel initialDiagnostics={diagnostics} />
 
       <PageHeader
         title="Gestão do dia"

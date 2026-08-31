@@ -74,9 +74,13 @@ async function fetchStudents(where: Prisma.StudentWhereInput) {
     } satisfies ClassStudentExerciseOption;
   });
 
-  return sortStudentsByName(refreshed.map((row) => ({ ...row, user: { fullName: row.fullName } }))).map(
-    ({ user: _user, ...row }) => row
-  );
+  return sortStudentsByName(
+    refreshed.map((row) => ({ ...row, user: { fullName: row.fullName } }))
+  ).map((row) => {
+    const { user: _unused, ...rest } = row;
+    void _unused;
+    return rest;
+  });
 }
 
 export async function getStudentsForExerciseAction(classId?: string) {
