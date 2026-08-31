@@ -135,8 +135,11 @@ export function StudentsListPanel({
         />
       ) : (
         <>
-          <div className="overflow-hidden rounded-xl border border-slate-200">
-            <ResponsiveTable minWidth="36rem" className="[&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10 [&_thead]:bg-white">
+          <div className="rounded-xl border border-slate-200">
+            <ResponsiveTable
+              minWidth="36rem"
+              className="[&_thead]:sticky [&_thead]:top-[var(--app-header-offset)] [&_thead]:z-10 [&_thead]:bg-[var(--surface)]"
+            >
               <thead>
                 <tr className="border-b border-slate-200 text-left text-slate-500 shadow-sm">
                   <th className="pb-3 pl-4 pr-4 pt-3">Matrícula</th>

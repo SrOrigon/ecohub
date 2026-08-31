@@ -89,11 +89,11 @@ export default async function LeituraGeralPage() {
         </div>
       </PageHeader>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-1">
+      <div className="layout-grid grid gap-6 lg:grid-cols-3">
+        <div className="min-w-0 lg:col-span-1">
           <InstitutionalHealthGauge score={data.healthScore} label={data.healthLabel} />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2 lg:grid-cols-4">
+        <div className="layout-grid grid min-w-0 gap-4 sm:grid-cols-2 lg:col-span-2 lg:grid-cols-4">
           <MetricCard icon={Users} label="Alunos" value={String(data.totalStudents)} color="text-indigo-600" />
           <MetricCard icon={GraduationCap} label="Turmas" value={String(data.totalClasses)} color="text-violet-600" />
           <MetricCard icon={BookOpen} label="Média geral" value={data.averageGrade.toFixed(1)} sub={`Meta ${data.passGrade}`} color="text-emerald-600" />

@@ -58,8 +58,8 @@ export function EcohubAiChat({
   }
 
   return (
-    <div className="flex min-h-[min(28rem,60dvh)] min-w-0 flex-col rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+    <div className="panel-chat rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex shrink-0 items-center gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-700">
           <Bot className="h-5 w-5" aria-hidden="true" />
         </div>
@@ -70,7 +70,7 @@ export function EcohubAiChat({
         <Sparkles className="ml-auto h-4 w-4 text-amber-500" aria-hidden="true" />
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+      <div className="panel-chat-messages space-y-3 p-4">
         {messages.map((msg, i) => (
           <div
             key={i}

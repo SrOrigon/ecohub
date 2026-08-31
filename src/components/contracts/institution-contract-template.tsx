@@ -139,8 +139,8 @@ export function InstitutionContractTemplatePanel({
           id="contract-template-html"
           value={html}
           onChange={(event) => setHtml(event.target.value)}
-          rows={14}
-          className="mt-2 w-full rounded-lg border border-slate-200 bg-white p-3 font-mono text-xs leading-relaxed text-slate-800"
+          rows={8}
+          className="mt-2 max-h-56 w-full resize-y overflow-y-auto rounded-lg border border-slate-200 bg-white p-3 font-mono text-xs leading-relaxed text-slate-800 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           spellCheck={false}
         />
         <Button

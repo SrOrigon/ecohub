@@ -182,7 +182,7 @@ button {
   flex: 1;
   flex-direction: column;
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
@@ -199,6 +199,12 @@ button {
 }
 
 .app-main > * {
+  min-width: 0;
+}
+
+/* Grids com sidebar + conteúdo: filhos precisam encolher para scroll interno funcionar */
+.layout-grid > *,
+.layout-with-aside > * {
   min-width: 0;
 }
 
@@ -271,6 +277,8 @@ button {
 @media (min-width: 768px) {
   .page-header-actions {
     width: auto;
+    max-width: min(100%, 28rem);
+    min-width: 0;
     justify-content: flex-end;
   }
 }
@@ -286,6 +294,7 @@ button {
 .responsive-table-wrap {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
@@ -606,6 +615,78 @@ input[type="radio"] {
 
 .messages-layout {
   min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .messages-layout {
+    align-items: stretch;
+    max-height: calc(100dvh - var(--app-header-offset) - 2.5rem);
+    min-height: min(36rem, calc(100dvh - var(--app-header-offset) - 2.5rem));
+  }
+
+  .messages-layout > * {
+    display: flex;
+    min-height: 0;
+    max-height: 100%;
+    flex-direction: column;
+  }
+
+  .messages-layout .messages-panel-card {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .messages-layout .messages-panel-body {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .messages-layout .messages-scroll-region {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+.layout-with-aside {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1536px) {
+  .layout-with-aside {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+    align-items: start;
+  }
+
+  .layout-with-aside-aside {
+    position: sticky;
+    top: calc(var(--app-header-offset) + 0.75rem);
+    max-height: calc(100dvh - var(--app-header-offset) - 1.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+.panel-chat {
+  display: flex;
+  min-height: min(28rem, 60dvh);
+  max-height: calc(100dvh - var(--app-header-offset) - 10rem);
+  min-width: 0;
+  flex-direction: column;
+}
+
+.panel-chat-messages {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-body {

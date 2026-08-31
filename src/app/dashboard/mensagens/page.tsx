@@ -64,9 +64,10 @@ export default async function MensagensPage({
     : undefined;
 
   const listPanel = (
-    <Card className="h-full">
-      <CardContent className="space-y-2 p-4">
-        <p className="font-semibold text-slate-800">Conversas</p>
+    <Card className="messages-panel-card h-full">
+      <CardContent className="messages-panel-body space-y-2 p-4">
+        <p className="shrink-0 font-semibold text-slate-800">Conversas</p>
+        <div className="messages-scroll-region space-y-2">
         {threads.length === 0 ? (
           <p className="text-sm text-slate-500">Nenhuma conversa ainda.</p>
         ) : (
@@ -87,8 +88,10 @@ export default async function MensagensPage({
           ))
         )}
 
+        </div>
+
         {user.role === "parent" && parentLinks.length > 0 && (
-          <form action={sendChatMessageAction} className="mt-4 space-y-2 border-t pt-4">
+          <form action={sendChatMessageAction} className="mt-4 shrink-0 space-y-2 border-t pt-4">
             <p className="text-sm font-medium">Iniciar conversa</p>
             <input type="hidden" name="parentId" value={user.id} />
             <div>
@@ -120,10 +123,10 @@ export default async function MensagensPage({
   );
 
   const chatPanel = activeThread ? (
-    <Card className="h-full">
-      <CardContent className="flex min-h-[min(70dvh,32rem)] flex-col p-4">
-        <p className="mb-4 hidden border-b pb-2 font-semibold lg:block">{threadTitle}</p>
-        <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain">
+    <Card className="messages-panel-card h-full">
+      <CardContent className="messages-panel-body flex flex-col p-4">
+        <p className="mb-4 hidden shrink-0 border-b pb-2 font-semibold lg:block">{threadTitle}</p>
+        <div className="messages-scroll-region space-y-3">
           {activeThread.messages.map((msg) => (
             <div
               key={msg.id}
@@ -136,7 +139,7 @@ export default async function MensagensPage({
             </div>
           ))}
         </div>
-        <form action={sendChatMessageAction} className="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row">
+        <form action={sendChatMessageAction} className="mt-4 flex shrink-0 flex-col gap-2 border-t pt-4 sm:flex-row">
           <input type="hidden" name="threadId" value={activeThread.id} />
           <Input name="body" placeholder="Digite sua mensagem..." required className="min-w-0 flex-1" />
           <Button type="submit" className="w-full shrink-0 sm:w-auto">

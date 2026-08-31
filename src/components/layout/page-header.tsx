@@ -34,7 +34,7 @@ export function PageHeader({
           {description && <p className="page-subtitle">{description}</p>}
         </div>
       </div>
-      {children && <div className="page-header-actions shrink-0">{children}</div>}
+      {children && <div className="page-header-actions min-w-0 shrink-0">{children}</div>}
     </header>
   );
 }

@@ -96,8 +96,8 @@ export default async function ContratosPage({
         description="Gestão de contratos por aluno e turma — estilo Sponte, com situação, datas e impressão individual."
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_20rem]">
-        <div className="space-y-6">
+      <div className="layout-with-aside">
+        <div className="min-w-0 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -168,7 +168,7 @@ export default async function ContratosPage({
               {filteredContracts.length === 0 ? (
                 <p className="text-sm text-slate-500">Nenhum contrato encontrado com os filtros atuais.</p>
               ) : (
-                <ResponsiveTable minWidth="56rem">
+                <ResponsiveTable minWidth="44rem">
                   <thead>
                     <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
                       <th className="pb-3 pr-3">Nº contrato</th>
@@ -246,7 +246,7 @@ export default async function ContratosPage({
           </Card>
         </div>
 
-        <aside className="space-y-4">
+        <aside className="layout-with-aside-aside min-w-0 space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Modelo de contrato da instituição</CardTitle>

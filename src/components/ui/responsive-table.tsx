@@ -12,7 +12,7 @@ export function ResponsiveTable({
   caption?: string;
 }) {
   return (
-    <div className="responsive-table-wrap">
+    <div className="responsive-table-wrap min-w-0">
       <table
         className={cn("responsive-table text-sm", className)}
         style={{ minWidth }}
