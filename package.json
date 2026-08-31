@@ -11,6 +11,7 @@
     "lint": "eslint",
     "check": "npm run lint && npm run build",
     "test:smoke": "node scripts/smoke-test.mjs",
+    "test:scroll": "node scripts/verify-scroll-layout.mjs",
     "test:validation": "npx tsx scripts/institutional-validation.ts",
     "test:full": "node scripts/run-full-validation.mjs",
     "db:backup": "node scripts/backup-db.mjs",
@@ -52,6 +53,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
+    "playwright": "^1.62.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^5"
   }

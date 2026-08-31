@@ -55,6 +55,7 @@ export function DashboardShell({
         <div
           className="app-shell"
           data-audience={kidFriendly ? "student" : "staff"}
+          data-mobile-nav-open={mobileMenuOpen ? "true" : "false"}
         >
         <CommandPalette userRole={role} />
         {showCreatorJourneyCelebration && (
@@ -93,7 +94,7 @@ export function DashboardShell({
             id="main-content"
             tabIndex={-1}
             aria-label="Conteúdo principal"
-            className="app-main page-stack focus:outline-none pb-24 md:pb-8"
+            className="app-main page-stack focus:outline-none md:pb-8"
           >
             {children}
           </main>

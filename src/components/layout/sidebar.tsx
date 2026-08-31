@@ -252,8 +252,8 @@ function SidebarNavRegion({
   }, [updateScrollHints]);
 
   return (
-    <div ref={regionRef} className="sidebar-nav-region flex min-h-0 flex-1 flex-col" data-scroll-top="true" data-scroll-bottom="true">
-      <div ref={scrollRef} className="sidebar-nav-scroll min-h-0 flex-1">
+    <div ref={regionRef} className="sidebar-nav-region" data-scroll-top="true" data-scroll-bottom="true">
+      <div ref={scrollRef} className="sidebar-nav-scroll">
         {children}
       </div>
     </div>
@@ -336,14 +336,14 @@ export function Sidebar({
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden" role="presentation">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/50 touch-none"
             onClick={() => onMobileOpenChange(false)}
             aria-hidden="true"
           />
           <aside
             id="mobile-sidebar"
             ref={mobilePanelRef}
-            className="relative flex h-full w-[min(20rem,92vw)] flex-col overflow-hidden sidebar-panel shadow-[var(--shadow-md)] safe-area-bottom safe-area-top"
+            className="sidebar-panel sidebar-drawer overflow-hidden shadow-[var(--shadow-md)] safe-area-bottom safe-area-top"
             aria-label="Menu lateral"
             role="dialog"
             aria-modal="true"
@@ -376,7 +376,7 @@ export function Sidebar({
       )}
 
       <aside
-        className="sidebar-panel hidden h-full min-h-0 max-h-dvh shrink-0 flex-col overflow-hidden border-r md:flex"
+        className="sidebar-panel sidebar-panel-desktop min-h-0 shrink-0 flex-col overflow-hidden border-r"
         aria-label="Menu lateral"
       >
         <SidebarContent
@@ -428,7 +428,7 @@ function SidebarContent({
   onNavigate?: () => void;
 }) {
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex h-16 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-gradient-to-r from-[color:var(--school-primary-soft)] to-transparent px-4 sm:px-6">
         <Medal className="h-8 w-8 shrink-0 text-[color:var(--school-primary)]" aria-hidden="true" />
         <div className="min-w-0">

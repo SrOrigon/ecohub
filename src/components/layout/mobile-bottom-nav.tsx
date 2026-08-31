@@ -70,7 +70,7 @@ export function MobileBottomNav({ role }: { role: UserRole }) {
   return (
     <nav
       aria-label="Navegação móvel principal"
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/90 bg-white/95 px-2 py-1.5 backdrop-blur-lg md:hidden dark:border-slate-800/90 dark:bg-slate-950/95"
+      className="mobile-bottom-nav fixed bottom-0 left-0 right-0 border-t border-slate-200/90 bg-white/95 px-2 py-1.5 backdrop-blur-lg md:hidden dark:border-slate-800/90 dark:bg-slate-950/95"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)" }}
     >
       <div className="flex items-center justify-around">

@@ -1,19 +1,20 @@
 /**
- * Bloqueio de scroll do body com contagem de referências.
+ * Bloqueio de scroll com contagem de referências.
  *
  * Modal e menu lateral podem estar abertos ao mesmo tempo. Sem contador, o
  * primeiro a fechar liberaria o scroll enquanto o outro continua aberto.
+ *
+ * O scroll real do dashboard vive em `.app-content`, não no body — por isso
+ * também aplicamos a classe `scroll-locked` no `<html>`.
  */
 
 let lockCount = 0;
-let previousOverflow = "";
 
 export function lockBodyScroll(): void {
   if (typeof document === "undefined") return;
 
   if (lockCount === 0) {
-    previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.documentElement.classList.add("scroll-locked");
   }
   lockCount += 1;
 }
@@ -24,7 +25,6 @@ export function unlockBodyScroll(): void {
 
   lockCount -= 1;
   if (lockCount === 0) {
-    document.body.style.overflow = previousOverflow;
-    previousOverflow = "";
+    document.documentElement.classList.remove("scroll-locked");
   }
 }
