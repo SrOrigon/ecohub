@@ -252,8 +252,8 @@ function SidebarNavRegion({
   }, [updateScrollHints]);
 
   return (
-    <div ref={regionRef} className="sidebar-nav-region" data-scroll-top="true" data-scroll-bottom="true">
-      <div ref={scrollRef} className="sidebar-nav-scroll h-full max-h-full">
+    <div ref={regionRef} className="sidebar-nav-region flex min-h-0 flex-1 flex-col" data-scroll-top="true" data-scroll-bottom="true">
+      <div ref={scrollRef} className="sidebar-nav-scroll min-h-0 flex-1">
         {children}
       </div>
     </div>
@@ -376,7 +376,7 @@ export function Sidebar({
       )}
 
       <aside
-        className="sidebar-panel hidden h-full max-h-dvh w-64 shrink-0 flex-col overflow-hidden border-r md:flex xl:w-72"
+        className="sidebar-panel hidden h-full min-h-0 max-h-dvh w-64 shrink-0 flex-col overflow-hidden border-r md:flex xl:w-72"
         aria-label="Menu lateral"
       >
         <SidebarContent
