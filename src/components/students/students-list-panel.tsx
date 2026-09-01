@@ -136,12 +136,9 @@ export function StudentsListPanel({
       ) : (
         <>
           <div className="rounded-xl border border-slate-200">
-            <ResponsiveTable
-              minWidth="36rem"
-              className="[&_thead]:sticky [&_thead]:top-[var(--app-header-offset)] [&_thead]:z-10 [&_thead]:bg-[var(--surface)]"
-            >
+            <ResponsiveTable minWidth="36rem">
               <thead>
-                <tr className="border-b border-slate-200 text-left text-slate-500 shadow-sm">
+                <tr className="border-b border-slate-200 bg-slate-50 text-left text-slate-500">
                   <th className="pb-3 pl-4 pr-4 pt-3">Matrícula</th>
                   <th className="pb-3 pr-4 pt-3">Nome</th>
                   <th className="hidden pb-3 pr-4 pt-3 md:table-cell">E-mail</th>
