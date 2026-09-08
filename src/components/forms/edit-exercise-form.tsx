@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { startTransition, useActionState, useMemo, useState } from "react";
 import { updateExerciseAction } from "@/actions/exercises";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -150,7 +150,8 @@ export function EditExerciseForm({
       return;
     }
     setClientError(null);
-    formAction(new FormData(event.currentTarget));
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
   }
 
   const totalQuestionPoints = useMemo(

@@ -68,9 +68,13 @@ export default async function ExerciciosPage() {
           icon={PenLine}
           title={isStaff ? "Nenhum exercício publicado" : "Nenhum exercício disponível"}
           description={
-            isStaff
-              ? "Clique em Publicar atividade, selecione um ou mais alunos e envie o exercício só para eles."
-              : "Quando o professor publicar, aparecerá aqui com XP e moedas para ganhar!"
+            !isStaff
+              ? "Quando o professor publicar, aparecerá aqui com XP e moedas para ganhar!"
+              : !hasSubjects
+                ? "Cadastre as disciplinas da instituição para liberar a publicação de atividades."
+                : classes.length === 0
+                  ? "Crie uma turma para poder publicar atividades."
+                  : "Clique em Publicar atividade, selecione um ou mais alunos e envie o exercício só para eles."
           }
         />
       ) : user.role === "student" ? (

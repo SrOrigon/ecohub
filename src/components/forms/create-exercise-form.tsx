@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState, useTransition } from "react";
+import { startTransition, useActionState, useMemo, useState, useTransition } from "react";
 import { createExerciseAction } from "@/actions/exercises";
 import { generateExerciseQuestionsAction } from "@/actions/ai";
 import { Button } from "@/components/ui/button";
@@ -178,7 +178,7 @@ export function CreateExerciseForm({
     }
     setClientError(null);
     const formData = new FormData(event.currentTarget);
-    formAction(formData);
+    startTransition(() => formAction(formData));
   }
 
   function updateQuestion(i: number, patch: Partial<DraftQuestion>) {

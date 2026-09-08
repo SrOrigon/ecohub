@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createTeacherAction } from "@/actions/crud";
 import { runServerAction } from "@/lib/run-server-action";
@@ -83,7 +83,7 @@ export function CreateTeacherForm() {
     formData.set("fullName", fullName.trim());
     formData.set("email", emailValue);
     formData.set("password", passwordValue);
-    formAction(formData);
+    startTransition(() => formAction(formData));
   }
 
   const displayError = clientError ?? state?.error;

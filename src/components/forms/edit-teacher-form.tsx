@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Pencil } from "lucide-react";
 import { updateTeacherAction } from "@/actions/crud";
@@ -101,7 +101,7 @@ export function EditTeacherForm({ teacher }: { teacher: EditableTeacher }) {
       "removeAvatar",
     ]);
     if (passwordValue) formData.set("password", passwordValue);
-    formAction(formData);
+    startTransition(() => formAction(formData));
   }
 
   const displayError = clientError ?? state?.error;
