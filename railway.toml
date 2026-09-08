@@ -25,6 +25,10 @@ healthcheckPath = "/api/health/live"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
+region = "ams"
+
+[deploy.multiRegionConfig.ams]
+numReplicas = 1
 
 [deploy.limitOverride.containers]
 cpu = 1
