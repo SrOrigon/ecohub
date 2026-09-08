@@ -49,6 +49,22 @@ PORT=3000
 
 ---
 
+## Hobby US$ 5 (obrigatório no painel)
+
+O `railway.toml` define 1 réplica, teto de **1 vCPU / 1 GB**, sleep quando idle e heap Node de 384 MB. Os **8 vCPU / 8 GB** da página Hobby são o máximo do plano, não o que o serviço deve usar. RAM custa ~US$ 10/GB/mês.
+
+O Hobby cobra **US$ 5/mês** e inclui **US$ 5 de crédito**. Uso acima disso é cobrado à parte. O trial expirado **não** sobe o app até você assinar o Hobby.
+
+No Railway, **antes** de Apply / Deploy (e logo após assinar o Hobby):
+
+1. Serviço **eduhub** → Scale / Replica Limits: **1 vCPU** e **1 GB**.
+2. Deploy → **Serverless**: ligado (`sleepApplication` no `railway.toml`).
+3. Serviço **Postgres**: **0,5 vCPU** e **256–512 MB** (o banco não dorme; 0,5 GB 24h já são ~US$ 5 só de RAM).
+4. Variável `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (rede privada). **Não** use `DATABASE_PUBLIC_URL`.
+5. Workspace → **Usage**: alerta de e-mail em **US$ 4**. Hard limit de compute: o mínimo da Railway é **US$ 10** (não existe hard limit de US$ 5).
+6. Sem réplicas extras, PR environments nem segundo serviço de app.
+7. Desenvolvimento em **localhost** (`npm run setup:local` + `npm run dev`). Não aponte `.env.local` para o Postgres da Railway.
+
 ## Railway
 
 1. Conecte o repositório GitHub (`SrOrigon/eduhub`, branch `main`)

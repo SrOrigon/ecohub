@@ -1,12 +1,12 @@
 [variables]
 NIXPACKS_NODE_VERSION = "20"
-# Runtime: DATABASE_URL do PostgreSQL Railway (${{Postgres.DATABASE_URL}}).
+# Runtime: DATABASE_URL do PostgreSQL Railway (${{Postgres.DATABASE_URL}} privado).
 
 [phases.install]
-cmds = ["npm install"]
+cmds = ["npm ci"]
 
 [phases.build]
 cmds = ["npm run build"]
 
 [start]
-cmd = "npm start"
+cmd = "node --max-old-space-size=384 scripts/start-production.mjs"

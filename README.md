@@ -21,6 +21,7 @@ Sistema unificado de **gestão escolar** + **gamificação educacional**, totalm
 ```bash
 cd "c:\Users\DeadW\Desktop\Projeto-estudante"
 npm install
+npm run setup:local
 npm run dev
 ```
 
@@ -53,6 +54,7 @@ Isso cria a escola `escola-piloto-validacao` com contas de teste locais (ver sa�
 ## Comandos úteis
 
 ```bash
+npm run setup:local   # .env.local SQLite + migrations (não usa Railway)
 npm run dev          # servidor de desenvolvimento
 npm run build        # compilar produção
 npm run db:migrate   # aplicar migrations

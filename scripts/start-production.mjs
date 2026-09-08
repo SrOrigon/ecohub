@@ -245,6 +245,11 @@ async function backgroundMaintenance(dbPath, previousUsers) {
  * qualquer tarefa assíncrona de backup rodar enquanto o servidor está no ar.
  */
 function startNext(port) {
+  const existingNodeOptions = process.env.NODE_OPTIONS?.trim() ?? "";
+  const nodeOptions = /--max-old-space-size=/.test(existingNodeOptions)
+    ? existingNodeOptions
+    : [existingNodeOptions, "--max-old-space-size=384"].filter(Boolean).join(" ");
+
   const child = spawn(
     process.execPath,
     [NEXT_BIN, "start", "-H", "0.0.0.0", "-p", String(port)],
@@ -253,6 +258,7 @@ function startNext(port) {
       cwd: ROOT,
       env: {
         ...process.env,
+        NODE_OPTIONS: nodeOptions,
         NODE_ENV: "production",
         DATABASE_URL: process.env.DATABASE_URL,
         ECOHUB_INSTITUTIONAL: process.env.ECOHUB_INSTITUTIONAL || "1",
@@ -324,10 +330,13 @@ async function main() {
 
   void backgroundMaintenance(dbPath, previousUsers);
 
-  const HOUR_MS = 60 * 60 * 1000;
-  setInterval(() => {
-    void backgroundMaintenance(dbPath, Math.max(previousUsers, 1));
-  }, HOUR_MS);
+  // Intervalo horário só no SQLite (backups). No Postgres isso gasta CPU/RAM e atrasa o sleep do Hobby.
+  if (!postgres) {
+    const HOUR_MS = 60 * 60 * 1000;
+    setInterval(() => {
+      void backgroundMaintenance(dbPath, Math.max(previousUsers, 1));
+    }, HOUR_MS);
+  }
 }
 
 main().catch((error) => {

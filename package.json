@@ -6,6 +6,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "setup:local": "node scripts/setup-local.mjs",
     "build": "node scripts/prisma-generate.mjs && next build",
     "start": "node scripts/start-production.mjs",
     "lint": "eslint",
