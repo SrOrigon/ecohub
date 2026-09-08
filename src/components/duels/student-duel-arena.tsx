@@ -305,7 +305,11 @@ export function StudentDuelArena({
                       min={0}
                       max={Math.min(myCoins, activeSession.maxBetCoins)}
                       value={betCoins}
-                      onChange={(e) => setBetCoins(Number(e.target.value))}
+                      onChange={(e) => {
+                        const next = Number.parseInt(e.target.value, 10);
+                        const cap = Math.min(myCoins, activeSession.maxBetCoins);
+                        setBetCoins(Number.isFinite(next) ? Math.min(cap, Math.max(0, next)) : 0);
+                      }}
                       className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     />
                   </div>
@@ -333,13 +337,12 @@ export function StudentDuelArena({
 
                 <Button
                   type="button"
-                  size="sm"
-                  disabled={isPending}
+                  disabled={isPending || !selectedPeerId}
                   onClick={handleCreateChallenge}
-                  className="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white font-bold shadow hover:from-amber-600 hover:to-red-600"
+                  className="w-full min-h-[44px] gap-2 bg-gradient-to-r from-red-600 via-amber-600 to-indigo-600 font-bold text-white shadow hover:opacity-95"
                 >
-                  <Swords className="mr-1.5 h-4 w-4" />
-                  {isPending ? "Enviando Desafio..." : "Desafiar Colega para Duelo 1v1!"}
+                  <Swords className="h-4 w-4" />
+                  {isPending ? "Enviando desafio..." : "Desafiar Colega para Duelo 1v1!"}
                 </Button>
               </div>
             )}

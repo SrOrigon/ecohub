@@ -22,6 +22,7 @@ import {
   trueFalseOptions,
   type QuestionType,
 } from "@/lib/exercises";
+import { useLatest } from "@/hooks/use-latest";
 import { Pencil } from "lucide-react";
 
 type ClassOption = { id: string; name: string };
@@ -96,22 +97,32 @@ export function EditExerciseForm({
   const [coinReward, setCoinReward] = useState(exercise.coinReward);
   const [dueDate, setDueDate] = useState(exercise.dueDate);
   const [questions, setQuestions] = useState<DraftQuestion[]>(() => questionsFromExercise(exercise.questions));
+  const titleRef = useLatest(title);
+  const descriptionRef = useLatest(description);
+  const kindRef = useLatest(kind);
+  const classFilterRef = useLatest(classFilter);
+  const selectedStudentIdsRef = useLatest(selectedStudentIds);
+  const maxPointsRef = useLatest(maxPoints);
+  const xpRewardRef = useLatest(xpReward);
+  const coinRewardRef = useLatest(coinReward);
+  const dueDateRef = useLatest(dueDate);
+  const questionsRef = useLatest(questions);
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
       formData.set("id", exercise.id);
       formData.set("isActive", exercise.isActive ? "true" : "false");
-      formData.set("title", title.trim());
-      formData.set("description", description.trim());
-      formData.set("kind", kind);
-      formData.set("preferredClassId", classFilter);
+      formData.set("title", titleRef.current.trim());
+      formData.set("description", descriptionRef.current.trim());
+      formData.set("kind", kindRef.current);
+      formData.set("preferredClassId", classFilterRef.current);
       formData.set("audienceType", "personalized");
-      formData.set("maxPoints", String(maxPoints));
-      formData.set("xpReward", String(xpReward));
-      formData.set("coinReward", String(coinReward));
-      formData.set("dueDate", dueDate);
-      selectedStudentIds.forEach((studentId) => formData.append("studentTargetIds", studentId));
-      formData.set("questionsJson", JSON.stringify(questions));
+      formData.set("maxPoints", String(maxPointsRef.current));
+      formData.set("xpReward", String(xpRewardRef.current));
+      formData.set("coinReward", String(coinRewardRef.current));
+      formData.set("dueDate", dueDateRef.current);
+      selectedStudentIdsRef.current.forEach((studentId) => formData.append("studentTargetIds", studentId));
+      formData.set("questionsJson", JSON.stringify(questionsRef.current));
       const result = await updateExerciseAction(formData);
       if (result.success) setOpen(false);
       return result;
@@ -206,7 +217,7 @@ export function EditExerciseForm({
                 id="edit-xp"
                 type="number"
                 value={xpReward}
-                onChange={(event) => setXpReward(parseBoundedInt(event.target.value, xpReward))}
+                onChange={(event) => setXpReward(parseBoundedInt(event.target.value, 0))}
               />
             </div>
             <div>
@@ -215,7 +226,7 @@ export function EditExerciseForm({
                 id="edit-coins"
                 type="number"
                 value={coinReward}
-                onChange={(event) => setCoinReward(parseBoundedInt(event.target.value, coinReward))}
+                onChange={(event) => setCoinReward(parseBoundedInt(event.target.value, 0))}
               />
             </div>
           </div>

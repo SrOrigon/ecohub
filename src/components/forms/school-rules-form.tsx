@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useLatest } from "@/hooks/use-latest";
+import { parseBoundedInt } from "@/lib/exercise-draft";
 import { updateSchoolSettingsAction } from "@/actions/crud";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,13 +39,14 @@ function Toggle({
 
 export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
   const [settings, setSettings] = useState<SchoolSettings>(initial);
+  const settingsRef = useLatest(settings);
   const [tab, setTab] = useState<
     "xp" | "academic" | "notify" | "exercises" | "shop" | "calendar" | "branding" | "permissions"
   >("xp");
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
-      formData.set("settingsJson", JSON.stringify(settings));
+      formData.set("settingsJson", JSON.stringify(settingsRef.current));
       return await updateSchoolSettingsAction(formData);
     },
     null
@@ -223,7 +226,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
                   onChange={(e) =>
                     setSettings((s) => ({
                       ...s,
-                      missions: { ...s.missions, defaultCoins: Number(e.target.value) || 0 },
+                      missions: { ...s.missions, defaultCoins: parseBoundedInt(e.target.value, 0) },
                     }))
                   }
                 />
@@ -452,7 +455,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
                     onChange={(e) =>
                       setSettings((s) => {
                         const presets = [...s.exercises.presets];
-                        presets[i] = { ...presets[i], coins: Number(e.target.value) || 0 };
+                        presets[i] = { ...presets[i], coins: parseBoundedInt(e.target.value, 0) };
                         return { ...s, exercises: { ...s.exercises, presets } };
                       })
                     }

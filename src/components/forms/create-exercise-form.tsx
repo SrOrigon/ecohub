@@ -22,6 +22,7 @@ import {
   type DraftQuestion,
 } from "@/lib/exercise-draft";
 import { ExerciseStudentPicker } from "@/components/forms/exercise-student-targets-field";
+import { useLatest } from "@/hooks/use-latest";
 import { ChevronLeft, ChevronRight, PenLine, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -83,6 +84,12 @@ export function CreateExerciseForm({
     coins: mid.coins,
     maxPoints: mid.points,
   });
+  const basicsRef = useLatest(basics);
+  const classFilterRef = useLatest(classFilter);
+  const selectedStudentIdsRef = useLatest(selectedStudentIds);
+  const questionsRef = useLatest(questions);
+  const rewardsRef = useLatest(rewards);
+  const kindRef = useLatest(kind);
   const [aiTopic, setAiTopic] = useState("");
   const [aiSubject, setAiSubject] = useState("");
   const [aiError, setAiError] = useState<string | null>(null);
@@ -101,17 +108,19 @@ export function CreateExerciseForm({
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
-      formData.set("title", basics.title.trim());
-      formData.set("preferredClassId", classFilter);
-      formData.set("kind", kind);
-      formData.set("description", basics.description.trim());
-      formData.set("dueDate", basics.dueDate);
+      const latestBasics = basicsRef.current;
+      const latestRewards = rewardsRef.current;
+      formData.set("title", latestBasics.title.trim());
+      formData.set("preferredClassId", classFilterRef.current);
+      formData.set("kind", kindRef.current);
+      formData.set("description", latestBasics.description.trim());
+      formData.set("dueDate", latestBasics.dueDate);
       formData.set("audienceType", "personalized");
-      selectedStudentIds.forEach((studentId) => formData.append("studentTargetIds", studentId));
-      formData.set("questionsJson", JSON.stringify(questions));
-      formData.set("xpReward", String(rewards.xp));
-      formData.set("coinReward", String(rewards.coins));
-      formData.set("maxPoints", String(rewards.maxPoints));
+      selectedStudentIdsRef.current.forEach((studentId) => formData.append("studentTargetIds", studentId));
+      formData.set("questionsJson", JSON.stringify(questionsRef.current));
+      formData.set("xpReward", String(latestRewards.xp));
+      formData.set("coinReward", String(latestRewards.coins));
+      formData.set("maxPoints", String(latestRewards.maxPoints));
       const result = await createExerciseAction(formData);
       if (result.success) {
         setOpen(false);

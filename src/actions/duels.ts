@@ -131,6 +131,39 @@ export async function startTeacherDuelSessionAction(formData: FormData) {
   return { success: true, sessionId: session.id };
 }
 
+/** Professor altera o teto de moedas/XP da arena já aberta. */
+export async function updateTeacherDuelSessionLimitsAction(formData: FormData) {
+  const user = await requireSession(["teacher", "director", "admin"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const sessionId = String(formData.get("sessionId") ?? "").trim();
+  const maxBetCoins = Math.min(100, Math.max(0, Number(formData.get("maxBetCoins") ?? 30)));
+  const maxBetXp = Math.min(100, Math.max(0, Number(formData.get("maxBetXp") ?? 30)));
+  if (!sessionId) return { error: "Sessão inválida." };
+
+  const session = await prisma.duelSession.findFirst({
+    where: { id: sessionId, schoolId: user.schoolId, isActive: true },
+    select: { id: true, classId: true, teacherId: true },
+  });
+  if (!session) return { error: "Sessão ativa não encontrada." };
+
+  if (user.role === "teacher" && session.teacherId !== user.id) {
+    return { error: "Sem permissão para alterar esta sessão." };
+  }
+
+  const scope = await assertClassInScope(user, session.classId);
+  if (!scope.ok) return { error: scope.error };
+
+  await prisma.duelSession.update({
+    where: { id: session.id },
+    data: { maxBetCoins, maxBetXp },
+  });
+
+  revalidatePath("/dashboard/professor");
+  revalidatePath("/dashboard/aluno");
+  return { success: true };
+}
+
 /** Professor encerra a Arena de Duelos */
 export async function closeTeacherDuelSessionAction(formData: FormData) {
   const user = await requireSession(["teacher", "director", "admin"]);

@@ -5,7 +5,7 @@ import { Swords, ShieldAlert, CheckCircle2, Lock, Unlock, Users, Sparkles } from
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { startTeacherDuelSessionAction, closeTeacherDuelSessionAction } from "@/actions/duels";
+import { startTeacherDuelSessionAction, closeTeacherDuelSessionAction, updateTeacherDuelSessionLimitsAction } from "@/actions/duels";
 
 export type TeacherDuelClass = {
   id: string;
@@ -31,6 +31,7 @@ export function TeacherDuelControl({
   const [selectedClassId, setSelectedClassId] = useState(classes[0]?.id ?? "");
   const [maxBetCoins, setMaxBetCoins] = useState(activeSession?.maxBetCoins ?? 30);
   const [maxBetXp, setMaxBetXp] = useState(activeSession?.maxBetXp ?? 30);
+  const [limitMessage, setLimitMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const isArenaActive = !!activeSession?.isActive;
@@ -48,6 +49,19 @@ export function TeacherDuelControl({
         fd.set("maxBetXp", String(maxBetXp));
         await startTeacherDuelSessionAction(fd);
       }
+    });
+  }
+
+  function handleUpdateLimits() {
+    if (!activeSession) return;
+    startTransition(async () => {
+      setLimitMessage(null);
+      const fd = new FormData();
+      fd.set("sessionId", activeSession.id);
+      fd.set("maxBetCoins", String(maxBetCoins));
+      fd.set("maxBetXp", String(maxBetXp));
+      const res = await updateTeacherDuelSessionLimitsAction(fd);
+      setLimitMessage(res.error ?? "Limites de aposta atualizados.");
     });
   }
 
@@ -103,8 +117,8 @@ export function TeacherDuelControl({
               min={0}
               max={100}
               value={maxBetCoins}
-              disabled={isArenaActive || isPending}
-              onChange={(e) => setMaxBetCoins(Number(e.target.value))}
+              disabled={isPending}
+              onChange={(e) => setMaxBetCoins(Math.min(100, Math.max(0, Number.parseInt(e.target.value, 10) || 0)))}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>
@@ -118,12 +132,29 @@ export function TeacherDuelControl({
               min={0}
               max={100}
               value={maxBetXp}
-              disabled={isArenaActive || isPending}
-              onChange={(e) => setMaxBetXp(Number(e.target.value))}
+              disabled={isPending}
+              onChange={(e) => setMaxBetXp(Math.min(100, Math.max(0, Number.parseInt(e.target.value, 10) || 0)))}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>
         </div>
+
+        {isArenaActive && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={isPending}
+              onClick={handleUpdateLimits}
+            >
+              Salvar limites de moedas/XP
+            </Button>
+            {limitMessage && (
+              <p className="text-xs font-medium text-slate-600 dark:text-slate-300">{limitMessage}</p>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 text-xs dark:border-indigo-950 dark:bg-indigo-950/30">
           <div className="flex items-center gap-2 text-indigo-900 dark:text-indigo-200">
