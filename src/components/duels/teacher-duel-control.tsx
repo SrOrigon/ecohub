@@ -115,10 +115,9 @@ export function TeacherDuelControl({
             <input
               type="number"
               min={0}
-              max={100}
               value={maxBetCoins}
               disabled={isPending}
-              onChange={(e) => setMaxBetCoins(Math.min(100, Math.max(0, Number.parseInt(e.target.value, 10) || 0)))}
+              onChange={(e) => setMaxBetCoins(Math.max(0, Number.parseInt(e.target.value, 10) || 0))}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>
@@ -130,10 +129,9 @@ export function TeacherDuelControl({
             <input
               type="number"
               min={0}
-              max={100}
               value={maxBetXp}
               disabled={isPending}
-              onChange={(e) => setMaxBetXp(Math.min(100, Math.max(0, Number.parseInt(e.target.value, 10) || 0)))}
+              onChange={(e) => setMaxBetXp(Math.max(0, Number.parseInt(e.target.value, 10) || 0))}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>

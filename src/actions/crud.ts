@@ -1513,8 +1513,14 @@ export async function updateSchoolSettingsAction(formData: FormData) {
     return { error: "Informe ao menos um período." };
   }
   if (merged.xp.xpPerLevel < 50) {
+    // #region agent log
+    fetch('http://127.0.0.1:7835/ingest/5ebca1af-63db-48d1-b506-1de1b9e39b43',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'60f478'},body:JSON.stringify({sessionId:'60f478',runId:'limits-scan',hypothesisId:'C',location:'crud.ts:1515',message:'regras: xpPerLevel rejeitado',data:{xpPerLevel:merged.xp.xpPerLevel,defaultCoins:merged.missions.defaultCoins,defaultXp:merged.missions.defaultXp},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     return { error: "XP por nível deve ser no mínimo 50." };
   }
+  // #region agent log
+  fetch('http://127.0.0.1:7835/ingest/5ebca1af-63db-48d1-b506-1de1b9e39b43',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'60f478'},body:JSON.stringify({sessionId:'60f478',runId:'limits-scan',hypothesisId:'C',location:'crud.ts:1515',message:'regras: valores persistidos',data:{xpPerLevel:merged.xp.xpPerLevel,defaultCoins:merged.missions.defaultCoins,defaultXp:merged.missions.defaultXp,presetCoins:merged.exercises.presets.map((p)=>p.coins)},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   if (merged.academic.maxGrade <= 0) {
     return { error: "Nota máxima inválida." };
   }

@@ -90,11 +90,11 @@ export function AdjustStudentPointsForm({
         </div>
         <div>
           <Label htmlFor="adjust-xp">XP</Label>
-          <Input id="adjust-xp" name="xpAmount" type="number" min={0} step={1} defaultValue={10} />
+          <Input id="adjust-xp" name="xpAmount" inputMode="numeric" autoComplete="off" defaultValue={10} />
         </div>
         <div>
           <Label htmlFor="adjust-coins">Moedas</Label>
-          <Input id="adjust-coins" name="coinAmount" type="number" min={0} step={1} defaultValue={0} />
+          <Input id="adjust-coins" name="coinAmount" inputMode="numeric" autoComplete="off" defaultValue={0} />
         </div>
       </div>
 
