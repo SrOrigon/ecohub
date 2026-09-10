@@ -9,6 +9,7 @@ import {
   Medal,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatMetricCard } from "@/components/ui/stat-metric-card";
 import { Badge } from "@/components/ui/badge";
 import { ChartSkeleton } from "@/components/ui/chart-skeleton";
 import { PageHeader } from "@/components/layout/page-header";
@@ -96,7 +97,7 @@ export default async function DashboardPage() {
 
       <LiveStatsStrip />
 
-      <LiveActivityTicker />
+      <LiveActivityTicker className="hidden sm:block" />
 
       {adjustStudents.length > 0 && (
         <Card className="border-violet-200 bg-violet-50/40">
@@ -109,17 +110,15 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      <div className="responsive-grid">
+      <div className="stat-grid">
         {statCards.map(({ label, value, icon: Icon, color }) => (
-          <Card key={label}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">{label}</CardTitle>
-              <Icon className={`h-4 w-4 shrink-0 ${color}`} aria-hidden="true" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{value}</p>
-            </CardContent>
-          </Card>
+          <StatMetricCard
+            key={label}
+            label={label}
+            value={value}
+            icon={Icon}
+            iconClassName={color}
+          />
         ))}
       </div>
 

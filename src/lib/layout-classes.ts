@@ -16,6 +16,8 @@ export const layout = {
   grid4: "layout-grid layout-grid-4",
   /** Cards/métricas: auto-fit fluido */
   gridAuto: "responsive-grid",
+  /** KPIs compactos (2 colunas no mobile) */
+  statGrid: "stat-grid",
   span2: "layout-span-2",
   /** Conteúdo principal + painel lateral (empilha se estreito) */
   withAside: "layout-with-aside",

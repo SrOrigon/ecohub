@@ -5,15 +5,11 @@ import { usePathname } from "next/navigation";
 import {
   Home,
   GraduationCap,
-  Sparkles,
   Trophy,
   Gift,
-  User,
   Users,
-  BookOpen,
   PenLine,
   Calendar,
-  Shield,
   Settings,
   Bell,
   Swords,
@@ -39,7 +35,6 @@ export function MobileBottomNav({ role }: { role: UserRole }) {
       { label: "Arena", href: "/dashboard/aluno#arena-duelos", icon: Swords },
       { label: "Loja", href: "/dashboard/loja", icon: Gift },
       { label: "Rankings", href: "/dashboard/rankings", icon: Trophy },
-      { label: "Perfil", href: "/dashboard/perfil", icon: User },
     ];
   } else if (role === "teacher") {
     items = [
@@ -47,23 +42,26 @@ export function MobileBottomNav({ role }: { role: UserRole }) {
       { label: "Turmas", href: "/dashboard/turmas", icon: Users, matchPrefix: "/dashboard/turmas" },
       { label: "Exercícios", href: "/dashboard/exercicios", icon: PenLine, matchPrefix: "/dashboard/exercicios" },
       { label: "Agenda", href: "/dashboard/agenda", icon: Calendar, matchPrefix: "/dashboard/agenda" },
-      { label: "Perfil", href: "/dashboard/perfil", icon: User },
     ];
   } else if (role === "parent") {
     items = [
       { label: "Início", href: "/dashboard/responsavel", icon: Home },
       { label: "Boletim", href: "/dashboard/boletim", icon: GraduationCap, matchPrefix: "/dashboard/boletim" },
       { label: "Alertas", href: "/dashboard/alertas", icon: Bell, matchPrefix: "/dashboard/alertas" },
-      { label: "Perfil", href: "/dashboard/perfil", icon: User },
+    ];
+  } else if (role === "secretary") {
+    items = [
+      { label: "Painel", href: "/dashboard/secretaria", icon: Home },
+      { label: "Turmas", href: "/dashboard/turmas", icon: Users, matchPrefix: "/dashboard/turmas" },
+      { label: "Alunos", href: "/dashboard/alunos", icon: GraduationCap, matchPrefix: "/dashboard/alunos" },
+      { label: "Ajustes", href: "/dashboard/configuracoes", icon: Settings, matchPrefix: "/dashboard/configuracoes" },
     ];
   } else {
-    // director, admin, secretary
     items = [
       { label: "Painel", href: "/dashboard", icon: Home },
       { label: "Turmas", href: "/dashboard/turmas", icon: Users, matchPrefix: "/dashboard/turmas" },
-      { label: "Auditoria", href: "/dashboard/auditoria", icon: Shield, matchPrefix: "/dashboard/auditoria" },
+      { label: "Alunos", href: "/dashboard/alunos", icon: GraduationCap, matchPrefix: "/dashboard/alunos" },
       { label: "Ajustes", href: "/dashboard/configuracoes", icon: Settings, matchPrefix: "/dashboard/configuracoes" },
-      { label: "Perfil", href: "/dashboard/perfil", icon: User },
     ];
   }
 

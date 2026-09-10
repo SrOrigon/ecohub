@@ -90,7 +90,7 @@ export function LiveStatsStrip({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "stat-grid gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3",
+        "stat-grid gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 dark:border-indigo-900 dark:bg-indigo-950/40",
         className
       )}
       aria-live="polite"
@@ -101,7 +101,7 @@ export function LiveStatsStrip({ className }: { className?: string }) {
           <p
             className={cn(
               "text-xl font-bold",
-              item.alert ? "text-red-600" : item.highlight ? "text-indigo-700" : "text-slate-900"
+              item.alert ? "text-red-600" : item.highlight ? "text-indigo-700 dark:text-indigo-300" : "text-slate-900 dark:text-slate-100"
             )}
           >
             {item.value}

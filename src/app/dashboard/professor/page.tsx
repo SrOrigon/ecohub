@@ -11,6 +11,7 @@ import { getTodayAgendaForTeacher } from "@/lib/today-agenda";
 import { CreateClassForm } from "@/components/forms/create-class-form";
 import { CreateExerciseForm } from "@/components/forms/create-exercise-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatMetricCard } from "@/components/ui/stat-metric-card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -277,27 +278,24 @@ export default async function TeacherDashboardPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-500">Minhas turmas</CardTitle>
-            <Users className="h-4 w-4 text-indigo-600" />
-          </CardHeader>
-          <CardContent><p className="text-2xl font-bold">{myClasses.length}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-500">Total de alunos</CardTitle>
-            <BookOpen className="h-4 w-4 text-emerald-600" />
-          </CardHeader>
-          <CardContent><p className="text-2xl font-bold">{totalStudents}</p></CardContent>
-        </Card>
-        <Card>
+      <div className="stat-grid">
+        <StatMetricCard
+          label="Minhas turmas"
+          value={myClasses.length}
+          icon={Users}
+          iconClassName="text-indigo-600"
+        />
+        <StatMetricCard
+          label="Total de alunos"
+          value={totalStudents}
+          icon={BookOpen}
+          iconClassName="text-emerald-600"
+        />
+        <Card className="stat-span-full">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-500">Ações rápidas</CardTitle>
-            <ClipboardList className="h-4 w-4 text-amber-600" />
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
+          <CardContent className="flex flex-wrap gap-2 p-3 pt-0 sm:p-4 sm:pt-0">
             <Link href="/dashboard/notas"><Button size="sm" variant="outline">Lançar nota</Button></Link>
             <Link href="/dashboard/frequencia"><Button size="sm" variant="outline">Frequência</Button></Link>
             <Link href="/dashboard/exercicios"><Button size="sm" variant="outline">Exercícios</Button></Link>

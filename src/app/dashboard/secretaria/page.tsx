@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { computeRiskAlerts } from "@/lib/risk-alerts";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatMetricCard } from "@/components/ui/stat-metric-card";
 import { AdjustStudentPointsForm } from "@/components/forms/adjust-student-points-form";
 import { getStudents } from "@/lib/queries";
 import { redirect } from "next/navigation";
@@ -51,19 +52,15 @@ export default async function SecretariaPage() {
         </Link>
       </PageHeader>
 
-      <div className="responsive-grid">
+      <div className="stat-grid">
         {cards.map(({ label, value, href, icon: Icon }) => (
-          <Link key={href} href={href}>
-            <Card className="transition hover:shadow-md">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500">{label}</CardTitle>
-                <Icon className="h-4 w-4 text-indigo-600" aria-hidden="true" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">{value}</p>
-              </CardContent>
-            </Card>
-          </Link>
+          <StatMetricCard
+            key={href}
+            href={href}
+            label={label}
+            value={value}
+            icon={Icon}
+          />
         ))}
       </div>
 
