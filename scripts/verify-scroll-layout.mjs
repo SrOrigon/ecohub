@@ -151,6 +151,43 @@ async function main() {
     const mobileMenu = await verifyViewport(page, "mobile drawer scroll", 400, 642, true);
     const mobileContent = await verifyViewport(page, "mobile main content scroll", 400, 642, false);
 
+    await page.setViewportSize({ width: 400, height: 612 });
+    await page.goto(`${BASE}/dashboard/alunos`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.waitForSelector(".app-shell", { timeout: 15000 });
+    await page.waitForTimeout(700);
+    const alunosHud = await page.evaluate(() => {
+      const content = document.querySelector(".app-content");
+      const search = document.querySelector("#student-list-search");
+      const nav = document.querySelector(".mobile-bottom-nav");
+      const title = document.querySelector(".header-bar .md\\:hidden p, .header-bar p");
+      const navRect = nav?.getBoundingClientRect();
+      if (content && content.scrollHeight > content.clientHeight) {
+        content.scrollTop = content.scrollHeight;
+      }
+      const searchAfter = document.querySelector("#student-list-search")?.getBoundingClientRect();
+      const navAfter = document.querySelector(".mobile-bottom-nav")?.getBoundingClientRect();
+      return {
+        greeting: title?.textContent?.trim() ?? "",
+        greetingOverflows: title ? title.scrollWidth > title.clientWidth + 2 : false,
+        searchClearsNav: Boolean(
+          searchAfter && navAfter && searchAfter.bottom <= navAfter.top + 2
+        ),
+        paddingBottom: document.querySelector(".app-main")
+          ? getComputedStyle(document.querySelector(".app-main")).paddingBottom
+          : null,
+        navH: navRect?.height ?? null,
+      };
+    });
+    log({
+      sessionId: "9787c3",
+      runId: "scroll-verify",
+      hypothesisId: "H-alunos-mobile-fold",
+      location: "scripts/verify-scroll-layout.mjs",
+      message: "staff alunos mobile HUD",
+      data: alunosHud,
+      timestamp: Date.now(),
+    });
+
     await login(page, "aluno.piloto@instituicao.local");
     await page.setViewportSize({ width: 400, height: 642 });
     await page.goto(`${BASE}/dashboard/aluno`, { waitUntil: "domcontentloaded", timeout: 60000 });
@@ -199,7 +236,7 @@ async function main() {
       return !r.data.navScrollOk || !r.data.contentScrollOk || !hudOk;
     });
 
-    if (failed.length > 0 || !studentHudOk) {
+    if (failed.length > 0 || !studentHudOk || !alunosHud.searchClearsNav) {
       console.error(`\n[scroll-verify] ${failed.length} cenário(s) falharam.`);
       process.exit(1);
     }

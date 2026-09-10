@@ -53,7 +53,7 @@ export default async function AlunosPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader
         title="Alunos"
         description="Cadastre alunos e matricule cada um em quantas turmas ou cursos forem necessários"

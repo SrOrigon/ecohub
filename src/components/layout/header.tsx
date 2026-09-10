@@ -45,7 +45,7 @@ export function Header({
           <Menu className="h-5 w-5" aria-hidden="true" />
         </button>
 
-        <div className="min-w-0 flex-1 flex items-center gap-3">
+        <div className="min-w-0 flex-1 overflow-hidden">
           {showSearch ? (
             <>
               <div className="hidden md:flex items-center gap-2 flex-1 max-w-md">
@@ -62,9 +62,13 @@ export function Header({
                   </kbd>
                 </button>
               </div>
-              <div className="md:hidden">
-                <p className="truncate text-sm font-semibold text-[var(--foreground)]">{schoolName}</p>
-                <p className="truncate text-xs text-[var(--muted-foreground)]">Olá, {firstName}!</p>
+              <div className="min-w-0 md:hidden">
+                <p className="truncate text-sm font-semibold leading-tight text-[var(--foreground)]">
+                  Olá, {firstName}
+                </p>
+                <p className="truncate text-[11px] leading-tight text-[var(--muted-foreground)]" title={schoolName}>
+                  {schoolName}
+                </p>
               </div>
             </>
           ) : (
@@ -77,7 +81,7 @@ export function Header({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-1.5">
+        <div className="flex shrink-0 items-center justify-end gap-0.5 sm:gap-1.5">
           {showSearch && (
             <button
               type="button"
@@ -89,7 +93,7 @@ export function Header({
             </button>
           )}
           <SoundToggle className="hidden sm:flex" />
-          <ThemeToggle compact className="shrink-0" />
+          <ThemeToggle compact className="theme-toggle-btn shrink-0" />
           <LiveConnectionBadge />
           {role === "parent" && <AttentionAlertBadge />}
           <NotificationBell />
@@ -98,7 +102,7 @@ export function Header({
           </Badge>
           <Link
             href="/dashboard/perfil"
-            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full transition hover:opacity-90"
+            className="header-avatar-link flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full transition hover:opacity-90"
             aria-label="Abrir minha conta"
             title="Minha conta"
           >

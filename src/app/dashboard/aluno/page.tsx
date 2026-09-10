@@ -223,7 +223,7 @@ export default async function AlunoPortalPage() {
   const firstName = user.fullName.split(" ")[0];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <PageHeader
         title={
           <span className="flex flex-wrap items-center gap-3">
@@ -233,34 +233,34 @@ export default async function AlunoPortalPage() {
         }
         description={`${student.classGroup?.name ?? "Sem turma"} · Matrícula ${student.enrollmentCode}`}
       >
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <Link href={`/dashboard/alunos/${student.id}`} className="w-full sm:w-auto">
-            <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
-              <User className="h-5 w-5" aria-hidden="true" />
-              Meu perfil 360°
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-row sm:flex-wrap">
+          <Link href={`/dashboard/alunos/${student.id}`} className="min-w-0">
+            <Button variant="outline" size="sm" className="w-full gap-2">
+              <User className="h-4 w-4" aria-hidden="true" />
+              Perfil 360°
             </Button>
           </Link>
-          <Link href={`/dashboard/alunos/${student.id}/boletim`} className="w-full sm:w-auto">
-            <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
-              <FileText className="h-5 w-5" aria-hidden="true" />
-              Meu boletim
+          <Link href={`/dashboard/alunos/${student.id}/boletim`} className="min-w-0">
+            <Button variant="outline" size="sm" className="w-full gap-2">
+              <FileText className="h-4 w-4" aria-hidden="true" />
+              Boletim
             </Button>
           </Link>
-          <Link href="/dashboard/aluno/historico" className="w-full sm:w-auto">
-            <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
-              <History className="h-5 w-5" aria-hidden="true" />
-              Meu histórico
+          <Link href="/dashboard/aluno/historico" className="min-w-0">
+            <Button variant="outline" size="sm" className="w-full gap-2">
+              <History className="h-4 w-4" aria-hidden="true" />
+              Histórico
             </Button>
           </Link>
-          <Link href="/dashboard/rankings" className="w-full sm:w-auto">
-            <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
-              <Trophy className="h-5 w-5" aria-hidden="true" />
+          <Link href="/dashboard/rankings" className="min-w-0">
+            <Button variant="outline" size="sm" className="w-full gap-2">
+              <Trophy className="h-4 w-4" aria-hidden="true" />
               Rankings
             </Button>
           </Link>
-          <Link href="/dashboard/loja" className="w-full sm:w-auto">
-            <Button size="lg" className="w-full gap-2 sm:w-auto">
-              <Gift className="h-5 w-5" aria-hidden="true" />
+          <Link href="/dashboard/loja" className="col-span-2 min-w-0 sm:col-span-1">
+            <Button size="sm" className="w-full gap-2">
+              <Gift className="h-4 w-4" aria-hidden="true" />
               Loja ({student.coins} moedas)
             </Button>
           </Link>
@@ -277,7 +277,7 @@ export default async function AlunoPortalPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Arena de Duelos 1v1 da Turma */}
-        <div className="lg:col-span-2">
+        <div id="arena-duelos" className="scroll-mt-20 lg:col-span-2">
           <StudentDuelArena
             myStudentId={student.id}
             classmates={classmateOptions}

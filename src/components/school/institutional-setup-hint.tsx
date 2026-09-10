@@ -14,14 +14,14 @@ export function InstitutionalSetupHint({
 }) {
   return (
     <Card className="border-indigo-100 bg-indigo-50/60">
-      <CardContent className="flex flex-wrap items-start gap-3 py-4">
+      <CardContent className="flex flex-wrap items-start gap-3 py-3 sm:py-4">
         <Settings2 className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" aria-hidden="true" />
-        <div className="min-w-0 flex-1 text-sm text-slate-700">
+        <div className="min-w-0 flex-1 text-sm text-slate-700 dark:text-slate-300">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="font-semibold text-slate-900">Cadastro manual da instituição</p>
+            <p className="font-semibold text-slate-900 dark:text-slate-100">Cadastro manual da instituição</p>
             {canManageSettings && <ProvisionSchoolButton />}
           </div>
-          <p className="mt-1">
+          <p className="mt-1 line-clamp-2 md:line-clamp-none">
             O Ecohub auxilia depois que você cadastra turmas, cursos e disciplinas. Cadastre primeiro;
             em seguida vincule cada aluno à turma ou curso correspondente.
           </p>

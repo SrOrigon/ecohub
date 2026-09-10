@@ -31,8 +31,9 @@ export function ThemeToggle({
       type="button"
       onClick={toggleTheme}
       className={cn(
-        "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] transition hover:bg-[var(--hover)]",
-        compact ? "px-0" : "px-3",
+        compact
+          ? "icon-btn theme-toggle-btn text-[var(--foreground)]"
+          : "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-[var(--foreground)] transition hover:bg-[var(--hover)]",
         className
       )}
       aria-label={titleMap[theme]}

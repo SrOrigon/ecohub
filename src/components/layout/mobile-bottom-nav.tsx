@@ -36,7 +36,7 @@ export function MobileBottomNav({ role }: { role: UserRole }) {
   if (role === "student") {
     items = [
       { label: "Início", href: "/dashboard/aluno", icon: Home },
-      { label: "Arena", href: "/dashboard/aluno", icon: Swords },
+      { label: "Arena", href: "/dashboard/aluno#arena-duelos", icon: Swords },
       { label: "Loja", href: "/dashboard/loja", icon: Gift },
       { label: "Rankings", href: "/dashboard/rankings", icon: Trophy },
       { label: "Perfil", href: "/dashboard/perfil", icon: User },
@@ -75,16 +75,24 @@ export function MobileBottomNav({ role }: { role: UserRole }) {
       <div className="flex items-center justify-around">
         {items.map((item) => {
           const Icon = item.icon;
+          const [path, hash] = item.href.split("#");
           const isActive = item.matchPrefix
             ? pathname.startsWith(item.matchPrefix)
-            : pathname === item.href;
+            : !hash && pathname === item.href;
 
           return (
             <Link
-              key={item.label}
+              key={`${item.href}-${item.label}`}
               href={item.href}
+              onClick={(event) => {
+                if (!hash || pathname !== path) return;
+                const target = document.getElementById(hash);
+                if (!target) return;
+                event.preventDefault();
+                target.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center py-1 text-center transition-all touch-manipulation active:scale-95",
+                "flex min-h-11 flex-1 flex-col items-center justify-center py-0.5 text-center transition-all touch-manipulation active:scale-95",
                 isActive
                   ? "font-bold text-indigo-600 dark:text-indigo-400"
                   : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -92,7 +100,7 @@ export function MobileBottomNav({ role }: { role: UserRole }) {
             >
               <div
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-xl transition-all",
+                  "flex h-7 w-8 items-center justify-center rounded-xl transition-all",
                   isActive
                     ? "bg-indigo-50 shadow-sm dark:bg-indigo-950/70"
                     : "bg-transparent"
