@@ -50,7 +50,7 @@ export function ProvisionSchoolButton() {
         ) : (
           <Sparkles className="h-4 w-4 text-indigo-600" />
         )}
-        Inicializar Dados Padrão (1 Clique)
+        Inicializar dados
       </Button>
       {errorMsg && (
         <p className="flex items-center gap-1 text-xs text-red-600">

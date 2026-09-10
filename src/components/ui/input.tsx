@@ -5,7 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const inputClassName =
-  "flex min-h-11 w-full rounded-xl border-2 border-[var(--border)] bg-[var(--input-bg)] px-4 py-2 text-base leading-normal text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ring-offset)]";
+  "flex min-h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--input-bg)] px-3.5 py-2 text-sm leading-normal text-[var(--foreground)] shadow-sm placeholder:text-[var(--muted-foreground)] transition-colors focus-visible:outline-none focus-visible:border-[color:var(--focus-ring)] focus-visible:ring-2 focus-visible:ring-[color:var(--school-primary-ring)] focus-visible:ring-offset-0 sm:text-[0.9375rem]";
 
 export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   function Input({ className, type, ...props }, ref) {

@@ -48,19 +48,8 @@ export function Header({
         <div className="min-w-0 flex-1 overflow-hidden">
           {showSearch ? (
             <>
-              <div className="hidden md:flex items-center gap-2 flex-1 max-w-md">
+              <div className="hidden md:flex max-w-lg flex-1 items-center">
                 <SearchBar className="w-full" />
-                <button
-                  type="button"
-                  onClick={openSpotlight}
-                  className="hidden lg:flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
-                  title="Busca global rápida"
-                >
-                  <span>Buscar</span>
-                  <kbd className="rounded bg-white px-1 font-mono text-[10px] shadow-sm dark:bg-slate-800">
-                    ⌘K
-                  </kbd>
-                </button>
               </div>
               <div className="min-w-0 md:hidden">
                 <p className="truncate text-sm font-semibold leading-tight text-[var(--foreground)]">

@@ -70,7 +70,7 @@ export default async function AlunosPage() {
       )}
 
       <Card>
-        <CardHeader>
+        <CardHeader className="border-b border-[var(--border-subtle)] pb-4">
           <CardTitle>Lista de alunos ({students.length})</CardTitle>
         </CardHeader>
         <CardContent className="min-w-0">

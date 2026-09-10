@@ -11,7 +11,7 @@ export const buttonVariants = cva(
         secondary:
           "border border-[var(--border)] bg-[var(--hover)] text-[var(--foreground)] hover:opacity-90",
         outline:
-          "border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--hover)]",
+          "border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--hover)]",
         ghost: "text-[var(--foreground)] hover:bg-[var(--hover)]",
         destructive: "bg-red-600 text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600",
       },

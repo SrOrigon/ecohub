@@ -13,7 +13,7 @@ export function InstitutionalSetupHint({
   subjectCount: number;
 }) {
   return (
-    <Card className="border-indigo-100 bg-indigo-50/60">
+    <Card className="border-indigo-100 bg-indigo-50/50 dark:border-indigo-900 dark:bg-indigo-950/30">
       <CardContent className="flex flex-wrap items-start gap-3 py-3 sm:py-4">
         <Settings2 className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" aria-hidden="true" />
         <div className="min-w-0 flex-1 text-sm text-slate-700 dark:text-slate-300">

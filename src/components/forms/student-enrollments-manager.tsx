@@ -98,9 +98,9 @@ export function StudentEnrollmentsManager({
               <Badge
                 key={item.classId}
                 variant="secondary"
-                className="inline-flex items-center gap-1 pr-1 text-xs"
+                className="inline-flex max-w-[14rem] items-center gap-1 truncate pr-1 text-xs font-medium"
               >
-                <span>{item.classGroup.name}</span>
+                <span className="truncate">{item.classGroup.name}</span>
                 <button
                   type="button"
                   disabled={pending}

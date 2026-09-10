@@ -16,22 +16,34 @@ export function SearchBar({ className }: { className?: string }) {
     if (q) router.push(`/dashboard/busca?q=${encodeURIComponent(q)}`);
   }
 
+  function openSpotlight() {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+  }
+
   return (
     <form onSubmit={handleSubmit} className={cn("relative w-full", className)} role="search">
       <label htmlFor="global-search" className="sr-only">
         Buscar alunos ou turmas
       </label>
       <Search
-        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 sm:h-5 sm:w-5"
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]"
         aria-hidden="true"
       />
       <Input
         id="global-search"
-        placeholder="Buscar..."
-        className="pl-9 sm:pl-10"
+        placeholder="Buscar alunos, turmas..."
+        className="h-10 min-h-10 pl-9 pr-16"
         name="q"
         autoComplete="off"
       />
+      <button
+        type="button"
+        onClick={openSpotlight}
+        className="absolute right-1.5 top-1/2 hidden -translate-y-1/2 items-center rounded-md border border-[var(--border)] bg-[var(--hover)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--muted-foreground)] lg:inline-flex"
+        title="Busca rápida"
+      >
+        ⌘K
+      </button>
     </form>
   );
 }

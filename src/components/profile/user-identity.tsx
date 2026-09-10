@@ -22,11 +22,11 @@ export function UserIdentity({
   vertical?: boolean;
 }) {
   const nameEl = href ? (
-    <Link href={href} className="block truncate font-medium text-indigo-600 hover:underline">
+    <Link href={href} className="block truncate font-medium text-indigo-600 hover:underline dark:text-indigo-400">
       {name}
     </Link>
   ) : (
-    <span className="block truncate font-medium text-slate-900">{name}</span>
+    <span className="block truncate font-medium text-[var(--foreground)]">{name}</span>
   );
 
   return (

@@ -135,26 +135,28 @@ export function StudentsListPanel({
         />
       ) : (
         <>
-          <div className="rounded-xl border border-slate-200">
-            <ResponsiveTable minWidth="36rem">
+          <div className="overflow-hidden">
+            <ResponsiveTable minWidth="40rem">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-left text-slate-500">
-                  <th className="pb-3 pl-4 pr-4 pt-3">Matrícula</th>
-                  <th className="pb-3 pr-4 pt-3">Nome</th>
-                  <th className="hidden pb-3 pr-4 pt-3 md:table-cell">E-mail</th>
-                  <th className="pb-3 pr-4 pt-3">Turmas / cursos</th>
-                  <th className="pb-3 pr-4 pt-3">Média</th>
-                  <th className="pb-3 pr-4 pt-3">Nível</th>
-                  <th className="hidden pb-3 pr-4 pt-3 lg:table-cell">XP</th>
-                  <th className="pb-3 pr-4 pt-3">Moedas</th>
-                  {canDeleteStudents && <th className="pb-3 pr-4 pt-3">Ações</th>}
+                <tr className="text-left">
+                  <th>Matrícula</th>
+                  <th>Nome</th>
+                  <th className="hidden md:table-cell">E-mail</th>
+                  <th>Turmas / cursos</th>
+                  <th>Média</th>
+                  <th>Nível</th>
+                  <th className="hidden lg:table-cell">XP</th>
+                  <th>Moedas</th>
+                  {canDeleteStudents && <th>Ações</th>}
                 </tr>
               </thead>
               <tbody>
                 {pageStudents.map((student) => (
-                  <tr key={student.id} className="border-b border-slate-100 align-top">
-                    <td className="py-3 pl-4 pr-4 font-mono text-xs">{student.enrollmentCode}</td>
-                    <td className="max-w-[14rem] py-3 pr-4 sm:max-w-none">
+                  <tr key={student.id}>
+                    <td className="whitespace-nowrap font-mono text-xs text-[var(--muted-foreground)]">
+                      {student.enrollmentCode}
+                    </td>
+                    <td className="min-w-[12rem]">
                       <UserIdentity
                         name={student.fullName}
                         avatarUrl={student.avatarUrl}
@@ -162,10 +164,10 @@ export function StudentsListPanel({
                         size="xs"
                       />
                     </td>
-                    <td className="hidden py-3 pr-4 text-slate-500 md:table-cell">
+                    <td className="hidden max-w-[14rem] truncate text-[var(--muted-foreground)] md:table-cell">
                       {student.email ?? "-"}
                     </td>
-                    <td className="max-w-[20rem] py-3 pr-4">
+                    <td className="min-w-[12rem]">
                       {canManage ? (
                         <StudentEnrollmentsManager
                           studentId={student.id}
@@ -174,25 +176,27 @@ export function StudentsListPanel({
                           compact
                         />
                       ) : (
-                        <span className="text-sm text-slate-600">
+                        <span className="text-sm text-[var(--muted-foreground)]">
                           {student.enrollments.map((item) => item.classGroup.name).join(", ") || "Sem turma"}
                         </span>
                       )}
                     </td>
-                    <td className="py-3 pr-4">
+                    <td className="whitespace-nowrap tabular-nums">
                       {student.average !== null && !Number.isNaN(student.average)
                         ? student.average.toFixed(1)
                         : "-"}
                     </td>
-                    <td className="py-3 pr-4">
-                      <Badge>Nv. {student.level}</Badge>
+                    <td>
+                      <Badge className="whitespace-nowrap">Nv. {student.level}</Badge>
                     </td>
-                    <td className="hidden py-3 pr-4 text-indigo-600 lg:table-cell">
+                    <td className="hidden whitespace-nowrap tabular-nums text-indigo-600 dark:text-indigo-400 lg:table-cell">
                       {student.xpTotal.toLocaleString("pt-BR")}
                     </td>
-                    <td className="py-3 pr-4 text-amber-600">{student.coins}</td>
+                    <td className="whitespace-nowrap tabular-nums text-amber-600 dark:text-amber-400">
+                      {student.coins}
+                    </td>
                     {canDeleteStudents && (
-                      <td className="py-3 pr-4">
+                      <td>
                         <DeleteStudentButton studentId={student.id} studentName={student.fullName} />
                       </td>
                     )}
