@@ -59,7 +59,7 @@ export default async function MatriculasPage() {
                     </Badge>
                   </div>
                   <p className="mt-1 text-sm text-slate-600">
-                    Série: {app.gradeLevel} · Nasc.: {app.birthDate.toLocaleDateString("pt-BR")}
+                    Curso: {app.gradeLevel} · Nasc.: {app.birthDate.toLocaleDateString("pt-BR")}
                   </p>
                   <p className="text-sm text-slate-600">
                     Responsável: {app.parentName} ({app.parentEmail})

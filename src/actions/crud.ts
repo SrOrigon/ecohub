@@ -312,11 +312,6 @@ export async function updateClassAction(formData: FormData) {
   const user = await requireSession(["admin", "director", "secretary", "teacher"]);
   if (!user.schoolId) return { error: "Escola não configurada." };
 
-  const settings = await getSchoolSettings(user.schoolId);
-  if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.createClasses")) {
-    return { error: "Sem permissão para editar turmas." };
-  }
-
   const classId = String(formData.get("classId") ?? "").trim();
   if (!classId) return { error: "Turma inválida." };
 

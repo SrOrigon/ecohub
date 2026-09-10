@@ -16,7 +16,13 @@ export default async function InscricaoPage({
   const { ok, erro } = await searchParams;
   const school = await prisma.school.findUnique({
     where: { slug: slug.toLowerCase() },
-    select: { name: true, slug: true, city: true, state: true },
+    select: {
+      name: true,
+      slug: true,
+      city: true,
+      state: true,
+      classGroups: { select: { id: true, name: true, gradeLevel: true }, orderBy: { name: "asc" } },
+    },
   });
   if (!school) notFound();
 
@@ -64,14 +70,22 @@ export default async function InscricaoPage({
             <Input id="birthDate" name="birthDate" type="date" required />
           </div>
           <div>
-            <Label htmlFor="gradeLevel">Série desejada</Label>
-            <Select id="gradeLevel" name="gradeLevel" required defaultValue="6">
-              {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((g) => (
-                <option key={g} value={g}>
-                  {g}º ano
+            <Label htmlFor="gradeLevel">Curso desejado</Label>
+            {school.classGroups.length > 0 ? (
+              <Select id="gradeLevel" name="gradeLevel" required defaultValue="">
+                <option value="" disabled>
+                  Selecione o curso...
                 </option>
-              ))}
-            </Select>
+                {school.classGroups.map((curso) => (
+                  <option key={curso.id} value={curso.name}>
+                    {curso.name}
+                    {curso.gradeLevel ? ` · ${curso.gradeLevel}` : ""}
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <Input id="gradeLevel" name="gradeLevel" required placeholder="Ex.: Design de Games Kids" />
+            )}
           </div>
           <hr className="border-slate-100" />
           <div>

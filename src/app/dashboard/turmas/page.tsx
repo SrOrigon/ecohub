@@ -27,7 +27,7 @@ export default async function TurmasPage() {
     user.role === "admin" ||
     user.role === "director" ||
     user.role === "secretary" ||
-    (isTeacher && hasPermission(user.role, settings, "teacher.createClasses"));
+    isTeacher;
 
   const teacherFilter = isTeacher ? user.id : undefined;
 

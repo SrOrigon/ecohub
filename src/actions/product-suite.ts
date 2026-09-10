@@ -313,6 +313,67 @@ export async function saveScheduleSlotAction(formData: FormData): Promise<{ erro
   return { success: true };
 }
 
+export async function updateScheduleSlotAction(formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  const user = await requireSession(STAFF_ROLES);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return { error: "Horário inválido." };
+
+  const existing = await prisma.classScheduleSlot.findFirst({
+    where: { id, schoolId: user.schoolId },
+    select: { id: true },
+  });
+  if (!existing) return { error: "Horário não encontrado." };
+
+  const settings = await getSchoolSettings(user.schoolId);
+  const classId = String(formData.get("classId") ?? "");
+  const weekday = Number(formData.get("weekday") ?? 1);
+  const startTime = String(formData.get("startTime") ?? "");
+  const endTime = String(formData.get("endTime") ?? "");
+  const subject = String(formData.get("subject") ?? "").trim();
+  const room = String(formData.get("room") ?? "").trim() || null;
+
+  if (!classId || !startTime || !endTime || !subject) {
+    return { error: "Preencha turma, horários e disciplina." };
+  }
+
+  const subjectCheck = assertInstitutionSubject(subject, settings.academic.subjects);
+  if (!subjectCheck.ok) return { error: subjectCheck.error };
+
+  const scope = await assertClassInScope(user, classId);
+  if (!scope.ok) return { error: scope.error };
+
+  await prisma.classScheduleSlot.update({
+    where: { id },
+    data: { classId, weekday, startTime, endTime, subject, room },
+  });
+
+  revalidatePath("/dashboard/horarios");
+  return { success: true };
+}
+
+export async function deleteScheduleSlotAction(formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  const user = await requireSession(STAFF_ROLES);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return { error: "Horário inválido." };
+
+  const existing = await prisma.classScheduleSlot.findFirst({
+    where: { id, schoolId: user.schoolId },
+    select: { id: true, classId: true },
+  });
+  if (!existing) return { error: "Horário não encontrado." };
+
+  const scope = await assertClassInScope(user, existing.classId);
+  if (!scope.ok) return { error: scope.error };
+
+  await prisma.classScheduleSlot.delete({ where: { id } });
+  revalidatePath("/dashboard/horarios");
+  return { success: true };
+}
+
 export async function exportGradesCsvAction(): Promise<{ csv?: string; error?: string }> {
   const user = await requireSession(STAFF_ROLES);
   if (!user.schoolId) return { error: "Escola não configurada." };
