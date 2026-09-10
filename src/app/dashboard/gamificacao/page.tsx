@@ -9,9 +9,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getClasses } from "@/lib/queries";
 import { getSchoolSettings } from "@/lib/school-settings";
-import { getRewardsForSchool } from "@/actions/rewards";
-import { getRewardCategoriesForSchool } from "@/actions/reward-categories";
-import { InstitutionShopManager } from "@/components/shop/institution-shop-manager";
 import { RankingList } from "@/components/profile/ranking-list";
 import { LiveStatsStrip, LiveActivityFeed } from "@/components/metrics/live-activity-feed";
 import { BulkCompleteMissionsForm } from "@/components/forms/bulk-complete-missions-form";
@@ -50,7 +47,6 @@ export default async function GamificacaoPage() {
 
   const classOptions = classes.map((c) => ({ id: c.id, name: c.name }));
   const isStaff = user.role === "director" || user.role === "secretary" || user.role === "teacher" || user.role === "admin";
-  const canManageShop = user.role === "director" || user.role === "admin";
   const canAdjustPoints =
     user.role === "admin" ||
     user.role === "director" ||
@@ -62,9 +58,6 @@ export default async function GamificacaoPage() {
     name: s.user.fullName,
     className: s.classGroup?.name ?? null,
   }));
-
-  const rewards = canManageShop ? await getRewardsForSchool(user.schoolId) : [];
-  const shopCategories = canManageShop ? await getRewardCategoriesForSchool(user.schoolId) : [];
 
   function studentsForMission(classId: string | null) {
     const pool = classId
@@ -86,7 +79,7 @@ export default async function GamificacaoPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Gamificação" description="Missões, XP, moedas, badges e rankings">
+      <PageHeader title="Gamificação" description="Missões, XP, badges e rankings">
         {isStaff && (
           <CreateMissionForm
             classes={classOptions}
@@ -122,10 +115,6 @@ export default async function GamificacaoPage() {
             <BulkCompleteMissionsForm items={pendingItems} />
           </CardContent>
         </Card>
-      )}
-
-      {canManageShop && (
-        <InstitutionShopManager categories={shopCategories} rewards={rewards} />
       )}
 
       {badges.length === 0 ? (
