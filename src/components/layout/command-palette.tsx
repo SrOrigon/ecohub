@@ -20,6 +20,8 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HudPortal } from "@/components/layout/hud-portal";
+import { lockBodyScroll, unlockBodyScroll } from "@/lib/body-scroll-lock";
 
 type CommandItem = {
   id: string;
@@ -90,6 +92,12 @@ export function CommandPalette({ userRole = "student" }: { userRole?: string }) 
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    lockBodyScroll();
+    return () => unlockBodyScroll();
+  }, [isOpen]);
+
   const filteredCommands = useMemo(() => {
     const roleFiltered = ALL_COMMANDS.filter(
       (cmd) => !cmd.roles || cmd.roles.includes(userRole)
@@ -128,12 +136,13 @@ export function CommandPalette({ userRole = "student" }: { userRole?: string }) 
   if (!isOpen) return null;
 
   return (
+    <HudPortal>
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/60 p-4 pt-16 backdrop-blur-sm sm:pt-24"
+      className="fixed inset-0 z-[65] flex items-start justify-center bg-slate-900/60 p-3 pt-[calc(var(--app-header-offset)+0.5rem)] pb-[calc(var(--mobile-nav-offset)+0.5rem)] backdrop-blur-sm md:p-4 md:pt-24 md:pb-8"
       onClick={() => setIsOpen(false)}
     >
       <div
-        className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-md transition-all dark:border-slate-800 dark:bg-slate-900/95"
+        className="flex max-h-full w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-md transition-all dark:border-slate-800 dark:bg-slate-900/95"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Header */}
@@ -157,7 +166,7 @@ export function CommandPalette({ userRole = "student" }: { userRole?: string }) 
         </div>
 
         {/* Results List */}
-        <div className="max-h-80 overflow-y-auto p-2">
+        <div className="max-h-[min(20rem,calc(100dvh-var(--app-header-offset)-var(--mobile-nav-offset)-9rem))] overflow-y-auto p-2 md:max-h-80">
           {filteredCommands.length === 0 ? (
             <p className="p-4 text-center text-sm text-slate-500">Nenhum resultado encontrado para &ldquo;{search}&rdquo;</p>
           ) : (
@@ -204,5 +213,6 @@ export function CommandPalette({ userRole = "student" }: { userRole?: string }) 
         </div>
       </div>
     </div>
+    </HudPortal>
   );
 }

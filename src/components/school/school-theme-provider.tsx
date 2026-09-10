@@ -35,6 +35,7 @@ export function SchoolThemeProvider({
         } as React.CSSProperties
       }
     >
+      <div id="hud-root" />
       {children}
     </div>
   );

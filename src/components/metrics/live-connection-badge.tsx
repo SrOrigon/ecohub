@@ -47,22 +47,13 @@ export function LiveConnectionBadge({ className }: { className?: string }) {
     : null;
 
   return (
-    <>
       <button
         type="button"
         onClick={() => void refresh()}
         title={timeLabel ? `Última atualização: ${timeLabel}. Clique só se precisar forçar.` : "Atualizar métricas"}
         aria-label={config.label}
-        className={cn("icon-btn touch-manipulation sm:hidden", config.border, className)}
-      >
-        <span className={cn("h-2.5 w-2.5 rounded-full", config.dot)} aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        onClick={() => void refresh()}
-        title={timeLabel ? `Última atualização: ${timeLabel}. Clique só se precisar forçar.` : "Atualizar métricas"}
         className={cn(
-          "hidden touch-manipulation items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition hover:opacity-90 sm:inline-flex",
+          "hidden touch-manipulation items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition hover:opacity-90 md:inline-flex",
           config.border,
           config.text,
           className
@@ -72,6 +63,5 @@ export function LiveConnectionBadge({ className }: { className?: string }) {
         <Icon className="h-3 w-3" aria-hidden="true" />
         <span>{config.label}</span>
       </button>
-    </>
   );
 }

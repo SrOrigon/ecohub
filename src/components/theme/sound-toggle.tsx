@@ -3,13 +3,14 @@
 import { useSyncExternalStore } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/sound-effects";
+import { cn } from "@/lib/utils";
 
 function subscribeSound(onStoreChange: () => void) {
   window.addEventListener("ecohub:sound_change", onStoreChange);
   return () => window.removeEventListener("ecohub:sound_change", onStoreChange);
 }
 
-export function SoundToggle() {
+export function SoundToggle({ className }: { className?: string }) {
   const enabled = useSyncExternalStore(subscribeSound, isSoundEnabled, () => true);
 
   function toggle() {
@@ -21,7 +22,10 @@ export function SoundToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="icon-btn shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+      className={cn(
+        "icon-btn shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors",
+        className
+      )}
       aria-label={enabled ? "Desativar efeitos sonoros" : "Ativar efeitos sonoros"}
       title={enabled ? "Efeitos sonoros ativados" : "Efeitos sonoros desativados"}
     >

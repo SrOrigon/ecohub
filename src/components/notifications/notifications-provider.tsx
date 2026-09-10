@@ -13,6 +13,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import type { NotificationSnapshot, NotificationSnapshotItem } from "@/lib/notification-snapshot";
 import { useCachedLiveSource } from "@/lib/page-live-cache";
+import { HudPortal } from "@/components/layout/hud-portal";
 
 type NotificationsContextValue = {
   unreadCount: number;
@@ -98,7 +99,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     <NotificationsContext.Provider value={value}>
       {children}
       {snapshot && snapshot.unreadCount > 0 && (
-        <div className="pointer-events-none fixed inset-x-0 top-14 z-40 flex justify-center px-3 md:top-16">
+        <HudPortal>
+        <div className="pointer-events-none hud-notify-banner fixed inset-x-0 z-[46] flex justify-center px-3">
           <Link
             href="/dashboard/notificacoes"
             className="pointer-events-auto mt-2 inline-flex max-w-full items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 shadow-sm dark:border-red-900 dark:bg-red-950/80 dark:text-red-100"
@@ -111,9 +113,11 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
             </span>
           </Link>
         </div>
+        </HudPortal>
       )}
       {toast && (
-        <div className="fixed right-3 top-20 z-50 w-[min(22rem,calc(100vw-1.5rem))] md:top-24">
+        <HudPortal>
+        <div className="hud-notify-toast fixed z-[55] w-[min(22rem,calc(100vw-1.5rem))]">
           <Link
             href={toast.href || "/dashboard/notificacoes"}
             onClick={() => setToast(null)}
@@ -128,6 +132,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
             <p className="mt-1 line-clamp-3 text-sm text-[var(--muted-foreground)]">{toast.message}</p>
           </Link>
         </div>
+        </HudPortal>
       )}
     </NotificationsContext.Provider>
   );

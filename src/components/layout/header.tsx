@@ -34,8 +34,8 @@ export function Header({
   }
 
   return (
-    <header className="header-bar sticky top-0 z-30 border-b safe-area-top">
-      <div className="flex min-h-14 items-center gap-2 px-3 py-2 md:gap-3 md:px-4 lg:min-h-16 lg:px-6">
+    <header className="header-bar sticky top-0 z-40 border-b safe-area-top">
+      <div className="flex h-14 items-center gap-1.5 px-2 sm:gap-2 sm:px-3 md:h-16 md:gap-3 md:px-4 lg:px-6">
         <button
           type="button"
           className="icon-btn shrink-0 md:hidden"
@@ -77,7 +77,7 @@ export function Header({
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-1.5">
+        <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-1.5">
           {showSearch && (
             <button
               type="button"
@@ -88,8 +88,8 @@ export function Header({
               <Search className="h-5 w-5 text-[var(--muted-foreground)]" aria-hidden="true" />
             </button>
           )}
-          <SoundToggle />
-          <ThemeToggle compact />
+          <SoundToggle className="hidden sm:flex" />
+          <ThemeToggle compact className="shrink-0" />
           <LiveConnectionBadge />
           {role === "parent" && <AttentionAlertBadge />}
           <NotificationBell />

@@ -52,55 +52,55 @@ export function DashboardShell({
   const showCreatorJourneyCelebration = ["admin", "director", "teacher"].includes(role);
 
   const shell = (
-        <div
-          className="app-shell"
-          data-audience={kidFriendly ? "student" : "staff"}
-          data-mobile-nav-open={mobileMenuOpen ? "true" : "false"}
-        >
-        <CommandPalette userRole={role} />
-        {showCreatorJourneyCelebration && (
-          <CreatorJourneyCelebration journey={creatorJourney} schoolId={schoolId} />
-        )}
-        <a href="#main-content" className="skip-link">
-          Ir para o conteúdo principal
-        </a>
+    <div
+      className="app-shell"
+      data-audience={kidFriendly ? "student" : "staff"}
+      data-mobile-nav-open={mobileMenuOpen ? "true" : "false"}
+    >
+      <CommandPalette userRole={role} />
+      {showCreatorJourneyCelebration && (
+        <CreatorJourneyCelebration journey={creatorJourney} schoolId={schoolId} />
+      )}
+      <a href="#main-content" className="skip-link">
+        Ir para o conteúdo principal
+      </a>
 
-        <Sidebar
-          pathname={pathname}
+      <Sidebar
+        pathname={pathname}
+        userName={userName}
+        schoolName={schoolName}
+        schoolSlug={schoolSlug}
+        role={role}
+        avatarUrl={avatarUrl}
+        kidFriendly={kidFriendly}
+        permissions={permissions}
+        features={features}
+        showPlatformAdmin={showPlatformAdmin}
+        creatorJourney={creatorJourney}
+        tagline={branding.tagline}
+        mobileOpen={mobileMenuOpen}
+        onMobileOpenChange={setMobileMenuOpen}
+      />
+
+      <div className="app-content">
+        <Header
           userName={userName}
           schoolName={schoolName}
-          schoolSlug={schoolSlug}
           role={role}
           avatarUrl={avatarUrl}
-          kidFriendly={kidFriendly}
-          permissions={permissions}
-          features={features}
-          showPlatformAdmin={showPlatformAdmin}
-          creatorJourney={creatorJourney}
-          tagline={branding.tagline}
-          mobileOpen={mobileMenuOpen}
-          onMobileOpenChange={setMobileMenuOpen}
+          onMenuClick={() => setMobileMenuOpen(true)}
         />
-
-        <div className="app-content">
-          <Header
-            userName={userName}
-            schoolName={schoolName}
-            role={role}
-            avatarUrl={avatarUrl}
-            onMenuClick={() => setMobileMenuOpen(true)}
-          />
-          <main
-            id="main-content"
-            tabIndex={-1}
-            aria-label="Conteúdo principal"
-            className="app-main page-stack focus:outline-none md:pb-8"
-          >
-            {children}
-          </main>
-          <MobileBottomNav role={role} />
-        </div>
-        </div>
+        <main
+          id="main-content"
+          tabIndex={-1}
+          aria-label="Conteúdo principal"
+          className="app-main page-stack focus:outline-none md:pb-8"
+        >
+          {children}
+        </main>
+      </div>
+      <MobileBottomNav role={role} />
+    </div>
   );
 
   return (

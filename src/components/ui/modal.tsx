@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HudPortal } from "@/components/layout/hud-portal";
 import { lockBodyScroll, unlockBodyScroll } from "@/lib/body-scroll-lock";
 
 export function Modal({
@@ -74,17 +75,19 @@ export function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+    <HudPortal>
+    <div className="fixed inset-0 z-[60]">
       <div className="absolute inset-0 bg-[var(--overlay)]" onClick={onClose} aria-hidden="true" />
+      <div className="relative flex h-full items-end justify-center px-0 pb-[var(--mobile-nav-offset)] md:items-center md:p-4 md:pb-4">
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
         className={cn(
-          "relative z-10 flex max-h-[92dvh] w-full flex-col safe-area-bottom",
-          "rounded-t-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-md)] sm:max-h-[90dvh] sm:rounded-xl",
-          size === "lg" ? "sm:max-w-2xl" : "sm:max-w-xl"
+          "relative z-10 flex max-h-[calc(100dvh-var(--mobile-nav-offset)-0.5rem)] w-full flex-col",
+          "rounded-t-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-md)] md:max-h-[90dvh] md:rounded-xl",
+          size === "lg" ? "md:max-w-2xl" : "md:max-w-xl"
         )}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3 sm:px-6 sm:py-4">
@@ -103,7 +106,9 @@ export function Modal({
         <div className="modal-body sm:px-6">{children}</div>
         {footer && <div className="modal-footer sm:px-6">{footer}</div>}
       </div>
+      </div>
     </div>
+    </HudPortal>
   );
 }
 

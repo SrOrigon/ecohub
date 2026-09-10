@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Compass, Sparkles, Target, Zap } from "lucide-react";
+import { ChevronDown, ChevronUp, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HudPortal } from "@/components/layout/hud-portal";
 
 export type QuestItem = {
   id: string;
@@ -26,9 +27,10 @@ export function FloatingQuestTracker({
   const topQuest = quests[0];
 
   return (
+    <HudPortal>
     <aside
       aria-label="Rastreador de Missões"
-      className="fixed bottom-4 right-4 z-40 max-w-sm transition-all duration-300"
+      className="hud-quest overflow-y-auto overscroll-contain transition-all duration-300"
     >
       <div className="overflow-hidden rounded-2xl border border-indigo-200/90 bg-white/95 shadow-2xl backdrop-blur-md dark:border-indigo-900/60 dark:bg-slate-900/95">
         {/* Header Bar */}
@@ -106,5 +108,6 @@ export function FloatingQuestTracker({
         )}
       </div>
     </aside>
+    </HudPortal>
   );
 }
