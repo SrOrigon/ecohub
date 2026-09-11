@@ -143,6 +143,7 @@ model ClassGroup {
   occurrences Occurrence[]
   trails      LearningTrail[]
   classGoals  ClassGoal[]
+  badges      Badge[]
   coTeachers  ClassGroupCoTeacher[]
   announcements Announcement[]
   scheduleSlots ClassScheduleSlot[]
@@ -350,6 +351,7 @@ model StudentMission {
 model Badge {
   id          String   @id @default(cuid())
   schoolId    String
+  classId     String?
   name        String
   description String?
   icon        String   @default("star")
@@ -357,7 +359,11 @@ model Badge {
   createdAt   DateTime @default(now())
 
   school        School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classGroup    ClassGroup?   @relation(fields: [classId], references: [id], onDelete: SetNull)
   studentBadges StudentBadge[]
+
+  @@index([schoolId])
+  @@index([classId])
 }
 
 model StudentBadge {

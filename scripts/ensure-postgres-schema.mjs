@@ -209,6 +209,12 @@ const DUEL_TABLE_PATCHES = [
   `CREATE INDEX IF NOT EXISTS "DuelMatch_challengedId_idx" ON "DuelMatch"("challengedId")`,
 ];
 
+const BADGE_COLUMN_PATCHES = [
+  `ALTER TABLE "Badge" ADD COLUMN IF NOT EXISTS "classId" TEXT`,
+  `CREATE INDEX IF NOT EXISTS "Badge_schoolId_idx" ON "Badge"("schoolId")`,
+  `CREATE INDEX IF NOT EXISTS "Badge_classId_idx" ON "Badge"("classId")`,
+];
+
 const ALL_PATCHES = [
   ...TABLE_PATCHES,
   ...DUEL_TABLE_PATCHES,
@@ -217,6 +223,7 @@ const ALL_PATCHES = [
   ...REWARD_COLUMN_PATCHES,
   ...EXERCISE_COLUMN_PATCHES,
   ...DOCUMENT_AND_ENROLLMENT_PATCHES,
+  ...BADGE_COLUMN_PATCHES,
   ...INDEX_PATCHES,
 ];
 
@@ -231,6 +238,7 @@ const CRITICAL_COLUMNS = [
   { table: "Student", column: "accountType" },
   { table: "Student", column: "status" },
   { table: "Exercise", column: "audienceType" },
+  { table: "Badge", column: "classId" },
 ];
 
 const CRITICAL_TABLES = ["ExerciseStudentTarget", "StudentClassEnrollment", "DuelSession", "DuelMatch"];

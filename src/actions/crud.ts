@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { requireSession, requireSessionResult } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { processGradeXp, processAttendanceXp, completeMission } from "@/lib/gamification";
+import { processGradeXp, processAttendanceXp, completeMission, awardClassAttitude } from "@/lib/gamification";
 import { syncTrailAfterAction } from "@/lib/trails";
 import { checkAndAwardClassGoals } from "@/lib/class-goals";
 import {
@@ -1455,6 +1455,172 @@ export async function deleteMissionAction(formData: FormData) {
   await prisma.mission.delete({ where: { id: missionId } });
 
   revalidateGroups("gamification", "analytics");
+  revalidatePath("/dashboard/gamificacao");
+  return { success: true };
+}
+
+const BADGE_ICONS = new Set(["clock", "star", "target"]);
+
+async function assertBadgeInScope(
+  user: Awaited<ReturnType<typeof requireSession>>,
+  badge: { schoolId: string; classId: string | null }
+) {
+  if (badge.schoolId !== user.schoolId) return { error: "Atitude não encontrada." };
+  if (user.role === "teacher") {
+    if (!badge.classId) return { error: "Atitudes da escola não podem ser alteradas pelo professor." };
+    const scope = await assertClassInScope(user, badge.classId);
+    if (!scope.ok) return { error: scope.error };
+  }
+  return null;
+}
+
+export async function createBadgeAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "secretary", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const iconRaw = String(formData.get("icon") ?? "star");
+  const icon = BADGE_ICONS.has(iconRaw) ? iconRaw : "star";
+  const xpRequired = parseInt(String(formData.get("xpRequired") ?? "0"), 10);
+  const classId = String(formData.get("classId") ?? "") || null;
+
+  if (!name) return { error: "Nome da atitude é obrigatório." };
+  if (!Number.isFinite(xpRequired) || xpRequired < 0) return { error: "XP inválido." };
+
+  if (user.role === "teacher" && !classId) {
+    return { error: "Selecione a turma desta atitude." };
+  }
+  if (classId) {
+    const scope = await assertClassInScope(user, classId);
+    if (!scope.ok) return { error: scope.error };
+  }
+
+  await prisma.badge.create({
+    data: {
+      schoolId: user.schoolId,
+      classId,
+      name,
+      description: description || null,
+      icon,
+      xpRequired: Math.floor(xpRequired),
+    },
+  });
+
+  revalidateGroups("gamification", "analytics");
+  revalidatePath("/dashboard/gamificacao");
+  return { success: true };
+}
+
+export async function updateBadgeAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "secretary", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const badgeId = String(formData.get("badgeId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const iconRaw = String(formData.get("icon") ?? "star");
+  const icon = BADGE_ICONS.has(iconRaw) ? iconRaw : "star";
+  const xpRequired = parseInt(String(formData.get("xpRequired") ?? "0"), 10);
+  const classId = String(formData.get("classId") ?? "") || null;
+
+  if (!badgeId || !name) return { error: "Dados inválidos." };
+  if (!Number.isFinite(xpRequired) || xpRequired < 0) return { error: "XP inválido." };
+
+  const badge = await prisma.badge.findFirst({
+    where: { id: badgeId, schoolId: user.schoolId },
+  });
+  if (!badge) return { error: "Atitude não encontrada." };
+
+  const denied = await assertBadgeInScope(user, badge);
+  if (denied) return denied;
+
+  if (user.role === "teacher" && !classId) {
+    return { error: "A atitude precisa permanecer vinculada a uma turma." };
+  }
+  if (classId) {
+    const scope = await assertClassInScope(user, classId);
+    if (!scope.ok) return { error: scope.error };
+  }
+
+  await prisma.badge.update({
+    where: { id: badgeId },
+    data: {
+      name,
+      description: description || null,
+      icon,
+      xpRequired: Math.floor(xpRequired),
+      classId,
+    },
+  });
+
+  revalidateGroups("gamification", "analytics");
+  revalidatePath("/dashboard/gamificacao");
+  return { success: true };
+}
+
+export async function deleteBadgeAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "secretary", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const badgeId = String(formData.get("badgeId") ?? "");
+  if (!badgeId) return { error: "Atitude inválida." };
+
+  const badge = await prisma.badge.findFirst({
+    where: { id: badgeId, schoolId: user.schoolId },
+  });
+  if (!badge) return { error: "Atitude não encontrada." };
+
+  const denied = await assertBadgeInScope(user, badge);
+  if (denied) return denied;
+
+  await prisma.badge.delete({ where: { id: badgeId } });
+
+  revalidateGroups("gamification", "analytics");
+  revalidatePath("/dashboard/gamificacao");
+  return { success: true };
+}
+
+export async function awardBadgeAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "secretary", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const badgeId = String(formData.get("badgeId") ?? "");
+  const studentId = String(formData.get("studentId") ?? "");
+  if (!badgeId || !studentId) return { error: "Selecione o aluno." };
+
+  const badge = await prisma.badge.findFirst({
+    where: { id: badgeId, schoolId: user.schoolId },
+  });
+  if (!badge) return { error: "Atitude não encontrada." };
+
+  const denied = await assertBadgeInScope(user, badge);
+  if (denied) return denied;
+
+  const studentScope = await assertStudentInScope(user, studentId);
+  if (!studentScope.ok) return { error: studentScope.error };
+
+  try {
+    const awarded = await awardClassAttitude(studentId, badgeId, user.schoolId);
+    await notifyStudent(
+      studentId,
+      "Nova atitude conquistada",
+      awarded.xpRequired > 0
+        ? `Você recebeu "${awarded.name}" e ganhou ${awarded.xpRequired} XP.`
+        : `Você recebeu a atitude "${awarded.name}".`,
+      "/dashboard/aluno"
+    );
+    await notifyStudentParents(
+      studentId,
+      "Atitude conquistada",
+      `O aluno recebeu a atitude "${awarded.name}".`,
+      `/dashboard/responsavel/filho/${studentId}`
+    );
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Não foi possível aplicar a atitude." };
+  }
+
+  revalidateGroups("core", "gamification", "analytics");
   revalidatePath("/dashboard/gamificacao");
   return { success: true };
 }

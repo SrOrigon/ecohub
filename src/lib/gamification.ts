@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import type { XpSource } from "@/lib/constants";
+import { studentsInClassWhere } from "@/lib/student-enrollments";
 import {
   DEFAULT_SCHOOL_SETTINGS,
   getSchoolSettingsForStudent,
@@ -134,7 +135,9 @@ async function checkAndAwardBadges(
   });
   if (!student?.user.schoolId) return;
 
-  const badges = await tx.badge.findMany({ where: { schoolId: student.user.schoolId } });
+  const badges = await tx.badge.findMany({
+    where: { schoolId: student.user.schoolId, classId: null },
+  });
   const earnedIds = new Set(student.studentBadges.map((b) => b.badgeId));
 
   const avgGrade =
@@ -279,6 +282,39 @@ export async function maybeAwardPerfectAttendance(
       },
     });
   });
+}
+
+export async function awardClassAttitude(
+  studentId: string,
+  badgeId: string,
+  schoolId: string
+) {
+  const badge = await prisma.badge.findFirst({
+    where: { id: badgeId, schoolId },
+  });
+  if (!badge) throw new Error("Atitude não encontrada.");
+
+  if (badge.classId) {
+    const enrolled = await prisma.student.findFirst({
+      where: { id: studentId, ...studentsInClassWhere(badge.classId) },
+      select: { id: true },
+    });
+    if (!enrolled) throw new Error("Esta atitude só pode ser aplicada a alunos da turma vinculada.");
+  }
+
+  try {
+    await prisma.studentBadge.create({
+      data: { studentId, badgeId },
+    });
+  } catch {
+    throw new Error("Este aluno já recebeu esta atitude.");
+  }
+
+  if (badge.xpRequired > 0) {
+    await awardXp(studentId, badge.xpRequired, `Atitude: ${badge.name}`, "badge");
+  }
+
+  return badge;
 }
 
 export async function completeMission(studentId: string, missionId: string) {

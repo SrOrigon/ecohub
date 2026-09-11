@@ -5,6 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CreateMissionForm } from "@/components/forms/create-mission-form";
 import { EditMissionForm } from "@/components/forms/edit-mission-form";
 import { StaffCompleteMissionForm } from "@/components/forms/staff-complete-mission-form";
+import { CreateBadgeForm } from "@/components/forms/create-badge-form";
+import { EditBadgeForm } from "@/components/forms/edit-badge-form";
+import { AwardBadgeForm } from "@/components/forms/award-badge-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getClasses } from "@/lib/queries";
@@ -27,9 +30,9 @@ export default async function GamificacaoPage() {
 
   const [missions, badges, ranking, classes, students, settings, pendingMissions] = await Promise.all([
     getMissions(user.schoolId),
-    getBadges(user.schoolId),
+    getBadges(user.schoolId, teacherFilter),
     getRanking(user.schoolId),
-    getClasses(user.schoolId),
+    getClasses(user.schoolId, teacherFilter),
     getStudents(user.schoolId),
     getSchoolSettings(user.schoolId),
     user.schoolId ? getPendingMissionConfirmations(user.schoolId, teacherFilter) : Promise.resolve([]),
@@ -47,6 +50,7 @@ export default async function GamificacaoPage() {
 
   const classOptions = classes.map((c) => ({ id: c.id, name: c.name }));
   const isStaff = user.role === "director" || user.role === "secretary" || user.role === "teacher" || user.role === "admin";
+  const requireBadgeClass = user.role === "teacher";
   const canAdjustPoints =
     user.role === "admin" ||
     user.role === "director" ||
@@ -79,13 +83,16 @@ export default async function GamificacaoPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Gamificação" description="Missões, XP, badges e rankings">
+      <PageHeader title="Gamificação" description="Missões, XP, atitudes por turma e rankings">
         {isStaff && (
-          <CreateMissionForm
-            classes={classOptions}
-            defaultXp={settings.missions.defaultXp}
-            defaultCoins={settings.missions.defaultCoins}
-          />
+          <div className="flex flex-wrap gap-2">
+            <CreateBadgeForm classes={classOptions} requireClass={requireBadgeClass} />
+            <CreateMissionForm
+              classes={classOptions}
+              defaultXp={settings.missions.defaultXp}
+              defaultCoins={settings.missions.defaultCoins}
+            />
+          </div>
         )}
       </PageHeader>
 
@@ -118,34 +125,66 @@ export default async function GamificacaoPage() {
       )}
 
       {badges.length === 0 ? (
-        <EmptyState
-          icon={Star}
-          title="Nenhuma badge cadastrada"
-          description="Badges são criadas automaticamente ao registrar a escola."
-        />
+        <div className="space-y-3">
+          <EmptyState
+            icon={Star}
+            title="Nenhuma atitude cadastrada"
+            description={
+              requireBadgeClass
+                ? "Crie atitudes da sua turma para aplicá-las aos alunos nas aulas. Elas não se misturam com as de outros professores."
+                : "Crie atitudes vinculadas a uma turma (ou da escola) e aplique-as aos alunos individualmente."
+            }
+          />
+          {isStaff && <CreateBadgeForm classes={classOptions} requireClass={requireBadgeClass} />}
+        </div>
       ) : (
-        <div className="responsive-grid">
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">Atitudes</h2>
+              <p className="text-sm text-slate-500">
+                Cada atitude pertence a uma turma. Aplique ao aluno na aula — as da sua turma não aparecem nas do outro professor.
+              </p>
+            </div>
+            {isStaff && <CreateBadgeForm classes={classOptions} requireClass={requireBadgeClass} />}
+          </div>
+          <div className="responsive-grid">
           {badges.map((badge) => {
             const Icon = iconMap[badge.icon as keyof typeof iconMap] ?? Star;
+            const earnedIds = new Set(badge.studentBadges.map((sb) => sb.studentId));
+            const eligibleStudents = studentsForMission(badge.classId).map((s) => ({
+              ...s,
+              earned: earnedIds.has(s.id),
+            }));
             return (
               <Card key={badge.id}>
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950">
                       <Icon className="h-5 w-5 text-indigo-600" aria-hidden="true" />
                     </div>
                     <div className="min-w-0">
                       <CardTitle className="text-base">{badge.name}</CardTitle>
                       <CardDescription>{badge.description}</CardDescription>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {badge.classGroup?.name ? `Turma: ${badge.classGroup.name}` : "Toda a escola"}
+                      </p>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
                   <Badge variant="default">{badge.xpRequired} XP · {badge._count.studentBadges} alunos</Badge>
+                  {isStaff && (
+                    <>
+                      <EditBadgeForm badge={badge} classes={classOptions} requireClass={requireBadgeClass} />
+                      <AwardBadgeForm badgeId={badge.id} students={eligibleStudents} />
+                    </>
+                  )}
                 </CardContent>
               </Card>
             );
           })}
+          </div>
         </div>
       )}
 

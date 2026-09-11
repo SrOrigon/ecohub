@@ -494,12 +494,59 @@ export async function getMissionsForStudent(schoolId: string | null, classId: st
   }
 }
 
-export async function getBadges(schoolId: string | null) {
+/** Copia atitudes da escola para turmas que ainda não têm as próprias. */
+export async function ensureClassAttitudeCopies(schoolId: string, classIds: string[]) {
+  if (classIds.length === 0) return;
+  try {
+    const templates = await prisma.badge.findMany({
+      where: { schoolId, classId: null },
+    });
+    if (templates.length === 0) return;
+
+    for (const classId of classIds) {
+      const existing = await prisma.badge.count({ where: { schoolId, classId } });
+      if (existing > 0) continue;
+      await prisma.badge.createMany({
+        data: templates.map((template) => ({
+          schoolId,
+          classId,
+          name: template.name,
+          description: template.description,
+          icon: template.icon,
+          xpRequired: template.xpRequired,
+        })),
+      });
+    }
+  } catch (err) {
+    console.error("[ensureClassAttitudeCopies] Error:", err);
+  }
+}
+
+export async function getBadges(schoolId: string | null, teacherId?: string) {
   if (!schoolId) return [];
   try {
+    if (teacherId) {
+      const teacherClasses = await prisma.classGroup.findMany({
+        where: { schoolId, ...teacherClassWhere(teacherId) },
+        select: { id: true },
+      });
+      await ensureClassAttitudeCopies(
+        schoolId,
+        teacherClasses.map((turma) => turma.id)
+      );
+    }
+
     return await prisma.badge.findMany({
-      where: { schoolId },
-      include: { _count: { select: { studentBadges: true } } },
+      where: {
+        schoolId,
+        ...(teacherId ? { classGroup: teacherClassWhere(teacherId) } : {}),
+      },
+      include: {
+        classGroup: { select: { id: true, name: true } },
+        studentBadges: { select: { studentId: true } },
+        _count: { select: { studentBadges: true } },
+      },
+      orderBy: [{ createdAt: "desc" }],
     });
   } catch (err) {
     console.error("[getBadges] Error:", err);
