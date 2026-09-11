@@ -35,8 +35,12 @@ export function EditBadgeForm({
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
       const result = await updateBadgeAction(formData);
-      if (result.success) setOpen(false);
-      return result;
+      const next = {
+        error: "error" in result ? result.error : undefined,
+        success: "success" in result ? result.success : undefined,
+      };
+      if (next.success) setOpen(false);
+      return next;
     },
     null
   );

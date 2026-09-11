@@ -15,7 +15,11 @@ export function AwardBadgeForm({
   const pendingStudents = students.filter((s) => !s.earned);
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
-      return await awardBadgeAction(formData);
+      const result = await awardBadgeAction(formData);
+      return {
+        error: "error" in result ? result.error : undefined,
+        success: "success" in result ? result.success : undefined,
+      };
     },
     null
   );
