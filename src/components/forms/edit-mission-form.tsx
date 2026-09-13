@@ -24,6 +24,9 @@ interface MissionData {
   isActive: boolean;
 }
 
+import { Pencil, Power } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 export function EditMissionForm({
   mission,
   classes,
@@ -53,18 +56,34 @@ export function EditMissionForm({
   );
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)}>
+    <div className="flex flex-wrap items-center gap-2">
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => setOpen(true)}
+        className="gap-1.5 h-8 text-xs font-medium"
+      >
+        <Pencil className="h-3.5 w-3.5 text-slate-500" />
         Editar
       </Button>
       <form action={toggleAction}>
         <input type="hidden" name="missionId" value={mission.id} />
-        <Button type="submit" size="sm" variant={mission.isActive ? "ghost" : "secondary"} disabled={togglePending}>
+        <Button
+          type="submit"
+          size="sm"
+          variant={mission.isActive ? "ghost" : "secondary"}
+          disabled={togglePending}
+          className="gap-1.5 h-8 text-xs font-medium"
+        >
+          <Power className={cn("h-3.5 w-3.5", mission.isActive ? "text-slate-400" : "text-emerald-600")} />
           {mission.isActive ? "Desativar" : "Ativar"}
         </Button>
       </form>
       <DeleteConfirmButton
         label="Excluir"
+        size="sm"
+        className="h-8 text-xs"
         confirmMessage={`Excluir a missão "${mission.title}"? Progresso dos alunos será perdido. Esta ação não pode ser desfeita.`}
         hiddenFields={{ missionId: mission.id }}
         action={deleteMissionAction}

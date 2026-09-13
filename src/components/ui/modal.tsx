@@ -77,7 +77,7 @@ export function Modal({
   return (
     <HudPortal>
     <div className="fixed inset-0 z-[60]">
-      <div className="absolute inset-0 bg-[var(--overlay)]" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-[var(--overlay)] backdrop-blur-xs transition-opacity" onClick={onClose} aria-hidden="true" />
       <div className="relative flex h-full items-end justify-center px-0 pb-[var(--mobile-nav-offset)] md:items-center md:p-4 md:pb-4">
       <div
         ref={dialogRef}
@@ -86,21 +86,21 @@ export function Modal({
         aria-labelledby="modal-title"
         className={cn(
           "relative z-10 flex max-h-[calc(100dvh-var(--mobile-nav-offset)-0.5rem)] w-full flex-col",
-          "rounded-t-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-md)] md:max-h-[90dvh] md:rounded-xl",
+          "rounded-t-3xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl md:max-h-[90dvh] md:rounded-2xl transition-all duration-200",
           size === "lg" ? "md:max-w-2xl" : "md:max-w-xl"
         )}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3 sm:px-6 sm:py-4">
-          <h2 id="modal-title" className="pr-4 text-base font-semibold text-[var(--foreground)] sm:text-lg">
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4 sm:px-6">
+          <h2 id="modal-title" className="pr-4 text-base font-bold text-[var(--foreground)] sm:text-lg tracking-tight">
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover)]"
+            className="flex h-8.5 w-8.5 items-center justify-center rounded-xl text-[var(--muted-foreground)] hover:bg-[var(--hover)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
             aria-label="Fechar"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4.5 w-4.5" />
           </button>
         </div>
         <div className="modal-body sm:px-6">{children}</div>

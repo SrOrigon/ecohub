@@ -25,34 +25,36 @@ export function StaffCompleteMissionForm({
   }
 
   return (
-    <form action={formAction} className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+    <form action={formAction} className="mt-3 space-y-2">
       <input type="hidden" name="missionId" value={missionId} />
-      <div className="min-w-0 flex-1">
-        <Label htmlFor={`student-${missionId}`} className="sr-only">
-          Selecionar aluno
-        </Label>
-        <Select id={`student-${missionId}`} name="studentId" required defaultValue="">
-          <option value="" disabled>
-            Selecione o aluno...
-          </option>
-          {pendingStudents.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
+          <Label htmlFor={`student-${missionId}`} className="sr-only">
+            Selecionar aluno
+          </Label>
+          <Select id={`student-${missionId}`} name="studentId" required defaultValue="" className="h-9 text-xs">
+            <option value="" disabled>
+              Selecionar aluno para concluir...
             </option>
-          ))}
-        </Select>
+            {pendingStudents.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <Button type="submit" size="sm" disabled={pending} className="shrink-0 gap-1.5 h-9 text-xs">
+          {pending ? "Salvando..." : "Concluir"}
+        </Button>
       </div>
-      <Button type="submit" size="sm" disabled={pending} className="shrink-0">
-        {pending ? "Salvando..." : "Marcar concluída"}
-      </Button>
       {state?.error && (
-        <p className="w-full text-sm text-red-600" role="alert">
+        <p className="text-xs text-red-600" role="alert">
           {state.error}
         </p>
       )}
       {state?.success && (
-        <p className="w-full text-sm text-emerald-700" role="status">
-          Missão concluída com sucesso!
+        <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400" role="status">
+          ✓ Missão concluída com sucesso!
         </p>
       )}
     </form>

@@ -12,6 +12,8 @@ interface ClassOption {
   name: string;
 }
 
+import { Plus, Target } from "lucide-react";
+
 export function CreateMissionForm({
   classes,
   defaultXp = 100,
@@ -42,25 +44,28 @@ export function CreateMissionForm({
           {trigger}
         </button>
       ) : hideDefaultTrigger ? null : (
-        <Button onClick={() => setOpen(true)}>+ Nova missão</Button>
+        <Button onClick={() => setOpen(true)} className="gap-1.5 shadow-xs">
+          <Plus className="h-4 w-4" />
+          Nova missão
+        </Button>
       )}
-      <Modal open={open} onClose={() => setOpen(false)} title="Criar missão">
+      <Modal open={open} onClose={() => setOpen(false)} title="Criar nova missão">
         <form action={formAction} className="space-y-4">
           <div>
-            <Label htmlFor="title">Título</Label>
-            <Input id="title" name="title" required />
+            <Label htmlFor="title">Título da missão</Label>
+            <Input id="title" name="title" required placeholder="Ex.: Leitura do Capítulo 3" />
           </div>
           <div>
             <Label htmlFor="description">Descrição</Label>
-            <Textarea id="description" name="description" />
+            <Textarea id="description" name="description" placeholder="Instruções claras para o aluno concluir a missão..." />
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Label htmlFor="xpReward">XP</Label>
+              <Label htmlFor="xpReward">Recompensa de XP</Label>
               <Input id="xpReward" name="xpReward" type="number" defaultValue={defaultXp} />
             </div>
             <div>
-              <Label htmlFor="coinReward">Moedas</Label>
+              <Label htmlFor="coinReward">Recompensa de moedas</Label>
               <Input id="coinReward" name="coinReward" type="number" defaultValue={defaultCoins} />
             </div>
           </div>
@@ -74,11 +79,12 @@ export function CreateMissionForm({
             </Select>
           </div>
           <div>
-            <Label htmlFor="dueDate">Prazo</Label>
+            <Label htmlFor="dueDate">Prazo de entrega</Label>
             <Input id="dueDate" name="dueDate" type="date" />
           </div>
           {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-          <Button type="submit" disabled={pending} className="w-full">
+          <Button type="submit" disabled={pending} className="w-full gap-2">
+            <Target className="h-4 w-4" />
             {pending ? "Criando..." : "Criar missão"}
           </Button>
         </form>

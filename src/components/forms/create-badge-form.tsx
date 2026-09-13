@@ -12,6 +12,8 @@ interface ClassOption {
   name: string;
 }
 
+import { Plus, Award } from "lucide-react";
+
 export function CreateBadgeForm({
   classes,
   requireClass,
@@ -35,18 +37,23 @@ export function CreateBadgeForm({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} disabled={classes.length === 0 && requireClass}>
-        + Nova atitude
+      <Button
+        onClick={() => setOpen(true)}
+        disabled={classes.length === 0 && requireClass}
+        className="gap-1.5 shadow-xs"
+      >
+        <Plus className="h-4 w-4" />
+        Nova atitude
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} title="Nova atitude">
         <form action={formAction} className="space-y-4">
           <div>
             <Label htmlFor="badge-name">Nome</Label>
-            <Input id="badge-name" name="name" required placeholder="Ex.: Pontualidade" />
+            <Input id="badge-name" name="name" required placeholder="Ex.: Pontualidade exemplar" />
           </div>
           <div>
             <Label htmlFor="badge-description">Descrição</Label>
-            <Textarea id="badge-description" name="description" placeholder="Quando aplicar esta atitude" />
+            <Textarea id="badge-description" name="description" placeholder="Critérios para conceder esta atitude ao aluno..." />
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
@@ -56,9 +63,9 @@ export function CreateBadgeForm({
             <div>
               <Label htmlFor="badge-icon">Ícone</Label>
               <Select id="badge-icon" name="icon" defaultValue="star">
-                <option value="star">Estrela</option>
-                <option value="clock">Relógio</option>
-                <option value="target">Alvo</option>
+                <option value="star">★ Estrela</option>
+                <option value="clock">⏱ Relógio</option>
+                <option value="target">🎯 Alvo</option>
               </Select>
             </div>
           </div>
@@ -79,7 +86,8 @@ export function CreateBadgeForm({
             </Select>
           </div>
           {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-          <Button type="submit" disabled={pending} className="w-full">
+          <Button type="submit" disabled={pending} className="w-full gap-2">
+            <Award className="h-4 w-4" />
             {pending ? "Criando..." : "Criar atitude"}
           </Button>
         </form>

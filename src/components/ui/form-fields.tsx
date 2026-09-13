@@ -4,7 +4,7 @@ export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLab
   return (
     <label
       className={cn(
-        "mb-2 block text-base font-semibold leading-normal tracking-normal text-[var(--foreground)]",
+        "mb-1.5 block text-xs font-semibold tracking-tight text-[var(--foreground)] sm:text-sm",
         className
       )}
       {...props}
@@ -16,7 +16,7 @@ export function Select({ className, children, ...props }: React.SelectHTMLAttrib
   return (
     <select
       className={cn(
-        "flex min-h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-base leading-normal text-[var(--foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--school-primary)]",
+        "flex min-h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--input-bg)] px-3.5 py-2 text-sm leading-normal text-[var(--foreground)] shadow-2xs transition-all duration-150 focus-visible:outline-none focus-visible:border-[color:var(--focus-ring)] focus-visible:ring-3 focus-visible:ring-[color:var(--school-primary-ring)]/40",
         className
       )}
       {...props}
@@ -30,7 +30,7 @@ export function Textarea({ className, ...props }: React.TextareaHTMLAttributes<H
   return (
     <textarea
       className={cn(
-        "flex min-h-[80px] w-full rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-3 py-2 text-base leading-normal text-[var(--foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--school-primary)]",
+        "flex min-h-[88px] w-full rounded-xl border border-[var(--border)] bg-[var(--input-bg)] px-3.5 py-2.5 text-sm leading-relaxed text-[var(--foreground)] shadow-2xs transition-all duration-150 placeholder:text-[var(--muted-foreground)] focus-visible:outline-none focus-visible:border-[color:var(--focus-ring)] focus-visible:ring-3 focus-visible:ring-[color:var(--school-primary-ring)]/40",
         className
       )}
       {...props}

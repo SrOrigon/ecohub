@@ -37,19 +37,29 @@ export function RankingList({
           item.coins !== undefined ? `${item.coins.toLocaleString("pt-BR")} moedas` : null,
         ].filter(Boolean);
 
+        const rankBadgeStyle =
+          item.rank === 1
+            ? "bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-xs shadow-amber-500/30 ring-2 ring-amber-400/30"
+            : item.rank === 2
+            ? "bg-gradient-to-br from-slate-300 to-slate-500 text-white shadow-xs"
+            : item.rank === 3
+            ? "bg-gradient-to-br from-amber-600 to-amber-800 text-white shadow-xs"
+            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300";
+
         return (
           <li
             key={item.id}
             className={cn(
               rankingRowGrid,
-              "rounded-xl p-3",
-              kidFriendly ? "border-2 border-indigo-100 bg-white" : "bg-slate-50"
+              "rounded-2xl p-3 border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm transition-all duration-150 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:shadow-2xs",
+              kidFriendly && "border-2 border-indigo-100 bg-white"
             )}
           >
             <span
               className={cn(
-                "row-span-2 flex shrink-0 items-center justify-center self-center rounded-full bg-indigo-600 font-bold text-white",
-                kidFriendly ? "h-10 w-10 text-base" : "h-8 w-8 text-sm"
+                "row-span-2 flex shrink-0 items-center justify-center self-center rounded-full font-bold",
+                rankBadgeStyle,
+                kidFriendly ? "h-10 w-10 text-base" : "h-7 w-7 text-xs"
               )}
               aria-hidden="true"
             >
@@ -92,21 +102,36 @@ export function RankingList({
 export function RankingTableRows({ items }: { items: RankingItem[] }) {
   return (
     <>
-      {items.map((item) => (
-        <tr key={item.id} className="border-b border-slate-100">
-          <td className="py-3 pr-4 font-medium">{item.rank}</td>
-          <td className="max-w-[12rem] py-3 pr-4 sm:max-w-none">
-            <UserIdentityCompact item={item} />
-          </td>
-          <td className="hidden max-w-[8rem] truncate py-3 pr-4 sm:table-cell">{item.className}</td>
-          <td className="py-3 pr-4">
-            <Badge>Nv. {item.level}</Badge>
-          </td>
-          <td className="whitespace-nowrap py-3 font-semibold text-indigo-600">
-            {item.xp.toLocaleString("pt-BR")}
-          </td>
-        </tr>
-      ))}
+      {items.map((item) => {
+        const rankBadgeStyle =
+          item.rank === 1
+            ? "bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-2xs ring-2 ring-amber-400/30"
+            : item.rank === 2
+            ? "bg-gradient-to-br from-slate-300 to-slate-500 text-white shadow-2xs"
+            : item.rank === 3
+            ? "bg-gradient-to-br from-amber-600 to-amber-800 text-white shadow-2xs"
+            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400";
+
+        return (
+          <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800/80 transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
+            <td className="py-3 pr-4 font-medium">
+              <span className={cn("inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold", rankBadgeStyle)}>
+                {item.rank}
+              </span>
+            </td>
+            <td className="max-w-[12rem] py-3 pr-4 sm:max-w-none">
+              <UserIdentityCompact item={item} />
+            </td>
+            <td className="hidden max-w-[8rem] truncate py-3 pr-4 text-xs font-medium text-slate-500 sm:table-cell">{item.className}</td>
+            <td className="py-3 pr-4">
+              <Badge variant="secondary" className="text-xs font-semibold">Nv. {item.level}</Badge>
+            </td>
+            <td className="whitespace-nowrap py-3 font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
+              {item.xp.toLocaleString("pt-BR")} XP
+            </td>
+          </tr>
+        );
+      })}
     </>
   );
 }

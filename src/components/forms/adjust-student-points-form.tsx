@@ -5,6 +5,8 @@ import { adjustStudentPointsAction } from "@/actions/point-adjustments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select, Textarea } from "@/components/ui/form-fields";
+import { Sparkles, TrendingUp, TrendingDown, CheckCircle2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const CLASS_ACTIVITY_PRESETS: Array<{
   label: string;
@@ -44,10 +46,10 @@ export function AdjustStudentPointsForm({
 
   return (
     <form id="adjust-points-form" action={formAction} className="space-y-4">
-      <div>
-        <p className="text-sm font-semibold text-slate-900">{title}</p>
-        <p className="text-xs text-slate-500">
-          Registre ganhos ou perdas de XP e moedas por atividades em sala. O histórico fica no perfil do aluno.
+      <div className="space-y-0.5">
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Registre ganhos ou perdas de XP e moedas por atividades em sala. O histórico fica registrado no perfil do aluno.
         </p>
       </div>
 
@@ -76,7 +78,7 @@ export function AdjustStudentPointsForm({
           name="activity"
           required
           rows={2}
-          placeholder="Ex.: Apresentação oral, participação no grupo, uso do celular..."
+          placeholder="Ex.: Apresentação oral, participação no grupo, uso indevido do celular..."
         />
       </div>
 
@@ -98,43 +100,64 @@ export function AdjustStudentPointsForm({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {CLASS_ACTIVITY_PRESETS.map((preset) => (
-          <button
-            key={preset.label}
-            type="button"
-            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 hover:border-indigo-300 hover:bg-indigo-50"
-            onClick={() => {
-              const form = document.getElementById("adjust-points-form") as HTMLFormElement | null;
-              if (!form) return;
-              const activity = form.elements.namedItem("activity") as HTMLTextAreaElement | null;
-              const direction = form.elements.namedItem("direction") as HTMLSelectElement | null;
-              const xp = form.elements.namedItem("xpAmount") as HTMLInputElement | null;
-              const coins = form.elements.namedItem("coinAmount") as HTMLInputElement | null;
-              if (activity) activity.value = preset.label;
-              if (direction) direction.value = preset.loss ? "loss" : "gain";
-              if (xp) xp.value = String(preset.xp);
-              if (coins) coins.value = String(preset.coins);
-            }}
-          >
-            {preset.label}
-          </button>
-        ))}
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Atalhos rápidos de atividade:</p>
+        <div className="flex flex-wrap gap-1.5">
+          {CLASS_ACTIVITY_PRESETS.map((preset) => (
+            <button
+              key={preset.label}
+              type="button"
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium shadow-2xs transition-all duration-150 active:scale-95",
+                preset.loss
+                  ? "border-rose-200/80 bg-rose-50/50 text-rose-700 hover:border-rose-300 hover:bg-rose-100/60 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+                  : "border-slate-200/90 bg-white/80 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-700"
+              )}
+              onClick={() => {
+                const form = document.getElementById("adjust-points-form") as HTMLFormElement | null;
+                if (!form) return;
+                const activity = form.elements.namedItem("activity") as HTMLTextAreaElement | null;
+                const direction = form.elements.namedItem("direction") as HTMLSelectElement | null;
+                const xp = form.elements.namedItem("xpAmount") as HTMLInputElement | null;
+                const coins = form.elements.namedItem("coinAmount") as HTMLInputElement | null;
+                if (activity) activity.value = preset.label;
+                if (direction) direction.value = preset.loss ? "loss" : "gain";
+                if (xp) xp.value = String(preset.xp);
+                if (coins) coins.value = String(preset.coins);
+              }}
+            >
+              {preset.loss ? (
+                <TrendingDown className="h-3 w-3 text-rose-500" />
+              ) : (
+                <TrendingUp className="h-3 w-3 text-emerald-500" />
+              )}
+              <span>{preset.label}</span>
+              <span className="opacity-60 text-[10px]">
+                ({preset.loss ? "-" : "+"}{preset.xp} XP)
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      <Button type="submit" disabled={pending}>
-        {pending ? "Salvando..." : "Aplicar ajuste"}
-      </Button>
+      <div className="pt-1">
+        <Button type="submit" disabled={pending} className="gap-1.5">
+          <Sparkles className="h-4 w-4" />
+          {pending ? "Salvando..." : "Aplicar ajuste"}
+        </Button>
+      </div>
 
       {state?.error && (
-        <p className="text-sm text-red-600" role="alert">
-          {state.error}
-        </p>
+        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50/80 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300" role="alert">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>{state.error}</span>
+        </div>
       )}
       {state?.success && state.message && (
-        <p className="text-sm text-emerald-700" role="status">
-          {state.message}
-        </p>
+        <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300" role="status">
+          <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-emerald-600" />
+          <span>{state.message}</span>
+        </div>
       )}
     </form>
   );
