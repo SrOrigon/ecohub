@@ -199,12 +199,14 @@ function NavLinks({
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={cn(
+                  "ui-interactive",
               "nav-link flex items-center gap-3 rounded-xl font-medium",
               kidFriendly ? "min-h-12 px-4 py-3 text-base" : "min-h-11 px-3 py-2.5 text-sm",
               active ? "nav-link-active" : "nav-link-inactive"
             )}
           >
-            <Icon className={cn("shrink-0", kidFriendly ? "h-6 w-6" : "h-5 w-5")} aria-hidden="true" />
+            <Icon className={cn(
+                  "shrink-0", kidFriendly ? "h-6 w-6" : "h-5 w-5")} aria-hidden="true" />
             <span className="min-w-0 flex-1 truncate">{label}</span>
             {showUnread && (
               <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white">

@@ -864,6 +864,7 @@ html.scroll-locked .app-content {
 .note-card:hover {
   border-color: color-mix(in srgb, var(--school-primary) 35%, var(--border));
   box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .note-card-content {
@@ -1605,10 +1606,11 @@ input[type="radio"] {
 .ui-card-soft {
   border-radius: 1rem;
   box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 .ui-card-soft:hover {
   box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 /* Accessibility Skip Link */
@@ -1624,4 +1626,32 @@ input[type="radio"] {
 
 .skip-link:focus {
   top: 0;
+}
+
+/* High-End UI Enhancements */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+.ui-glass {
+  background: var(--header-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ui-interactive {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ui-interactive:active {
+  transform: scale(0.97);
+}
+
+/* Enhanced Focus State */
+*:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--school-primary-ring);
 }
