@@ -11,11 +11,12 @@ export function HudPortal({ children }: { children: ReactNode }) {
   const [target, setTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    setTarget(
-      document.getElementById("hud-root") ??
-        document.querySelector<HTMLElement>(".school-theme") ??
-        document.body
-    );
+    // Avoid setting state directly during the effect to prevent cascaded renders
+    const timer = setTimeout(() => {
+      const el = document.getElementById("hud-root") ?? document.querySelector<HTMLElement>(".school-theme") ?? document.body;
+      setTarget(el);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!target) return null;
