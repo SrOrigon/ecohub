@@ -117,6 +117,18 @@ const TABLE_PATCHES = [
     CONSTRAINT "TeacherInvite_invitedById_fkey" FOREIGN KEY ("invitedById") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "TeacherInvite_usedById_fkey" FOREIGN KEY ("usedById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
   )`,
+  `CREATE TABLE IF NOT EXISTS "StudentProject" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "schoolId" TEXT NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "projectUrl" TEXT,
+    "imageUrl" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "StudentProject_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "StudentProject_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
 ];
 
 const INDEX_PATCHES = [
@@ -130,6 +142,8 @@ const INDEX_PATCHES = [
   `CREATE INDEX IF NOT EXISTS "TeacherInvite_schoolId_idx" ON "TeacherInvite"("schoolId")`,
   `CREATE INDEX IF NOT EXISTS "TeacherInvite_token_idx" ON "TeacherInvite"("token")`,
   `CREATE INDEX IF NOT EXISTS "RewardRedemption_status_idx" ON "RewardRedemption"("status")`,
+  `CREATE INDEX IF NOT EXISTS "StudentProject_schoolId_idx" ON "StudentProject"("schoolId")`,
+  `CREATE INDEX IF NOT EXISTS "StudentProject_studentId_idx" ON "StudentProject"("studentId")`,
 ];
 
 const DOCUMENT_AND_ENROLLMENT_PATCHES = [
@@ -241,7 +255,7 @@ const CRITICAL_COLUMNS = [
   { table: "Badge", column: "classId" },
 ];
 
-const CRITICAL_TABLES = ["ExerciseStudentTarget", "StudentClassEnrollment", "DuelSession", "DuelMatch"];
+const CRITICAL_TABLES = ["ExerciseStudentTarget", "StudentClassEnrollment", "DuelSession", "DuelMatch", "StudentProject"];
 
 async function columnExists(prisma, table, column) {
   const rows = await prisma.$queryRawUnsafe(
