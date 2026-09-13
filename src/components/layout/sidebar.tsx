@@ -55,7 +55,6 @@ import { logoutAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import { useNotificationsOptional } from "@/components/notifications/notifications-provider";
-import { sortByTextPt } from "@/lib/sort-order";
 
 type NavItem = {
   href: string;
@@ -154,6 +153,75 @@ function filterNav(
   });
 }
 
+const NAV_CATEGORIES = [
+  {
+    title: "Principal",
+    hrefs: [
+      "/dashboard",
+      "/dashboard/professor",
+      "/dashboard/aluno",
+      "/dashboard/secretaria",
+      "/dashboard/responsavel",
+      "/dashboard/assistente",
+      "/dashboard/agenda",
+      "/dashboard/calendario",
+    ],
+  },
+  {
+    title: "Acadêmico & Turmas",
+    hrefs: [
+      "/dashboard/turmas",
+      "/dashboard/alunos",
+      "/dashboard/professores",
+      "/dashboard/responsaveis",
+      "/dashboard/disciplinas",
+      "/dashboard/notas",
+      "/dashboard/frequencia",
+      "/dashboard/diario",
+      "/dashboard/horarios",
+    ],
+  },
+  {
+    title: "Gamificação & Projetos",
+    hrefs: [
+      "/dashboard/gamificacao",
+      "/dashboard/rankings",
+      "/dashboard/projetos",
+      "/dashboard/loja",
+      "/dashboard/exercicios",
+      "/dashboard/trilhas",
+      "/dashboard/metas-coletivas",
+      "/dashboard/engajamento",
+      "/dashboard/boletim",
+    ],
+  },
+  {
+    title: "Administrativo & Secretaria",
+    hrefs: [
+      "/dashboard/matriculas",
+      "/dashboard/contratos",
+      "/dashboard/documentos",
+      "/dashboard/autorizacoes",
+      "/dashboard/alertas",
+      "/dashboard/relatorios",
+      "/dashboard/comunicados",
+      "/dashboard/mensagens",
+      "/dashboard/precisao-disciplinas",
+      "/dashboard/leitura-geral",
+      "/dashboard/historico",
+    ],
+  },
+  {
+    title: "Sistema & Gestão",
+    hrefs: [
+      "/dashboard/configuracoes",
+      "/dashboard/plataforma",
+      "/dashboard/notificacoes",
+      "/dashboard/perfil",
+    ],
+  },
+];
+
 function NavLinks({
   pathname,
   role,
@@ -183,37 +251,72 @@ function NavLinks({
       },
     ];
   }
-  items = sortByTextPt(items, (item) => item.label);
   const notifications = useNotificationsOptional();
   const unreadCount = notifications?.unreadCount ?? 0;
 
+  function renderLink(item: NavItem) {
+    const { href, label, icon: Icon } = item;
+    const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+    const showUnread = href === "/dashboard/notificacoes" && unreadCount > 0;
+    return (
+      <Link
+        key={href}
+        href={href}
+        onClick={onNavigate}
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "nav-link flex items-center gap-3 rounded-xl font-medium transition-all duration-150",
+          kidFriendly ? "min-h-12 px-4 py-3 text-base" : "min-h-10 px-3 py-2 text-sm",
+          active ? "nav-link-active" : "nav-link-inactive"
+        )}
+      >
+        <Icon className={cn("shrink-0", kidFriendly ? "h-6 w-6" : "h-4.5 w-4.5")} aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate">{label}</span>
+        {showUnread && (
+          <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </Link>
+    );
+  }
+
+  if (kidFriendly) {
+    return (
+      <nav aria-label="Menu principal" className="space-y-1 px-2 py-3 sm:px-3 sm:py-4">
+        {items.map(renderLink)}
+      </nav>
+    );
+  }
+
+  const itemMap = new Map(items.map((i) => [i.href, i]));
+  const assignedHrefs = new Set<string>();
+
+  const sections = NAV_CATEGORIES.map((cat) => {
+    const catItems = cat.hrefs
+      .map((h) => itemMap.get(h))
+      .filter((i): i is NavItem => Boolean(i));
+    catItems.forEach((i) => assignedHrefs.add(i.href));
+    return { title: cat.title, items: catItems };
+  }).filter((s) => s.items.length > 0);
+
+  const remainingItems = items.filter((i) => !assignedHrefs.has(i.href));
+  if (remainingItems.length > 0) {
+    sections.push({ title: "Outros", items: remainingItems });
+  }
+
   return (
-    <nav aria-label="Menu principal" className="space-y-0.5 px-2 py-3 sm:px-3 sm:py-4">
-      {items.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
-        const showUnread = href === "/dashboard/notificacoes" && unreadCount > 0;
-        return (
-          <Link
-            key={href}
-            href={href}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              "nav-link flex items-center gap-3 rounded-xl font-medium",
-              kidFriendly ? "min-h-12 px-4 py-3 text-base" : "min-h-11 px-3 py-2.5 text-sm",
-              active ? "nav-link-active" : "nav-link-inactive"
-            )}
-          >
-            <Icon className={cn("shrink-0", kidFriendly ? "h-6 w-6" : "h-5 w-5")} aria-hidden="true" />
-            <span className="min-w-0 flex-1 truncate">{label}</span>
-            {showUnread && (
-              <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </Link>
-        );
-      })}
+    <nav aria-label="Menu principal" className="space-y-4 px-2 py-3 sm:px-3 sm:py-4">
+      {sections.map((section, idx) => (
+        <div key={section.title} className={cn("space-y-1", idx > 0 && "pt-1")}>
+          <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            {section.title}
+          </p>
+          <div className="space-y-0.5">
+            {section.items.map(renderLink)}
+          </div>
+        </div>
+      ))}
     </nav>
   );
 }
@@ -431,11 +534,15 @@ function SidebarContent({
 }) {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-gradient-to-r from-[color:var(--school-primary-soft)] to-transparent px-4 sm:px-6">
-        <Medal className="h-8 w-8 shrink-0 text-[color:var(--school-primary)]" aria-hidden="true" />
+      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-[var(--border)] bg-gradient-to-r from-[color:var(--school-primary-soft)] via-[color:var(--school-primary-soft)]/40 to-transparent px-4 sm:px-5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-sm shadow-indigo-500/25">
+          <Medal className="h-5 w-5" aria-hidden="true" />
+        </div>
         <div className="min-w-0">
-          <p className="truncate text-lg font-bold text-[var(--foreground)]">Ecohub</p>
-          <p className="truncate text-sm text-[var(--muted-foreground)]">{ROLE_LABELS[role]}</p>
+          <p className="truncate text-base font-extrabold tracking-tight text-[var(--foreground)]">Ecohub</p>
+          <span className="inline-block truncate text-[11px] font-semibold text-[color:var(--school-primary)]">
+            {ROLE_LABELS[role]}
+          </span>
         </div>
       </div>
       {tagline && (
@@ -459,22 +566,27 @@ function SidebarContent({
           onNavigate={onNavigate}
         />
       </SidebarNavRegion>
-      <div className="shrink-0 border-t border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_-4px_12px_-8px_rgba(15,23,42,0.12)]">
+      <div className="shrink-0 border-t border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_-4px_12px_-8px_rgba(15,23,42,0.08)]">
         <Link
           href="/dashboard/perfil"
           onClick={onNavigate}
-          className="mb-3 flex min-h-12 items-center gap-3 rounded-xl p-2 transition hover:bg-[var(--hover)] active:opacity-90"
+          className="mb-2 flex items-center gap-2.5 rounded-xl p-2 transition-all hover:bg-[var(--hover)] active:scale-[0.98]"
         >
-          <ProfileAvatar name={userName} avatarUrl={avatarUrl} size="sm" className="ring-2" />
+          <ProfileAvatar name={userName} avatarUrl={avatarUrl} size="sm" className="ring-2 ring-indigo-500/20" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-[var(--foreground)]">{userName}</p>
-            <p className="truncate text-xs text-[var(--muted-foreground)]">{schoolName}</p>
+            <p className="truncate text-xs font-semibold text-[var(--foreground)]">{userName}</p>
+            <p className="truncate text-[11px] text-[var(--muted-foreground)]">{schoolName}</p>
           </div>
         </Link>
-        <form action={logoutAction} className="mt-1">
+        <form action={logoutAction}>
           {schoolSlug && <input type="hidden" name="tenantSlug" value={schoolSlug} />}
-          <Button type="submit" variant="outline" size={kidFriendly ? "lg" : "default"} className="w-full">
-            Sair
+          <Button
+            type="submit"
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 min-h-8 h-8 rounded-lg"
+          >
+            Encerrar sessão
           </Button>
         </form>
       </div>

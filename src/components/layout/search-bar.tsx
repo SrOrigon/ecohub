@@ -32,15 +32,15 @@ export function SearchBar({ className }: { className?: string }) {
       <Input
         id="global-search"
         placeholder="Buscar alunos, turmas..."
-        className="h-10 min-h-10 pl-9 pr-16"
+        className="h-9 min-h-9 pl-9 pr-14 text-xs rounded-xl border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 shadow-2xs focus:bg-white dark:focus:bg-slate-900 transition-all"
         name="q"
         autoComplete="off"
       />
       <button
         type="button"
         onClick={openSpotlight}
-        className="absolute right-1.5 top-1/2 hidden -translate-y-1/2 items-center rounded-md border border-[var(--border)] bg-[var(--hover)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--muted-foreground)] lg:inline-flex"
-        title="Busca rápida"
+        className="absolute right-2 top-1/2 hidden -translate-y-1/2 items-center rounded-md border border-slate-200/90 dark:border-slate-800 bg-white/90 dark:bg-slate-800/90 px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-500 dark:text-slate-400 shadow-2xs transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 md:inline-flex cursor-pointer"
+        title="Busca rápida (Ctrl+K)"
       >
         ⌘K
       </button>

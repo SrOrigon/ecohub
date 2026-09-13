@@ -1,4 +1,5 @@
-import { Clock, Star, Target } from "lucide-react";
+import { Clock, Star, Target, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { getMissions, getBadges, getRanking, getStudents } from "@/lib/queries";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -156,32 +157,82 @@ export default async function GamificacaoPage() {
               ...s,
               earned: earnedIds.has(s.id),
             }));
+            const isHighTier = badge.xpRequired >= 500;
+            const isMidTier = badge.xpRequired >= 250;
+
             return (
-              <Card key={badge.id}>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950">
-                      <Icon className="h-5 w-5 text-indigo-600" aria-hidden="true" />
+              <div
+                key={badge.id}
+                className="achievement-card flex flex-col justify-between p-5 border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-sm hover:shadow-md"
+              >
+                <div>
+                  {/* Top row: Icon + Tier XP Pill + Actions */}
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div
+                      className={cn(
+                        "achievement-icon-wrapper shrink-0",
+                        isHighTier
+                          ? "bg-gradient-to-br from-amber-500/20 to-orange-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
+                          : isMidTier
+                          ? "bg-gradient-to-br from-purple-500/20 to-indigo-500/10 border-purple-500/30 text-purple-600 dark:text-purple-400"
+                          : "bg-gradient-to-br from-indigo-500/20 to-blue-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400"
+                      )}
+                    >
+                      <Icon className="h-5 w-5" aria-hidden="true" />
                     </div>
-                    <div className="min-w-0">
-                      <CardTitle className="text-base">{badge.name}</CardTitle>
-                      <CardDescription>{badge.description}</CardDescription>
-                      <p className="mt-1 text-xs text-slate-400">
-                        {badge.classGroup?.name ? `Turma: ${badge.classGroup.name}` : "Toda a escola"}
-                      </p>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span
+                        className={cn(
+                          "glass-pill",
+                          isHighTier && "border-amber-400/40 bg-amber-50/80 text-amber-700 dark:text-amber-300 dark:bg-amber-950/50",
+                          isMidTier && !isHighTier && "border-purple-400/40 bg-purple-50/80 text-purple-700 dark:text-purple-300 dark:bg-purple-950/50"
+                        )}
+                      >
+                        +{badge.xpRequired} XP
+                      </span>
+                      {isStaff && (
+                        <EditBadgeForm
+                          badge={badge}
+                          classes={classOptions}
+                          requireClass={requireBadgeClass}
+                          compact
+                        />
+                      )}
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Badge variant="default">{badge.xpRequired} XP · {badge._count.studentBadges} alunos</Badge>
-                  {isStaff && (
-                    <>
-                      <EditBadgeForm badge={badge} classes={classOptions} requireClass={requireBadgeClass} />
-                      <AwardBadgeForm badgeId={badge.id} students={eligibleStudents} />
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+
+                  {/* Title and Scope */}
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-snug">
+                      {badge.name}
+                    </h3>
+                    {badge.description && (
+                      <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                        {badge.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Meta info: Class and Students badge */}
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 font-medium text-slate-600 dark:text-slate-300">
+                      {badge.classGroup?.name ? `Turma: ${badge.classGroup.name}` : "Toda a escola"}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 font-medium text-indigo-700 dark:text-indigo-300">
+                      <Users className="h-3 w-3" />
+                      {badge._count.studentBadges} {badge._count.studentBadges === 1 ? "aluno" : "alunos"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions / Award form */}
+                {isStaff && (
+                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                    <AwardBadgeForm badgeId={badge.id} students={eligibleStudents} />
+                  </div>
+                )}
+              </div>
             );
           })}
           </div>
@@ -211,13 +262,18 @@ export default async function GamificacaoPage() {
               }));
 
               return (
-                <div key={mission.id} className="rounded-lg border border-slate-200 p-4">
+                <div
+                  key={mission.id}
+                  className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-4 transition-all duration-150 hover:border-indigo-300 dark:hover:border-indigo-800 hover:shadow-xs"
+                >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-medium">{mission.title}</p>
-                      <p className="mt-1 text-sm text-slate-500">{mission.description}</p>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">{mission.title}</p>
+                      <p className="mt-1 text-sm text-slate-500 leading-relaxed">{mission.description}</p>
                       {mission.classGroup && (
-                        <p className="mt-1 text-xs text-slate-400">Turma: {mission.classGroup.name}</p>
+                        <p className="mt-1 text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                          Turma: {mission.classGroup.name}
+                        </p>
                       )}
                     </div>
                     {mission.isActive ? (
@@ -227,12 +283,14 @@ export default async function GamificacaoPage() {
                     )}
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <Badge>+{mission.xpReward} XP</Badge>
+                    <Badge variant="default">+{mission.xpReward} XP</Badge>
                     <Badge variant="warning">+{mission.coinReward} moedas</Badge>
-                    <span className="text-xs text-slate-500">{completions} conclusões</span>
+                    <span className="text-xs font-medium text-slate-500">
+                      {completions} {completions === 1 ? "conclusão" : "conclusões"}
+                    </span>
                   </div>
                   {isStaff && (
-                    <div className="mt-3 space-y-3 border-t border-slate-100 pt-3">
+                    <div className="mt-3 space-y-3 border-t border-slate-100 dark:border-slate-800 pt-3">
                       <EditMissionForm mission={mission} classes={classOptions} />
                       {mission.isActive && (
                         <StaffCompleteMissionForm missionId={mission.id} students={eligibleStudents} />
