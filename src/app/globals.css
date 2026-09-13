@@ -898,18 +898,19 @@ html.scroll-locked .app-content {
 
 [data-audience="student"] {
   --touch-min: 48px;
-  font-size: clamp(1rem, 0.5vw + 0.95rem, 1.0625rem);
+  font-size: clamp(1.125rem, 0.5vw + 1rem, 1.25rem);
 }
 
 [data-audience="student"] h1,
 [data-audience="student"] .page-title {
-  font-size: clamp(1.5rem, 3vw + 0.75rem, 2.25rem);
+  font-size: clamp(1.75rem, 3vw + 1rem, 2.5rem);
   line-height: 1.25;
 }
 
 [data-audience="student"] .kid-card {
-  border-width: 2px;
-  border-radius: 1rem;
+  border-width: 4px;
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-md);
 }
 
 [data-audience="student"] .kid-stat {

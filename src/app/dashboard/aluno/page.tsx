@@ -326,9 +326,9 @@ export default async function AlunoPortalPage() {
           Seu progresso
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="kid-card border-indigo-300 bg-gradient-to-br from-indigo-50 to-white">
+          <Card className="kid-card border-indigo-300 bg-gradient-to-br from-indigo-50 to-white shadow-lg hover:shadow-xl transition-all border-4 rounded-[2rem]">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base text-slate-700">
+              <CardTitle className="flex items-center gap-2 text-xl text-slate-700 font-bold">
                 <Star className="h-5 w-5 text-indigo-600" aria-hidden="true" />
                 Nível {student.level}
               </CardTitle>
@@ -345,35 +345,35 @@ export default async function AlunoPortalPage() {
               >
                 <div className="h-4 rounded-full bg-indigo-600 transition-all" style={{ width: `${xpProgress}%` }} />
               </div>
-              <p className="mt-2 text-base text-slate-600">Próximo nível: {xpForNextLevel} XP</p>
+              <p className="mt-2 text-lg text-slate-700">Próximo nível: {xpForNextLevel} XP</p>
             </CardContent>
           </Card>
 
-          <Card className="kid-card border-amber-300">
+          <Card className="kid-card border-amber-300 shadow-lg hover:shadow-xl transition-all border-4 rounded-[2rem] bg-amber-50/30">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base text-slate-700">
+              <CardTitle className="flex items-center gap-2 text-xl text-slate-700 font-bold">
                 <Coins className="h-5 w-5 text-amber-600" aria-hidden="true" />
                 Moedas
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="kid-stat text-amber-600">{student.coins}</p>
-              <p className="mt-2 text-base text-slate-600">Use na loja de recompensas</p>
+              <p className="mt-2 text-lg text-slate-700">Use na loja de recompensas</p>
             </CardContent>
           </Card>
 
-          <Card className="kid-card">
+          <Card className="kid-card shadow-lg hover:shadow-xl transition-all border-4 rounded-[2rem]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base text-slate-700">Média das notas</CardTitle>
+              <CardTitle className="text-xl text-slate-700 font-bold">Média das notas</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="kid-stat text-slate-900">{avgGrade.toFixed(1)}</p>
             </CardContent>
           </Card>
 
-          <Card className="kid-card">
+          <Card className="kid-card shadow-lg hover:shadow-xl transition-all border-4 rounded-[2rem]">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base text-slate-700">
+              <CardTitle className="flex items-center gap-2 text-xl text-slate-700 font-bold">
                 <Trophy className="h-5 w-5 text-emerald-600" aria-hidden="true" />
                 Ranking da turma
               </CardTitle>
@@ -390,7 +390,7 @@ export default async function AlunoPortalPage() {
 
       {pendingExercises.length > 0 && (
         <section aria-labelledby="activities-heading">
-          <Card className="kid-card border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-white">
+          <Card className="kid-card border-indigo-200 bg-gradient-to-br from-indigo-50 to-white shadow-lg hover:shadow-xl transition-all border-4 rounded-[2rem]">
             <CardHeader>
               <CardTitle id="activities-heading" className="flex items-center gap-2 text-xl">
                 <PenLine className="h-6 w-6 text-indigo-600" aria-hidden="true" />
@@ -430,7 +430,7 @@ export default async function AlunoPortalPage() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="kid-card" id="missoes">
+        <Card className="kid-card shadow-lg hover:shadow-xl transition-all border-4 rounded-[2rem]" id="missoes">
           <CardHeader>
             <CardTitle className="text-xl">Minhas missões</CardTitle>
           </CardHeader>
@@ -445,7 +445,7 @@ export default async function AlunoPortalPage() {
               return (
                 <article key={mission.id} className="rounded-2xl border-2 border-slate-200 p-4">
                   <h3 className="text-lg font-bold text-slate-900">{mission.title}</h3>
-                  <p className="mt-1 text-base text-slate-600">{mission.description}</p>
+                  <p className="mt-1 text-lg text-slate-700">{mission.description}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge>+{mission.xpReward} XP</Badge>
                     <Badge variant="warning">+{mission.coinReward} moedas</Badge>
@@ -468,7 +468,7 @@ export default async function AlunoPortalPage() {
           </CardContent>
         </Card>
 
-        <Card className="kid-card">
+        <Card className="kid-card shadow-lg hover:shadow-xl transition-all border-4 rounded-[2rem]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl">
               <Trophy className="h-6 w-6 text-emerald-600" aria-hidden="true" />
@@ -509,7 +509,7 @@ export default async function AlunoPortalPage() {
             <h3 className="mb-3 mt-6 text-lg font-bold">Suas conquistas</h3>
             <div className="flex flex-wrap gap-2">
               {student.studentBadges.length === 0 && (
-                <p className="text-base text-slate-600">
+                <p className="text-lg text-slate-700">
                   Complete missões e mantenha boas notas para ganhar badges!
                 </p>
               )}

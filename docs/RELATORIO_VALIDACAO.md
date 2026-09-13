@@ -1,23 +1,23 @@
 # Relatório de Validação Ecohub
 
-Gerado em: 2026-08-27T21:34:19.407Z
+Gerado em: 2026-09-13T17:34:05.982Z
 
 ## Resumo
 
 | Métrica | Valor |
 |---------|-------|
-| Etapas OK | 9 |
-| Etapas com falha | 0 |
+| Etapas OK | 7 |
+| Etapas com falha | 2 |
 | Produção | https://eduhub-production-b513.up.railway.app |
 
 ## Fases executadas
 
 - [x] Fase 1  -  migrate
 - [x] Fase 1  -  build
-- [x] Fase 1  -  backup
+- [ ] Fase 1  -  backup
 - [x] Fase 2  -  seed-pilot
 - [x] Fase 2  -  smoke-local
-- [x] Fase 2  -  health-local
+- [ ] Fase 2  -  health-local
 - [x] Fase 2  -  institutional-suite
 - [x] Fase 3  -  smoke-prod
 - [x] Fase 3  -  health-prod
@@ -26,28 +26,30 @@ Gerado em: 2026-08-27T21:34:19.407Z
 
 ```json
 {
-  "status": "ok",
+  "status": "degraded",
   "service": "ecohub",
   "version": "0.1.0",
-  "uptime": 168.5221513,
+  "uptime": 8.879792015,
   "checks": {
     "database": "ok",
     "authSecret": "ok",
-    "persistence": "ok"
+    "persistence": "warning"
   },
   "persistence": {
     "engine": "sqlite",
     "databasePath": "./dev.db",
     "onPersistentVolume": false,
-    "volumeMounted": true,
-    "volumeMountPath": "/data",
-    "volumeSource": "local",
-    "volumeReason": null,
+    "volumeMounted": false,
+    "volumeMountPath": null,
+    "volumeSource": "proc-mounts",
+    "volumeReason": "Nenhum volume persistente em /data. No Railway: serviço eduhub → Volumes → Add volume → Mount path /data. Depois redeploy e cadastre de novo.",
     "volumeWritable": true,
     "accounts": {
-      "users": 13,
-      "schools": 3,
-      "persisted": true,
+      "users": 3,
+      "schools": 1,
+      "students": 1,
+      "classGroups": 1,
+      "persisted": false,
       "store": "sqlite",
       "goldenBackup": false
     },
@@ -74,7 +76,7 @@ Gerado em: 2026-08-27T21:34:19.407Z
   "status": "ok",
   "service": "ecohub",
   "version": "0.1.0",
-  "uptime": 1459.964507793,
+  "uptime": 4.422582874,
   "checks": {
     "database": "ok",
     "authSecret": "ok",
@@ -90,17 +92,19 @@ Gerado em: 2026-08-27T21:34:19.407Z
     "volumeReason": null,
     "volumeWritable": true,
     "accounts": {
-      "users": 20,
+      "users": 41,
       "schools": 1,
+      "students": 34,
+      "classGroups": 15,
       "persisted": true,
       "store": "postgresql",
       "goldenBackup": true
     },
     "cache": {
-      "entries": 2,
-      "hits": 7,
-      "misses": 24,
-      "hitRate": 22.6,
+      "entries": 0,
+      "hits": 0,
+      "misses": 0,
+      "hitRate": 0,
       "maxEntries": 800,
       "durable": false,
       "note": "Cache só acelera leitura. Contas ficam no Postgres."
@@ -108,7 +112,7 @@ Gerado em: 2026-08-27T21:34:19.407Z
     "lastBackup": null
   },
   "mode": "institutional",
-  "responseMs": 4
+  "responseMs": 21
 }
 ```
 

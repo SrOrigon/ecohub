@@ -1,0 +1,55 @@
+
+> projeto-estudante@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+- Environments: .env.local, .env
+✓ Ready in 530ms
+✓ Running next.config.ts took 43ms
+[ecohub] Não foi possível salvar AUTH_SECRET no volume: EACCES: permission denied, mkdir '/data'
+- Experiments (use with caution):
+  · serverActions
+
+○ Compiling /login ...
+ GET /login 200 in 4.1s (next.js: 3.2s, proxy.ts: 298ms, application-code: 541ms)
+ GET /login/aluno 200 in 1340ms (next.js: 1132ms, proxy.ts: 14ms, application-code: 194ms)
+ GET /login/aluno 200 in 98ms (next.js: 15ms, proxy.ts: 7ms, application-code: 76ms)
+ GET /login/aluno 200 in 91ms (next.js: 6ms, proxy.ts: 9ms, application-code: 76ms)
+ GET /login/aluno 200 in 83ms (next.js: 8ms, proxy.ts: 10ms, application-code: 65ms)
+ GET /login 200 in 94ms (next.js: 5ms, proxy.ts: 8ms, application-code: 81ms)
+ GET /login 200 in 74ms (next.js: 6ms, proxy.ts: 5ms, application-code: 64ms)
+ GET /login/aluno 200 in 54ms (next.js: 6ms, proxy.ts: 6ms, application-code: 43ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+ GET /login 200 in 128ms (next.js: 12ms, proxy.ts: 19ms, application-code: 97ms)
+ GET /login 200 in 86ms (next.js: 5ms, proxy.ts: 7ms, application-code: 75ms)
+ GET /login/aluno 200 in 50ms (next.js: 7ms, proxy.ts: 6ms, application-code: 37ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+ GET /login 200 in 115ms (next.js: 8ms, proxy.ts: 6ms, application-code: 100ms)
+ GET /login 200 in 92ms (next.js: 4ms, proxy.ts: 9ms, application-code: 79ms)
+ GET /login/aluno 200 in 54ms (next.js: 5ms, proxy.ts: 5ms, application-code: 45ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+ GET /login 200 in 73ms (next.js: 3ms, proxy.ts: 6ms, application-code: 64ms)
+ GET /login 200 in 71ms (next.js: 4ms, proxy.ts: 5ms, application-code: 63ms)
+ GET /login/aluno 200 in 54ms (next.js: 4ms, proxy.ts: 5ms, application-code: 44ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+ GET /login 200 in 85ms (next.js: 5ms, proxy.ts: 7ms, application-code: 73ms)
+ GET /login 200 in 70ms (next.js: 4ms, proxy.ts: 5ms, application-code: 61ms)
+ GET /login/aluno 200 in 76ms (next.js: 4ms, proxy.ts: 6ms, application-code: 66ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+ GET /login 200 in 70ms (next.js: 3ms, proxy.ts: 6ms, application-code: 61ms)
+ GET /login 200 in 78ms (next.js: 5ms, proxy.ts: 6ms, application-code: 67ms)
+ GET /login/aluno 200 in 55ms (next.js: 5ms, proxy.ts: 5ms, application-code: 45ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+ GET /login 200 in 82ms (next.js: 5ms, proxy.ts: 5ms, application-code: 72ms)
+ GET /login 200 in 80ms (next.js: 4ms, proxy.ts: 7ms, application-code: 70ms)
+ GET /login/aluno 200 in 45ms (next.js: 6ms, proxy.ts: 5ms, application-code: 35ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+ GET /entrar 200 in 871ms (next.js: 831ms, proxy.ts: 4ms, application-code: 36ms)
+ GET /login 200 in 69ms (next.js: 3ms, proxy.ts: 4ms, application-code: 62ms)
+ GET /login 200 in 71ms (next.js: 5ms, proxy.ts: 5ms, application-code: 61ms)
+ GET /entrar 200 in 47ms (next.js: 4ms, proxy.ts: 5ms, application-code: 38ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+ GET /login 200 in 79ms (next.js: 4ms, proxy.ts: 10ms, application-code: 66ms)
+ GET /login 200 in 72ms (next.js: 3ms, proxy.ts: 5ms, application-code: 63ms)
