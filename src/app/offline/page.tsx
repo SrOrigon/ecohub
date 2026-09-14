@@ -1,4 +1,5 @@
 import { WifiOff, RefreshCcw } from "lucide-react";
+import Link from "next/link";
 
 export const metadata = {
   title: "Você está Offline | Ecohub",
@@ -26,13 +27,13 @@ export default function OfflinePage() {
         `
       }} />
 
-      <a
+              <Link
         href="/"
         className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-8 text-sm font-medium text-white shadow hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 transition-transform active:scale-95"
       >
         <RefreshCcw className="h-4 w-4" />
         Tentar Novamente
-      </a>
+              </Link>
     </div>
   );
 }
