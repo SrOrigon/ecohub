@@ -58,22 +58,30 @@ export async function createProject(data: {
   return project;
 }
 
+import { unstable_cache } from "next/cache";
+
+const getCachedProjects = unstable_cache(
+  async (schoolId: string) => {
+    return prisma.studentProject.findMany({
+      where: { schoolId },
+      include: {
+        student: {
+          include: {
+            user: true,
+            classGroup: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  },
+  ['projects-gallery'],
+  { revalidate: 60, tags: ['projects'] }
+);
+
 export async function getProjects() {
   const user = await getSessionUser();
   if (!user || !user.schoolId) return [];
 
-  const projects = await prisma.studentProject.findMany({
-    where: { schoolId: user.schoolId },
-    include: {
-      student: {
-        include: {
-          user: true,
-          classGroup: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return projects;
+  return getCachedProjects(user.schoolId);
 }
