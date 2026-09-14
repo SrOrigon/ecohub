@@ -9,16 +9,17 @@ import { createPortal } from "react-dom";
  */
 export function HudPortal({ children }: { children: ReactNode }) {
   const [target, setTarget] = useState<HTMLElement | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Avoid setting state directly during the effect to prevent cascaded renders
     const timer = setTimeout(() => {
+      setMounted(true);
       const el = document.getElementById("hud-root") ?? document.querySelector<HTMLElement>(".school-theme") ?? document.body;
       setTarget(el);
     }, 0);
     return () => clearTimeout(timer);
   }, []);
 
-  if (!target) return null;
+  if (!mounted || !target) return null;
   return createPortal(children, target);
 }
