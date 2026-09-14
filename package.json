@@ -1,6 +1,6 @@
 {
   "name": "projeto-estudante",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "prisma": {
     "seed": "tsx scripts/seed-pilot-institution.ts"
   },

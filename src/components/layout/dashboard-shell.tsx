@@ -8,6 +8,7 @@ import { SchoolThemeProvider } from "@/components/school/school-theme-provider";
 import { LiveMetricsProvider } from "@/components/metrics/live-metrics-provider";
 import { AttentionAlertsProvider } from "@/components/alerts/attention-alerts-provider";
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
+import { LiveToast } from "@/components/notifications/live-toast";
 import { CreatorJourneyCelebration } from "@/components/creator/creator-journey-celebration";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
@@ -106,6 +107,7 @@ export function DashboardShell({
   return (
     <SchoolThemeProvider branding={branding}>
       <NotificationsProvider>
+        <LiveToast />
       {needsLiveMetrics ? (
         needsAttentionAlerts ? (
           <LiveMetricsProvider>

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, MessageCircle, Heart } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Sparkles } from "lucide-react";
+
 import { playQuestCompleteSound } from "@/lib/sound-effects";
 
-type PetMood = "happy" | "excited" | "focused" | "cheering";
+
 
 const PET_CHARACTERS = {
   default: {
@@ -64,12 +64,12 @@ export function PetCompanion({
 }) {
   const pet = PET_CHARACTERS[(equippedPetKey as keyof typeof PET_CHARACTERS) ?? "default"] ?? PET_CHARACTERS.default;
   const [tipIndex, setTipIndex] = useState(0);
-  const [interacted, setInteracted] = useState(false);
+
 
   function handlePetClick() {
     playQuestCompleteSound();
     setTipIndex((prev) => (prev + 1) % pet.tips.length);
-    setInteracted(true);
+
   }
 
   const firstName = studentName.split(" ")[0];

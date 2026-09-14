@@ -265,7 +265,7 @@ function NavLinks({
         onClick={onNavigate}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "nav-link flex items-center gap-3 rounded-xl font-medium transition-all duration-150",
+          "ui-interactive nav-link flex items-center gap-3 rounded-xl font-medium transition-all duration-150",
           kidFriendly ? "min-h-12 px-4 py-3 text-base" : "min-h-10 px-3 py-2 text-sm",
           active ? "nav-link-active" : "nav-link-inactive"
         )}

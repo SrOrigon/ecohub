@@ -4,35 +4,35 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
-export async function getProjects(schoolId: string) {
-  const user = await getSessionUser();
-  if (!user) throw new Error("Não autorizado");
-
-  const projects = await prisma.studentProject.findMany({
-    where: { schoolId },
-    include: {
-      student: {
-        include: {
-          user: true,
-          classGroup: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return projects;
+function isValidHttpUrl(string: string) {
+  let url;
+  try {
+    url = new URL(string);
+  } catch (_) {
+    return false;
+  }
+  return url.protocol === "http:" || url.protocol === "https:";
 }
 
 export async function createProject(data: {
   title: string;
-  description?: string | null;
-  projectUrl?: string | null;
-  imageUrl?: string | null;
+  description?: string;
+  projectUrl?: string;
+  imageUrl?: string;
 }) {
   const user = await getSessionUser();
+
   if (!user || user.role !== "student") {
-    throw new Error("Somente alunos podem enviar projetos");
+    throw new Error("Apenas alunos podem enviar projetos.");
+  }
+
+  // Validate URLs to prevent XSS
+  if (data.projectUrl && !isValidHttpUrl(data.projectUrl)) {
+    throw new Error("A URL do projeto deve iniciar com http:// ou https://");
+  }
+
+  if (data.imageUrl && !isValidHttpUrl(data.imageUrl)) {
+    throw new Error("A URL da imagem deve iniciar com http:// ou https://");
   }
 
   const student = await prisma.student.findUnique({
@@ -40,22 +40,48 @@ export async function createProject(data: {
   });
 
   if (!student) {
-    throw new Error("Aluno não encontrado");
+    throw new Error("Estudante não encontrado.");
   }
 
   const project = await prisma.studentProject.create({
     data: {
-      schoolId: user.schoolId || "",
-      studentId: student.id,
       title: data.title,
       description: data.description,
       projectUrl: data.projectUrl,
       imageUrl: data.imageUrl,
+      studentId: student.id,
+      schoolId: user.schoolId!,
     },
   });
 
   revalidatePath("/dashboard/projetos");
-  revalidatePath("/dashboard/aluno");
+  return project;
+}
 
-  return { success: true, project };
+import { unstable_cache } from "next/cache";
+
+const getCachedProjects = unstable_cache(
+  async (schoolId: string) => {
+    return prisma.studentProject.findMany({
+      where: { schoolId },
+      include: {
+        student: {
+          include: {
+            user: true,
+            classGroup: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  },
+  ['projects-gallery'],
+  { revalidate: 60, tags: ['projects'] }
+);
+
+export async function getProjects() {
+  const user = await getSessionUser();
+  if (!user || !user.schoolId) return [];
+
+  return getCachedProjects(user.schoolId);
 }

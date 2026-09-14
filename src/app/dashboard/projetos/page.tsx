@@ -13,7 +13,7 @@ export default async function ProjetosPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  const projects = await getProjects(user.schoolId || "");
+  const projects = await getProjects();
 
   return (
     <div className="space-y-6">
@@ -37,10 +37,10 @@ export default async function ProjetosPage() {
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {projects.map((project) => (
+          {projects.map((project, index) => (
             <Card
               key={project.id}
-              className="group flex h-full flex-col overflow-hidden rounded-xl border-2 border-indigo-100 shadow-sm transition-all hover:border-indigo-300 hover:shadow-lg dark:border-indigo-900 dark:bg-slate-900"
+              className={`group flex h-full flex-col animate-fade-in-up stagger-${(index % 8) + 1} overflow-hidden rounded-xl border-2 border-indigo-100 shadow-sm transition-all hover:border-indigo-300 hover:shadow-lg dark:border-indigo-900 dark:bg-slate-900`}
             >
               <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 {project.imageUrl ? (
