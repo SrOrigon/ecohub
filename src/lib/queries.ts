@@ -96,6 +96,47 @@ export async function getRanking(schoolId: string | null, classId?: string | nul
   }
 }
 
+export async function getMonthlyAttendance(
+  schoolId: string | null,
+  options?: {
+    month?: number;
+    year?: number;
+    classId?: string;
+    studentId?: string;
+  }
+) {
+  if (!schoolId) return [];
+  try {
+    const now = new Date();
+    const month = options?.month ?? (now.getMonth() + 1);
+    const year = options?.year ?? now.getFullYear();
+
+    const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const endDate = new Date(year, month, 1, 0, 0, 0, 0);
+
+    return await prisma.attendance.findMany({
+      where: {
+        student: { user: { schoolId } },
+        ...(options?.classId ? { classId: options.classId } : {}),
+        ...(options?.studentId ? { studentId: options.studentId } : {}),
+        date: { gte: startDate, lt: endDate },
+      },
+      include: {
+        student: { include: { user: { select: { fullName: true } } } },
+        classGroup: { select: { name: true } },
+        justifiedBy: { select: { fullName: true } },
+      },
+      orderBy: [
+        { date: "desc" },
+        { student: { user: { fullName: "asc" } } },
+      ],
+    });
+  } catch (err) {
+    console.error("[getMonthlyAttendance] Error:", err);
+    return [];
+  }
+}
+
 export const getMonthlyPerformance = cache(async (schoolId: string | null) => {
   if (!schoolId) return [];
 

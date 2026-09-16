@@ -652,11 +652,10 @@ export async function recordAttendanceAction(formData: FormData) {
   const student = await prisma.student.findFirst({
     where: {
       id: studentId,
-      classId,
       user: { schoolId: user.schoolId },
     },
   });
-  if (!student) return { error: "Aluno não encontrado nesta turma." };
+  if (!student) return { error: "Aluno não encontrado nesta instituição." };
 
   const existing = await prisma.attendance.findUnique({
     where: { studentId_date: { studentId, date } },
@@ -959,6 +958,126 @@ export async function bulkAttendanceAction(formData: FormData) {
 
   revalidateGroups("core", "academic", "gamification", "analytics", "alerts");
   return { success: true, message: `Chamada registrada para ${students.length} alunos (${registered} novos).` };
+}
+
+export async function importAttendanceBatchAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const settings = await getSchoolSettings(user.schoolId);
+  if (user.role === "teacher" && !hasPermission(user.role, settings, "teacher.recordAttendance")) {
+    return { error: "Sem permissão para registrar frequência." };
+  }
+
+  const rawJson = String(formData.get("payload") ?? "").trim();
+  const rawCsv = String(formData.get("csvData") ?? "").trim();
+
+  type ImportRow = {
+    studentId?: string;
+    studentEmail?: string;
+    classId?: string;
+    date: string;
+    status?: string;
+  };
+
+  let rows: ImportRow[] = [];
+
+  if (rawJson) {
+    try {
+      rows = JSON.parse(rawJson);
+    } catch {
+      return { error: "Formato JSON inválido." };
+    }
+  } else if (rawCsv) {
+    const lines = rawCsv.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      if (line.toLowerCase().startsWith("data") || line.toLowerCase().startsWith("date")) continue;
+      const parts = line.split(/[,;\t]/).map((p) => p.trim());
+      if (parts.length >= 3) {
+        rows.push({
+          date: parts[0],
+          studentId: parts[1],
+          status: parts[2],
+          classId: parts[3] ?? undefined,
+        });
+      }
+    }
+  }
+
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return { error: "Nenhum registro para importar." };
+  }
+
+  const schoolStudents = await prisma.student.findMany({
+    where: { user: { schoolId: user.schoolId } },
+    select: { id: true, classId: true, user: { select: { email: true, fullName: true } } },
+  });
+
+  const studentMap = new Map<string, { id: string; classId: string | null }>();
+  for (const s of schoolStudents) {
+    studentMap.set(s.id, { id: s.id, classId: s.classId });
+    if (s.user.email) {
+      studentMap.set(s.user.email.toLowerCase(), { id: s.id, classId: s.classId });
+    }
+  }
+
+  let importedCount = 0;
+  const changed: { studentId: string; status: string; previous: string | null }[] = [];
+
+  for (const row of rows) {
+    if (!row.date) continue;
+    const key = (row.studentId || row.studentEmail || "").trim();
+    const student = studentMap.get(key) || studentMap.get(key.toLowerCase());
+    if (!student) continue;
+
+    const classId = row.classId || student.classId;
+    if (!classId) continue;
+
+    const parsedDate = parseDateOnlyOrToday(row.date);
+    const status = ATTENDANCE_STATUSES.includes(row.status as AttendanceStatus) ? row.status! : "present";
+
+    const existing = await prisma.attendance.findUnique({
+      where: { studentId_date: { studentId: student.id, date: parsedDate } },
+      select: { id: true, status: true },
+    });
+
+    const previousStatus = existing?.status ?? null;
+
+    if (existing) {
+      if (existing.status !== status) {
+        await prisma.attendance.update({
+          where: { id: existing.id },
+          data: { status, classId },
+        });
+        importedCount++;
+      }
+    } else {
+      await prisma.attendance.create({
+        data: {
+          studentId: student.id,
+          classId,
+          date: parsedDate,
+          status,
+        },
+      });
+      importedCount++;
+    }
+
+    if (previousStatus !== status) {
+      changed.push({ studentId: student.id, status, previous: previousStatus });
+    }
+  }
+
+  for (const item of changed) {
+    await processAttendanceXp(item.studentId, item.status, item.previous);
+  }
+
+  revalidateGroups("core", "academic", "gamification", "analytics", "alerts");
+  return {
+    success: true,
+    count: importedCount,
+    message: `${importedCount} registro(s) de frequência importado(s) com sucesso.`,
+  };
 }
 
 export async function requestMissionCompletionAction(formData: FormData) {

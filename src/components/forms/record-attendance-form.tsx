@@ -44,7 +44,7 @@ export function RecordAttendanceForm({ students }: { students: StudentOption[] }
         <form action={formAction} className="space-y-4">
           <div>
             <Label htmlFor="date">Data</Label>
-            <Input id="date" name="date" type="date" defaultValue={today} required />
+            <Input id="date" name="date" type="date" defaultValue={today} min="2024-05-01" max={today} required />
           </div>
           <div>
             <Label htmlFor="studentId">Aluno</Label>

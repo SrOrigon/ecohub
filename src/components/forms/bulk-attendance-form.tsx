@@ -46,7 +46,7 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
         <form action={formAction} className="space-y-4">
           <div>
             <Label htmlFor="bulk-date">Data</Label>
-            <Input id="bulk-date" name="date" type="date" defaultValue={today} required />
+            <Input id="bulk-date" name="date" type="date" defaultValue={today} min="2024-05-01" max={today} required />
           </div>
           <div>
             <Label htmlFor="bulk-classId">Turma</Label>

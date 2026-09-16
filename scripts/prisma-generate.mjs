@@ -13,4 +13,4 @@ if (!process.env.DATABASE_URL && !collectPostgresUrl()) {
 }
 
 const schema = syncPrismaSchema();
-execSync(`npx prisma generate --schema="${schema}"`, { stdio: "inherit", cwd: ROOT });
+execSync(`npx prisma@5.22.0 generate --schema="${schema}"`, { stdio: "inherit", cwd: ROOT });
