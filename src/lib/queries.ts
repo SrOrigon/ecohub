@@ -102,45 +102,182 @@ export async function getMonthlyAttendance(
     month?: number;
     year?: number;
     classId?: string;
+    teacherClassIds?: string[];
     studentId?: string;
+    status?: string;
+    search?: string;
+    page?: number;
+    pageSize?: number;
   }
 ) {
-  if (!schoolId) return [];
+  if (!schoolId) {
+    return {
+      records: [],
+      totalCount: 0,
+      totalMonthlyRecords: 0,
+      totalAbsences: 0,
+      attendanceRate: 0,
+      alertedStudents: [],
+      studentAbsenceMap: new Map<string, number>(),
+      page: 1,
+      totalPages: 1,
+    };
+  }
   try {
     const now = new Date();
     const month = options?.month ?? (now.getMonth() + 1);
     const year = options?.year ?? now.getFullYear();
+    const page = Math.max(1, options?.page ?? 1);
+    const pageSize = Math.max(1, options?.pageSize ?? 50);
 
     const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0);
     const endDate = new Date(year, month, 1, 0, 0, 0, 0);
+    const search = options?.search?.trim();
 
-    return await prisma.attendance.findMany({
-      where: {
-        student: { user: { schoolId } },
-        ...(options?.classId ? { classId: options.classId } : {}),
-        ...(options?.studentId ? { studentId: options.studentId } : {}),
-        date: { gte: startDate, lt: endDate },
+    const classCondition = options?.classId
+      ? { classId: options.classId }
+      : options?.teacherClassIds && options.teacherClassIds.length > 0
+      ? { classId: { in: options.teacherClassIds } }
+      : {};
+
+    const where = {
+      student: {
+        user: {
+          schoolId,
+          ...(search ? { fullName: { contains: search } } : {}),
+        },
       },
-      include: {
-        student: {
-          include: {
-            user: { select: { fullName: true, phone: true } },
-            parentLinks: {
-              include: { parent: { select: { fullName: true, phone: true } } },
+      ...classCondition,
+      ...(options?.studentId ? { studentId: options.studentId } : {}),
+      ...(options?.status ? { status: options.status } : {}),
+      date: { gte: startDate, lt: endDate },
+    };
+
+    const baseWhere = {
+      student: { user: { schoolId } },
+      ...classCondition,
+      date: { gte: startDate, lt: endDate },
+    };
+
+    const [totalCount, records, monthlyAbsencesGroup] = await Promise.all([
+      prisma.attendance.count({ where }),
+      prisma.attendance.findMany({
+        where,
+        include: {
+          student: {
+            include: {
+              user: { select: { fullName: true, phone: true } },
+              parentLinks: {
+                include: { parent: { select: { fullName: true, phone: true } } },
+              },
+            },
+          },
+          classGroup: { select: { name: true } },
+          justifiedBy: { select: { fullName: true } },
+        },
+        orderBy: [
+          { date: "desc" },
+          { student: { user: { fullName: "asc" } } },
+        ],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.attendance.findMany({
+        where: baseWhere,
+        select: {
+          status: true,
+          studentId: true,
+          student: {
+            select: {
+              id: true,
+              user: { select: { fullName: true, phone: true } },
+              classGroup: { select: { name: true } },
+              parentLinks: {
+                include: { parent: { select: { fullName: true, phone: true } } },
+              },
             },
           },
         },
-        classGroup: { select: { name: true } },
-        justifiedBy: { select: { fullName: true } },
-      },
-      orderBy: [
-        { date: "desc" },
-        { student: { user: { fullName: "asc" } } },
-      ],
-    });
+      }),
+    ]);
+
+    let totalAbsences = 0;
+    let presentCount = 0;
+    const studentAbsencesCountMap = new Map<string, number>();
+    const studentDetailMap = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        className: string;
+        phone?: string | null;
+        parents: Array<{ name: string; phone?: string | null }>;
+        absences: number;
+      }
+    >();
+
+    for (const record of monthlyAbsencesGroup) {
+      if (record.status === "absent") {
+        totalAbsences++;
+      } else if (record.status === "present" || record.status === "late") {
+        presentCount++;
+      }
+
+      const existing = studentDetailMap.get(record.studentId);
+      if (existing) {
+        if (record.status === "absent") {
+          existing.absences++;
+          studentAbsencesCountMap.set(record.studentId, existing.absences);
+        }
+      } else {
+        const absences = record.status === "absent" ? 1 : 0;
+        studentAbsencesCountMap.set(record.studentId, absences);
+        studentDetailMap.set(record.studentId, {
+          id: record.studentId,
+          name: record.student.user.fullName,
+          className: record.student.classGroup?.name ?? "-",
+          phone: record.student.user.phone,
+          parents: record.student.parentLinks.map((p) => ({
+            name: p.parent.fullName,
+            phone: p.parent.phone,
+          })),
+          absences,
+        });
+      }
+    }
+
+    const alertedStudents = Array.from(studentDetailMap.values())
+      .filter((s) => s.absences > 3)
+      .sort((a, b) => b.absences - a.absences);
+
+    const totalMonthlyRecords = monthlyAbsencesGroup.length;
+    const attendanceRate = totalMonthlyRecords > 0 ? Math.round((presentCount / totalMonthlyRecords) * 100) : 0;
+    const totalPages = Math.ceil(totalCount / pageSize) || 1;
+
+    return {
+      records,
+      totalCount,
+      totalMonthlyRecords,
+      totalAbsences,
+      attendanceRate,
+      alertedStudents,
+      studentAbsenceMap: studentAbsencesCountMap,
+      page,
+      totalPages,
+    };
   } catch (err) {
     console.error("[getMonthlyAttendance] Error:", err);
-    return [];
+    return {
+      records: [],
+      totalCount: 0,
+      totalMonthlyRecords: 0,
+      totalAbsences: 0,
+      attendanceRate: 0,
+      alertedStudents: [],
+      studentAbsenceMap: new Map<string, number>(),
+      page: 1,
+      totalPages: 1,
+    };
   }
 }
 

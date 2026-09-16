@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RecordAttendanceForm } from "@/components/forms/record-attendance-form";
@@ -32,6 +33,7 @@ interface PageProps {
     classId?: string;
     q?: string;
     status?: string;
+    pagina?: string;
   }>;
 }
 
@@ -42,44 +44,49 @@ export default async function FrequenciaPage(props: PageProps) {
   const now = new Date();
   const activeMonth = params.month ? parseInt(params.month, 10) : now.getMonth() + 1;
   const activeYear = params.year ? parseInt(params.year, 10) : now.getFullYear();
+  const activePage = params.pagina ? Math.max(1, parseInt(params.pagina, 10)) : 1;
   const classIdFilter = params.classId || undefined;
   const statusFilter = params.status || "";
-  const searchQuery = (params.q || "").toLowerCase().trim();
+  const searchQuery = (params.q || "").trim();
 
   const activeMonthName = monthNames[activeMonth - 1] ?? "Mês Vigente";
 
   const teacherFilter = user.role === "teacher" ? user.id : undefined;
 
-  const [monthlyAttendance, students, classes, justifications] = await Promise.all([
+  const [students, classes] = await Promise.all([
+    getStudents(user.schoolId),
+    getClasses(user.schoolId, teacherFilter),
+  ]);
+
+  const teacherClassIds = teacherFilter ? classes.map((c) => c.id) : undefined;
+
+  const [monthlyAttendanceData, justifications] = await Promise.all([
     getMonthlyAttendance(user.schoolId, {
       month: activeMonth,
       year: activeYear,
       classId: classIdFilter,
+      teacherClassIds,
+      status: statusFilter,
+      search: searchQuery,
+      page: activePage,
+      pageSize: 50,
     }),
-    getStudents(user.schoolId),
-    getClasses(user.schoolId, teacherFilter),
     user.schoolId
       ? fetchJustifiedAttendance(user, user.schoolId, teacherFilter)
       : Promise.resolve([]),
   ]);
 
-  const classStudentIds = new Set(
-    teacherFilter ? classes.flatMap((c) => c.students.map((s) => s.id)) : []
-  );
-
-  let filteredAttendance = teacherFilter
-    ? monthlyAttendance.filter((a) => classStudentIds.has(a.studentId))
-    : monthlyAttendance;
-
-  if (statusFilter) {
-    filteredAttendance = filteredAttendance.filter((a) => a.status === statusFilter);
-  }
-
-  if (searchQuery) {
-    filteredAttendance = filteredAttendance.filter((a) =>
-      a.student.user.fullName.toLowerCase().includes(searchQuery)
-    );
-  }
+  const {
+    records: filteredAttendance,
+    totalCount,
+    totalMonthlyRecords,
+    totalAbsences,
+    attendanceRate,
+    alertedStudents,
+    studentAbsenceMap,
+    page,
+    totalPages,
+  } = monthlyAttendanceData;
 
   const filteredStudents = teacherFilter
     ? students.filter((s) => s.classId && classes.some((c) => c.id === s.classId))
@@ -97,50 +104,19 @@ export default async function FrequenciaPage(props: PageProps) {
     students: c.students.map((s) => ({ id: s.id, name: s.user.fullName })),
   }));
 
-  // Calculations for quick metrics
-  const totalMonthlyRecords = filteredAttendance.length;
-  const totalAbsences = filteredAttendance.filter((a) => a.status === "absent").length;
-  const presentCount = filteredAttendance.filter((a) => a.status === "present" || a.status === "late").length;
-  const attendanceRate = totalMonthlyRecords > 0 ? Math.round((presentCount / totalMonthlyRecords) * 100) : 0;
-
-  // Map student monthly absences and student info
-  const studentAbsenceMap = new Map<
-    string,
-    {
-      id: string;
-      name: string;
-      className: string;
-      phone?: string | null;
-      parents: Array<{ name: string; phone?: string | null }>;
-      absences: number;
-    }
-  >();
-
-  for (const record of (teacherFilter ? monthlyAttendance.filter((a) => classStudentIds.has(a.studentId)) : monthlyAttendance)) {
-    const isAbsent = record.status === "absent";
-    const existing = studentAbsenceMap.get(record.studentId);
-    if (existing) {
-      if (isAbsent) existing.absences++;
-    } else {
-      studentAbsenceMap.set(record.studentId, {
-        id: record.studentId,
-        name: record.student.user.fullName,
-        className: record.classGroup.name,
-        phone: record.student.user.phone,
-        parents: record.student.parentLinks.map((p) => ({
-          name: p.parent.fullName,
-          phone: p.parent.phone,
-        })),
-        absences: isAbsent ? 1 : 0,
-      });
-    }
-  }
-
-  const alertedStudents = Array.from(studentAbsenceMap.values())
-    .filter((s) => s.absences > 3)
-    .sort((a, b) => b.absences - a.absences);
-
   const filterClasses = classes.map((c) => ({ id: c.id, name: c.name }));
+
+  // URL builder helper for pagination links
+  function buildPageUrl(p: number) {
+    const paramsObj = new URLSearchParams();
+    if (params.month) paramsObj.set("month", params.month);
+    if (params.year) paramsObj.set("year", params.year);
+    if (params.classId) paramsObj.set("classId", params.classId);
+    if (params.q) paramsObj.set("q", params.q);
+    if (params.status) paramsObj.set("status", params.status);
+    paramsObj.set("pagina", String(p));
+    return `/dashboard/frequencia?${paramsObj.toString()}`;
+  }
 
   return (
     <div className="space-y-6">
@@ -164,7 +140,7 @@ export default async function FrequenciaPage(props: PageProps) {
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">{attendanceRate}%</div>
             <p className="mt-1 text-xs text-slate-500">
-              {presentCount} presentes em {totalMonthlyRecords} registros
+              Média consolidada de presença no mês ({totalMonthlyRecords} chamadas)
             </p>
           </CardContent>
         </Card>
@@ -178,7 +154,7 @@ export default async function FrequenciaPage(props: PageProps) {
           <CardContent>
             <div className="text-2xl font-bold text-rose-600">{totalAbsences}</div>
             <p className="mt-1 text-xs text-slate-500">
-              Ausências registradas em {activeMonthName}/{activeYear}
+              Ausências acumuladas em {activeMonthName}/{activeYear}
             </p>
           </CardContent>
         </Card>
@@ -243,10 +219,15 @@ export default async function FrequenciaPage(props: PageProps) {
       <JustificationsPanel records={justifications} />
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>
-            Registros de Frequência — {activeMonthName} de {activeYear} ({filteredAttendance.length})
+            Registros de Frequência — {activeMonthName} de {activeYear} ({totalCount} encontrados)
           </CardTitle>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2 text-xs text-slate-600">
+              <span>Página {page} de {totalPages}</span>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="min-w-0">
           <ResponsiveTable minWidth="42rem">
@@ -263,8 +244,7 @@ export default async function FrequenciaPage(props: PageProps) {
             <tbody>
               {filteredAttendance.map((record) => {
                 const status = statusLabels[record.status] ?? statusLabels.present;
-                const studentInfo = studentAbsenceMap.get(record.studentId);
-                const monthlyAbsences = studentInfo?.absences ?? 0;
+                const monthlyAbsences = studentAbsenceMap.get(record.studentId) ?? 0;
                 const isAlerted = monthlyAbsences > 3;
 
                 return (
@@ -307,6 +287,40 @@ export default async function FrequenciaPage(props: PageProps) {
               )}
             </tbody>
           </ResponsiveTable>
+
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+              <span className="text-slate-500">
+                Mostrando {filteredAttendance.length} de {totalCount} registros
+              </span>
+              <div className="flex gap-2">
+                {page > 1 ? (
+                  <Link
+                    href={buildPageUrl(page - 1)}
+                    className="rounded border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    ← Anterior
+                  </Link>
+                ) : (
+                  <span className="rounded border border-slate-100 bg-slate-50 px-3 py-1.5 text-slate-400 cursor-not-allowed">
+                    ← Anterior
+                  </span>
+                )}
+                {page < totalPages ? (
+                  <Link
+                    href={buildPageUrl(page + 1)}
+                    className="rounded border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Próxima →
+                  </Link>
+                ) : (
+                  <span className="rounded border border-slate-100 bg-slate-50 px-3 py-1.5 text-slate-400 cursor-not-allowed">
+                    Próxima →
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
