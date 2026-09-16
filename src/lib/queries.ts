@@ -122,7 +122,14 @@ export async function getMonthlyAttendance(
         date: { gte: startDate, lt: endDate },
       },
       include: {
-        student: { include: { user: { select: { fullName: true } } } },
+        student: {
+          include: {
+            user: { select: { fullName: true, phone: true } },
+            parentLinks: {
+              include: { parent: { select: { fullName: true, phone: true } } },
+            },
+          },
+        },
         classGroup: { select: { name: true } },
         justifiedBy: { select: { fullName: true } },
       },

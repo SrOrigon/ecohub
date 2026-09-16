@@ -5,6 +5,7 @@ import { BulkAttendanceForm } from "@/components/forms/bulk-attendance-form";
 import { ImportAttendanceForm } from "@/components/forms/import-attendance-form";
 import { JustificationsPanel } from "@/components/attendance/justifications-panel";
 import { AttendanceFilterBar } from "@/components/attendance/attendance-filter-bar";
+import { StudentContactModal } from "@/components/attendance/student-contact-modal";
 import { PageHeader } from "@/components/layout/page-header";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { formatDate } from "@/lib/utils";
@@ -102,21 +103,36 @@ export default async function FrequenciaPage(props: PageProps) {
   const presentCount = filteredAttendance.filter((a) => a.status === "present" || a.status === "late").length;
   const attendanceRate = totalMonthlyRecords > 0 ? Math.round((presentCount / totalMonthlyRecords) * 100) : 0;
 
-  // Alert students (> 3 absences in selected month)
-  const studentAbsenceMap = new Map<string, { id: string; name: string; className: string; absences: number }>();
+  // Map student monthly absences and student info
+  const studentAbsenceMap = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      className: string;
+      phone?: string | null;
+      parents: Array<{ name: string; phone?: string | null }>;
+      absences: number;
+    }
+  >();
+
   for (const record of (teacherFilter ? monthlyAttendance.filter((a) => classStudentIds.has(a.studentId)) : monthlyAttendance)) {
-    if (record.status === "absent") {
-      const existing = studentAbsenceMap.get(record.studentId);
-      if (existing) {
-        existing.absences++;
-      } else {
-        studentAbsenceMap.set(record.studentId, {
-          id: record.studentId,
-          name: record.student.user.fullName,
-          className: record.classGroup.name,
-          absences: 1,
-        });
-      }
+    const isAbsent = record.status === "absent";
+    const existing = studentAbsenceMap.get(record.studentId);
+    if (existing) {
+      if (isAbsent) existing.absences++;
+    } else {
+      studentAbsenceMap.set(record.studentId, {
+        id: record.studentId,
+        name: record.student.user.fullName,
+        className: record.classGroup.name,
+        phone: record.student.user.phone,
+        parents: record.student.parentLinks.map((p) => ({
+          name: p.parent.fullName,
+          phone: p.parent.phone,
+        })),
+        absences: isAbsent ? 1 : 0,
+      });
     }
   }
 
@@ -186,18 +202,28 @@ export default async function FrequenciaPage(props: PageProps) {
         <Card className="border-amber-200 bg-amber-50/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-amber-900">
-              ⚠️ Detalhamento dos Alunos em Alerta ({alertedStudents.length})
+              ⚠️ Alunos em Alerta por Excesso de Faltas ({alertedStudents.length}) — Ação de Busca Ativa
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2.5">
               {alertedStudents.map((s) => (
-                <div key={s.id} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs text-amber-900 shadow-2xs">
-                  <span className="font-semibold">{s.name}</span>
-                  <span className="text-slate-500">({s.className})</span>
-                  <Badge variant="danger" className="ml-1 text-[10px] px-1.5 py-0">
-                    {s.absences} faltas
-                  </Badge>
+                <div
+                  key={s.id}
+                  className="flex items-center gap-2 rounded-lg border border-amber-300 bg-white p-2 text-xs text-amber-900 shadow-2xs"
+                >
+                  <div>
+                    <span className="font-semibold">{s.name}</span>
+                    <span className="ml-1 text-slate-500">({s.className})</span>
+                    <Badge variant="danger" className="ml-1.5 px-1.5 py-0 text-[10px]">
+                      {s.absences} faltas no mês
+                    </Badge>
+                  </div>
+                  <StudentContactModal
+                    studentName={s.name}
+                    studentPhone={s.phone}
+                    parents={s.parents}
+                  />
                 </div>
               ))}
             </div>
@@ -223,35 +249,58 @@ export default async function FrequenciaPage(props: PageProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="min-w-0">
-          <ResponsiveTable minWidth="36rem">
+          <ResponsiveTable minWidth="42rem">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
                 <th className="hidden pb-3 pr-4 sm:table-cell">Data</th>
                 <th className="pb-3 pr-4">Aluno</th>
                 <th className="hidden pb-3 pr-4 md:table-cell">Turma</th>
-                <th className="pb-3">Status</th>
+                <th className="pb-3 pr-4">Status</th>
+                <th className="hidden pb-3 pr-4 sm:table-cell">Faltas no Mês</th>
+                <th className="pb-3">Contato Rápido</th>
               </tr>
             </thead>
             <tbody>
               {filteredAttendance.map((record) => {
                 const status = statusLabels[record.status] ?? statusLabels.present;
+                const studentInfo = studentAbsenceMap.get(record.studentId);
+                const monthlyAbsences = studentInfo?.absences ?? 0;
+                const isAlerted = monthlyAbsences > 3;
+
                 return (
                   <tr key={record.id} className="border-b border-slate-100">
                     <td className="hidden py-3 pr-4 sm:table-cell">{formatDate(record.date)}</td>
-                    <td className="max-w-[8rem] py-3 pr-4 sm:max-w-none">{record.student.user.fullName}</td>
+                    <td className="max-w-[8rem] py-3 pr-4 sm:max-w-none font-medium">
+                      {record.student.user.fullName}
+                    </td>
                     <td className="hidden py-3 pr-4 md:table-cell">{record.classGroup.name}</td>
-                    <td className="py-3">
+                    <td className="py-3 pr-4">
                       <Badge variant={status.variant}>{status.label}</Badge>
                       {record.justificationNote && (
                         <p className="mt-1 max-w-xs text-xs text-slate-500">{record.justificationNote}</p>
                       )}
+                    </td>
+                    <td className="hidden py-3 pr-4 sm:table-cell">
+                      <Badge variant={isAlerted ? "danger" : "secondary"} className="text-xs">
+                        {monthlyAbsences} {monthlyAbsences === 1 ? "falta" : "faltas"}
+                      </Badge>
+                    </td>
+                    <td className="py-3">
+                      <StudentContactModal
+                        studentName={record.student.user.fullName}
+                        studentPhone={record.student.user.phone}
+                        parents={record.student.parentLinks.map((p) => ({
+                          name: p.parent.fullName,
+                          phone: p.parent.phone,
+                        }))}
+                      />
                     </td>
                   </tr>
                 );
               })}
               {filteredAttendance.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-slate-500">
+                  <td colSpan={6} className="py-8 text-center text-slate-500">
                     Nenhum registro encontrado para os filtros selecionados em {activeMonthName}/{activeYear}.
                   </td>
                 </tr>
