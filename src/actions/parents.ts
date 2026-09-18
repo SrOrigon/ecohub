@@ -13,6 +13,7 @@ import {
 import { validatePassword, hashPassword } from "@/lib/security/password-policy";
 import { confirmUserPersisted } from "@/lib/persistence-guard";
 import { invalidateSchoolCaches } from "@/lib/runtime-cache";
+import { userExistsByEmail } from "@/lib/user-lookup";
 
 export async function createParentAction(formData: FormData) {
   const user = await requireSession(["admin", "director"]);
@@ -29,7 +30,7 @@ export async function createParentAction(formData: FormData) {
   const passwordCheck = validatePassword(password);
   if (!passwordCheck.ok) return { error: passwordCheck.error };
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await userExistsByEmail(email);
   if (existing) return { error: "E-mail já cadastrado." };
 
   const passwordHash = await hashPassword(password);
@@ -258,7 +259,7 @@ export async function provisionStudentForParentAction(formData: FormData) {
   if (!school) return { error: "Escola não encontrada." };
 
   if (!enrollmentCode) {
-    enrollmentCode = `ALU-${Date.now().toString(36).toUpperCase()}`;
+    enrollmentCode = `ALU-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
   }
 
   const existingCode = await prisma.student.findUnique({ where: { enrollmentCode } });

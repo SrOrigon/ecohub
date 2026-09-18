@@ -423,7 +423,7 @@ async function registerStudentActionImpl(formData: FormData) {
   }
 
   if (!enrollmentCode) {
-    enrollmentCode = `ALU-${Date.now().toString(36).toUpperCase()}`;
+    enrollmentCode = `ALU-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
   }
 
   if (await userExistsByEmail(email)) return { error: GENERIC_REGISTER_ERROR };

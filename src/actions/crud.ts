@@ -1235,7 +1235,7 @@ export async function updateStudentAction(formData: FormData) {
 
   let nextEmail = student.user.email;
   if (email && email !== student.user.email) {
-    const existingEmail = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    const existingEmail = await userExistsByEmail(email, student.userId);
     if (existingEmail) return { error: "E-mail já cadastrado." };
     nextEmail = email;
   }
@@ -1452,7 +1452,7 @@ async function updateTeacherActionImpl(formData: FormData) {
   if (!teacher) return { error: "Professor não encontrado." };
 
   if (email !== teacher.email) {
-    const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    const existing = await userExistsByEmail(email, teacher.id);
     if (existing) return { error: "E-mail já cadastrado." };
   }
 
