@@ -514,7 +514,10 @@ export default async function AlunoPortalPage() {
                 </p>
               )}
               {student.studentBadges.map((sb) => (
-                <Badge key={sb.id} variant="success" className="px-3 py-1.5 text-base">
+                <Badge key={sb.id} variant="success" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-base">
+                  {sb.badge.imageUrl && (
+                    <img src={sb.badge.imageUrl} alt="" className="h-4 w-4 rounded-full object-cover" />
+                  )}
                   {sb.badge.name}
                 </Badge>
               ))}

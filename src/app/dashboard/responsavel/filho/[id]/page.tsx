@@ -283,8 +283,12 @@ export default async function FilhoDetailPage({ params }: { params: Promise<{ id
             {student.studentBadges.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {student.studentBadges.map((sb) => (
-                  <Badge key={sb.id} variant="default">
-                    <Medal className="mr-1 h-3 w-3" aria-hidden="true" />
+                  <Badge key={sb.id} variant="default" className="inline-flex items-center gap-1">
+                    {sb.badge.imageUrl ? (
+                      <img src={sb.badge.imageUrl} alt="" className="h-3.5 w-3.5 rounded-full object-cover" />
+                    ) : (
+                      <Medal className="mr-1 h-3 w-3" aria-hidden="true" />
+                    )}
                     {sb.badge.name}
                   </Badge>
                 ))}

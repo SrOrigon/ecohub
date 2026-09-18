@@ -177,7 +177,7 @@ export default async function GamificacaoPage() {
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div
                       className={cn(
-                        "achievement-icon-wrapper shrink-0",
+                        "achievement-icon-wrapper shrink-0 overflow-hidden",
                         isHighTier
                           ? "bg-gradient-to-br from-amber-500/20 to-orange-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
                           : isMidTier
@@ -185,7 +185,11 @@ export default async function GamificacaoPage() {
                           : "bg-gradient-to-br from-indigo-500/20 to-blue-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400"
                       )}
                     >
-                      <Icon className="h-5 w-5" aria-hidden="true" />
+                      {badge.imageUrl ? (
+                        <img src={badge.imageUrl} alt={badge.name} className="h-6 w-6 rounded-full object-cover" />
+                      ) : (
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0 flex-wrap">

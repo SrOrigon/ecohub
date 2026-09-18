@@ -35,7 +35,7 @@ import {
   parseStudentProfileForm,
   STUDENT_ACTIVITY_TYPES,
 } from "@/lib/student-profile";
-import { resolveAvatarFromForm } from "@/lib/avatar";
+import { resolveAvatarFromForm, resolveBadgeImageFromForm } from "@/lib/avatar";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 import {
   generateStudentPin,
@@ -1694,17 +1694,25 @@ export async function createBadgeAction(formData: FormData) {
     }
   }
 
+  const badgeImageResult = await resolveBadgeImageFromForm(formData, null);
+  if (badgeImageResult && typeof badgeImageResult === "object" && "error" in badgeImageResult) {
+    return { error: badgeImageResult.error };
+  }
+  const imageUrl = badgeImageResult as string | null;
+
   const primaryClassId = classIds[0] || null;
+  const schoolId = user.schoolId;
 
   await prisma.$transaction(async (tx) => {
     const created = await tx.badge.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId,
         courseId: courseId ?? undefined,
         classId: primaryClassId ?? undefined,
         name,
         description: description || undefined,
         icon,
+        imageUrl: imageUrl ?? undefined,
         xpRequired: Math.floor(xpRequired),
         coinsReward: Math.floor(coinsReward),
       },
@@ -1782,6 +1790,12 @@ export async function updateBadgeAction(formData: FormData) {
     }
   }
 
+  const badgeImageResult = await resolveBadgeImageFromForm(formData, badge.imageUrl);
+  if (badgeImageResult && typeof badgeImageResult === "object" && "error" in badgeImageResult) {
+    return { error: badgeImageResult.error };
+  }
+  const imageUrl = badgeImageResult as string | null;
+
   const primaryClassId = classIds[0] || null;
 
   await prisma.$transaction(async (tx) => {
@@ -1791,6 +1805,7 @@ export async function updateBadgeAction(formData: FormData) {
         name,
         description: description || undefined,
         icon,
+        imageUrl: imageUrl ?? undefined,
         xpRequired: Math.floor(xpRequired),
         coinsReward: Math.floor(coinsReward),
         courseId: courseId ?? undefined,

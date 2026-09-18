@@ -361,6 +361,7 @@ model Badge {
   name        String
   description String?
   icon        String   @default("star")
+  imageUrl    String?
   xpRequired  Int      @default(0)
   coinsReward Int      @default(0)
   createdAt   DateTime @default(now())

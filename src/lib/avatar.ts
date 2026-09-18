@@ -61,3 +61,38 @@ export async function resolveAvatarFromForm(
 
   return currentAvatar;
 }
+
+export async function resolveBadgeImageFromForm(
+  formData: FormData,
+  currentImage: string | null = null
+): Promise<string | null | { error: string }> {
+  const removeImage = formData.get("removeBadgeImage") === "1";
+  if (removeImage) return null;
+
+  const imageFile = formData.get("badgeImageFile") || formData.get("imageFile") || formData.get("badgeImage");
+  if (imageFile instanceof File && imageFile.size > 0) {
+    try {
+      if (!isAllowedAvatarMime(imageFile.type)) {
+        return { error: "Formato de imagem não suportado. Use JPG, PNG, WebP ou GIF." };
+      }
+      if (imageFile.size > AVATAR_MAX_BYTES) {
+        return { error: "A imagem deve ter no máximo 300 KB." };
+      }
+      const dataUrl = await fileToAvatarDataUrl(imageFile);
+      if (typeof dataUrl === "object") return dataUrl;
+      return dataUrl;
+    } catch {
+      return { error: "Não foi possível processar a imagem enviada. Tente outro arquivo." };
+    }
+  }
+
+  const imageUrlField = String(formData.get("imageUrl") ?? "").trim();
+  if (imageUrlField) {
+    if (!isValidExternalAvatarUrl(imageUrlField)) {
+      return { error: "URL da imagem deve começar com http:// ou https://" };
+    }
+    return imageUrlField;
+  }
+
+  return currentImage;
+}

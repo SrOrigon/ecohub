@@ -1,12 +1,12 @@
 "use client";
 
-import { useActionState, useState, useMemo } from "react";
+import { useActionState, useState, useMemo, ChangeEvent } from "react";
 import { createBadgeAction } from "@/actions/crud";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/modal";
-import { Plus, Award, CheckSquare, Square } from "lucide-react";
+import { Plus, Award, CheckSquare, Square, Image as ImageIcon } from "lucide-react";
 
 export interface ClassOption {
   id: string;
@@ -23,6 +23,7 @@ export function CreateBadgeForm({
   requireClass?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const courses = useMemo(() => {
     const set = new Map<string, string>();
@@ -60,6 +61,16 @@ export function CreateBadgeForm({
     }
   }
 
+  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    } else {
+      setPreviewUrl(null);
+    }
+  }
+
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
       const result = await createBadgeAction(formData);
@@ -70,6 +81,7 @@ export function CreateBadgeForm({
       if (next.success) {
         setOpen(false);
         setSelectedClassIds([]);
+        setPreviewUrl(null);
       }
       return next;
     },
@@ -106,12 +118,63 @@ export function CreateBadgeForm({
               <Input id="badge-coins" name="coinsReward" type="number" defaultValue={20} placeholder="Ex: 20 ou -10" />
             </div>
             <div>
-              <Label htmlFor="badge-icon">Ícone</Label>
+              <Label htmlFor="badge-icon">Ícone Padrão</Label>
               <Select id="badge-icon" name="icon" defaultValue="star">
                 <option value="star">★ Estrela</option>
                 <option value="clock">⏱ Relógio</option>
                 <option value="target">🎯 Alvo</option>
               </Select>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-3 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="badge-image-file" className="flex items-center gap-1.5 text-xs font-semibold">
+                <ImageIcon className="h-4 w-4 text-indigo-500" />
+                Imagem / Emblema personalizado (opcional)
+              </Label>
+              {previewUrl && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewUrl(null)}
+                  className="text-xs text-red-500 hover:underline"
+                >
+                  Remover prévia
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt="Prévia do emblema"
+                  className="h-12 w-12 rounded-full object-cover border-2 border-indigo-500 shrink-0"
+                />
+              ) : (
+                <div className="h-12 w-12 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 shrink-0">
+                  <ImageIcon className="h-6 w-6" />
+                </div>
+              )}
+              <div className="flex-1 space-y-1.5">
+                <input
+                  id="badge-image-file"
+                  type="file"
+                  name="badgeImage"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleFileChange}
+                  className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 dark:file:bg-indigo-950 dark:file:text-indigo-300 hover:file:bg-indigo-100"
+                />
+                <Input
+                  name="imageUrl"
+                  placeholder="Ou informe a URL da imagem (https://...)"
+                  className="text-xs h-8"
+                  onChange={(e) => {
+                    if (e.target.value.startsWith("http")) {
+                      setPreviewUrl(e.target.value);
+                    }
+                  }}
+                />
+              </div>
             </div>
           </div>
 

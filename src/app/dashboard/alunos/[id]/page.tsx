@@ -449,7 +449,12 @@ export default async function StudentDetailPage({
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {student.studentBadges.map((sb) => (
-                      <Badge key={sb.id} variant="default">{sb.badge.name}</Badge>
+                      <Badge key={sb.id} variant="default" className="inline-flex items-center gap-1">
+                        {sb.badge.imageUrl && (
+                          <img src={sb.badge.imageUrl} alt="" className="h-3.5 w-3.5 rounded-full object-cover" />
+                        )}
+                        {sb.badge.name}
+                      </Badge>
                     ))}
                   </div>
                 )}
