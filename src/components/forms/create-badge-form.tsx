@@ -1,18 +1,19 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useMemo } from "react";
 import { createBadgeAction } from "@/actions/crud";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/modal";
+import { Plus, Award, CheckSquare, Square } from "lucide-react";
 
-interface ClassOption {
+export interface ClassOption {
   id: string;
   name: string;
+  gradeLevel?: string | null;
+  courseId?: string | null;
 }
-
-import { Plus, Award } from "lucide-react";
 
 export function CreateBadgeForm({
   classes,
@@ -22,6 +23,43 @@ export function CreateBadgeForm({
   requireClass?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+
+  const courses = useMemo(() => {
+    const set = new Map<string, string>();
+    classes.forEach((c) => {
+      const courseKey = c.courseId || c.gradeLevel || "Curso Geral";
+      set.set(courseKey, courseKey);
+    });
+    return Array.from(set.values());
+  }, [classes]);
+
+  const [selectedCourse, setSelectedCourse] = useState<string>(() => courses[0] ?? "");
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+
+  const availableClasses = useMemo(() => {
+    if (!selectedCourse) return classes;
+    return classes.filter((c) => (c.courseId || c.gradeLevel || "Curso Geral") === selectedCourse);
+  }, [classes, selectedCourse]);
+
+  function handleCourseChange(course: string) {
+    setSelectedCourse(course);
+    setSelectedClassIds([]);
+  }
+
+  function toggleClass(id: string) {
+    setSelectedClassIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  }
+
+  function toggleAllClasses() {
+    if (selectedClassIds.length === availableClasses.length) {
+      setSelectedClassIds([]);
+    } else {
+      setSelectedClassIds(availableClasses.map((c) => c.id));
+    }
+  }
+
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
       const result = await createBadgeAction(formData);
@@ -29,7 +67,10 @@ export function CreateBadgeForm({
         error: "error" in result ? result.error : undefined,
         success: "success" in result ? result.success : undefined,
       };
-      if (next.success) setOpen(false);
+      if (next.success) {
+        setOpen(false);
+        setSelectedClassIds([]);
+      }
       return next;
     },
     null
@@ -69,24 +110,81 @@ export function CreateBadgeForm({
               </Select>
             </div>
           </div>
+
           <div>
-            <Label htmlFor="badge-class">Turma</Label>
-            <Select id="badge-class" name="classId" required={requireClass} defaultValue={classes.length === 1 ? classes[0].id : ""}>
-              {!requireClass && <option value="">Toda a escola</option>}
-              {requireClass && (
-                <option value="" disabled>
-                  Selecione a turma...
-                </option>
-              )}
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
+            <Label htmlFor="badge-course">Curso / Modalidade</Label>
+            <Select
+              id="badge-course"
+              name="courseId"
+              value={selectedCourse}
+              onChange={(e) => handleCourseChange(e.target.value)}
+            >
+              {!requireClass && <option value="">Toda a escola (Geral)</option>}
+              {courses.map((course) => (
+                <option key={course} value={course}>
+                  {course}
                 </option>
               ))}
             </Select>
           </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <Label>Turmas do curso</Label>
+              {availableClasses.length > 1 && (
+                <button
+                  type="button"
+                  onClick={toggleAllClasses}
+                  className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  {selectedClassIds.length === availableClasses.length ? "Desmarcar todas" : "Selecionar todas"}
+                </button>
+              )}
+            </div>
+
+            <div className="max-h-40 overflow-y-auto space-y-1.5 rounded-lg border border-slate-200 dark:border-slate-800 p-2 bg-slate-50/50 dark:bg-slate-900/50">
+              {availableClasses.length === 0 ? (
+                <p className="text-xs text-slate-500 p-2">Nenhuma turma disponível para este curso.</p>
+              ) : (
+                availableClasses.map((c) => {
+                  const isChecked = selectedClassIds.includes(c.id);
+                  return (
+                    <label
+                      key={c.id}
+                      className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 p-1.5 rounded-md hover:bg-white dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        name="classIds"
+                        value={c.id}
+                        checked={isChecked}
+                        onChange={() => toggleClass(c.id)}
+                        className="sr-only"
+                      />
+                      {isChecked ? (
+                        <CheckSquare className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                      ) : (
+                        <Square className="h-4 w-4 text-slate-400 shrink-0" />
+                      )}
+                      <span>{c.name}</span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+            {requireClass && selectedClassIds.length === 0 && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                Selecione ao menos uma turma para a atitude.
+              </p>
+            )}
+          </div>
+
           {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-          <Button type="submit" disabled={pending} className="w-full gap-2">
+          <Button
+            type="submit"
+            disabled={pending || (requireClass && selectedClassIds.length === 0)}
+            className="w-full gap-2"
+          >
             <Award className="h-4 w-4" />
             {pending ? "Criando..." : "Criar atitude"}
           </Button>

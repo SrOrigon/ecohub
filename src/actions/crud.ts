@@ -1625,13 +1625,24 @@ const BADGE_ICONS = new Set(["clock", "star", "target"]);
 
 async function assertBadgeInScope(
   user: Awaited<ReturnType<typeof requireSession>>,
-  badge: { schoolId: string; classId: string | null }
+  badge: { schoolId: string; classId: string | null; classes?: { classId: string }[] }
 ) {
   if (badge.schoolId !== user.schoolId) return { error: "Atitude não encontrada." };
   if (user.role === "teacher") {
-    if (!badge.classId) return { error: "Atitudes da escola não podem ser alteradas pelo professor." };
-    const scope = await assertClassInScope(user, badge.classId);
-    if (!scope.ok) return { error: scope.error };
+    const badgeClassIds = [
+      ...(badge.classId ? [badge.classId] : []),
+      ...(badge.classes ? badge.classes.map((bc) => bc.classId) : []),
+    ];
+    if (badgeClassIds.length === 0) return { error: "Atitudes da escola não podem ser alteradas pelo professor." };
+    let hasAccess = false;
+    for (const cid of badgeClassIds) {
+      const scope = await assertClassInScope(user, cid);
+      if (scope.ok) {
+        hasAccess = true;
+        break;
+      }
+    }
+    if (!hasAccess) return { error: "Você não tem acesso a esta atitude." };
   }
   return null;
 }
@@ -1645,28 +1656,65 @@ export async function createBadgeAction(formData: FormData) {
   const iconRaw = String(formData.get("icon") ?? "star");
   const icon = BADGE_ICONS.has(iconRaw) ? iconRaw : "star";
   const xpRequired = parseInt(String(formData.get("xpRequired") ?? "0"), 10);
-  const classId = String(formData.get("classId") ?? "") || null;
+  const courseId = String(formData.get("courseId") ?? "").trim() || null;
+
+  const rawClassIds = formData.getAll("classIds").map(String).filter(Boolean);
+  const singleClassId = String(formData.get("classId") ?? "").trim();
+  const classIds = [...new Set([...rawClassIds, ...(singleClassId ? [singleClassId] : [])])];
 
   if (!name) return { error: "Nome da atitude é obrigatório." };
   if (!Number.isFinite(xpRequired) || xpRequired < 0) return { error: "XP inválido." };
 
-  if (user.role === "teacher" && !classId) {
-    return { error: "Selecione a turma desta atitude." };
-  }
-  if (classId) {
-    const scope = await assertClassInScope(user, classId);
-    if (!scope.ok) return { error: scope.error };
+  if (user.role === "teacher" && classIds.length === 0) {
+    return { error: "Selecione ao menos uma turma para esta atitude." };
   }
 
-  await prisma.badge.create({
-    data: {
-      schoolId: user.schoolId,
-      classId,
-      name,
-      description: description || null,
-      icon,
-      xpRequired: Math.floor(xpRequired),
-    },
+  if (classIds.length > 0) {
+    for (const cid of classIds) {
+      const scope = await assertClassInScope(user, cid);
+      if (!scope.ok) return { error: scope.error };
+    }
+
+    const dbClasses = await prisma.classGroup.findMany({
+      where: { id: { in: classIds }, schoolId: user.schoolId },
+      select: { id: true, courseId: true, gradeLevel: true },
+    });
+
+    if (dbClasses.length !== classIds.length) {
+      return { error: "Uma ou mais turmas selecionadas não foram encontradas." };
+    }
+
+    if (courseId) {
+      const allMatch = dbClasses.every((c) => (c.courseId || c.gradeLevel) === courseId);
+      if (!allMatch) {
+        return { error: "Todas as turmas selecionadas devem pertencer ao mesmo curso." };
+      }
+    }
+  }
+
+  const primaryClassId = classIds[0] || null;
+
+  await prisma.$transaction(async (tx) => {
+    const created = await tx.badge.create({
+      data: {
+        schoolId: user.schoolId,
+        courseId: courseId ?? undefined,
+        classId: primaryClassId,
+        name,
+        description: description || null,
+        icon,
+        xpRequired: Math.floor(xpRequired),
+      },
+    });
+
+    if (classIds.length > 0) {
+      await tx.badgeClass.createMany({
+        data: classIds.map((cid) => ({
+          badgeId: created.id,
+          classId: cid,
+        })),
+      });
+    }
   });
 
   revalidateGroups("gamification", "analytics");
@@ -1684,36 +1732,76 @@ export async function updateBadgeAction(formData: FormData) {
   const iconRaw = String(formData.get("icon") ?? "star");
   const icon = BADGE_ICONS.has(iconRaw) ? iconRaw : "star";
   const xpRequired = parseInt(String(formData.get("xpRequired") ?? "0"), 10);
-  const classId = String(formData.get("classId") ?? "") || null;
+  const courseId = String(formData.get("courseId") ?? "").trim() || null;
+
+  const rawClassIds = formData.getAll("classIds").map(String).filter(Boolean);
+  const singleClassId = String(formData.get("classId") ?? "").trim();
+  const classIds = [...new Set([...rawClassIds, ...(singleClassId ? [singleClassId] : [])])];
 
   if (!badgeId || !name) return { error: "Dados inválidos." };
   if (!Number.isFinite(xpRequired) || xpRequired < 0) return { error: "XP inválido." };
 
   const badge = await prisma.badge.findFirst({
     where: { id: badgeId, schoolId: user.schoolId },
+    include: { classes: true },
   });
   if (!badge) return { error: "Atitude não encontrada." };
 
   const denied = await assertBadgeInScope(user, badge);
   if (denied) return denied;
 
-  if (user.role === "teacher" && !classId) {
-    return { error: "A atitude precisa permanecer vinculada a uma turma." };
-  }
-  if (classId) {
-    const scope = await assertClassInScope(user, classId);
-    if (!scope.ok) return { error: scope.error };
+  if (user.role === "teacher" && classIds.length === 0) {
+    return { error: "A atitude precisa permanecer vinculada a ao menos uma turma." };
   }
 
-  await prisma.badge.update({
-    where: { id: badgeId },
-    data: {
-      name,
-      description: description || null,
-      icon,
-      xpRequired: Math.floor(xpRequired),
-      classId,
-    },
+  if (classIds.length > 0) {
+    for (const cid of classIds) {
+      const scope = await assertClassInScope(user, cid);
+      if (!scope.ok) return { error: scope.error };
+    }
+
+    const dbClasses = await prisma.classGroup.findMany({
+      where: { id: { in: classIds }, schoolId: user.schoolId },
+      select: { id: true, courseId: true, gradeLevel: true },
+    });
+
+    if (dbClasses.length !== classIds.length) {
+      return { error: "Uma ou mais turmas selecionadas não foram encontradas." };
+    }
+
+    if (courseId) {
+      const allMatch = dbClasses.every((c) => (c.courseId || c.gradeLevel) === courseId);
+      if (!allMatch) {
+        return { error: "Todas as turmas selecionadas devem pertencer ao mesmo curso." };
+      }
+    }
+  }
+
+  const primaryClassId = classIds[0] || null;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.badge.update({
+      where: { id: badgeId },
+      data: {
+        name,
+        description: description || null,
+        icon,
+        xpRequired: Math.floor(xpRequired),
+        courseId: courseId ?? undefined,
+        classId: primaryClassId,
+      },
+    });
+
+    await tx.badgeClass.deleteMany({ where: { badgeId } });
+
+    if (classIds.length > 0) {
+      await tx.badgeClass.createMany({
+        data: classIds.map((cid) => ({
+          badgeId,
+          classId: cid,
+        })),
+      });
+    }
   });
 
   revalidateGroups("gamification", "analytics");

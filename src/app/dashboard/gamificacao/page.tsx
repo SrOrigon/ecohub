@@ -50,7 +50,12 @@ export default async function GamificacaoPage() {
     coinReward: pm.mission.coinReward,
   }));
 
-  const classOptions = classes.map((c) => ({ id: c.id, name: c.name }));
+  const classOptions = classes.map((c) => ({
+    id: c.id,
+    name: c.name,
+    gradeLevel: c.gradeLevel,
+    courseId: c.courseId,
+  }));
   const isStaff = user.role === "director" || user.role === "secretary" || user.role === "teacher" || user.role === "admin";
   const requireBadgeClass = user.role === "teacher";
   const canAdjustPoints =
@@ -219,7 +224,11 @@ export default async function GamificacaoPage() {
                   {/* Meta info: Class and Students badge */}
                   <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
                     <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 font-medium text-slate-600 dark:text-slate-300">
-                      {badge.classGroup?.name ? `Turma: ${badge.classGroup.name}` : "Toda a escola"}
+                      {badge.classes && badge.classes.length > 0
+                        ? `Turma(s): ${badge.classes.map((bc) => bc.classGroup.name).join(", ")}`
+                        : badge.classGroup?.name
+                        ? `Turma: ${badge.classGroup.name}`
+                        : "Toda a escola"}
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 font-medium text-indigo-700 dark:text-indigo-300">
                       <Users className="h-3 w-3" />

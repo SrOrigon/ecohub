@@ -291,15 +291,24 @@ export async function awardClassAttitude(
 ) {
   const badge = await prisma.badge.findFirst({
     where: { id: badgeId, schoolId },
+    include: { classes: true },
   });
   if (!badge) throw new Error("Atitude não encontrada.");
 
-  if (badge.classId) {
+  const linkedClassIds = [
+    ...(badge.classId ? [badge.classId] : []),
+    ...(badge.classes ? badge.classes.map((bc) => bc.classId) : []),
+  ];
+
+  if (linkedClassIds.length > 0) {
     const enrolled = await prisma.student.findFirst({
-      where: { id: studentId, ...studentsInClassWhere(badge.classId) },
+      where: {
+        id: studentId,
+        OR: linkedClassIds.map((cid) => studentsInClassWhere(cid)),
+      },
       select: { id: true },
     });
-    if (!enrolled) throw new Error("Esta atitude só pode ser aplicada a alunos da turma vinculada.");
+    if (!enrolled) throw new Error("Esta atitude só pode ser aplicada a alunos das turmas vinculadas.");
   }
 
   try {
