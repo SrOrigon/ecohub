@@ -1137,6 +1137,49 @@ export async function requestMissionCompletionAction(formData: FormData) {
   return { success: true };
 }
 
+const DEFAULT_MOCK_BADGE_NAMES = [
+  "Pontualidade",
+  "Estudante Estrela",
+  "Missão Completa",
+  "Nota 10",
+  "Assiduidade de Ouro",
+  "Mestre das Missões",
+  "Estudante Exemplar",
+  "Pontualidade exemplar",
+];
+
+export async function purgeDefaultBadgesAction(formData?: FormData) {
+  const user = await requireSession(["admin", "director", "secretary", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const targetClassId = formData ? String(formData.get("classId") ?? "").trim() : "";
+  const purgeAll = formData ? formData.get("purgeAll") === "true" : false;
+
+  if (targetClassId && user.role === "teacher") {
+    const scope = await assertClassInScope(user, targetClassId);
+    if (!scope.ok) return { error: scope.error };
+  }
+
+  const whereCondition = {
+    schoolId: user.schoolId,
+    ...(targetClassId ? { classId: targetClassId } : {}),
+    ...(!purgeAll ? { name: { in: DEFAULT_MOCK_BADGE_NAMES } } : {}),
+  };
+
+  const result = await prisma.badge.deleteMany({
+    where: whereCondition,
+  });
+
+  revalidateGroups("gamification", "analytics");
+  revalidatePath("/dashboard/gamificacao");
+
+  return {
+    success: true,
+    deletedCount: result.count,
+    message: `${result.count} atitude(s) expurgada(s) com sucesso.`,
+  };
+}
+
 export async function updateStudentAction(formData: FormData) {
   const user = await requireSession(["admin", "director", "secretary", "teacher"]);
   if (!user.schoolId) return { error: "Escola não configurada." };

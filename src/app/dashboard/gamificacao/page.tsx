@@ -8,6 +8,7 @@ import { EditMissionForm } from "@/components/forms/edit-mission-form";
 import { StaffCompleteMissionForm } from "@/components/forms/staff-complete-mission-form";
 import { CreateBadgeForm } from "@/components/forms/create-badge-form";
 import { EditBadgeForm } from "@/components/forms/edit-badge-form";
+import { PurgeDefaultBadgesButton } from "@/components/forms/purge-default-badges-button";
 import { AwardBadgeForm } from "@/components/forms/award-badge-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -93,6 +94,7 @@ export default async function GamificacaoPage() {
               defaultXp={settings.missions.defaultXp}
               defaultCoins={settings.missions.defaultCoins}
             />
+            <PurgeDefaultBadgesButton />
           </div>
         )}
       </PageHeader>

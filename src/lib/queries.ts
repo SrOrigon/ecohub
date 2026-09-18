@@ -710,17 +710,6 @@ export async function ensureClassAttitudeCopies(schoolId: string, classIds: stri
 export async function getBadges(schoolId: string | null, teacherId?: string) {
   if (!schoolId) return [];
   try {
-    if (teacherId) {
-      const teacherClasses = await prisma.classGroup.findMany({
-        where: { schoolId, ...teacherClassWhere(teacherId) },
-        select: { id: true },
-      });
-      await ensureClassAttitudeCopies(
-        schoolId,
-        teacherClasses.map((turma) => turma.id)
-      );
-    }
-
     return await prisma.badge.findMany({
       where: {
         schoolId,
