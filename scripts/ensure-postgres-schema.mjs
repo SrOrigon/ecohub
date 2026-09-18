@@ -225,8 +225,25 @@ const DUEL_TABLE_PATCHES = [
 
 const BADGE_COLUMN_PATCHES = [
   `ALTER TABLE "Badge" ADD COLUMN IF NOT EXISTS "classId" TEXT`,
+  `ALTER TABLE "Badge" ADD COLUMN IF NOT EXISTS "courseId" TEXT`,
+  `ALTER TABLE "Badge" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT`,
+  `ALTER TABLE "Badge" ADD COLUMN IF NOT EXISTS "coinsReward" INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE "ClassGroup" ADD COLUMN IF NOT EXISTS "courseId" TEXT`,
+  `CREATE TABLE IF NOT EXISTS "BadgeClass" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "badgeId" TEXT NOT NULL,
+    "classId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "BadgeClass_badgeId_fkey" FOREIGN KEY ("badgeId") REFERENCES "Badge" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "BadgeClass_classId_fkey" FOREIGN KEY ("classId") REFERENCES "ClassGroup" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "BadgeClass_badgeId_classId_key" ON "BadgeClass"("badgeId", "classId")`,
+  `CREATE INDEX IF NOT EXISTS "BadgeClass_badgeId_idx" ON "BadgeClass"("badgeId")`,
+  `CREATE INDEX IF NOT EXISTS "BadgeClass_classId_idx" ON "BadgeClass"("classId")`,
   `CREATE INDEX IF NOT EXISTS "Badge_schoolId_idx" ON "Badge"("schoolId")`,
   `CREATE INDEX IF NOT EXISTS "Badge_classId_idx" ON "Badge"("classId")`,
+  `CREATE INDEX IF NOT EXISTS "Badge_courseId_idx" ON "Badge"("courseId")`,
+  `CREATE INDEX IF NOT EXISTS "ClassGroup_courseId_idx" ON "ClassGroup"("courseId")`,
 ];
 
 const ALL_PATCHES = [
@@ -255,7 +272,7 @@ const CRITICAL_COLUMNS = [
   { table: "Badge", column: "classId" },
 ];
 
-const CRITICAL_TABLES = ["ExerciseStudentTarget", "StudentClassEnrollment", "DuelSession", "DuelMatch", "StudentProject"];
+const CRITICAL_TABLES = ["ExerciseStudentTarget", "StudentClassEnrollment", "DuelSession", "DuelMatch", "StudentProject", "BadgeClass"];
 
 async function columnExists(prisma, table, column) {
   const rows = await prisma.$queryRawUnsafe(
