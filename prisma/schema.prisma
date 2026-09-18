@@ -362,6 +362,7 @@ model Badge {
   description String?
   icon        String   @default("star")
   xpRequired  Int      @default(0)
+  coinsReward Int      @default(0)
   createdAt   DateTime @default(now())
 
   school        School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)

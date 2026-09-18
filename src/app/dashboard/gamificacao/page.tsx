@@ -188,16 +188,33 @@ export default async function GamificacaoPage() {
                       <Icon className="h-5 w-5" aria-hidden="true" />
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                       <span
                         className={cn(
                           "glass-pill",
-                          isHighTier && "border-amber-400/40 bg-amber-50/80 text-amber-700 dark:text-amber-300 dark:bg-amber-950/50",
-                          isMidTier && !isHighTier && "border-purple-400/40 bg-purple-50/80 text-purple-700 dark:text-purple-300 dark:bg-purple-950/50"
+                          badge.xpRequired < 0
+                            ? "border-red-400/40 bg-red-50/80 text-red-700 dark:text-red-300 dark:bg-red-950/50"
+                            : isHighTier
+                            ? "border-amber-400/40 bg-amber-50/80 text-amber-700 dark:text-amber-300 dark:bg-amber-950/50"
+                            : isMidTier
+                            ? "border-purple-400/40 bg-purple-50/80 text-purple-700 dark:text-purple-300 dark:bg-purple-950/50"
+                            : "border-indigo-400/40 bg-indigo-50/80 text-indigo-700 dark:text-indigo-300 dark:bg-indigo-950/50"
                         )}
                       >
-                        +{badge.xpRequired} XP
+                        {badge.xpRequired >= 0 ? `+${badge.xpRequired}` : badge.xpRequired} XP
                       </span>
+                      {badge.coinsReward !== 0 && (
+                        <span
+                          className={cn(
+                            "glass-pill",
+                            badge.coinsReward < 0
+                              ? "border-red-400/40 bg-red-50/80 text-red-700 dark:text-red-300 dark:bg-red-950/50"
+                              : "border-amber-400/40 bg-amber-50/80 text-amber-700 dark:text-amber-300 dark:bg-amber-950/50"
+                          )}
+                        >
+                          {badge.coinsReward > 0 ? `+${badge.coinsReward}` : badge.coinsReward} Moedas
+                        </span>
+                      )}
                       {isStaff && (
                         <EditBadgeForm
                           badge={badge}

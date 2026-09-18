@@ -22,6 +22,7 @@ export interface BadgeData {
   description: string | null;
   icon: string;
   xpRequired: number;
+  coinsReward?: number;
   courseId?: string | null;
   classId: string | null;
   classes?: Array<{ classId: string; classGroup?: { id: string; name: string; gradeLevel?: string | null; courseId?: string | null } }>;
@@ -150,15 +151,25 @@ export function EditBadgeForm({
               defaultValue={badge.description ?? ""}
             />
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
-              <Label htmlFor={`badge-xp-${badge.id}`}>XP ao aplicar</Label>
+              <Label htmlFor={`badge-xp-${badge.id}`}>XP (+ / -)</Label>
               <Input
                 id={`badge-xp-${badge.id}`}
                 name="xpRequired"
                 type="number"
-                min={0}
                 defaultValue={badge.xpRequired}
+                placeholder="Ex: 100 ou -50"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`badge-coins-${badge.id}`}>Moedas (+ / -)</Label>
+              <Input
+                id={`badge-coins-${badge.id}`}
+                name="coinsReward"
+                type="number"
+                defaultValue={badge.coinsReward ?? 0}
+                placeholder="Ex: 20 ou -10"
               />
             </div>
             <div>

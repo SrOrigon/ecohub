@@ -1656,6 +1656,7 @@ export async function createBadgeAction(formData: FormData) {
   const iconRaw = String(formData.get("icon") ?? "star");
   const icon = BADGE_ICONS.has(iconRaw) ? iconRaw : "star";
   const xpRequired = parseInt(String(formData.get("xpRequired") ?? "0"), 10);
+  const coinsReward = parseInt(String(formData.get("coinsReward") ?? "0"), 10);
   const courseId = String(formData.get("courseId") ?? "").trim() || null;
 
   const rawClassIds = formData.getAll("classIds").map(String).filter(Boolean);
@@ -1663,7 +1664,8 @@ export async function createBadgeAction(formData: FormData) {
   const classIds = [...new Set([...rawClassIds, ...(singleClassId ? [singleClassId] : [])])];
 
   if (!name) return { error: "Nome da atitude é obrigatório." };
-  if (!Number.isFinite(xpRequired) || xpRequired < 0) return { error: "XP inválido." };
+  if (!Number.isFinite(xpRequired)) return { error: "XP inválido." };
+  if (!Number.isFinite(coinsReward)) return { error: "Valor de moedas inválido." };
 
   if (user.role === "teacher" && classIds.length === 0) {
     return { error: "Selecione ao menos uma turma para esta atitude." };
@@ -1699,11 +1701,12 @@ export async function createBadgeAction(formData: FormData) {
       data: {
         schoolId: user.schoolId,
         courseId: courseId ?? undefined,
-        classId: primaryClassId,
+        classId: primaryClassId ?? undefined,
         name,
-        description: description || null,
+        description: description || undefined,
         icon,
         xpRequired: Math.floor(xpRequired),
+        coinsReward: Math.floor(coinsReward),
       },
     });
 
@@ -1732,6 +1735,7 @@ export async function updateBadgeAction(formData: FormData) {
   const iconRaw = String(formData.get("icon") ?? "star");
   const icon = BADGE_ICONS.has(iconRaw) ? iconRaw : "star";
   const xpRequired = parseInt(String(formData.get("xpRequired") ?? "0"), 10);
+  const coinsReward = parseInt(String(formData.get("coinsReward") ?? "0"), 10);
   const courseId = String(formData.get("courseId") ?? "").trim() || null;
 
   const rawClassIds = formData.getAll("classIds").map(String).filter(Boolean);
@@ -1739,7 +1743,8 @@ export async function updateBadgeAction(formData: FormData) {
   const classIds = [...new Set([...rawClassIds, ...(singleClassId ? [singleClassId] : [])])];
 
   if (!badgeId || !name) return { error: "Dados inválidos." };
-  if (!Number.isFinite(xpRequired) || xpRequired < 0) return { error: "XP inválido." };
+  if (!Number.isFinite(xpRequired)) return { error: "XP inválido." };
+  if (!Number.isFinite(coinsReward)) return { error: "Valor de moedas inválido." };
 
   const badge = await prisma.badge.findFirst({
     where: { id: badgeId, schoolId: user.schoolId },
@@ -1784,11 +1789,12 @@ export async function updateBadgeAction(formData: FormData) {
       where: { id: badgeId },
       data: {
         name,
-        description: description || null,
+        description: description || undefined,
         icon,
         xpRequired: Math.floor(xpRequired),
+        coinsReward: Math.floor(coinsReward),
         courseId: courseId ?? undefined,
-        classId: primaryClassId,
+        classId: primaryClassId ?? undefined,
       },
     });
 

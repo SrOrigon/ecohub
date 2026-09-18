@@ -311,17 +311,56 @@ export async function awardClassAttitude(
     if (!enrolled) throw new Error("Esta atitude só pode ser aplicada a alunos das turmas vinculadas.");
   }
 
-  try {
-    await prisma.studentBadge.create({
-      data: { studentId, badgeId },
-    });
-  } catch {
-    throw new Error("Este aluno já recebeu esta atitude.");
-  }
+  const xpDelta = badge.xpRequired;
+  const coinDelta = badge.coinsReward;
 
-  if (badge.xpRequired > 0) {
-    await awardXp(studentId, badge.xpRequired, `Atitude: ${badge.name}`, "badge");
-  }
+  await prisma.$transaction(async (tx) => {
+    const student = await tx.student.findUnique({
+      where: { id: studentId },
+      select: { xpTotal: true, coins: true },
+    });
+    if (!student) throw new Error("Aluno não encontrado.");
+
+    if (coinDelta < 0 && student.coins + coinDelta < 0) {
+      throw new Error("O aluno não possui saldo de moedas suficiente para esta penalidade.");
+    }
+
+    try {
+      await tx.studentBadge.create({
+        data: { studentId, badgeId },
+      });
+    } catch {
+      throw new Error("Este aluno já recebeu esta atitude.");
+    }
+
+    const nextCoins = Math.max(0, student.coins + coinDelta);
+    const nextXp = Math.max(0, student.xpTotal + xpDelta);
+
+    const rules = await getSchoolSettingsForStudent(studentId);
+    const newLevel = calculateLevel(nextXp, rules.xp.xpPerLevel);
+
+    await tx.student.update({
+      where: { id: studentId },
+      data: {
+        xpTotal: nextXp,
+        coins: nextCoins,
+        level: newLevel,
+      },
+    });
+
+    const xpSign = xpDelta >= 0 ? `+${xpDelta}` : `${xpDelta}`;
+    const coinSign = coinDelta >= 0 ? `+${coinDelta}` : `${coinDelta}`;
+    const reasonText = `Atitude: ${badge.name} (${xpSign} XP, ${coinSign} Moedas)`;
+
+    await tx.xpTransaction.create({
+      data: {
+        studentId,
+        amount: xpDelta,
+        reason: reasonText,
+        source: "badge",
+      },
+    });
+  });
 
   return badge;
 }

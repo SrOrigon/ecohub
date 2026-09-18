@@ -96,10 +96,14 @@ export function CreateBadgeForm({
             <Label htmlFor="badge-description">Descrição</Label>
             <Textarea id="badge-description" name="description" placeholder="Critérios para conceder esta atitude ao aluno..." />
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
-              <Label htmlFor="badge-xp">XP ao aplicar</Label>
-              <Input id="badge-xp" name="xpRequired" type="number" min={0} defaultValue={100} />
+              <Label htmlFor="badge-xp">XP (+ / -)</Label>
+              <Input id="badge-xp" name="xpRequired" type="number" defaultValue={100} placeholder="Ex: 100 ou -50" />
+            </div>
+            <div>
+              <Label htmlFor="badge-coins">Moedas (+ / -)</Label>
+              <Input id="badge-coins" name="coinsReward" type="number" defaultValue={20} placeholder="Ex: 20 ou -10" />
             </div>
             <div>
               <Label htmlFor="badge-icon">Ícone</Label>
