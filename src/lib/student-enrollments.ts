@@ -10,7 +10,7 @@ export const ENROLLMENT_STATUSES = [
 
 export type EnrollmentStatus = (typeof ENROLLMENT_STATUSES)[number]["value"];
 
-export const ACTIVE_ENROLLMENT_STATUSES: EnrollmentStatus[] = ["active", "locked"];
+export const ACTIVE_ENROLLMENT_STATUSES: EnrollmentStatus[] = ["active"];
 
 export function enrollmentStatusLabel(status: string) {
   return ENROLLMENT_STATUSES.find((item) => item.value === status)?.label ?? status;
@@ -23,12 +23,15 @@ export function activeEnrollmentWhere(classId?: string): Prisma.StudentClassEnro
   };
 }
 
-/** Alunos matriculados em uma turma (fonte: vínculos + legado classId). */
+/** Alunos matriculados em uma turma (fonte: vínculos ativos + legado classId). */
 export function studentsInClassWhere(classId: string): Prisma.StudentWhereInput {
   return {
     OR: [
-      { classId },
       { classEnrollments: { some: activeEnrollmentWhere(classId) } },
+      {
+        classId,
+        classEnrollments: { none: { classId } },
+      },
     ],
   };
 }

@@ -11,6 +11,7 @@ import {
   type EnrollmentStatus,
 } from "@/lib/student-enrollments";
 import { revalidatePath } from "next/cache";
+import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 
 const ENROLLMENT_ROLES = ["admin", "director", "secretary", "teacher"] as const;
 
@@ -48,6 +49,7 @@ export async function enrollStudentInClassAction(formData: FormData) {
   revalidatePath(`/dashboard/alunos/${studentId}`);
   revalidatePath("/dashboard/turmas");
   revalidatePath("/dashboard/frequencia");
+  invalidateSchoolCaches(user.schoolId);
   return { success: true };
 }
 
@@ -82,6 +84,8 @@ export async function updateStudentEnrollmentStatusAction(formData: FormData) {
   revalidatePath("/dashboard/alunos");
   revalidatePath(`/dashboard/alunos/${studentId}`);
   revalidatePath("/dashboard/turmas");
+  revalidatePath("/dashboard/frequencia");
+  invalidateSchoolCaches(user.schoolId);
   return { success: true };
 }
 
@@ -119,5 +123,6 @@ export async function removeStudentFromClassAction(formData: FormData) {
   revalidatePath(`/dashboard/alunos/${studentId}`);
   revalidatePath("/dashboard/turmas");
   revalidatePath("/dashboard/frequencia");
+  invalidateSchoolCaches(user.schoolId);
   return { success: true };
 }

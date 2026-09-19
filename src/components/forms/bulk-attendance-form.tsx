@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { bulkAttendanceAction } from "@/actions/crud";
+import { useActionState, useEffect, useState } from "react";
+import { bulkAttendanceAction, getClassStudentsAction } from "@/actions/crud";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
@@ -25,6 +25,9 @@ const statusLabels: Record<string, string> = {
 export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }) {
   const [open, setOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState("");
+  const [studentsList, setStudentsList] = useState<{ id: string; name: string }[]>([]);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
+
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean; message?: string } | null, formData: FormData) => {
       const result = await bulkAttendanceAction(formData);
@@ -35,14 +38,60 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
   );
 
   const today = useToday();
-  const classData = classes.find((c) => c.id === selectedClass);
+
+  useEffect(() => {
+    if (!open || !selectedClass) {
+      return;
+    }
+
+    let isMounted = true;
+
+    getClassStudentsAction(selectedClass)
+      .then((res) => {
+        if (isMounted) {
+          if (res.success && res.students) {
+            setStudentsList(res.students);
+          } else {
+            const fallback = classes.find((c) => c.id === selectedClass)?.students ?? [];
+            setStudentsList(fallback);
+          }
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          const fallback = classes.find((c) => c.id === selectedClass)?.students ?? [];
+          setStudentsList(fallback);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingStudents(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [open, selectedClass, classes]);
+
+  function handleOpen() {
+    setOpen(true);
+    if (selectedClass) {
+      setIsLoadingStudents(true);
+    }
+  }
+
+  function handleClose() {
+    setOpen(false);
+    setSelectedClass("");
+    setStudentsList([]);
+    setIsLoadingStudents(false);
+  }
 
   return (
     <>
-      <Button variant="secondary" onClick={() => setOpen(true)} className="w-full sm:w-auto">
+      <Button variant="secondary" onClick={handleOpen} className="w-full sm:w-auto">
         Chamada por turma
       </Button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Chamada em lote">
+      <Modal open={open} onClose={handleClose} title="Chamada em lote">
         <form action={formAction} className="space-y-4">
           <div>
             <Label htmlFor="bulk-date">Data</Label>
@@ -55,27 +104,38 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
               name="classId"
               required
               value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
+              onChange={(e) => {
+                const cid = e.target.value;
+                setSelectedClass(cid);
+                setStudentsList([]);
+                if (cid) setIsLoadingStudents(true);
+              }}
             >
               <option value="">Selecione a turma...</option>
               {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name} ({c.students.length} alunos)</option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </Select>
           </div>
 
-          {classData && (
+          {selectedClass !== "" && (
             <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border p-3">
-              {classData.students.map((s) => (
-                <div key={s.id} className="flex flex-col gap-2 rounded-lg border border-slate-100 p-2 text-sm sm:flex-row sm:items-center sm:justify-between">
-                  <span className="min-w-0 truncate font-medium">{s.name}</span>
-                  <Select name={`status_${s.id}`} defaultValue="present" className="min-h-11 w-full shrink-0 text-base sm:w-36">
-                    {ATTENDANCE_STATUSES.map((st) => (
-                      <option key={st} value={st}>{statusLabels[st]}</option>
-                    ))}
-                  </Select>
-                </div>
-              ))}
+              {isLoadingStudents ? (
+                <p className="py-4 text-center text-xs text-slate-500">Carregando alunos da turma...</p>
+              ) : studentsList.length === 0 ? (
+                <p className="py-4 text-center text-xs text-slate-500">Nenhum aluno ativo nesta turma.</p>
+              ) : (
+                studentsList.map((s) => (
+                  <div key={s.id} className="flex flex-col gap-2 rounded-lg border border-slate-100 p-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                    <span className="min-w-0 truncate font-medium">{s.name}</span>
+                    <Select name={`status_${s.id}`} defaultValue="present" className="min-h-11 w-full shrink-0 text-base sm:w-36">
+                      {ATTENDANCE_STATUSES.map((st) => (
+                        <option key={st} value={st}>{statusLabels[st]}</option>
+                      ))}
+                    </Select>
+                  </div>
+                ))
+              )}
             </div>
           )}
 

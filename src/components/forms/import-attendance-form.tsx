@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { importAttendanceBatchAction } from "@/actions/crud";
+import { useActionState, useEffect, useState } from "react";
+import { getClassStudentsAction, importAttendanceBatchAction } from "@/actions/crud";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
@@ -27,20 +27,66 @@ export function ImportAttendanceForm({ classes }: { classes: ClassOption[] }) {
   const [csvText, setCsvText] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [quickDate, setQuickDate] = useState("");
+  const [studentsList, setStudentsList] = useState<{ id: string; name: string }[]>([]);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
+
+  useEffect(() => {
+    if (!open || mode !== "quick" || !selectedClass) {
+      return;
+    }
+
+    let isMounted = true;
+
+    getClassStudentsAction(selectedClass)
+      .then((res) => {
+        if (isMounted) {
+          if (res.success && res.students) {
+            setStudentsList(res.students);
+          } else {
+            const fallback = classes.find((c) => c.id === selectedClass)?.students ?? [];
+            setStudentsList(fallback);
+          }
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          const fallback = classes.find((c) => c.id === selectedClass)?.students ?? [];
+          setStudentsList(fallback);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingStudents(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [open, mode, selectedClass, classes]);
+
+  function handleOpen() {
+    setOpen(true);
+    if (mode === "quick" && selectedClass) {
+      setIsLoadingStudents(true);
+    }
+  }
+
+  function handleClose() {
+    setOpen(false);
+    setSelectedClass("");
+    setStudentsList([]);
+    setIsLoadingStudents(false);
+  }
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean; message?: string } | null, formData: FormData) => {
       if (mode === "quick" && selectedClass && quickDate) {
-        const classData = classes.find((c) => c.id === selectedClass);
-        if (classData) {
-          const rows = classData.students.map((s) => ({
-            date: quickDate,
-            studentId: s.id,
-            classId: selectedClass,
-            status: String(formData.get(`status_${s.id}`) ?? "present"),
-          }));
-          formData.set("payload", JSON.stringify(rows));
-        }
+        const rows = studentsList.map((s) => ({
+          date: quickDate,
+          studentId: s.id,
+          classId: selectedClass,
+          status: String(formData.get(`status_${s.id}`) ?? "present"),
+        }));
+        formData.set("payload", JSON.stringify(rows));
       }
       const result = await importAttendanceBatchAction(formData);
       if (result.success) {
@@ -71,14 +117,12 @@ ${todayStr},aluno3@escola.com,late`;
     reader.readAsText(file);
   }
 
-  const selectedClassObj = classes.find((c) => c.id === selectedClass);
-
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)} className="w-full sm:w-auto">
+      <Button variant="outline" onClick={handleOpen} className="w-full sm:w-auto">
         Importar Histórico
       </Button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Lançamento Retroativo / Importação de Frequência">
+      <Modal open={open} onClose={handleClose} title="Lançamento Retroativo / Importação de Frequência">
         <div className="mb-4 flex gap-2 border-b pb-3">
           <Button
             type="button"
@@ -156,35 +200,46 @@ ${todayStr},aluno3@escola.com,late`;
                 <Select
                   id="quick-class"
                   value={selectedClass}
-                  onChange={(e) => setSelectedClass(e.target.value)}
+                  onChange={(e) => {
+                    const cid = e.target.value;
+                    setSelectedClass(cid);
+                    setStudentsList([]);
+                    if (cid) setIsLoadingStudents(true);
+                  }}
                   required
                 >
                   <option value="">Selecione a turma...</option>
                   {classes.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} ({c.students.length} alunos)
+                      {c.name}
                     </option>
                   ))}
                 </Select>
               </div>
 
-              {selectedClassObj && (
+              {selectedClass !== "" && (
                 <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border p-3">
-                  {selectedClassObj.students.map((s) => (
-                    <div
-                      key={s.id}
-                      className="flex flex-col gap-2 rounded border border-slate-100 p-2 text-sm sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <span className="truncate font-medium">{s.name}</span>
-                      <Select name={`status_${s.id}`} defaultValue="present" className="w-full text-xs sm:w-36">
-                        {ATTENDANCE_STATUSES.map((st) => (
-                          <option key={st} value={st}>
-                            {statusLabels[st]}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-                  ))}
+                  {isLoadingStudents ? (
+                    <p className="py-4 text-center text-xs text-slate-500">Carregando alunos da turma...</p>
+                  ) : studentsList.length === 0 ? (
+                    <p className="py-4 text-center text-xs text-slate-500">Nenhum aluno ativo nesta turma.</p>
+                  ) : (
+                    studentsList.map((s) => (
+                      <div
+                        key={s.id}
+                        className="flex flex-col gap-2 rounded border border-slate-100 p-2 text-sm sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <span className="truncate font-medium">{s.name}</span>
+                        <Select name={`status_${s.id}`} defaultValue="present" className="w-full text-xs sm:w-36">
+                          {ATTENDANCE_STATUSES.map((st) => (
+                            <option key={st} value={st}>
+                              {statusLabels[st]}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>

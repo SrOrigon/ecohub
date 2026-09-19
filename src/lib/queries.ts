@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { cache } from "react";
 import type { SessionUser } from "@/lib/auth";
 import { teacherClassWhere } from "@/lib/teacher-classes";
-import { studentInClassFilter } from "@/lib/student-enrollments";
+import { activeEnrollmentWhere, studentInClassFilter } from "@/lib/student-enrollments";
 import { CACHE_TTL, cacheGetOrSet } from "@/lib/runtime-cache";
 import { sortByTextPt, sortStudentsByName, sortTeachersByName } from "@/lib/sort-order";
 
@@ -539,20 +539,27 @@ export async function getClasses(schoolId: string | null, teacherId?: string) {
   const sortClassRoster = <
     T extends {
       name: string;
-      students: Array<{ user: { fullName: string } }>;
-      enrollments?: Array<{ student: { user: { fullName: string } } }>;
+      students: Array<{ id: string; user: { fullName: string; avatarUrl?: string | null } }>;
+      enrollments?: Array<{ student: { id: string; user: { fullName: string; avatarUrl?: string | null } } }>;
     },
   >(
     classes: T[]
   ) =>
     sortByTextPt(
-      classes.map((turma) => ({
-        ...turma,
-        students: sortByTextPt(turma.students, (student) => student.user.fullName),
-        enrollments: turma.enrollments
-          ? sortByTextPt(turma.enrollments, (enrollment) => enrollment.student.user.fullName)
-          : turma.enrollments,
-      })),
+      classes.map((turma) => {
+        const enrolledStudents = (turma.enrollments ?? []).map((e) => e.student);
+        const enrolledIds = new Set(enrolledStudents.map((s) => s.id));
+        const legacyStudents = turma.students.filter((s) => !enrolledIds.has(s.id));
+        const combinedStudents = sortByTextPt([...enrolledStudents, ...legacyStudents], (s) => s.user.fullName);
+
+        return {
+          ...turma,
+          students: combinedStudents,
+          enrollments: turma.enrollments
+            ? sortByTextPt(turma.enrollments, (enrollment) => enrollment.student.user.fullName)
+            : turma.enrollments,
+        };
+      }),
       (turma) => turma.name
     );
 
@@ -562,7 +569,7 @@ export async function getClasses(schoolId: string | null, teacherId?: string) {
       include: {
         ...baseInclude,
         enrollments: {
-          where: { status: { in: ["active", "locked"] } },
+          where: activeEnrollmentWhere(),
           include: {
             student: {
               select: {
@@ -575,7 +582,7 @@ export async function getClasses(schoolId: string | null, teacherId?: string) {
         _count: {
           select: {
             students: true,
-            enrollments: { where: { status: { in: ["active", "locked"] } } },
+            enrollments: { where: activeEnrollmentWhere() },
           },
         },
       },

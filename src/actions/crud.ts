@@ -47,6 +47,7 @@ import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 import { formatCrudError } from "@/lib/action-errors";
 import { userExistsByEmail } from "@/lib/user-lookup";
 import { findUserByEmailForLogin } from "@/lib/auth-credentials";
+import { sortStudentsByName } from "@/lib/sort-order";
 
 function revalidatePaths(paths: string[]) {
   for (const p of paths) revalidatePath(p);
@@ -873,6 +874,34 @@ export async function completeMissionAction(formData: FormData) {
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Erro ao concluir missão." };
   }
+}
+
+export async function getClassStudentsAction(classId: string) {
+  const user = await requireSession(["admin", "director", "secretary", "teacher"]);
+  if (!user.schoolId) return { error: "Escola não configurada.", students: [] };
+  if (!classId) return { error: "Selecione uma turma.", students: [] };
+
+  const scope = await assertClassInScope(user, classId);
+  if (!scope.ok) return { error: scope.error, students: [] };
+
+  const students = await prisma.student.findMany({
+    where: {
+      ...studentsInClassWhere(classId),
+      user: { schoolId: user.schoolId },
+    },
+    select: {
+      id: true,
+      user: { select: { fullName: true } },
+    },
+    orderBy: { user: { fullName: "asc" } },
+  });
+
+  const formatted = sortStudentsByName(students).map((s) => ({
+    id: s.id,
+    name: s.user.fullName,
+  }));
+
+  return { success: true, students: formatted };
 }
 
 export async function bulkAttendanceAction(formData: FormData) {
