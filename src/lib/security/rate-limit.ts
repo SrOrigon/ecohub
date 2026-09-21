@@ -29,14 +29,16 @@ export function rateLimitMessage(retryAfterSec: number): string {
   return `Muitas tentativas. Aguarde ${minutes} minuto(s) e tente novamente.`;
 }
 
-/** Rate limit por IP + identificador (e-mail, matrícula, etc.). */
+/** Rate limit por IP + identificador (e-mail, matrícula, etc.) e opcionalmente por escola. */
 export async function enforceRateLimit(
   namespace: string,
   identifier: string,
-  opts: { limit: number; windowMs: number }
+  opts: { limit: number; windowMs: number },
+  schoolId?: string | null
 ): Promise<void> {
   const ip = await getClientIp();
-  const key = `${namespace}:${ip}:${identifier.toLowerCase().slice(0, 256)}`;
+  const schoolKey = schoolId ? `:school:${schoolId}` : "";
+  const key = `${namespace}:${ip}${schoolKey}:${identifier.toLowerCase().slice(0, 256)}`;
   const now = Date.now();
   cleanupExpired(now);
 
@@ -53,10 +55,31 @@ export async function enforceRateLimit(
   bucket.count += 1;
 }
 
+/** Bloqueio estrito de máximo 5 tentativas por minuto para rotas sensíveis. */
+export const STRICT_SENSITIVE_LIMIT = {
+  limit: 5,
+  windowMs: 60 * 1000, // 1 minuto
+} as const;
+
+export async function enforceStrictSensitiveLimit(
+  namespace: string,
+  identifier: string,
+  schoolId?: string | null
+): Promise<void> {
+  return enforceRateLimit(
+    `strict_${namespace}`,
+    identifier,
+    STRICT_SENSITIVE_LIMIT,
+    schoolId
+  );
+}
+
 export const AUTH_RATE_LIMIT = {
   login: { limit: 5, windowMs: 15 * 60 * 1000 },
   pinLogin: { limit: 5, windowMs: 15 * 60 * 1000 },
   register: { limit: 3, windowMs: 60 * 60 * 1000 },
   inviteAccept: { limit: 5, windowMs: 15 * 60 * 1000 },
   cnpjLookup: { limit: 10, windowMs: 60 * 60 * 1000 },
+  passwordReset: STRICT_SENSITIVE_LIMIT,
+  gradeMutation: STRICT_SENSITIVE_LIMIT,
 } as const;

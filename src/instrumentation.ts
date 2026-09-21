@@ -18,3 +18,28 @@ export async function register() {
     }
   }
 }
+
+export async function onRequestError(
+  error: { digest?: string } & Error,
+  request: {
+    path: string;
+    method: string;
+    headers: Record<string, string>;
+  },
+  context: {
+    routerKind: "Pages Router" | "App Router";
+    routePath: string;
+    routeType: "render" | "action" | "middleware";
+  }
+) {
+  console.error("[telemetry-exception]", {
+    path: request.path,
+    method: request.method,
+    routePath: context.routePath,
+    routeType: context.routeType,
+    errorMessage: error.message,
+    errorDigest: error.digest,
+    stack: error.stack,
+    timestamp: new Date().toISOString(),
+  });
+}
