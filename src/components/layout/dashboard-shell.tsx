@@ -12,6 +12,7 @@ import { LiveToast } from "@/components/notifications/live-toast";
 import { CreatorJourneyCelebration } from "@/components/creator/creator-journey-celebration";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { ConnectivityBanner } from "@/components/layout/connectivity-banner";
 import { isKidFriendlyRole, type UserRole } from "@/lib/constants";
 import type { SchoolSettings } from "@/lib/school-settings";
 
@@ -84,6 +85,7 @@ export function DashboardShell({
       />
 
       <div className="app-content">
+        <ConnectivityBanner />
         <Header
           userName={userName}
           schoolName={schoolName}

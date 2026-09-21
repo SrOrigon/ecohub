@@ -70,7 +70,11 @@ export function RecordAttendanceForm({ students }: { students: StudentOption[] }
               ))}
             </Select>
           </div>
-          {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state?.error && (
+            <div className="rounded-md bg-red-50 p-3 text-sm font-medium text-red-600 border border-red-200">
+              {state.error}
+            </div>
+          )}
           <Button type="submit" disabled={pending || !classId} className="w-full">
             {pending ? "Salvando..." : "Registrar"}
           </Button>
