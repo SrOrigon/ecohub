@@ -38,6 +38,8 @@ model School {
   studentProjects StudentProject[]
   auditLogs AuditLog[]
   invoices Invoice[]
+  paymentConfigs SchoolPaymentConfig[]
+  studentInvoices StudentInvoice[]
 }
 
 model User {
@@ -93,6 +95,7 @@ model User {
   documentsIssued IssuedDocument[] @relation("DocIssuer")
   enrollmentReviews EnrollmentApplication[] @relation("EnrollmentReviewer")
   chatThreadsAsParent ChatThread[] @relation("ChatParent")
+  verifiedInvoices StudentInvoice[] @relation("VerifiedInvoices")
 
   @@index([schoolId])
   @@index([schoolId, role])
@@ -217,6 +220,7 @@ model Student {
   challengedMatches DuelMatch[] @relation("ChallengedStudent")
   projects          StudentProject[]
   invoices          Invoice[]
+  studentInvoices   StudentInvoice[]
 
   @@index([classId])
 }
@@ -1060,4 +1064,56 @@ model Invoice {
   @@index([schoolId, status])
   @@index([studentId, status])
   @@index([externalInvoiceId])
+}
+
+model SchoolPaymentConfig {
+  id                 String   @id @default(cuid())
+  schoolId           String   @unique
+  providerType       String   @default("MANUAL_PIX") // MANUAL_PIX, MANUAL_BANK_TRANSFER, ASAAS, MERCADO_PAGO, EFI_BANK, CUSTOM_INSTRUCTIONS
+  isActive           Boolean  @default(true)
+  pixKey             String?
+  pixKeyType         String?  // CPF, CNPJ, EMAIL, PHONE, RANDOM
+  beneficiaryName    String?
+  bankName           String?
+  encryptedApiKey    String?
+  encryptedApiSecret String?
+  webhookSecret      String?
+  instructions       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  school             School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  studentInvoices    StudentInvoice[]
+
+  @@index([providerType])
+}
+
+model StudentInvoice {
+  id                 String    @id @default(cuid())
+  schoolId           String
+  studentId          String
+  title              String
+  amountCents        Int
+  dueDate            DateTime
+  status             String    @default("PENDING") // PENDING, AWAITING_CONFIRMATION, PAID, OVERDUE, CANCELED, REFUNDED
+  paymentMethodId    String?
+  pixQrCodeBase64    String?
+  pixCopyPaste       String?
+  externalInvoiceId  String?
+  proofAttachmentUrl String?
+  proofUploadedAt    DateTime?
+  paidAt             DateTime?
+  verifiedByUserId   String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  school             School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student            Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  paymentConfig      SchoolPaymentConfig? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  verifiedByUser     User?                @relation("VerifiedInvoices", fields: [verifiedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([schoolId, status])
+  @@index([studentId, status])
+  @@index([externalInvoiceId])
+  @@index([paymentMethodId])
 }
