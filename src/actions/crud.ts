@@ -343,10 +343,12 @@ export async function updateClassAction(formData: FormData) {
     .filter(Boolean);
   const uniqueCoTeachers = [...new Set(coTeacherIds)].filter((id) => id !== teacherId);
 
-  const staffOk = await assertTeachersInSchool(
-    user.schoolId,
-    [teacherId, ...uniqueCoTeachers].filter((id): id is string => !!id)
-  );
+  const staffToVerify =
+    user.role === "teacher"
+      ? [teacherId].filter((id): id is string => !!id)
+      : [teacherId, ...uniqueCoTeachers].filter((id): id is string => !!id);
+
+  const staffOk = await assertTeachersInSchool(user.schoolId, staffToVerify);
   if (!staffOk) return { error: "Professor inválido para esta instituição." };
 
   await prisma.$transaction(async (tx) => {
@@ -1226,6 +1228,9 @@ export async function updateStudentAction(formData: FormData) {
   });
   if (!student) return { error: "Aluno não encontrado." };
 
+  const studentScope = await assertStudentInScope(user, studentId);
+  if (!studentScope.ok) return { error: studentScope.error };
+
   if (classId) {
     const scope = await assertClassInScope(user, classId);
     if (!scope.ok) return { error: scope.error };
@@ -1262,8 +1267,10 @@ export async function updateStudentAction(formData: FormData) {
     if (existingUsername) return { error: "Nome de usuário já está em uso." };
   }
 
+  const canManageAdminFields = ["admin", "director", "secretary"].includes(user.role);
+
   let nextEmail = student.user.email;
-  if (email && email !== student.user.email) {
+  if (canManageAdminFields && email && email !== student.user.email) {
     const existingEmail = await userExistsByEmail(email, student.userId);
     if (existingEmail) return { error: "E-mail já cadastrado." };
     nextEmail = email;
@@ -1286,7 +1293,7 @@ export async function updateStudentAction(formData: FormData) {
     ...profile.data,
   };
 
-  if (password) {
+  if (canManageAdminFields && password) {
     const passwordCheck = validatePassword(password);
     if (!passwordCheck.ok) return { error: passwordCheck.error };
     userUpdate.passwordHash = await hashPassword(password);
@@ -1301,7 +1308,11 @@ export async function updateStudentAction(formData: FormData) {
       where: { id: studentId },
       data: {
         birthDate,
-        status: String(formData.get("status") ?? student.status) === "inactive" ? "inactive" : "active",
+        status: canManageAdminFields
+          ? String(formData.get("status") ?? student.status) === "inactive"
+            ? "inactive"
+            : "active"
+          : student.status,
       },
     }),
   ]);

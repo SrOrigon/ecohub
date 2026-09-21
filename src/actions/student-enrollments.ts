@@ -34,8 +34,14 @@ export async function enrollStudentInClassAction(formData: FormData) {
   const scope = await assertClassInScope(user, classId);
   if (!scope.ok) return { error: scope.error };
 
-  const studentScope = await assertStudentInScope(user, studentId);
-  if (!studentScope.ok) return { error: studentScope.error };
+  const student = await prisma.student.findFirst({
+    where: {
+      id: studentId,
+      user: { schoolId: user.schoolId },
+    },
+    select: { id: true },
+  });
+  if (!student) return { error: "Aluno não encontrado nesta instituição." };
 
   const turma = await prisma.classGroup.findFirst({
     where: { id: classId, schoolId: user.schoolId },

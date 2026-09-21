@@ -37,6 +37,7 @@ export function StudentEnrollmentsManager({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [pickedClassId, setPickedClassId] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const enrolledClassIds = new Set(enrollments.map((item) => item.classId));
   const availableClasses = sortByTextPt(
@@ -45,24 +46,34 @@ export function StudentEnrollmentsManager({
   );
 
   function enroll(classId: string) {
+    setErrorMessage(null);
     const formData = new FormData();
     formData.set("studentId", studentId);
     formData.set("classId", classId);
     startTransition(async () => {
-      await enrollStudentInClassAction(formData);
-      setPickedClassId("");
-      router.refresh();
+      const result = await enrollStudentInClassAction(formData);
+      if (result?.error) {
+        setErrorMessage(result.error);
+      } else {
+        setPickedClassId("");
+        router.refresh();
+      }
     });
   }
 
   function updateStatus(classId: string, status: string) {
+    setErrorMessage(null);
     const formData = new FormData();
     formData.set("studentId", studentId);
     formData.set("classId", classId);
     formData.set("status", status);
     startTransition(async () => {
-      await updateStudentEnrollmentStatusAction(formData);
-      router.refresh();
+      const result = await updateStudentEnrollmentStatusAction(formData);
+      if (result?.error) {
+        setErrorMessage(result.error);
+      } else {
+        router.refresh();
+      }
     });
   }
 
@@ -70,12 +81,17 @@ export function StudentEnrollmentsManager({
     const confirmed = window.confirm(`Remover este aluno da turma "${className}"?`);
     if (!confirmed) return;
 
+    setErrorMessage(null);
     const formData = new FormData();
     formData.set("studentId", studentId);
     formData.set("classId", classId);
     startTransition(async () => {
-      await removeStudentFromClassAction(formData);
-      router.refresh();
+      const result = await removeStudentFromClassAction(formData);
+      if (result?.error) {
+        setErrorMessage(result.error);
+      } else {
+        router.refresh();
+      }
     });
   }
 
@@ -88,6 +104,7 @@ export function StudentEnrollmentsManager({
   if (compact) {
     return (
       <div className="space-y-2">
+        {errorMessage && <p className="text-sm font-medium text-red-600">{errorMessage}</p>}
         <div
           className="flex max-h-[calc(2.75rem*5+0.5rem)] flex-wrap gap-1 overflow-y-auto overscroll-contain pr-1"
         >
@@ -135,6 +152,11 @@ export function StudentEnrollmentsManager({
 
   return (
     <div className="space-y-4">
+      {errorMessage && (
+        <div className="rounded-md bg-red-50 p-3 text-sm font-medium text-red-600">
+          {errorMessage}
+        </div>
+      )}
       <div className="space-y-2">
         {sortedEnrollments.length === 0 ? (
           <p className="text-sm text-slate-500">Nenhuma turma ou curso vinculado a este aluno.</p>

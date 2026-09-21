@@ -68,7 +68,11 @@ export function EditStudentForm({
             />
             <p className="mt-1 text-xs text-slate-500">A senha é armazenada apenas como hash seguro, nunca em texto puro.</p>
           </div>
-          {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state?.error && (
+            <div className="rounded-md bg-red-50 p-3 text-sm font-medium text-red-600 border border-red-200">
+              {state.error}
+            </div>
+          )}
           {state?.success && <p className="text-sm text-emerald-600">Atualizado!</p>}
           <Button type="submit" disabled={pending} className="w-full">
             {pending ? "Salvando..." : "Salvar perfil"}
