@@ -68,6 +68,9 @@ export type InstitutionalReport = {
     totalXp: number;
     exerciseSubmissions: number;
     overallPrecision: number;
+    dropoutRiskRate: number;
+    bnccCoverageRate: number;
+    familyEngagementIndex: number;
   };
   subjects: ReportSubjectDetail[];
   students: ReportStudentRow[];
@@ -198,6 +201,34 @@ export async function getInstitutionalReport(
     }))
   );
 
+  // Executive KPIs
+  const studentsAtRisk = reportStudents.filter((s) => {
+    const lowAttendance = s.attendanceRate !== null && s.attendanceRate < 75;
+    const lowAverage = s.overallAverage !== null && s.overallAverage < Math.max(1, passGrade - 2);
+    return lowAttendance || lowAverage;
+  }).length;
+  const dropoutRiskRate = reportStudents.length > 0 ? Math.round((studentsAtRisk / reportStudents.length) * 100) : 0;
+
+  const [totalExercisesCount, completedExerciseSubmissions, totalTrailsCount, completedTrailSteps, totalParentLinks, readAnnouncementsCount] = await Promise.all([
+    prisma.exercise.count({ where: { schoolId } }),
+    prisma.exerciseSubmission.count({ where: { exercise: { schoolId } } }),
+    prisma.learningTrail.count({ where: { schoolId } }),
+    prisma.studentTrailProgress.count({ where: { trail: { schoolId } } }),
+    prisma.parentStudent.count({ where: { student: { user: { schoolId } } } }),
+    prisma.announcementRead.count({ where: { announcement: { schoolId } } }),
+  ]);
+
+  const totalPlannedActivities = totalExercisesCount + totalTrailsCount || 1;
+  const totalCompletedActivities = completedExerciseSubmissions + completedTrailSteps;
+  const bnccCoverageRate = Math.min(
+    100,
+    Math.round((totalCompletedActivities / (totalPlannedActivities * Math.max(1, overview.totalStudents))) * 100)
+  );
+
+  const familyEngagementIndex = totalParentLinks > 0
+    ? Math.min(100, Math.round((readAnnouncementsCount / Math.max(1, totalParentLinks * 2)) * 100))
+    : 0;
+
   const classes: ReportClassRow[] = overview.classes
     .filter((c) => {
       if (!options?.teacherId) return true;
@@ -231,6 +262,9 @@ export async function getInstitutionalReport(
       totalXp: overview.totalXpAwarded,
       exerciseSubmissions: overview.exerciseSubmissions,
       overallPrecision: precision.overallPrecision,
+      dropoutRiskRate,
+      bnccCoverageRate,
+      familyEngagementIndex,
     },
     subjects,
     students: reportStudents,

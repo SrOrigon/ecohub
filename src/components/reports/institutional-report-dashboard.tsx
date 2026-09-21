@@ -11,7 +11,12 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronRight,
+  AlertTriangle,
+  Award,
+  HeartHandshake,
+  Mail,
 } from "lucide-react";
+import { scheduleWeeklyExecutiveReportAction } from "@/actions/reports";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +32,7 @@ type Tab = "summary" | "subjects" | "students" | "matrix";
 
 const EXPORT_OPTIONS: { kind: ReportExportKind; label: string; description: string }[] = [
   { kind: "full", label: "Relatório completo", description: "Todas as seções em um arquivo" },
+  { kind: "censo-escolar", label: "Mapa Censo Escolar (MEC/INEP)", description: "Padrão ministerial consolidado" },
   { kind: "summary", label: "Resumo", description: "Indicadores institucionais" },
   { kind: "subjects", label: "Disciplinas", description: "Precisão e desempenho por matéria" },
   { kind: "students", label: "Alunos", description: "Lista geral de alunos" },
@@ -38,6 +44,21 @@ export function InstitutionalReportDashboard({ report }: { report: Institutional
   const [tab, setTab] = useState<Tab>("summary");
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [scheduleStatus, setScheduleStatus] = useState<string | null>(null);
+  const [scheduling, setScheduling] = useState(false);
+
+  async function handleScheduleEmail() {
+    setScheduling(true);
+    try {
+      const res = await scheduleWeeklyExecutiveReportAction();
+      if (res.error) setScheduleStatus(`Erro: ${res.error}`);
+      else setScheduleStatus(res.message ?? "Agendado com sucesso!");
+    } catch {
+      setScheduleStatus("Falha ao agendar e-mail.");
+    } finally {
+      setScheduling(false);
+    }
+  }
 
   const generatedLabel = useMemo(
     () => new Date(report.generatedAt).toLocaleString("pt-BR"),
@@ -95,8 +116,24 @@ export function InstitutionalReportDashboard({ report }: { report: Institutional
             <Download className="h-4 w-4" aria-hidden="true" />
             Baixar completo
           </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full gap-2 sm:w-auto text-indigo-700 bg-indigo-50 border-indigo-200"
+            onClick={handleScheduleEmail}
+            disabled={scheduling}
+          >
+            <Mail className="h-4 w-4" aria-hidden="true" />
+            {scheduling ? "Agendando..." : "Agendar Relatório Semanal"}
+          </Button>
         </div>
       </div>
+
+      {scheduleStatus && (
+        <div className="rounded-lg bg-indigo-50 p-3 text-xs font-medium text-indigo-800 border border-indigo-200">
+          {scheduleStatus}
+        </div>
+      )}
 
       <div className="print-only hidden print:block mb-4 border-b pb-4">
         <h1 className="text-2xl font-bold">Relatório institucional  -  {report.schoolName}</h1>
@@ -161,6 +198,28 @@ function SummarySection({ report }: { report: InstitutionalReport }) {
         <StatCard icon={GraduationCap} label="Turmas" value={String(s.totalClasses)} />
         <StatCard icon={BookOpen} label="Média geral" value={s.averageGrade.toFixed(1)} sub={`Meta ${report.passGrade}`} />
         <StatCard icon={BookOpen} label="Saúde pedagógica" value={`${s.healthScore}`} sub={s.healthLabel} />
+      </div>
+
+      {/* KPIs Executivos Avançados */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          icon={AlertTriangle}
+          label="Risco de Evasão / Abandono"
+          value={`${s.dropoutRiskRate}%`}
+          sub="Presença <75% ou nota <5.0"
+        />
+        <StatCard
+          icon={Award}
+          label="Cobertura de Habilidades BNCC"
+          value={`${s.bnccCoverageRate}%`}
+          sub="Trilhas & Exercícios concluídos"
+        />
+        <StatCard
+          icon={HeartHandshake}
+          label="Engajamento Familiar"
+          value={`${s.familyEngagementIndex}%`}
+          sub="Atividade & comunicados lidos"
+        />
       </div>
       <Card>
         <CardHeader>

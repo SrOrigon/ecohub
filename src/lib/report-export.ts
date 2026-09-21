@@ -27,6 +27,7 @@ export type ReportExportKind =
   | "students"
   | "student-subjects"
   | "classes"
+  | "censo-escolar"
   | "full";
 
 export function buildReportCsv(report: InstitutionalReport, kind: ReportExportKind): {
@@ -167,10 +168,47 @@ export function buildReportCsv(report: InstitutionalReport, kind: ReportExportKi
         ),
       };
 
+    case "censo-escolar":
+      return {
+        filename: `censo-escolar-ministerial-${slug}-${dateStamp}.csv`,
+        mime: "text/csv;charset=utf-8",
+        content: rowsToCsv(
+          [
+            "COD_INSTITUICAO",
+            "NOME_INSTITUICAO",
+            "COD_ALUNO_MATRICULA",
+            "NOME_COMPLETO_ALUNO",
+            "TURMA_SÉRIE",
+            "E_MAIL_ALUNO",
+            "FREQUENCIA_GLOBAL_PERCENTUAL",
+            "MEDIA_GERAL_DESEMPENHO",
+            "PONTUACAO_XP_TOTAL",
+            "SITUACAO_MATRICULA_DISCIPLINA",
+            "DISCIPLINAS_CURSADAS_DETALHE",
+          ],
+          report.students.map((s) => [
+            report.schoolName,
+            report.schoolName,
+            s.enrollmentCode,
+            s.name,
+            s.className,
+            s.email || "NÃO INFORMADO",
+            s.attendanceRate !== null ? `${s.attendanceRate}%` : "100%",
+            s.overallAverage !== null ? s.overallAverage.toFixed(1) : "-",
+            s.xpTotal,
+            s.approvalStatus,
+            s.subjects.map((sub) => `${sub.subject}: ${sub.average} (${sub.status})`).join(" | "),
+          ])
+        ),
+      };
+
     case "full": {
       const sections = [
         "=== RESUMO INSTITUCIONAL ===",
         buildReportCsv(report, "summary").content.replace(UTF8_BOM, ""),
+        "",
+        "=== MAPA PADRÃO CENSO ESCOLAR ===",
+        buildReportCsv(report, "censo-escolar").content.replace(UTF8_BOM, ""),
         "",
         "=== DISCIPLINAS ===",
         buildReportCsv(report, "subjects").content.replace(UTF8_BOM, ""),
