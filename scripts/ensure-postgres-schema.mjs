@@ -129,6 +129,77 @@ const TABLE_PATCHES = [
     CONSTRAINT "StudentProject_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "StudentProject_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student" ("id") ON DELETE CASCADE ON UPDATE CASCADE
   )`,
+  `CREATE TABLE IF NOT EXISTS "AuditLog" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "schoolId" TEXT,
+    "actorId" TEXT NOT NULL,
+    "actorRole" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "entityType" TEXT NOT NULL,
+    "entityId" TEXT,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "diffBefore" TEXT DEFAULT '{}',
+    "diffAfter" TEXT DEFAULT '{}',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AuditLog_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS "Invoice" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "schoolId" TEXT NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "amountCents" INTEGER NOT NULL,
+    "dueDate" TIMESTAMP(3) NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "pixQrCode" TEXT,
+    "pixCopyPaste" TEXT,
+    "externalInvoiceId" TEXT,
+    "paidAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Invoice_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "Invoice_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS "SchoolPaymentConfig" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "schoolId" TEXT NOT NULL UNIQUE,
+    "providerType" TEXT NOT NULL DEFAULT 'MANUAL_PIX',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "pixKey" TEXT,
+    "pixKeyType" TEXT,
+    "beneficiaryName" TEXT,
+    "bankName" TEXT,
+    "encryptedApiKey" TEXT,
+    "encryptedApiSecret" TEXT,
+    "webhookSecret" TEXT,
+    "instructions" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "SchoolPaymentConfig_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS "StudentInvoice" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "schoolId" TEXT NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "amountCents" INTEGER NOT NULL,
+    "dueDate" TIMESTAMP(3) NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "paymentMethodId" TEXT,
+    "pixQrCodeBase64" TEXT,
+    "pixCopyPaste" TEXT,
+    "externalInvoiceId" TEXT,
+    "proofAttachmentUrl" TEXT,
+    "proofUploadedAt" TIMESTAMP(3),
+    "paidAt" TIMESTAMP(3),
+    "verifiedByUserId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "StudentInvoice_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "StudentInvoice_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "StudentInvoice_paymentMethodId_fkey" FOREIGN KEY ("paymentMethodId") REFERENCES "SchoolPaymentConfig" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "StudentInvoice_verifiedByUserId_fkey" FOREIGN KEY ("verifiedByUserId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+  )`,
 ];
 
 const INDEX_PATCHES = [
@@ -144,6 +215,18 @@ const INDEX_PATCHES = [
   `CREATE INDEX IF NOT EXISTS "RewardRedemption_status_idx" ON "RewardRedemption"("status")`,
   `CREATE INDEX IF NOT EXISTS "StudentProject_schoolId_idx" ON "StudentProject"("schoolId")`,
   `CREATE INDEX IF NOT EXISTS "StudentProject_studentId_idx" ON "StudentProject"("studentId")`,
+  `CREATE INDEX IF NOT EXISTS "AuditLog_schoolId_createdAt_idx" ON "AuditLog"("schoolId", "createdAt")`,
+  `CREATE INDEX IF NOT EXISTS "AuditLog_actorId_idx" ON "AuditLog"("actorId")`,
+  `CREATE INDEX IF NOT EXISTS "AuditLog_action_idx" ON "AuditLog"("action")`,
+  `CREATE INDEX IF NOT EXISTS "AuditLog_entityType_entityId_idx" ON "AuditLog"("entityType", "entityId")`,
+  `CREATE INDEX IF NOT EXISTS "Invoice_schoolId_status_idx" ON "Invoice"("schoolId", "status")`,
+  `CREATE INDEX IF NOT EXISTS "Invoice_studentId_status_idx" ON "Invoice"("studentId", "status")`,
+  `CREATE INDEX IF NOT EXISTS "Invoice_externalInvoiceId_idx" ON "Invoice"("externalInvoiceId")`,
+  `CREATE INDEX IF NOT EXISTS "SchoolPaymentConfig_providerType_idx" ON "SchoolPaymentConfig"("providerType")`,
+  `CREATE INDEX IF NOT EXISTS "StudentInvoice_schoolId_status_idx" ON "StudentInvoice"("schoolId", "status")`,
+  `CREATE INDEX IF NOT EXISTS "StudentInvoice_studentId_status_idx" ON "StudentInvoice"("studentId", "status")`,
+  `CREATE INDEX IF NOT EXISTS "StudentInvoice_externalInvoiceId_idx" ON "StudentInvoice"("externalInvoiceId")`,
+  `CREATE INDEX IF NOT EXISTS "StudentInvoice_paymentMethodId_idx" ON "StudentInvoice"("paymentMethodId")`,
 ];
 
 const DOCUMENT_AND_ENROLLMENT_PATCHES = [
@@ -272,7 +355,18 @@ const CRITICAL_COLUMNS = [
   { table: "Badge", column: "classId" },
 ];
 
-const CRITICAL_TABLES = ["ExerciseStudentTarget", "StudentClassEnrollment", "DuelSession", "DuelMatch", "StudentProject", "BadgeClass"];
+const CRITICAL_TABLES = [
+  "ExerciseStudentTarget",
+  "StudentClassEnrollment",
+  "DuelSession",
+  "DuelMatch",
+  "StudentProject",
+  "BadgeClass",
+  "AuditLog",
+  "Invoice",
+  "SchoolPaymentConfig",
+  "StudentInvoice",
+];
 
 async function columnExists(prisma, table, column) {
   const rows = await prisma.$queryRawUnsafe(
