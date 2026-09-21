@@ -51,6 +51,9 @@ export default async function ConfiguracoesPage() {
           Auto-correção {settings.exercises.autoGradeEnabled ? "ligada" : "desligada"}
         </Badge>
         <Badge variant="default">{settings.branding.tagline ? "Tema personalizado" : "Tema padrão"}</Badge>
+        <Link href="/dashboard/configuracoes/pagamentos" className="text-sm font-medium text-emerald-700 hover:underline">
+          Configurar métodos de recebimento (Pix / Gateway)
+        </Link>
       </div>
 
       <Card className="border-indigo-200 bg-indigo-50/80 dark:border-indigo-900 dark:bg-indigo-950/30">
