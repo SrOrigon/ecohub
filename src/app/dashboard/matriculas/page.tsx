@@ -7,6 +7,7 @@ import { reviewEnrollmentAction, deleteEnrollmentApplicationAction } from "@/act
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
+import { BulkImportTrigger } from "@/components/students/bulk-import-trigger";
 
 export default async function MatriculasPage() {
   const user = await getSessionUser();
@@ -24,22 +25,25 @@ export default async function MatriculasPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Matrículas" description="Pipeline de inscrições online  -  aprove ou recuse candidatos.">
-        {school?.slug ? (
-          <a
-            href={`/inscricao/${school.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 sm:w-auto"
-          >
-            Link público ↗
-          </a>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3">
+          <BulkImportTrigger />
+          {school?.slug ? (
+            <a
+              href={`/inscricao/${school.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 sm:w-auto"
+            >
+              Link público ↗
+            </a>
+          ) : null}
+        </div>
       </PageHeader>
 
       {applications.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-slate-500">
-            Nenhuma inscrição recebida ainda. Compartilhe o link público com as famílias.
+            Nenhuma inscrição recebida ainda. Compartilhe o link público com as famílias ou faça importação em massa via CSV.
           </CardContent>
         </Card>
       ) : (
