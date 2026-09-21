@@ -9,13 +9,15 @@ import { StatMetricCard } from "@/components/ui/stat-metric-card";
 import { AdjustStudentPointsForm } from "@/components/forms/adjust-student-points-form";
 import { getStudents } from "@/lib/queries";
 import { redirect } from "next/navigation";
+import { getOverdueFinanceAlertsAction } from "@/actions/student-finance";
+import { formatBRL } from "@/lib/student-finance";
 
 export default async function SecretariaPage() {
   const user = await getSessionUser();
   if (!user?.schoolId) redirect("/login");
   if (user.role !== "secretary" && user.role !== "admin") redirect("/dashboard");
 
-  const [pendingEnrollments, pendingAuths, unreadThreads, alerts, students] = await Promise.all([
+  const [pendingEnrollments, pendingAuths, unreadThreads, alerts, students, overdueAlerts] = await Promise.all([
     prisma.enrollmentApplication.count({ where: { schoolId: user.schoolId, status: "pending" } }),
     prisma.authorizationForm.count({
       where: { schoolId: user.schoolId, responses: { none: {} } },
@@ -23,6 +25,7 @@ export default async function SecretariaPage() {
     prisma.chatThread.count({ where: { schoolId: user.schoolId } }),
     computeRiskAlerts(user.schoolId),
     getStudents(user.schoolId),
+    getOverdueFinanceAlertsAction(5),
   ]);
 
   const adjustStudents = students.map((s) => ({
@@ -51,6 +54,36 @@ export default async function SecretariaPage() {
           Leitura geral pedagógica
         </Link>
       </PageHeader>
+
+      {overdueAlerts.length > 0 && (
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-amber-900 text-base">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              Alerta de Inadimplência (&gt; 5 dias de atraso)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-amber-950 space-y-2">
+            <p className="text-xs text-amber-800">
+              Foram identificadas {overdueAlerts.length} cobrança(s) em atraso superior a 5 dias:
+            </p>
+            <div className="divide-y divide-amber-200/60 rounded-lg border border-amber-200 bg-white/80 p-2">
+              {overdueAlerts.slice(0, 5).map((item) => (
+                <div key={item.id} className="flex items-center justify-between py-1.5 text-xs">
+                  <div>
+                    <span className="font-semibold text-slate-900">{item.studentName}</span>{" "}
+                    <span className="text-slate-500">({item.studentClass})</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-semibold text-amber-800">{formatBRL(item.amountCents)}</span>{" "}
+                    <span className="text-amber-600">({item.daysOverdue} dias de atraso)</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="stat-grid">
         {cards.map(({ label, value, href, icon: Icon }) => (

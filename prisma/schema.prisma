@@ -37,6 +37,7 @@ model School {
   scheduleSlots ClassScheduleSlot[]
   studentProjects StudentProject[]
   auditLogs AuditLog[]
+  invoices Invoice[]
 }
 
 model User {
@@ -215,6 +216,7 @@ model Student {
   challengerMatches DuelMatch[] @relation("ChallengerStudent")
   challengedMatches DuelMatch[] @relation("ChallengedStudent")
   projects          StudentProject[]
+  invoices          Invoice[]
 
   @@index([classId])
 }
@@ -1036,4 +1038,26 @@ model AuditLog {
   @@index([actorId])
   @@index([action])
   @@index([entityType, entityId])
+}
+
+model Invoice {
+  id                String    @id @default(cuid())
+  schoolId          String
+  studentId         String
+  amountCents       Int
+  dueDate           DateTime
+  status            String    @default("PENDING") // PENDING, PAID, OVERDUE, CANCELED
+  pixQrCode         String?
+  pixCopyPaste      String?
+  externalInvoiceId String?
+  paidAt            DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  school            School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student           Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, status])
+  @@index([studentId, status])
+  @@index([externalInvoiceId])
 }
