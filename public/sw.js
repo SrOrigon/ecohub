@@ -1,18 +1,36 @@
-const CACHE_NAME = "ecohub-v4-app-shell";
-const API_CACHE = "ecohub-v4-api";
-const DYNAMIC_CACHE = "ecohub-v4-dynamic";
+const CACHE_VERSION = "ecohub-v5";
+const CACHE_NAME = `${CACHE_VERSION}-app-shell`;
+const PAGES_CACHE = `${CACHE_VERSION}-pages`;
+const API_CACHE = `${CACHE_VERSION}-api`;
+const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
+
+const CURRENT_CACHES = [CACHE_NAME, PAGES_CACHE, API_CACHE, DYNAMIC_CACHE];
 
 const OFFLINE_URL = "/offline";
 
 const PRECACHE_ASSETS = [
   OFFLINE_URL,
   "/icon.svg",
-  "/manifest.json"
+  "/globe.svg",
+  "/file.svg",
+  "/window.svg",
+  "/manifest.json",
+];
+
+// Main dashboard routes configured for Stale-While-Revalidate
+const SWR_PAGE_ROUTES = [
+  "/dashboard",
+  "/dashboard/alunos",
+  "/dashboard/turmas",
+  "/dashboard/frequencia",
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS)).then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -23,8 +41,8 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((k) => k !== CACHE_NAME && k !== API_CACHE && k !== DYNAMIC_CACHE)
-            .map((k) => caches.delete(k))
+            .filter((key) => !CURRENT_CACHES.includes(key))
+            .map((key) => caches.delete(key))
         )
       )
       .then(() => self.clients.claim())
@@ -38,58 +56,86 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(req.url);
 
-  // 1. Navigation requests (HTML pages): Network First, fallback to Offline Page
-  if (req.mode === "navigate") {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const clone = res.clone();
-          caches.open(DYNAMIC_CACHE).then((cache) => cache.put(req, clone));
-          return res;
-        })
-        .catch(() => caches.match(OFFLINE_URL).then(offlineRes => offlineRes || caches.match(req)))
-    );
-    return;
-  }
-
-  // 2. Static Assets (Next.js static files, fonts, images): Cache First, fallback to Network
+  // 1. Static Assets (Next.js static files, images, icons, fonts): Cache-First
   if (
     url.pathname.startsWith("/_next/static") ||
-    url.pathname.match(/\.(png|jpg|jpeg|svg|woff2|css|js)$/)
+    url.pathname.match(/\.(png|jpg|jpeg|webp|svg|gif|ico|woff|woff2|ttf|eot|css|js)$/i)
   ) {
     event.respondWith(
       caches.match(req).then((cached) => {
         if (cached) return cached;
-        return fetch(req).then((res) => {
-          if (res.ok) {
-            const clone = res.clone();
+        return fetch(req).then((networkRes) => {
+          if (networkRes && networkRes.ok) {
+            const clone = networkRes.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
           }
-          return res;
+          return networkRes;
         });
       })
     );
     return;
   }
 
-  // 3. API GET Requests (Data fetching): Stale-While-Revalidate
+  // 2. Read API Requests (/api/metrics/*, /api/*): Network-First with Cache Fallback
   if (url.pathname.startsWith("/api/") && !url.pathname.includes("/stream")) {
     event.respondWith(
-      caches.open(API_CACHE).then((cache) => {
-        return cache.match(req).then((cached) => {
-          const fetchPromise = fetch(req).then((networkRes) => {
-            if (networkRes.ok) {
-              cache.put(req, networkRes.clone());
-            }
-            return networkRes;
-          }).catch(() => {
-             // If network fails and we have no cache, just throw
-             if (!cached) throw new Error("Offline and no cache");
-          });
+      fetch(req)
+        .then((networkRes) => {
+          if (networkRes && networkRes.ok) {
+            const clone = networkRes.clone();
+            caches.open(API_CACHE).then((cache) => cache.put(req, clone));
+          }
+          return networkRes;
+        })
+        .catch(() =>
+          caches.open(API_CACHE).then((cache) => cache.match(req))
+        )
+    );
+    return;
+  }
 
-          return cached || fetchPromise;
+  // 3. Main Dashboard Pages: Stale-While-Revalidate
+  const isSWRPage = SWR_PAGE_ROUTES.some(
+    (route) => url.pathname === route || url.pathname === `${route}/`
+  );
+
+  if (req.mode === "navigate" && isSWRPage) {
+    event.respondWith(
+      caches.open(PAGES_CACHE).then((cache) => {
+        return cache.match(req).then((cachedResponse) => {
+          const fetchPromise = fetch(req)
+            .then((networkRes) => {
+              if (networkRes && networkRes.ok) {
+                cache.put(req, networkRes.clone());
+              }
+              return networkRes;
+            })
+            .catch(() => cachedResponse);
+
+          return cachedResponse || fetchPromise;
         });
       })
+    );
+    return;
+  }
+
+  // 4. Other Navigation Requests (HTML pages): Network-First, fallback to Cache, then Offline Page
+  if (req.mode === "navigate") {
+    event.respondWith(
+      fetch(req)
+        .then((networkRes) => {
+          if (networkRes && networkRes.ok) {
+            const clone = networkRes.clone();
+            caches.open(DYNAMIC_CACHE).then((cache) => cache.put(req, clone));
+          }
+          return networkRes;
+        })
+        .catch(() =>
+          caches.match(req).then((cachedRes) => {
+            if (cachedRes) return cachedRes;
+            return caches.match(OFFLINE_URL);
+          })
+        )
     );
     return;
   }
