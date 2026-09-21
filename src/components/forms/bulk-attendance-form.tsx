@@ -8,6 +8,8 @@ import { Label, Select } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/modal";
 import { useToday } from "@/hooks/use-today";
 import { ATTENDANCE_STATUSES } from "@/lib/constants";
+import { getOfflineSnapshot, saveOfflineSnapshot } from "@/lib/offline-storage";
+import { WifiOff } from "lucide-react";
 
 interface ClassWithStudents {
   id: string;
@@ -27,6 +29,7 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
   const [selectedClass, setSelectedClass] = useState("");
   const [studentsList, setStudentsList] = useState<{ id: string; name: string }[]>([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
+  const [isOfflineCached, setIsOfflineCached] = useState(false);
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean; message?: string } | null, formData: FormData) => {
@@ -49,18 +52,24 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
     getClassStudentsAction(selectedClass)
       .then((res) => {
         if (isMounted) {
-          if (res.success && res.students) {
+          if (res.success && res.students && res.students.length > 0) {
             setStudentsList(res.students);
+            saveOfflineSnapshot(`cached_students_${selectedClass}`, res.students);
+            setIsOfflineCached(false);
           } else {
-            const fallback = classes.find((c) => c.id === selectedClass)?.students ?? [];
+            const snapshot = getOfflineSnapshot<{ id: string; name: string }[]>(`cached_students_${selectedClass}`);
+            const fallback = snapshot?.data ?? classes.find((c) => c.id === selectedClass)?.students ?? [];
             setStudentsList(fallback);
+            setIsOfflineCached(!!snapshot?.data);
           }
         }
       })
       .catch(() => {
         if (isMounted) {
-          const fallback = classes.find((c) => c.id === selectedClass)?.students ?? [];
+          const snapshot = getOfflineSnapshot<{ id: string; name: string }[]>(`cached_students_${selectedClass}`);
+          const fallback = snapshot?.data ?? classes.find((c) => c.id === selectedClass)?.students ?? [];
           setStudentsList(fallback);
+          setIsOfflineCached(true);
         }
       })
       .finally(() => {
@@ -117,6 +126,13 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
               ))}
             </Select>
           </div>
+
+          {isOfflineCached && (
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 border border-amber-200">
+              <WifiOff className="h-3.5 w-3.5" />
+              Exibindo dados em cache (Offline)
+            </div>
+          )}
 
           {selectedClass !== "" && (
             <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border p-3">

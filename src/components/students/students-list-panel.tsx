@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Search, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Users, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { UserIdentity } from "@/components/profile/user-identity";
 import { StudentEnrollmentsManager } from "@/components/forms/student-enrollments-manager";
 import { DeleteStudentButton } from "@/components/forms/delete-student-button";
+import { getOfflineSnapshot, saveOfflineSnapshot } from "@/lib/offline-storage";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 10;
@@ -52,7 +53,7 @@ function matchesStudent(row: StudentListRow, query: string) {
 }
 
 export function StudentsListPanel({
-  students,
+  students: initialStudents,
   classes,
   canManage,
   canDeleteStudents,
@@ -65,9 +66,23 @@ export function StudentsListPanel({
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
 
+  const { activeStudents, isOfflineCached } = useMemo(() => {
+    if (initialStudents.length > 0) {
+      if (typeof window !== "undefined") {
+        saveOfflineSnapshot("cached_students_list", initialStudents);
+      }
+      return { activeStudents: initialStudents, isOfflineCached: false };
+    }
+    const snapshot = getOfflineSnapshot<StudentListRow[]>("cached_students_list");
+    if (snapshot?.data && snapshot.data.length > 0) {
+      return { activeStudents: snapshot.data, isOfflineCached: true };
+    }
+    return { activeStudents: initialStudents, isOfflineCached: false };
+  }, [initialStudents]);
+
   const filteredStudents = useMemo(
-    () => students.filter((student) => matchesStudent(student, query)),
-    [students, query]
+    () => activeStudents.filter((student) => matchesStudent(student, query)),
+    [activeStudents, query]
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
@@ -80,7 +95,7 @@ export function StudentsListPanel({
   const rangeStart = filteredStudents.length === 0 ? 0 : currentPage * PAGE_SIZE + 1;
   const rangeEnd = Math.min(filteredStudents.length, (currentPage + 1) * PAGE_SIZE);
 
-  if (students.length === 0) {
+  if (activeStudents.length === 0) {
     return (
       <EmptyState
         icon={Users}
@@ -92,6 +107,12 @@ export function StudentsListPanel({
 
   return (
     <div className="space-y-4">
+      {isOfflineCached && (
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 border border-amber-200">
+          <WifiOff className="h-3.5 w-3.5" />
+          Exibindo dados em cache (Offline)
+        </div>
+      )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative min-w-0 flex-1 sm:max-w-md">
           <label htmlFor="student-list-search" className="sr-only">
@@ -116,12 +137,12 @@ export function StudentsListPanel({
         <p className="shrink-0 text-sm text-slate-500">
           {query.trim() ? (
             <>
-              {filteredStudents.length} de {students.length} aluno
-              {students.length === 1 ? "" : "s"}
+              {filteredStudents.length} de {activeStudents.length} aluno
+              {activeStudents.length === 1 ? "" : "s"}
             </>
           ) : (
             <>
-              Mostrando {rangeStart}–{rangeEnd} de {students.length}
+              Mostrando {rangeStart}–{rangeEnd} de {activeStudents.length}
             </>
           )}
         </p>
