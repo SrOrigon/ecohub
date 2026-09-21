@@ -36,6 +36,7 @@ model School {
   issuedDocuments IssuedDocument[]
   scheduleSlots ClassScheduleSlot[]
   studentProjects StudentProject[]
+  auditLogs AuditLog[]
 }
 
 model User {
@@ -1013,4 +1014,26 @@ model StudentProject {
 
   @@index([schoolId])
   @@index([studentId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  schoolId   String?
+  actorId    String
+  actorRole  String
+  action     String
+  entityType String
+  entityId   String?
+  ipAddress  String?
+  userAgent  String?
+  diffBefore String?  @default("{}")
+  diffAfter  String?  @default("{}")
+  createdAt  DateTime @default(now())
+
+  school School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+
+  @@index([schoolId, createdAt])
+  @@index([actorId])
+  @@index([action])
+  @@index([entityType, entityId])
 }

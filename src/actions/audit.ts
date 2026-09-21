@@ -5,9 +5,10 @@ import { prisma } from "@/lib/db";
 
 export type AuditLogEntry = {
   id: string;
-  category: "Notas" | "Frequência" | "Documentos" | "Gamificação" | "Acesso";
+  category: string;
   action: string;
   operatorName: string;
+  actorRole: string;
   targetName?: string;
   details: string;
   timestamp: string;
@@ -19,94 +20,44 @@ export async function getAuditLogsAction(): Promise<AuditLogEntry[]> {
   const user = await requireSession(["director", "admin"]);
   if (!user.schoolId) return [];
 
-  const [grades, attendances, documents, studentActivities] = await Promise.all([
-    prisma.grade.findMany({
-      where: { student: { user: { schoolId: user.schoolId } } },
-      include: {
-        student: { include: { user: { select: { fullName: true } } } },
-        teacher: { select: { fullName: true } },
-      },
-      take: 25,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.attendance.findMany({
-      where: { student: { user: { schoolId: user.schoolId } } },
-      include: {
-        student: { include: { user: { select: { fullName: true } } } },
-      },
-      take: 25,
-      orderBy: { date: "desc" },
-    }),
-    prisma.issuedDocument.findMany({
-      where: { schoolId: user.schoolId },
-      include: {
-        student: { include: { user: { select: { fullName: true } } } },
-        issuedBy: { select: { fullName: true } },
-      },
-      take: 25,
-      orderBy: { issuedAt: "desc" },
-    }),
-    prisma.studentActivity.findMany({
-      where: { student: { user: { schoolId: user.schoolId } } },
-      include: {
-        student: { include: { user: { select: { fullName: true } } } },
-      },
-      take: 25,
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  const auditLogs = await prisma.auditLog.findMany({
+    where: { schoolId: user.schoolId },
+    take: 150,
+    orderBy: { createdAt: "desc" },
+  });
 
-  const logs: AuditLogEntry[] = [];
+  const actorIds = [...new Set(auditLogs.map((log) => log.actorId))];
+  const actors = await prisma.user.findMany({
+    where: { id: { in: actorIds } },
+    select: { id: true, fullName: true, role: true },
+  });
+  const actorMap = new Map(actors.map((a) => [a.id, a]));
 
-  for (const g of grades) {
-    logs.push({
-      id: `grade-${g.id}`,
-      category: "Notas",
-      action: "Lançamento de Nota",
-      operatorName: g.teacher?.fullName ?? "Docente",
-      targetName: g.student.user.fullName,
-      details: `${g.subject} (${g.period}) -> Nota ${g.value.toFixed(1)}/${g.maxValue}`,
-      timestamp: g.createdAt.toISOString(),
-    });
-  }
+  const logs: AuditLogEntry[] = auditLogs.map((log) => {
+    const actor = actorMap.get(log.actorId);
+    let detailsStr = "";
+    try {
+      const diffObj = JSON.parse(log.diffAfter || "{}");
+      detailsStr = Object.entries(diffObj)
+        .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
+        .slice(0, 5)
+        .join(" · ");
+    } catch {
+      detailsStr = log.diffAfter || "";
+    }
 
-  for (const a of attendances) {
-    logs.push({
-      id: `att-${a.id}`,
-      category: "Frequência",
-      action: a.status === "present" ? "Presença Confirmada" : a.status === "absent" ? "Falta Registrada" : "Falta Justificada",
-      operatorName: a.justifiedById ? "Coordenação (Justificativa)" : "Chamada em Sala",
-      targetName: a.student.user.fullName,
-      details: `Data: ${new Date(a.date).toLocaleDateString("pt-BR")}${a.justificationNote ? ` · Motivo: ${a.justificationNote}` : ""}`,
-      timestamp: a.createdAt.toISOString(),
-    });
-  }
+    return {
+      id: log.id,
+      category: log.entityType,
+      action: log.action,
+      operatorName: actor?.fullName ?? log.actorId,
+      actorRole: log.actorRole,
+      targetName: log.entityId ?? undefined,
+      details: detailsStr || `${log.action} (${log.entityType})`,
+      timestamp: log.createdAt.toISOString(),
+      ipAddress: log.ipAddress ?? undefined,
+    };
+  });
 
-  for (const doc of documents) {
-    logs.push({
-      id: `doc-${doc.id}`,
-      category: "Documentos",
-      action: "Emissão de Documento Escolar",
-      operatorName: doc.issuedBy.fullName,
-      targetName: doc.student.user.fullName,
-      details: `${doc.title} (${doc.type}) · Status: ${doc.status}`,
-      timestamp: doc.issuedAt.toISOString(),
-    });
-  }
-
-  for (const act of studentActivities) {
-    logs.push({
-      id: `act-${act.id}`,
-      category: "Gamificação",
-      action: act.title,
-      operatorName: "Sistema / Interação",
-      targetName: act.student.user.fullName,
-      details: act.detail ?? act.title,
-      timestamp: act.createdAt.toISOString(),
-    });
-  }
-
-  // Ordena por data decrescente
-  logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   return logs;
 }

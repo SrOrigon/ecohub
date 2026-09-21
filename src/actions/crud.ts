@@ -47,6 +47,7 @@ import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 import { formatCrudError } from "@/lib/action-errors";
 import { userExistsByEmail } from "@/lib/user-lookup";
 import { findUserByEmailForLogin } from "@/lib/auth-credentials";
+import { logAuditEvent } from "@/lib/audit-logger";
 import { sortStudentsByName } from "@/lib/sort-order";
 
 function revalidatePaths(paths: string[]) {
@@ -365,6 +366,17 @@ export async function updateClassAction(formData: FormData) {
         });
       }
     }
+  });
+
+  await logAuditEvent({
+    schoolId: user.schoolId,
+    actorId: user.id,
+    actorRole: user.role,
+    action: "CLASS_UPDATE",
+    entityType: "ClassGroup",
+    entityId: classId,
+    diffBefore: existing,
+    diffAfter: { name, gradeLevel, year, teacherId },
   });
 
   revalidateGroups("core", "people", "exercises");
@@ -1224,7 +1236,7 @@ export async function updateStudentAction(formData: FormData) {
 
   const student = await prisma.student.findFirst({
     where: { id: studentId, user: { schoolId: user.schoolId } },
-    include: { user: { select: { id: true, email: true, avatarUrl: true } } },
+    include: { user: { select: { id: true, email: true, avatarUrl: true, fullName: true } } },
   });
   if (!student) return { error: "Aluno não encontrado." };
 
@@ -1316,6 +1328,17 @@ export async function updateStudentAction(formData: FormData) {
       },
     }),
   ]);
+
+  await logAuditEvent({
+    schoolId: user.schoolId,
+    actorId: user.id,
+    actorRole: user.role,
+    action: "STUDENT_UPDATE",
+    entityType: "Student",
+    entityId: studentId,
+    diffBefore: { fullName: student.user.fullName, birthDate: student.birthDate },
+    diffAfter: userUpdate,
+  });
 
   if (classId) {
     await enrollStudentInClass(studentId, classId);

@@ -5,6 +5,7 @@ import { requireSessionResult } from "@/lib/auth";
 import { resolveAvatarFromForm } from "@/lib/avatar";
 import { prisma } from "@/lib/db";
 import { validatePassword, hashPassword, verifyPassword, normalizePassword } from "@/lib/security/password-policy";
+import { logAuditEvent } from "@/lib/audit-logger";
 
 function revalidateProfile() {
   revalidatePath("/dashboard/perfil");
@@ -54,6 +55,16 @@ export async function updateProfileAction(formData: FormData) {
     },
   });
 
+  await logAuditEvent({
+    schoolId: user.schoolId,
+    actorId: user.id,
+    actorRole: user.role,
+    action: "PROFILE_UPDATE",
+    entityType: "User",
+    entityId: user.id,
+    diffAfter: { fullName, city, state },
+  });
+
   revalidateProfile();
   return { success: true, message: "Perfil atualizado com sucesso." };
 }
@@ -93,6 +104,16 @@ export async function changePasswordAction(formData: FormData) {
   await prisma.user.update({
     where: { id: user.id },
     data: { passwordHash },
+  });
+
+  await logAuditEvent({
+    schoolId: user.schoolId,
+    actorId: user.id,
+    actorRole: user.role,
+    action: "PASSWORD_CHANGE",
+    entityType: "User",
+    entityId: user.id,
+    diffAfter: { password: newPassword }, // will be masked automatically by logAuditEvent
   });
 
   revalidateProfile();

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { awardXp } from "@/lib/gamification";
 import { getSchoolSettingsForStudent } from "@/lib/school-settings";
 import { makeReceiptCode, parseReaisToCents } from "@/lib/student-finance";
+import { logAuditEvent } from "@/lib/audit-logger";
 
 function canWriteFinance(role: string) {
   return role === "admin" || role === "director" || role === "secretary";
@@ -57,6 +58,16 @@ export async function upsertStudentFinanceAction(formData: FormData) {
     },
   });
 
+  await logAuditEvent({
+    schoolId: user.schoolId,
+    actorId: user.id,
+    actorRole: user.role,
+    action: "FINANCE_ACCOUNT_UPDATE",
+    entityType: "StudentFinanceAccount",
+    entityId: studentId,
+    diffAfter: { amountCents, dueDay, discountPercent, expectedInstallments },
+  });
+
   revalidatePath(`/dashboard/alunos/${studentId}`);
   return { success: true };
 }
@@ -95,7 +106,7 @@ export async function recordTuitionPaymentAction(formData: FormData) {
   const now = new Date();
   const dueDate = new Date(now.getFullYear(), now.getMonth(), Math.min(account.dueDay, 28));
 
-  await prisma.tuitionPayment.create({
+  const payment = await prisma.tuitionPayment.create({
     data: {
       accountId: account.id,
       studentId,
@@ -107,6 +118,16 @@ export async function recordTuitionPaymentAction(formData: FormData) {
       awardedCoins,
       note: "Pagamento registrado pela instituição",
     },
+  });
+
+  await logAuditEvent({
+    schoolId: user.schoolId,
+    actorId: user.id,
+    actorRole: user.role,
+    action: "FINANCE_PAYMENT_RECORD",
+    entityType: "TuitionPayment",
+    entityId: payment.id,
+    diffAfter: { studentId, netAmountCents: net, receiptCode: payment.receiptCode },
   });
 
   await awardXp(
