@@ -90,6 +90,54 @@ export async function getSchoolDropoutRiskSummary(schoolId: string) {
   }));
 }
 
+export async function getClassDropoutOverview(classId: string) {
+  const user = await getSessionUser();
+  if (!user || !user.schoolId) {
+    throw new Error("Sessão inválida");
+  }
+
+  const classGroup = await prisma.classGroup.findFirst({
+    where: { id: classId, schoolId: user.schoolId },
+    include: {
+      students: {
+        where: { status: "active" },
+        select: { id: true },
+      },
+    },
+  });
+
+  if (!classGroup) {
+    throw new Error("Turma não encontrada nesta instituição");
+  }
+
+  const results = [];
+  for (const student of classGroup.students) {
+    const assessment = await calculateStudentDropoutRisk(student.id, user.schoolId);
+    if (assessment) {
+      results.push(assessment);
+    }
+  }
+
+  const orderMap: Record<string, number> = {
+    CRITICAL: 4,
+    HIGH: 3,
+    MEDIUM: 2,
+    LOW: 1,
+  };
+
+  results.sort((a, b) => {
+    const diff = (orderMap[b.level] || 0) - (orderMap[a.level] || 0);
+    if (diff !== 0) return diff;
+    return b.score - a.score;
+  });
+
+  return results;
+}
+
+export async function getSchoolDropoutAlerts(schoolId: string) {
+  return await getSchoolDropoutRiskSummary(schoolId);
+}
+
 export async function notifyParentDropoutRiskAction(studentId: string, customMessage?: string) {
   const user = await getSessionUser();
   if (!user || !user.schoolId) {

@@ -280,6 +280,18 @@ export default async function StudentDetailPage({
                 </ul>
               </div>
             )}
+            {dropoutRisk.recommendedActions.length > 0 && (
+              <div className="pt-1">
+                <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 mb-1">
+                  Ações Recomendadas:
+                </p>
+                <ul className="list-disc pl-4 text-xs text-indigo-800 dark:text-indigo-400 space-y-0.5">
+                  {dropoutRisk.recommendedActions.map((action, idx) => (
+                    <li key={idx}>{action}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

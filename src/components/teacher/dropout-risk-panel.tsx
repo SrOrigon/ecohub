@@ -21,6 +21,7 @@ export interface RiskStudentItem {
   score: number;
   level: string;
   factors: string[];
+  recommendedActions?: string[];
   lastRiskAssessment?: Date | null;
 }
 
@@ -185,17 +186,32 @@ export function DropoutRiskPanel({
                   )}
 
                   {isExpanded && (
-                    <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        Fatores que impactam o risco de evasão:
-                      </p>
-                      <ul className="space-y-1 pl-4 text-xs text-slate-600 dark:text-slate-400 list-disc">
-                        {student.factors.length > 0 ? (
-                          student.factors.map((factor, idx) => <li key={idx}>{factor}</li>)
-                        ) : (
-                          <li>Indicadores em acompanhamento.</li>
-                        )}
-                      </ul>
+                    <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800 space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          Fatores que impactam o risco de evasão:
+                        </p>
+                        <ul className="space-y-1 pl-4 text-xs text-slate-600 dark:text-slate-400 list-disc">
+                          {student.factors.length > 0 ? (
+                            student.factors.map((factor, idx) => <li key={idx}>{factor}</li>)
+                          ) : (
+                            <li>Indicadores em acompanhamento.</li>
+                          )}
+                        </ul>
+                      </div>
+
+                      {student.recommendedActions && student.recommendedActions.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 mb-1">
+                            Ações Recomendadas (Early Warning):
+                          </p>
+                          <ul className="space-y-1 pl-4 text-xs text-indigo-800 dark:text-indigo-400 list-disc">
+                            {student.recommendedActions.map((action, idx) => (
+                              <li key={idx}>{action}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
