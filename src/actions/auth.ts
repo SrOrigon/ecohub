@@ -35,6 +35,7 @@ import {
 import { DEFAULT_SCHOOL_SETTINGS, getSchoolSettings, stringifySchoolSettings } from "@/lib/school-settings";
 import { canSelfRegisterStudent, parseBirthDate } from "@/lib/student-age";
 import { verifyStudentPin } from "@/lib/student-pin";
+import { normalizeWhatsAppNumber } from "@/lib/whatsapp-billing";
 import type { UserRole } from "@/lib/constants";
 import {
   AUTH_RATE_LIMIT,
@@ -496,12 +497,18 @@ async function registerParentActionImpl(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = normalizePassword(String(formData.get("password") ?? ""));
   const fullName = String(formData.get("fullName") ?? "").trim();
+  const rawPhone = String(formData.get("phone") ?? "").trim();
   const schoolSlug = String(formData.get("schoolSlug") ?? "").trim().toLowerCase();
   const enrollmentCode = String(formData.get("enrollmentCode") ?? "").trim();
   const relation = String(formData.get("relation") ?? "responsavel");
 
   if (!email || !password || !fullName || !schoolSlug || !enrollmentCode) {
     return { error: "Preencha todos os campos, incluindo código da escola e matrícula do filho." };
+  }
+
+  const phone = normalizeWhatsAppNumber(rawPhone);
+  if (!phone) {
+    return { error: "Informe um número de WhatsApp/Telemóvel válido com DDD (mínimo 10 dígitos)." };
   }
 
   const passwordCheck = validatePassword(password);
@@ -546,6 +553,7 @@ async function registerParentActionImpl(formData: FormData) {
         email,
         passwordHash,
         fullName,
+        phone,
         role: "parent",
         schoolId: school.id,
       },

@@ -270,6 +270,29 @@ export async function confirmInvoicePaymentAction(formData: FormData) {
   }
 }
 
+export async function logWhatsAppBillingSentAction(invoiceId: string) {
+  const user = await requireSession(["admin", "director", "secretary"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const invoice = await prisma.studentInvoice.findFirst({
+    where: { id: invoiceId, schoolId: user.schoolId },
+  });
+
+  if (!invoice) return { error: "Fatura não encontrada." };
+
+  await logAuditEvent({
+    schoolId: user.schoolId,
+    actorId: user.id,
+    actorRole: user.role,
+    action: "INVOICE_WHATSAPP_BILLING_SENT",
+    entityType: "StudentInvoice",
+    entityId: invoiceId,
+    diffAfter: { invoiceTitle: invoice.title, amountCents: invoice.amountCents },
+  });
+
+  return { success: true };
+}
+
 export async function getAwaitingConfirmationInvoicesAction() {
   const user = await requireSession(["admin", "director", "secretary"]);
   if (!user.schoolId) return [];

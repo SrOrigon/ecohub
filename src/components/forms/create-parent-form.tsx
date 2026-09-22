@@ -5,6 +5,7 @@ import { createParentAction } from "@/actions/parents";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
+import { formatWhatsAppMask } from "@/lib/whatsapp-billing";
 import { Modal } from "@/components/ui/modal";
 
 interface StudentOption {
@@ -21,6 +22,7 @@ const relations = [
 
 export function CreateParentForm({ students }: { students: StudentOption[] }) {
   const [open, setOpen] = useState(false);
+  const [phone, setPhone] = useState("");
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
       const result = await createParentAction(formData);
@@ -42,6 +44,21 @@ export function CreateParentForm({ students }: { students: StudentOption[] }) {
           <div>
             <Label htmlFor="email">E-mail</Label>
             <Input id="email" name="email" type="email" required />
+          </div>
+          <div>
+            <Label htmlFor="phone">Telemóvel / WhatsApp (com DDD)</Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              required
+              placeholder="(11) 99999-9999"
+              value={phone}
+              onChange={(e) => setPhone(formatWhatsAppMask(e.target.value))}
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Obrigatorio para envio de notificações e cobranças de mensalidade via Pix.
+            </p>
           </div>
           <div>
             <Label htmlFor="password">Senha inicial</Label>

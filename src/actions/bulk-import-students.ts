@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/security/password-policy";
 import { logAuditEvent } from "@/lib/audit-logger";
+import { normalizeWhatsAppNumber } from "@/lib/whatsapp-billing";
 
 export interface StudentImportRecord {
   studentName: string;
@@ -69,7 +70,8 @@ export async function bulkImportStudentsAction(records: StudentImportRecord[]) {
 
         // 2. Resolve Responsável
         const parentEmail = item.parentEmail?.trim().toLowerCase() || null;
-        const parentPhone = item.parentPhone?.trim() || null;
+        const rawParentPhone = item.parentPhone?.trim() || "";
+        const parentPhone = normalizeWhatsAppNumber(rawParentPhone);
 
         let parentUser = null;
 

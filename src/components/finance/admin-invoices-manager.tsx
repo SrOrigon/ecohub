@@ -1,14 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { confirmInvoicePaymentAction } from "@/actions/invoices";
+import { confirmInvoicePaymentAction, logWhatsAppBillingSentAction } from "@/actions/invoices";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatBRL } from "@/lib/student-finance";
 import { formatDate } from "@/lib/utils";
-import { Check, ExternalLink, Eye, X } from "lucide-react";
+import { Check, ExternalLink, Eye, X, MessageSquare, AlertCircle } from "lucide-react";
+import {
+  generateInvoiceWhatsAppMessage,
+  generateWhatsAppLink,
+  normalizeWhatsAppNumber,
+} from "@/lib/whatsapp-billing";
 
 export interface PendingInvoiceItem {
   id: string;
@@ -16,11 +21,16 @@ export interface PendingInvoiceItem {
   amountCents: number;
   dueDate: Date | string;
   status: string;
+  pixCopyPaste?: string | null;
   proofAttachmentUrl?: string | null;
   proofUploadedAt?: Date | string | null;
   student: {
+    id: string;
     user: { fullName: string; email: string };
     classGroup?: { name: string } | null;
+    parentLinks?: {
+      parent: { id: string; fullName: string; phone?: string | null };
+    }[];
   };
 }
 
@@ -32,8 +42,39 @@ export function AdminInvoicesManager({
   const [selectedInvoice, setSelectedInvoice] = useState<PendingInvoiceItem | null>(null);
   const [previewProof, setPreviewProof] = useState<string | null>(null);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [noPhoneModalStudent, setNoPhoneModalStudent] = useState<{ id: string; name: string } | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  function handleWhatsAppCharge(inv: PendingInvoiceItem) {
+    const parent = inv.student.parentLinks?.[0]?.parent;
+    const phone = parent?.phone;
+    const normalizedPhone = phone ? normalizeWhatsAppNumber(phone) : null;
+
+    if (!normalizedPhone) {
+      setNoPhoneModalStudent({ id: inv.student.id, name: inv.student.user.fullName });
+      return;
+    }
+
+    const message = generateInvoiceWhatsAppMessage(
+      {
+        id: inv.id,
+        title: inv.title,
+        amountCents: inv.amountCents,
+        dueDate: inv.dueDate,
+        pixCopyPaste: inv.pixCopyPaste,
+        studentName: inv.student.user.fullName,
+        parentName: parent?.fullName,
+      },
+      "Ecohub"
+    );
+
+    const link = generateWhatsAppLink(normalizedPhone, message);
+    if (link) {
+      logWhatsAppBillingSentAction(inv.id).catch(() => {});
+      window.open(link, "_blank", "noopener,noreferrer");
+    }
+  }
 
   function handleApprove(invoiceId: string) {
     const formData = new FormData();
@@ -116,6 +157,17 @@ export function AdminInvoicesManager({
 
                   <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1 text-xs border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                    onClick={() => handleWhatsAppCharge(inv)}
+                  >
+                    <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
+                    Cobrar via WhatsApp
+                  </Button>
+
+                  <Button
+                    type="button"
                     size="sm"
                     className="h-8 gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
                     disabled={isPending}
@@ -174,6 +226,40 @@ export function AdminInvoicesManager({
                 <Button type="button" variant="outline" size="sm" onClick={() => setPreviewProof(null)}>
                   Fechar
                 </Button>
+              </div>
+            </div>
+          </Modal>
+        )}
+
+        {/* Modal Alerta Responsável Sem WhatsApp */}
+        {noPhoneModalStudent && (
+          <Modal
+            open={!!noPhoneModalStudent}
+            onClose={() => setNoPhoneModalStudent(null)}
+            title="Responsável Sem WhatsApp Cadastrado"
+          >
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" />
+                <p>
+                  O responsável vinculado ao aluno <strong>{noPhoneModalStudent.name}</strong> não possui número de WhatsApp/Telemóvel cadastrado.
+                </p>
+              </div>
+
+              <p className="text-xs text-slate-600">
+                Acesse o perfil do aluno para cadastrar ou atualizar o número de telefone do encarregado de educação.
+              </p>
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setNoPhoneModalStudent(null)}>
+                  Fechar
+                </Button>
+                <a
+                  href={`/dashboard/alunos/${noPhoneModalStudent.id}`}
+                  className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                >
+                  Atualizar Perfil do Aluno
+                </a>
               </div>
             </div>
           </Modal>

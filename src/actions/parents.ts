@@ -12,6 +12,7 @@ import {
 } from "@/lib/student-pin";
 import { validatePassword, hashPassword } from "@/lib/security/password-policy";
 import { confirmUserPersisted } from "@/lib/persistence-guard";
+import { normalizeWhatsAppNumber } from "@/lib/whatsapp-billing";
 import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 import { userExistsByEmail } from "@/lib/user-lookup";
 
@@ -21,11 +22,17 @@ export async function createParentAction(formData: FormData) {
 
   const fullName = String(formData.get("fullName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const rawPhone = String(formData.get("phone") ?? "").trim();
   const password = String(formData.get("password") ?? "").trim();
   const studentId = String(formData.get("studentId") ?? "") || null;
   const relation = String(formData.get("relation") ?? "responsavel");
 
   if (!fullName || !email || !password) return { error: "Nome, e-mail e senha são obrigatórios." };
+
+  const phone = normalizeWhatsAppNumber(rawPhone);
+  if (!phone) {
+    return { error: "Informe um número de WhatsApp/Telemóvel válido com DDD (mínimo 10 dígitos)." };
+  }
 
   const passwordCheck = validatePassword(password);
   if (!passwordCheck.ok) return { error: passwordCheck.error };
@@ -35,7 +42,7 @@ export async function createParentAction(formData: FormData) {
 
   const passwordHash = await hashPassword(password);
   const parent = await prisma.user.create({
-    data: { email, passwordHash, fullName, role: "parent", schoolId: user.schoolId },
+    data: { email, passwordHash, fullName, phone, role: "parent", schoolId: user.schoolId },
   });
 
   await confirmUserPersisted(
