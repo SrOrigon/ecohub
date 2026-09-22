@@ -157,6 +157,8 @@ export async function confirmInvoicePaymentAction(formData: FormData) {
   const invoiceId = String(formData.get("invoiceId") ?? "").trim();
   const isApproved = String(formData.get("isApproved") ?? "true") === "true";
   const rejectReason = String(formData.get("rejectReason") ?? "").trim();
+  const paymentMethod = String(formData.get("paymentMethod") ?? "MANUAL_PIX").trim();
+  const cardMachineId = String(formData.get("cardMachineId") ?? "").trim() || null;
 
   if (!invoiceId) return { error: "Fatura inválida." };
 
@@ -171,12 +173,31 @@ export async function confirmInvoicePaymentAction(formData: FormData) {
 
   if (isApproved) {
     const paidAt = new Date();
+    let netAmountCents = invoice.amountCents;
+
+    if (cardMachineId && (paymentMethod === "DEBIT_CARD" || paymentMethod === "CREDIT_CARD")) {
+      const machine = await prisma.cardMachineConfig.findFirst({
+        where: { id: cardMachineId, schoolId: user.schoolId },
+      });
+      if (machine) {
+        const feePercent =
+          paymentMethod === "DEBIT_CARD"
+            ? machine.debitFeePercent
+            : machine.creditSightFeePercent;
+        const discountCents = Math.round(invoice.amountCents * (feePercent / 100));
+        netAmountCents = Math.max(0, invoice.amountCents - discountCents);
+      }
+    }
+
     await prisma.studentInvoice.update({
       where: { id: invoiceId },
       data: {
         status: "PAID",
         paidAt,
         verifiedByUserId: user.id,
+        paymentMethod,
+        cardMachineId,
+        netAmountCents,
       },
     });
 

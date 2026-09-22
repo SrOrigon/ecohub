@@ -113,6 +113,90 @@ export async function saveSchoolPaymentConfigAction(formData: FormData) {
   return { success: true, message: "Configuração de pagamentos salva com sucesso." };
 }
 
+export async function saveCardMachineAction(formData: FormData) {
+  const user = await requireSession(["admin", "director"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  const id = String(formData.get("id") ?? "").trim();
+  const machineName = String(formData.get("machineName") ?? "").trim();
+  const provider = String(formData.get("provider") ?? "Stone").trim();
+  const serialNumber = String(formData.get("serialNumber") ?? "").trim() || null;
+  const debitFeePercent = Number(formData.get("debitFeePercent") ?? 1.5);
+  const creditSightFeePercent = Number(formData.get("creditSightFeePercent") ?? 2.5);
+  const creditInstallmentFeePercent = Number(formData.get("creditInstallmentFeePercent") ?? 3.8);
+
+  if (!machineName) return { error: "Nome do terminal POS é obrigatório." };
+
+  if (id) {
+    await prisma.cardMachineConfig.updateMany({
+      where: { id, schoolId: user.schoolId },
+      data: {
+        machineName,
+        provider,
+        serialNumber,
+        debitFeePercent,
+        creditSightFeePercent,
+        creditInstallmentFeePercent,
+      },
+    });
+  } else {
+    await prisma.cardMachineConfig.create({
+      data: {
+        schoolId: user.schoolId,
+        machineName,
+        provider,
+        serialNumber,
+        debitFeePercent,
+        creditSightFeePercent,
+        creditInstallmentFeePercent,
+      },
+    });
+  }
+
+  await logAuditEvent({
+    schoolId: user.schoolId,
+    actorId: user.id,
+    actorRole: user.role,
+    action: "CARD_MACHINE_SAVE",
+    entityType: "CardMachineConfig",
+    diffAfter: { machineName, provider, serialNumber },
+  });
+
+  revalidatePath("/dashboard/configuracoes/pagamentos");
+  return { success: true, message: "Maquininha cadastrada/atualizada com sucesso!" };
+}
+
+export async function deleteCardMachineAction(id: string) {
+  const user = await requireSession(["admin", "director"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+
+  await prisma.cardMachineConfig.deleteMany({
+    where: { id, schoolId: user.schoolId },
+  });
+
+  await logAuditEvent({
+    schoolId: user.schoolId,
+    actorId: user.id,
+    actorRole: user.role,
+    action: "CARD_MACHINE_DELETE",
+    entityType: "CardMachineConfig",
+    entityId: id,
+  });
+
+  revalidatePath("/dashboard/configuracoes/pagamentos");
+  return { success: true, message: "Maquininha removida com sucesso." };
+}
+
+export async function getCardMachinesAction() {
+  const user = await requireSession(["admin", "director", "secretary"]);
+  if (!user.schoolId) return [];
+
+  return prisma.cardMachineConfig.findMany({
+    where: { schoolId: user.schoolId, isActive: true },
+    orderBy: { machineName: "asc" },
+  });
+}
+
 export async function testPaymentGatewayConnectionAction(formData: FormData) {
   const user = await requireSession(["admin", "director"]);
   if (!user.schoolId) return { error: "Escola não configurada." };

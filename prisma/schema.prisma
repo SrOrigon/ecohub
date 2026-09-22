@@ -39,6 +39,7 @@ model School {
   auditLogs AuditLog[]
   invoices Invoice[]
   paymentConfigs SchoolPaymentConfig[]
+  cardMachines   CardMachineConfig[]
   studentInvoices StudentInvoice[]
 }
 
@@ -1070,6 +1071,24 @@ model Invoice {
   @@index([externalInvoiceId])
 }
 
+model CardMachineConfig {
+  id                          String   @id @default(cuid())
+  schoolId                    String
+  machineName                 String
+  provider                    String   // Stone, Cielo, PagSeguro, Rede, SumUp, Getnet, etc.
+  serialNumber                String?
+  debitFeePercent             Float    @default(1.5)
+  creditSightFeePercent       Float    @default(2.5)
+  creditInstallmentFeePercent Float    @default(3.8)
+  isActive                    Boolean  @default(true)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+}
+
 model SchoolPaymentConfig {
   id                 String   @id @default(cuid())
   schoolId           String   @unique
@@ -1108,6 +1127,9 @@ model StudentInvoice {
   proofUploadedAt    DateTime?
   paidAt             DateTime?
   verifiedByUserId   String?
+  paymentMethod      String?   // MANUAL_PIX, DEBIT_CARD, CREDIT_CARD, CASH, BANK_TRANSFER
+  cardMachineId      String?
+  netAmountCents     Int?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
