@@ -43,6 +43,14 @@ export function buildWhatsAppLink(phone: string, encodedMessage: string): string
   return `https://wa.me/${clean}?text=${encodedMessage}`;
 }
 
+export function sanitizeBrazilianPhone(phone: string): string {
+  let clean = phone.replace(/\D/g, "");
+  if (clean.length === 10 || clean.length === 11) {
+    clean = `55${clean}`;
+  }
+  return clean;
+}
+
 export function normalizeWhatsAppNumber(phone: string): string | null {
   if (!phone) return null;
   const digits = phone.replace(/\D/g, "");
