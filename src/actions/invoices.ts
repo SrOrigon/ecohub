@@ -307,9 +307,45 @@ export async function getAwaitingConfirmationInvoicesAction() {
         include: {
           user: { select: { fullName: true, email: true } },
           classGroup: { select: { name: true } },
+          parentLinks: {
+            include: {
+              parent: { select: { id: true, fullName: true, phone: true } },
+            },
+          },
         },
       },
     },
     orderBy: { proofUploadedAt: "desc" },
+  });
+}
+
+export async function getOverdueInvoicesAction() {
+  const user = await requireSession(["admin", "director", "secretary"]);
+  if (!user.schoolId) return [];
+
+  const now = new Date();
+
+  return prisma.studentInvoice.findMany({
+    where: {
+      schoolId: user.schoolId,
+      OR: [
+        { status: "OVERDUE" },
+        { status: "PENDING", dueDate: { lt: now } },
+      ],
+    },
+    include: {
+      student: {
+        include: {
+          user: { select: { fullName: true, email: true } },
+          classGroup: { select: { name: true } },
+          parentLinks: {
+            include: {
+              parent: { select: { id: true, fullName: true, phone: true } },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { dueDate: "asc" },
   });
 }

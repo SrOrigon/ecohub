@@ -36,15 +36,26 @@ export interface PendingInvoiceItem {
 
 export function AdminInvoicesManager({
   pendingInvoices = [],
+  overdueInvoices = [],
 }: {
   pendingInvoices: PendingInvoiceItem[];
+  overdueInvoices?: PendingInvoiceItem[];
 }) {
   const [selectedInvoice, setSelectedInvoice] = useState<PendingInvoiceItem | null>(null);
   const [previewProof, setPreviewProof] = useState<string | null>(null);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [noPhoneModalStudent, setNoPhoneModalStudent] = useState<{ id: string; name: string } | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [sentInvoiceIds, setSentInvoiceIds] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
+
+  const overdueList =
+    overdueInvoices.length > 0
+      ? overdueInvoices
+      : pendingInvoices.filter((inv) => {
+          return inv.status === "OVERDUE" || new Date(inv.dueDate).getTime() < Date.now();
+        });
 
   function handleWhatsAppCharge(inv: PendingInvoiceItem) {
     const parent = inv.student.parentLinks?.[0]?.parent;
@@ -106,12 +117,24 @@ export function AdminInvoicesManager({
   return (
     <Card className="border-amber-200 bg-amber-50/30 dark:border-amber-900 dark:bg-amber-950/20">
       <CardHeader>
-        <CardTitle className="text-base flex items-center justify-between">
-          <span className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
-            Faturas Aguardando Confirmação
-          </span>
-          <Badge variant="warning">{pendingInvoices.length} pendente(s)</Badge>
-        </CardTitle>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="text-base flex items-center gap-2 text-amber-900 dark:text-amber-200">
+            Faturas e Recebimentos
+          </CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs border-emerald-400 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
+              onClick={() => setBatchModalOpen(true)}
+            >
+              <MessageSquare className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              Disparo Rápido WhatsApp (Faturas Vencidas)
+            </Button>
+            <Badge variant="warning">{pendingInvoices.length} pendente(s)</Badge>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {pendingInvoices.length === 0 ? (
@@ -303,6 +326,107 @@ export function AdminInvoicesManager({
                   onClick={handleRejectSubmit}
                 >
                   Confirmar Recusa
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        )}
+
+        {/* Modal Disparo Rápido WhatsApp (Faturas Vencidas) */}
+        {batchModalOpen && (
+          <Modal
+            open={batchModalOpen}
+            onClose={() => setBatchModalOpen(false)}
+            title="Disparo Rápido WhatsApp (Faturas Vencidas)"
+          >
+            <div className="space-y-4">
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Envie lembretes e cobranças com chave Pix Copia e Cola diretamente no WhatsApp dos responsáveis com faturas em atraso.
+              </p>
+
+              {overdueList.length === 0 ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-6 text-center text-xs text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
+                  <Check className="mx-auto mb-2 h-6 w-6 text-emerald-600" />
+                  <p className="font-semibold text-sm">Nenhuma fatura vencida encontrada!</p>
+                  <p className="text-slate-500 mt-1">Todas as cobranças escolares estão em dia.</p>
+                </div>
+              ) : (
+                <div className="max-h-[380px] space-y-2.5 overflow-y-auto pr-1">
+                  {overdueList.map((inv) => {
+                    const parent = inv.student.parentLinks?.[0]?.parent;
+                    const rawPhone = parent?.phone;
+                    const normalizedPhone = rawPhone ? normalizeWhatsAppNumber(rawPhone) : null;
+                    const isSent = sentInvoiceIds.includes(inv.id);
+
+                    return (
+                      <div
+                        key={inv.id}
+                        className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-xs sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-900 dark:text-white text-xs truncate">
+                              {inv.student.user.fullName}
+                            </span>
+                            <span className="text-[11px] text-slate-500">
+                              ({inv.student.classGroup?.name ?? "Sem turma"})
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                            Responsável: <strong>{parent?.fullName ?? "Não vinculado"}</strong>
+                            {rawPhone ? ` · ${rawPhone}` : " · Sem telefone"}
+                          </p>
+                          <div className="flex items-center gap-2 text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+                            <span className="font-bold">{formatBRL(inv.amountCents)}</span>
+                            <span>· Venc: {formatDate(inv.dueDate.toString())}</span>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0">
+                          {normalizedPhone ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              className={`h-7 gap-1 text-xs transition-colors ${
+                                isSent
+                                  ? "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300"
+                                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                              }`}
+                              onClick={() => {
+                                handleWhatsAppCharge(inv);
+                                if (!isSent) {
+                                  setSentInvoiceIds((prev) => [...prev, inv.id]);
+                                }
+                              }}
+                            >
+                              {isSent ? (
+                                <>
+                                  <Check className="h-3 w-3 text-emerald-600" />
+                                  Enviado
+                                </>
+                              ) : (
+                                <>
+                                  <MessageSquare className="h-3 w-3" />
+                                  Cobrar WhatsApp
+                                </>
+                              )}
+                            </Button>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-1 text-[11px] font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                              <AlertCircle className="h-3 w-3" />
+                              Sem WhatsApp
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setBatchModalOpen(false)}>
+                  Fechar
                 </Button>
               </div>
             </div>

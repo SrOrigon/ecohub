@@ -10,7 +10,7 @@ import { AdjustStudentPointsForm } from "@/components/forms/adjust-student-point
 import { getStudents } from "@/lib/queries";
 import { redirect } from "next/navigation";
 import { getOverdueFinanceAlertsAction } from "@/actions/student-finance";
-import { getAwaitingConfirmationInvoicesAction } from "@/actions/invoices";
+import { getAwaitingConfirmationInvoicesAction, getOverdueInvoicesAction } from "@/actions/invoices";
 import { AdminInvoicesManager } from "@/components/finance/admin-invoices-manager";
 import { formatBRL } from "@/lib/student-finance";
 
@@ -19,7 +19,16 @@ export default async function SecretariaPage() {
   if (!user?.schoolId) redirect("/login");
   if (user.role !== "secretary" && user.role !== "admin") redirect("/dashboard");
 
-  const [pendingEnrollments, pendingAuths, unreadThreads, alerts, students, overdueAlerts, awaitingInvoices] = await Promise.all([
+  const [
+    pendingEnrollments,
+    pendingAuths,
+    unreadThreads,
+    alerts,
+    students,
+    overdueAlerts,
+    awaitingInvoices,
+    overdueInvoices,
+  ] = await Promise.all([
     prisma.enrollmentApplication.count({ where: { schoolId: user.schoolId, status: "pending" } }),
     prisma.authorizationForm.count({
       where: { schoolId: user.schoolId, responses: { none: {} } },
@@ -29,6 +38,7 @@ export default async function SecretariaPage() {
     getStudents(user.schoolId),
     getOverdueFinanceAlertsAction(5),
     getAwaitingConfirmationInvoicesAction(),
+    getOverdueInvoicesAction(),
   ]);
 
   const adjustStudents = students.map((s) => ({
@@ -97,8 +107,11 @@ export default async function SecretariaPage() {
         </Card>
       )}
 
-      {awaitingInvoices.length > 0 && (
-        <AdminInvoicesManager pendingInvoices={awaitingInvoices} />
+      {(awaitingInvoices.length > 0 || overdueInvoices.length > 0) && (
+        <AdminInvoicesManager
+          pendingInvoices={awaitingInvoices}
+          overdueInvoices={overdueInvoices}
+        />
       )}
 
       <div className="stat-grid">

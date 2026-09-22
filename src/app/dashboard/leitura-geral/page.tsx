@@ -57,7 +57,7 @@ export default async function LeituraGeralPage() {
 
   if (!user.schoolId) redirect("/dashboard");
 
-  const [data, temporal, precision, executive] = await Promise.all([
+  const [data, temporal, precision, executiveData] = await Promise.all([
     getInstitutionalOverview(user.schoolId),
     getTemporalAnalysis(user.schoolId),
     getSubjectPrecisionOverview(user.schoolId),
@@ -97,9 +97,9 @@ export default async function LeituraGeralPage() {
       </PageHeader>
 
       {/* Visão Executiva Agregada */}
-      <ExecutiveKpiGrid data={executive} />
+      <ExecutiveKpiGrid data={executiveData} />
 
-      <AtRiskStudentsTable students={executive.atRiskStudents} />
+      <AtRiskStudentsTable students={executiveData.atRiskStudents} />
 
       <div className={layout.grid3}>
         <div className="min-w-0">
