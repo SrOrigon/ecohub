@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, FileCheck, MessageSquare, AlertTriangle, Bot } from "lucide-react";
+import { ClipboardList, FileCheck, MessageSquare, AlertTriangle, Bot, CreditCard, ArrowRight } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { computeRiskAlerts } from "@/lib/risk-alerts";
@@ -50,12 +50,21 @@ export default async function SecretariaPage() {
         title="Painel da Secretaria"
         description="Operações do dia a dia  -  matrículas, documentos, mensagens e alertas."
       >
-        <Link
-          href="/dashboard/leitura-geral"
-          className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
-        >
-          Leitura geral pedagógica
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/dashboard/configuracoes/pagamentos"
+            className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+          >
+            <CreditCard className="h-4 w-4 text-emerald-700" aria-hidden="true" />
+            Configurar Recebimentos Pix
+          </Link>
+          <Link
+            href="/dashboard/leitura-geral"
+            className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+          >
+            Leitura geral pedagógica
+          </Link>
+        </div>
       </PageHeader>
 
       {overdueAlerts.length > 0 && (
@@ -103,6 +112,27 @@ export default async function SecretariaPage() {
           />
         ))}
       </div>
+
+      <Card className="border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base font-bold text-emerald-950 dark:text-emerald-100">
+            <CreditCard className="h-5 w-5 text-emerald-600" aria-hidden="true" />
+            Gestão Financeira &amp; Recebimentos
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm text-emerald-950 dark:text-emerald-200">
+          <p className="text-slate-700 dark:text-slate-300">
+            Defina a chave Pix institucional, instruções de transferência e integrações com gateway de pagamentos.
+          </p>
+          <Link
+            href="/dashboard/configuracoes/pagamentos"
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-emerald-700 shrink-0"
+          >
+            <span>Configurar Recebimentos Pix</span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </CardContent>
+      </Card>
 
       {adjustStudents.length > 0 && (
         <Card className="border-violet-200 bg-violet-50/40">

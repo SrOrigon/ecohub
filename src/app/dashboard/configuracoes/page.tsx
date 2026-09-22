@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form-fields";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CreditCard, ArrowRight } from "lucide-react";
 
 export default async function ConfiguracoesPage() {
   const user = await getSessionUser();
@@ -55,6 +56,37 @@ export default async function ConfiguracoesPage() {
           Configurar métodos de recebimento (Pix / Gateway)
         </Link>
       </div>
+
+      {(user.role === "admin" || user.role === "director") && (
+        <Card className="border-emerald-300 bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-white dark:border-emerald-800 dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-slate-900 shadow-sm">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs">
+                <CreditCard className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-bold text-emerald-950 dark:text-emerald-100">
+                  Pagamentos &amp; Cobranças (Pix / Gateway)
+                </CardTitle>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+              Configure a chave Pix da instituição ou conecte seu gateway de faturamento para recebimento de mensalidades e taxas.
+            </p>
+            <div>
+              <Link
+                href="/dashboard/configuracoes/pagamentos"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-base font-semibold text-white shadow-xs hover:bg-emerald-700 transition-all duration-150 active:scale-[0.98]"
+              >
+                <span>Configurar Pagamentos &amp; Recebimentos</span>
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-indigo-200 bg-indigo-50/80 dark:border-indigo-900 dark:bg-indigo-950/30">
         <CardHeader>
