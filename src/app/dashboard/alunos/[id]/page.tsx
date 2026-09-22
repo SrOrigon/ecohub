@@ -15,7 +15,8 @@ import { formatDate } from "@/lib/utils";
 import { ATTENDANCE_LABELS, type AttendanceStatus } from "@/lib/constants";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, FileText, Medal, MapPin, Target } from "lucide-react";
+import { BookOpen, FileText, Medal, MapPin, Target, ShieldAlert } from "lucide-react";
+import { calculateStudentDropoutRisk } from "@/lib/predictive-dropout";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import { EditStudentForm } from "@/components/forms/edit-student-form";
 import { CreateStudentActivityForm } from "@/components/forms/create-student-activity-form";
@@ -74,7 +75,7 @@ export default async function StudentDetailPage({
     if (!own || own.id !== id) redirect("/dashboard/aluno");
   }
 
-  const [student, classes, history, precision, settings, wallet, ranking] = await Promise.all([
+  const [student, classes, history, precision, settings, wallet, ranking, dropoutRisk] = await Promise.all([
     getStudentById(id, user.schoolId),
     getClasses(user.schoolId),
     getStudentHistory(id),
@@ -82,6 +83,7 @@ export default async function StudentDetailPage({
     getSchoolSettings(user.schoolId),
     getStudentWallet(id),
     getRanking(user.schoolId, null, 50),
+    user.schoolId ? calculateStudentDropoutRisk(id, user.schoolId) : Promise.resolve(null),
   ]);
   if (!student) notFound();
 
@@ -237,6 +239,50 @@ export default async function StudentDetailPage({
           )}
         </div>
       </PageHeader>
+
+      {dropoutRisk && dropoutRisk.score > 20 && (
+        <Card className="border-amber-300 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base font-bold text-amber-950 dark:text-amber-100">
+              <ShieldAlert className="h-5 w-5 text-amber-600" aria-hidden="true" />
+              Early Warning System  -  Diagnóstico Anti-Evasão
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-amber-950 dark:text-amber-200">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">Nível de Risco:</span>
+              <Badge
+                variant={
+                  dropoutRisk.level === "CRITICAL"
+                    ? "danger"
+                    : dropoutRisk.level === "HIGH"
+                      ? "warning"
+                      : "secondary"
+                }
+              >
+                {dropoutRisk.level === "CRITICAL"
+                  ? "Crítico"
+                  : dropoutRisk.level === "HIGH"
+                    ? "Alto"
+                    : "Médio"}{" "}
+                ({dropoutRisk.score} / 100 pts)
+              </Badge>
+            </div>
+            {dropoutRisk.factors.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Motivos detectados pelo motor preditivo:
+                </p>
+                <ul className="list-disc pl-4 text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
+                  {dropoutRisk.factors.map((factor, idx) => (
+                    <li key={idx}>{factor}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="overflow-hidden border-2 border-indigo-100">
         <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center">

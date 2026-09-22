@@ -191,6 +191,10 @@ model Student {
   equippedBackground String?
   equippedPet     String?
   status          String    @default("active")
+  dropoutRiskScore Int      @default(0)
+  dropoutRiskLevel String   @default("LOW")
+  dropoutFactors   String   @default("[]")
+  lastRiskAssessment DateTime?
   createdAt       DateTime  @default(now())
 
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)

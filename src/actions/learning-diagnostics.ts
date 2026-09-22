@@ -1,11 +1,178 @@
 "use server";
 
-import { requireSession } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
+import { getSessionUser, requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { teacherClassWhere } from "@/lib/teacher-classes";
 import { assertClassInScope, assertStudentInScope } from "@/lib/tenant-guards";
 import { notifyStudent } from "@/lib/notifications";
-import { revalidatePath } from "next/cache";
+import {
+  calculateStudentDropoutRisk,
+  type StudentDropoutRiskAssessment,
+} from "@/lib/predictive-dropout";
+
+export async function refreshClassDropoutRisk(classId: string) {
+  const user = await getSessionUser();
+  if (!user || !user.schoolId) {
+    return { success: false, error: "Sessão inválida" };
+  }
+
+  const classGroup = await prisma.classGroup.findFirst({
+    where: { id: classId, schoolId: user.schoolId },
+    include: {
+      students: {
+        select: { id: true },
+      },
+    },
+  });
+
+  if (!classGroup) {
+    return { success: false, error: "Turma não encontrada nesta instituição" };
+  }
+
+  const assessments: StudentDropoutRiskAssessment[] = [];
+
+  for (const student of classGroup.students) {
+    const assessment = await calculateStudentDropoutRisk(student.id, user.schoolId);
+    if (assessment) {
+      assessments.push(assessment);
+      await prisma.student.update({
+        where: { id: student.id },
+        data: {
+          dropoutRiskScore: assessment.score,
+          dropoutRiskLevel: assessment.level,
+          dropoutFactors: JSON.stringify(assessment.factors),
+          lastRiskAssessment: assessment.assessedAt,
+        },
+      });
+    }
+  }
+
+  revalidatePath("/dashboard/alertas");
+  revalidatePath(`/dashboard/turmas/${classId}`);
+
+  return {
+    success: true,
+    count: assessments.length,
+    assessments,
+  };
+}
+
+export async function getSchoolDropoutRiskSummary(schoolId: string) {
+  const user = await getSessionUser();
+  if (!user || user.schoolId !== schoolId) {
+    throw new Error("Acesso não autorizado para esta instituição");
+  }
+
+  const studentsAtRisk = await prisma.student.findMany({
+    where: {
+      user: { schoolId },
+      status: "active",
+      dropoutRiskLevel: { in: ["HIGH", "CRITICAL"] },
+    },
+    include: {
+      user: { select: { fullName: true, email: true, avatarUrl: true } },
+      classGroup: { select: { id: true, name: true } },
+    },
+    orderBy: { dropoutRiskScore: "desc" },
+  });
+
+  return studentsAtRisk.map((s) => ({
+    studentId: s.id,
+    studentName: s.user.fullName,
+    enrollmentCode: s.enrollmentCode,
+    avatarUrl: s.user.avatarUrl,
+    className: s.classGroup?.name ?? "Sem turma",
+    score: s.dropoutRiskScore,
+    level: s.dropoutRiskLevel,
+    factors: (JSON.parse(s.dropoutFactors || "[]") as string[]) ?? [],
+    lastRiskAssessment: s.lastRiskAssessment,
+  }));
+}
+
+export async function notifyParentDropoutRiskAction(studentId: string, customMessage?: string) {
+  const user = await getSessionUser();
+  if (!user || !user.schoolId) {
+    return { success: false, error: "Sessão expirada" };
+  }
+
+  const student = await prisma.student.findFirst({
+    where: { id: studentId, user: { schoolId: user.schoolId } },
+    include: {
+      user: { select: { fullName: true } },
+      parentLinks: { select: { parentId: true } },
+    },
+  });
+
+  if (!student) {
+    return { success: false, error: "Aluno não encontrado" };
+  }
+
+  const parentIds = student.parentLinks.map((p) => p.parentId);
+  if (parentIds.length === 0) {
+    return {
+      success: false,
+      error: "Nenhum responsável cadastrado para este aluno",
+    };
+  }
+
+  const messageText =
+    customMessage ||
+    `Comunicado de Acompanhamento: Identificamos oscilações no engajamento e presença de ${student.user.fullName}. Solicitamos agendar uma reunião pedagógica.`;
+
+  for (const parentId of parentIds) {
+    await prisma.notification.create({
+      data: {
+        userId: parentId,
+        title: "Alerta de Acompanhamento Pedagógico",
+        message: messageText,
+        href: `/dashboard/responsavel/filho/${studentId}`,
+      },
+    });
+  }
+
+  revalidatePath(`/dashboard/alunos/${studentId}`);
+  revalidatePath("/dashboard/alertas");
+
+  return {
+    success: true,
+    message: `Notificação enviada para ${parentIds.length} responsável(is).`,
+  };
+}
+
+export async function createReinforcementPlanAction(studentId: string, notes: string) {
+  const user = await getSessionUser();
+  if (!user || !user.schoolId) {
+    return { success: false, error: "Sessão expirada" };
+  }
+
+  const student = await prisma.student.findFirst({
+    where: { id: studentId, user: { schoolId: user.schoolId } },
+    include: { user: { select: { fullName: true } } },
+  });
+
+  if (!student) {
+    return { success: false, error: "Aluno não encontrado" };
+  }
+
+  await prisma.studentActivity.create({
+    data: {
+      studentId: student.id,
+      type: "reinforcement_plan",
+      title: "Plano de Apoio Pedagógico e Reforço Criado",
+      detail: notes,
+      occurredAt: new Date(),
+    },
+  });
+
+  revalidatePath(`/dashboard/alunos/${studentId}`);
+  revalidatePath("/dashboard/alertas");
+
+  return {
+    success: true,
+    message: "Plano de reforço registrado no histórico do aluno com sucesso.",
+  };
+}
 
 export type TopicDiagnostic = {
   subject: string;

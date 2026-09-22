@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { getAttentionAlertsSnapshot } from "@/lib/attention-alerts";
 import { AttentionAlertsPanel } from "@/components/alerts/attention-alerts-panel";
+import { DropoutRiskPanel } from "@/components/teacher/dropout-risk-panel";
+import { getSchoolDropoutRiskSummary } from "@/actions/learning-diagnostics";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { redirect } from "next/navigation";
@@ -12,10 +14,15 @@ export default async function AlertasPage() {
   if (!user?.schoolId) redirect("/login");
   if (!["admin", "director", "secretary"].includes(user.role)) redirect("/dashboard");
 
-  const snapshot = await getAttentionAlertsSnapshot(user);
+  const [snapshot, riskSummary] = await Promise.all([
+    getAttentionAlertsSnapshot(user),
+    getSchoolDropoutRiskSummary(user.schoolId),
+  ]);
 
   return (
     <div className="space-y-6">
+      <DropoutRiskPanel students={riskSummary} />
+
       <PageHeader
         title="Alertas de atenção"
         description="Monitoramento institucional: notas por matéria, frequência, faltas e prazos de entrega."
