@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState, FormEvent } from "react";
 import { createGradeAction } from "@/actions/crud";
+import { useOfflineMutation } from "@/hooks/use-offline-mutation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
@@ -24,20 +25,45 @@ export function CreateGradeForm({
   maxGrade?: number;
 }) {
   const [open, setOpen] = useState(false);
-  const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
-      const result = await createGradeAction(formData);
-      if (result.success) setOpen(false);
-      return result;
-    },
+  const { mutate } = useOfflineMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resultState, setResultState] = useState<{ error?: string; message?: string; queued?: boolean } | null>(
     null
   );
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setResultState(null);
+
+    const formData = new FormData(e.currentTarget);
+    try {
+      const res = await mutate("createGradeAction", formData, createGradeAction);
+      if (res.success) {
+        if (res.queued) {
+          setResultState({
+            queued: true,
+            message: res.message ?? "Nota salva offline. Será enviada ao reconectar.",
+          });
+        } else {
+          setResultState({ message: "Nota lançada! XP creditado automaticamente." });
+          setTimeout(() => setOpen(false), 1200);
+        }
+      } else {
+        setResultState({ error: res.error ?? "Erro ao lançar nota." });
+      }
+    } catch {
+      setResultState({ error: "Erro de conexão ao lançar nota." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <>
       <Button onClick={() => setOpen(true)}>+ Lançar nota</Button>
       <Modal open={open} onClose={() => setOpen(false)} title="Lançar nota">
-        <form action={formAction} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="studentId">Aluno</Label>
             <Select id="studentId" name="studentId" required>
@@ -75,10 +101,14 @@ export function CreateGradeForm({
               ))}
             </Select>
           </div>
-          {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-          {state?.success && <p className="text-sm text-emerald-600">Nota lançada! XP creditado automaticamente.</p>}
-          <Button type="submit" disabled={pending} className="w-full">
-            {pending ? "Salvando..." : "Lançar nota"}
+          {resultState?.error && <p className="text-sm text-red-600">{resultState.error}</p>}
+          {resultState?.message && (
+            <p className={`text-sm ${resultState.queued ? "text-amber-700 font-medium" : "text-emerald-600"}`}>
+              {resultState.message}
+            </p>
+          )}
+          <Button type="submit" disabled={isSubmitting} className="w-full">
+            {isSubmitting ? "Salvando..." : "Lançar nota"}
           </Button>
         </form>
       </Modal>

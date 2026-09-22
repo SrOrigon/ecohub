@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { bulkAttendanceAction, getClassStudentsAction } from "@/actions/crud";
+import { useOfflineMutation } from "@/hooks/use-offline-mutation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
@@ -31,14 +32,39 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [isOfflineCached, setIsOfflineCached] = useState(false);
 
-  const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string; success?: boolean; message?: string } | null, formData: FormData) => {
-      const result = await bulkAttendanceAction(formData);
-      if (result.success) setOpen(false);
-      return result;
-    },
+  const { mutate } = useOfflineMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resultState, setResultState] = useState<{ error?: string; message?: string; queued?: boolean } | null>(
     null
   );
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setResultState(null);
+
+    const formData = new FormData(e.currentTarget);
+    try {
+      const res = await mutate("bulkAttendanceAction", formData, bulkAttendanceAction);
+      if (res.success) {
+        if (res.queued) {
+          setResultState({
+            queued: true,
+            message: res.message ?? "Chamada salva offline. Sincronização pendente.",
+          });
+        } else {
+          setResultState({ message: res.message ?? "Chamada registrada com sucesso!" });
+          setTimeout(() => handleClose(), 1200);
+        }
+      } else {
+        setResultState({ error: res.error ?? "Erro ao registrar chamada." });
+      }
+    } catch {
+      setResultState({ error: "Erro de conexão ao processar requisição." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   const today = useToday();
 
@@ -101,7 +127,7 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
         Chamada por turma
       </Button>
       <Modal open={open} onClose={handleClose} title="Chamada em lote">
-        <form action={formAction} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="bulk-date">Data</Label>
             <Input id="bulk-date" name="date" type="date" defaultValue={today} min="2024-05-01" max={today} required />
@@ -155,10 +181,14 @@ export function BulkAttendanceForm({ classes }: { classes: ClassWithStudents[] }
             </div>
           )}
 
-          {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-          {state?.message && <p className="text-sm text-emerald-600">{state.message}</p>}
-          <Button type="submit" disabled={pending || !selectedClass} className="w-full">
-            {pending ? "Salvando..." : "Registrar chamada"}
+          {resultState?.error && <p className="text-sm text-red-600">{resultState.error}</p>}
+          {resultState?.message && (
+            <p className={`text-sm ${resultState.queued ? "text-amber-700 font-medium" : "text-emerald-600"}`}>
+              {resultState.message}
+            </p>
+          )}
+          <Button type="submit" disabled={isSubmitting || !selectedClass} className="w-full">
+            {isSubmitting ? "Salvando..." : "Registrar chamada"}
           </Button>
         </form>
       </Modal>

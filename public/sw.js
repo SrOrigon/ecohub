@@ -49,6 +49,19 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Suporte a Background Sync
+self.addEventListener("sync", (event) => {
+  if (event.tag === "sync-pending-mutations") {
+    event.waitUntil(
+      self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ type: "SYNC_PENDING_MUTATIONS" });
+        });
+      })
+    );
+  }
+});
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
