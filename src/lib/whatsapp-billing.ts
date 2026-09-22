@@ -1,21 +1,56 @@
-import { formatBRL } from "@/lib/student-finance";
-import { formatDate } from "@/lib/utils";
+export interface WhatsAppInvoicePayload {
+  parentName: string;
+  studentName: string;
+  schoolName: string;
+  amount: number;
+  dueDate: string;
+  pixCode?: string | null;
+  referenceMonth?: string | null;
+}
+
+export function formatBRL(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+}
+
+export function buildWhatsAppBillingMessage(payload: WhatsAppInvoicePayload): string {
+  const formattedVal = formatBRL(payload.amount);
+  const ref = payload.referenceMonth ? ` referente a ${payload.referenceMonth}` : "";
+
+  let msg = `Olá, ${payload.parentName}!\n\n`;
+  msg += `Lembramos da fatura escolar de *${payload.studentName}*${ref}, `;
+  msg += `com vencimento em *${payload.dueDate}* no valor de *${formattedVal}*.\n\n`;
+
+  if (payload.pixCode) {
+    msg += `📌 *Código Pix Copia e Cola:*\n\`\`\`${payload.pixCode}\`\`\`\n\n`;
+  }
+
+  msg += `Qualquer dúvida, estamos à disposição.\n*${payload.schoolName}*`;
+  return encodeURIComponent(msg);
+}
+
+export function buildWhatsAppLink(phone: string, encodedMessage: string): string {
+  let clean = phone.replace(/\D/g, "");
+  if (clean.length === 10 || clean.length === 11) {
+    clean = `55${clean}`;
+  }
+  return `https://wa.me/${clean}?text=${encodedMessage}`;
+}
 
 export function normalizeWhatsAppNumber(phone: string): string | null {
   if (!phone) return null;
   const digits = phone.replace(/\D/g, "");
 
-  // Formato nacional brasileiro com DDD (10 ou 11 dígitos, ex: 21999998888 ou 2133334444)
   if (digits.length === 10 || digits.length === 11) {
     return `55${digits}`;
   }
 
-  // Já em formato internacional com 55 (12 ou 13 dígitos)
   if (digits.length === 12 || digits.length === 13) {
     if (digits.startsWith("55")) return digits;
   }
 
-  // Outros formatos com pelo menos 10 dígitos
   if (digits.length >= 10 && digits.length <= 15) {
     return digits;
   }
@@ -49,59 +84,20 @@ export function generateInvoiceWhatsAppMessage(
   invoice: InvoiceBillingDetails,
   schoolName: string = "Ecohub"
 ): string {
-  const amountStr = formatBRL(invoice.amountCents);
-  const dueDateStr = formatDate(invoice.dueDate.toString());
-  const parentGreeting = invoice.parentName ? `Olá, ${invoice.parentName}!` : "Olá!";
-
-  let message = `${parentGreeting}\n\n`;
-  message += `Lembrete de cobrança de *${schoolName}* referente ao estudante *${invoice.studentName}*:\n\n`;
-  message += `📌 *Fatura:* ${invoice.title}\n`;
-  message += `💰 *Valor:* ${amountStr}\n`;
-  message += `📅 *Vencimento:* ${dueDateStr}\n\n`;
-
-  if (invoice.pixCopyPaste) {
-    message += `🔑 *Pix Copia e Cola:*\n\`\`\`${invoice.pixCopyPaste}\`\`\`\n\n`;
-  } else if (invoice.pixKey) {
-    message += `🔑 *Chave Pix da Instituição:* ${invoice.pixKey}\n\n`;
-  }
-
-  message += `Agradecemos pela atenção e parceria! Caso já tenha efetuado o pagamento, por gentileza desconsidere este aviso.`;
-
-  return message;
-}
-
-export function buildWhatsAppBillingMessage(params: {
-  parentName: string;
-  studentName: string;
-  schoolName: string;
-  amount: number;
-  dueDate: string;
-  pixCode?: string;
-  referenceMonth?: string;
-}): string {
-  const formattedAmount = new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(params.amount);
-
-  return (
-    `Olá, ${params.parentName}! %0A%0A` +
-    `Lembramos sobre a mensalidade escolar de *${params.studentName}* referente a *${params.referenceMonth || "mensalidade"}*, ` +
-    `com vencimento em *${params.dueDate}* no valor de *${formattedAmount}*.%0A%0A` +
-    (params.pixCode ? `📌 *Código Pix Copia e Cola:*%0A\`\`\`${params.pixCode}\`\`\`%0A%0A` : "") +
-    `Agradecemos a parceria com a *${params.schoolName}*!`
-  );
-}
-
-export function buildWhatsAppLink(phone: string, message: string): string {
-  const cleanPhone = phone.replace(/\D/g, "");
-  return `https://wa.me/${cleanPhone}?text=${message}`;
+  return buildWhatsAppBillingMessage({
+    parentName: invoice.parentName || "Responsável",
+    studentName: invoice.studentName,
+    schoolName: schoolName,
+    amount: invoice.amountCents / 100,
+    dueDate: String(invoice.dueDate),
+    pixCode: invoice.pixCopyPaste || invoice.pixKey,
+  });
 }
 
 export function generateWhatsAppLink(phone: string, text: string): string | null {
   const normalizedPhone = normalizeWhatsAppNumber(phone);
   if (!normalizedPhone) return null;
 
-  const encodedText = encodeURIComponent(text);
+  const encodedText = text.includes("%") ? text : encodeURIComponent(text);
   return `https://api.whatsapp.com/send?phone=${normalizedPhone}&text=${encodedText}`;
 }
