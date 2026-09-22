@@ -18,6 +18,9 @@ import { getSessionUser } from "@/lib/auth";
 import { getInstitutionalOverview } from "@/lib/institutional-overview";
 import { getTemporalAnalysis } from "@/lib/institutional-trends";
 import { getSubjectPrecisionOverview } from "@/lib/subject-precision";
+import { getExecutiveDashboardData } from "@/lib/reads/executive-reads";
+import { ExecutiveKpiGrid } from "@/components/institutional/executive-kpi-grid";
+import { AtRiskStudentsTable } from "@/components/institutional/at-risk-students-table";
 import { SubjectPrecisionSummaryStrip } from "@/components/institutional/subject-precision-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,10 +55,13 @@ export default async function LeituraGeralPage() {
   if (!user) redirect("/login");
   if (!["admin", "director", "secretary"].includes(user.role)) redirect("/dashboard");
 
-  const [data, temporal, precision] = await Promise.all([
+  if (!user.schoolId) redirect("/dashboard");
+
+  const [data, temporal, precision, executive] = await Promise.all([
     getInstitutionalOverview(user.schoolId),
     getTemporalAnalysis(user.schoolId),
     getSubjectPrecisionOverview(user.schoolId),
+    getExecutiveDashboardData(user.schoolId),
   ]);
 
   const classChartData = data.classes.map((c) => ({
@@ -89,6 +95,11 @@ export default async function LeituraGeralPage() {
           </Link>
         </div>
       </PageHeader>
+
+      {/* Visão Executiva Agregada */}
+      <ExecutiveKpiGrid data={executive} />
+
+      <AtRiskStudentsTable students={executive.atRiskStudents} />
 
       <div className={layout.grid3}>
         <div className="min-w-0">
