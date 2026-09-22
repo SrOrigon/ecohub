@@ -22,7 +22,7 @@ export function BulkImportModal({
 
   function handleDownloadTemplate() {
     const csvContent =
-      "Nome do Aluno,Data Nasc (AAAA-MM-DD),Nome do Responsável,Telefone Responsável,Email Responsável,Turma\n" +
+      "Nome do Aluno,Data Nasc (AAAA-MM-DD),Nome do Responsável,whatsapp_responsavel,Email Responsável,Turma\n" +
       "Lucas Silva,2015-05-20,Maria Silva,11999998888,maria.silva@email.com,5º Ano A\n" +
       "Ana Souza,2016-08-12,João Souza,11988887777,joao.souza@email.com,4º Ano B\n";
 
@@ -75,14 +75,19 @@ export function BulkImportModal({
       const line = lines[i];
       const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
 
+      const parentPhone = cols[3] || "";
+      if (!parentPhone || parentPhone.replace(/\D/g, "").length < 10) {
+        continue; // Rejeitar linhas com WhatsApp/telefone do responsável ausente ou inválido
+      }
+
       if (cols.length >= 3) {
         parsedRecords.push({
           studentName: cols[0] || "",
           birthDate: cols[1] || "",
           parentName: cols[2] || "",
-          parentPhone: cols[3] || "",
+          parentPhone,
           parentEmail: cols[4] || "",
-          className: cols[5] || cols[3] || "Turma Geral",
+          className: cols[5] || "Turma Geral",
         });
       }
     }

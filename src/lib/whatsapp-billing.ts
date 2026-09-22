@@ -70,6 +70,34 @@ export function generateInvoiceWhatsAppMessage(
   return message;
 }
 
+export function buildWhatsAppBillingMessage(params: {
+  parentName: string;
+  studentName: string;
+  schoolName: string;
+  amount: number;
+  dueDate: string;
+  pixCode?: string;
+  referenceMonth?: string;
+}): string {
+  const formattedAmount = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(params.amount);
+
+  return (
+    `Olá, ${params.parentName}! %0A%0A` +
+    `Lembramos sobre a mensalidade escolar de *${params.studentName}* referente a *${params.referenceMonth || "mensalidade"}*, ` +
+    `com vencimento em *${params.dueDate}* no valor de *${formattedAmount}*.%0A%0A` +
+    (params.pixCode ? `📌 *Código Pix Copia e Cola:*%0A\`\`\`${params.pixCode}\`\`\`%0A%0A` : "") +
+    `Agradecemos a parceria com a *${params.schoolName}*!`
+  );
+}
+
+export function buildWhatsAppLink(phone: string, message: string): string {
+  const cleanPhone = phone.replace(/\D/g, "");
+  return `https://wa.me/${cleanPhone}?text=${message}`;
+}
+
 export function generateWhatsAppLink(phone: string, text: string): string | null {
   const normalizedPhone = normalizeWhatsAppNumber(phone);
   if (!normalizedPhone) return null;
