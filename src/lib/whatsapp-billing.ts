@@ -15,6 +15,10 @@ export function formatBRL(value: number): string {
   }).format(value);
 }
 
+export function formatCurrencyBRL(value: number): string {
+  return formatBRL(value);
+}
+
 export function buildWhatsAppBillingMessage(payload: WhatsAppInvoicePayload): string {
   const formattedVal = formatBRL(payload.amount);
   const ref = payload.referenceMonth ? ` referente a ${payload.referenceMonth}` : "";
