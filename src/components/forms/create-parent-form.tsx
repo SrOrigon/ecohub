@@ -5,7 +5,7 @@ import { createParentAction } from "@/actions/parents";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
-import { formatWhatsAppMask } from "@/lib/whatsapp-billing";
+import { formatWhatsAppMask, sanitizeBrazilianPhone } from "@/lib/whatsapp-billing";
 import { Modal } from "@/components/ui/modal";
 
 interface StudentOption {
@@ -25,6 +25,10 @@ export function CreateParentForm({ students }: { students: StudentOption[] }) {
   const [phone, setPhone] = useState("");
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
+      const rawPhone = String(formData.get("phone") ?? "");
+      if (rawPhone) {
+        formData.set("phone", sanitizeBrazilianPhone(rawPhone));
+      }
       const result = await createParentAction(formData);
       if (result.success) setOpen(false);
       return result;

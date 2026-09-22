@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { formatWhatsAppMask } from "@/lib/whatsapp-billing";
+import { formatWhatsAppMask, sanitizeBrazilianPhone } from "@/lib/whatsapp-billing";
 import { registerParentAction } from "@/actions/auth";
 import { runServerAction } from "@/lib/run-server-action";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,13 @@ import { ArrowLeft } from "lucide-react";
 export function RegisterParentForm({ initialSchoolSlug = "" }: { initialSchoolSlug?: string }) {
   const [phone, setPhone] = useState("");
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string } | null, formData: FormData) =>
-      runServerAction(async () => (await registerParentAction(formData)) ?? null),
+    async (_prev: { error?: string } | null, formData: FormData) => {
+      const rawPhone = String(formData.get("phone") ?? "");
+      if (rawPhone) {
+        formData.set("phone", sanitizeBrazilianPhone(rawPhone));
+      }
+      return runServerAction(async () => (await registerParentAction(formData)) ?? null);
+    },
     null
   );
 
