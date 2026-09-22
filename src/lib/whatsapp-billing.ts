@@ -8,47 +8,59 @@ export interface WhatsAppInvoicePayload {
   referenceMonth?: string | null;
 }
 
-export function formatBRL(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-}
-
-export function formatCurrencyBRL(value: number): string {
-  return formatBRL(value);
-}
-
-export function buildWhatsAppBillingMessage(payload: WhatsAppInvoicePayload): string {
-  const formattedVal = formatBRL(payload.amount);
-  const ref = payload.referenceMonth ? ` referente a ${payload.referenceMonth}` : "";
-
-  let msg = `Olá, ${payload.parentName}!\n\n`;
-  msg += `Lembramos da fatura escolar de *${payload.studentName}*${ref}, `;
-  msg += `com vencimento em *${payload.dueDate}* no valor de *${formattedVal}*.\n\n`;
-
-  if (payload.pixCode) {
-    msg += `📌 *Código Pix Copia e Cola:*\n\`\`\`${payload.pixCode}\`\`\`\n\n`;
-  }
-
-  msg += `Qualquer dúvida, estamos à disposição.\n*${payload.schoolName}*`;
-  return encodeURIComponent(msg);
-}
-
-export function buildWhatsAppLink(phone: string, encodedMessage: string): string {
-  let clean = phone.replace(/\D/g, "");
-  if (clean.length === 10 || clean.length === 11) {
-    clean = `55${clean}`;
-  }
-  return `https://wa.me/${clean}?text=${encodedMessage}`;
-}
-
+/**
+ * Higieniza telefones do padrão brasileiro para o formato internacional E.164.
+ * Remove caracteres não numéricos e prefixa '55' caso não exista.
+ */
 export function sanitizeBrazilianPhone(phone: string): string {
   let clean = phone.replace(/\D/g, "");
   if (clean.length === 10 || clean.length === 11) {
     clean = `55${clean}`;
   }
   return clean;
+}
+
+/**
+ * Formata valores numéricos para o padrão de moeda Real (BRL).
+ */
+export function formatCurrencyBRL(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+}
+
+export function formatBRL(value: number): string {
+  return formatCurrencyBRL(value);
+}
+
+/**
+ * Constrói a mensagem formal e amigável com os detalhes da fatura e Pix.
+ */
+export function buildWhatsAppBillingMessage(payload: WhatsAppInvoicePayload): string {
+  const formattedVal = formatCurrencyBRL(payload.amount);
+  const ref = payload.referenceMonth ? ` referente a *${payload.referenceMonth}*` : "";
+
+  let msg = `Olá, ${payload.parentName}!\n\n`;
+  msg += `Lembramos sobre a fatura escolar de *${payload.studentName}*${ref}, `;
+  msg += `com vencimento em *${payload.dueDate}* no valor de *${formattedVal}*.\n\n`;
+
+  if (payload.pixCode) {
+    msg += `📌 *Código Pix Copia e Cola:*\n\`\`\`${payload.pixCode}\`\`\`\n\n`;
+  }
+
+  msg += `Caso já tenha efetuado o pagamento, por favor desconsidere este aviso.\n\n`;
+  msg += `Atenciosamente,\n*${payload.schoolName}*`;
+
+  return encodeURIComponent(msg);
+}
+
+/**
+ * Gera a URL universal wa.me para abrir diretamente o WhatsApp Web/App.
+ */
+export function buildWhatsAppLink(phone: string, encodedMessage: string): string {
+  const cleanPhone = sanitizeBrazilianPhone(phone);
+  return `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
 }
 
 export function normalizeWhatsAppNumber(phone: string): string | null {
