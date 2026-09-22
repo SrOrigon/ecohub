@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import {
@@ -15,9 +16,26 @@ import {
   type GradeRow,
 } from "@/lib/boletim";
 import { cn } from "@/lib/utils";
-import { Calendar, GraduationCap, TrendingUp, UserCheck } from "lucide-react";
+import {
+  BookOpen,
+  Calendar,
+  Check,
+  Copy,
+  Edit3,
+  GraduationCap,
+  Loader2,
+  MessageCircle,
+  Sparkles,
+  TrendingUp,
+  UserCheck,
+} from "lucide-react";
+import { generatePedagogicalSummary } from "@/actions/report-card-summary";
+import { buildWhatsAppLink } from "@/lib/whatsapp-billing";
 
 type BoletimPayload = {
+  studentId?: string;
+  parentPhone?: string | null;
+  parentName?: string | null;
   studentName: string;
   avatarUrl: string | null;
   enrollmentCode: string;
@@ -35,6 +53,7 @@ type BoletimPayload = {
   xpTotal: number;
   badgeCount: number;
   badgeNames: string[];
+  initialObservations?: string | null;
 };
 
 function gradeCellClass(variant: "success" | "warning" | "danger") {
@@ -50,6 +69,11 @@ export function BoletimView({ data }: { data: BoletimPayload }) {
   );
 
   const [periodFilter, setPeriodFilter] = useState<string>("all");
+  const [observations, setObservations] = useState<string>(data.initialObservations || "");
+  const [isPendingAi, startAiTransition] = useTransition();
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [isEditingObservations, setIsEditingObservations] = useState<boolean>(false);
 
   const filteredGrades = useMemo(
     () =>
@@ -67,8 +91,121 @@ export function BoletimView({ data }: { data: BoletimPayload }) {
   const approval = approvalLabel(overallAvg, data.passGrade);
   const attendance = computeAttendanceSummary(data.attendance);
 
+  const handleGenerateAi = () => {
+    if (!data.studentId) return;
+    setAiError(null);
+    startAiTransition(async () => {
+      const res = await generatePedagogicalSummary(data.studentId!);
+      if (res.error) {
+        setAiError(res.error);
+      } else if (res.summary) {
+        setObservations(res.summary);
+      }
+    });
+  };
+
+  const handleSendWhatsApp = () => {
+    let targetPhone = data.parentPhone?.trim() || "";
+    if (!targetPhone) {
+      const input = window.prompt(
+        "Informe o WhatsApp do responsável (DDD + número, ex: 11988887777):"
+      );
+      if (!input) return;
+      targetPhone = input.trim();
+    }
+
+    let summaryGradesText = "";
+    if (displayPeriods.length > 0) {
+      summaryGradesText = displayPeriods
+        .map((p) => {
+          const periodGrades = data.grades.filter((g) => g.period === p);
+          if (periodGrades.length === 0) return null;
+          const avg = periodGrades.reduce((sum, g) => sum + g.value, 0) / periodGrades.length;
+          return `• ${p}: média ${avg.toFixed(1)}`;
+        })
+        .filter(Boolean)
+        .join("\n");
+    }
+
+    let msg = `Olá, ${data.parentName || "família"}! 🎓\n`;
+    msg += `Aqui está o resumo do boletim escolar de *${data.studentName}* (${data.schoolName} - ${data.year}):\n\n`;
+
+    if (overallAvg != null) {
+      msg += `📌 *Média Geral:* ${overallAvg.toFixed(1)} (Meta de aprovação: ${data.passGrade})\n`;
+    }
+    if (summaryGradesText) {
+      msg += `📊 *Médias por Período:*\n${summaryGradesText}\n`;
+    }
+    if (attendance) {
+      msg += `\n📅 *Frequência Escolar:* ${attendance.rate}% (${attendance.present + attendance.late} presenças em ${attendance.total} aulas)\n`;
+    }
+
+    if (observations.trim()) {
+      msg += `\n📝 *Parecer Pedagógico da Escola:*\n${observations.trim()}\n`;
+    } else {
+      msg += `\nPara acompanhar notas detalhadas e atividades diárias, acesse o portal escolar.\n`;
+    }
+
+    msg += `\nEstamos à disposição para dialogar sobre o desenvolvimento pedagógico do estudante.\n*${data.schoolName}*`;
+
+    const encoded = encodeURIComponent(msg);
+    const link = buildWhatsAppLink(targetPhone, encoded);
+    window.open(link, "_blank");
+  };
+
+  const handleCopyObservations = () => {
+    if (!observations) return;
+    navigator.clipboard.writeText(observations);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Barra de Ações Rápidas: IA e WhatsApp */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50/90 to-white p-4 shadow-sm print:hidden">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+            <Sparkles className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-800">Ações Rápidas do Boletim</p>
+            <p className="text-xs text-slate-500">
+              Síntese pedagógica assistida por IA & envio direto aos responsáveis
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleGenerateAi}
+            disabled={isPendingAi || !data.studentId}
+            className="gap-2 border-indigo-300 bg-white font-medium text-indigo-700 hover:bg-indigo-50"
+          >
+            {isPendingAi ? (
+              <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+            ) : (
+              <Sparkles className="h-4 w-4 text-indigo-600" />
+            )}
+            {isPendingAi ? "Gerando Parecer..." : "Gerar Parecer com IA"}
+          </Button>
+
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            onClick={handleSendWhatsApp}
+            className="gap-2 bg-emerald-600 font-medium text-white hover:bg-emerald-700"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Enviar Boletim (WhatsApp)
+          </Button>
+        </div>
+      </div>
+
       <section className="flex flex-col items-center gap-4 rounded-2xl border-2 border-indigo-100 bg-gradient-to-br from-indigo-50/80 to-white p-5 sm:flex-row sm:items-start sm:p-6">
         <ProfileAvatar name={data.studentName} avatarUrl={data.avatarUrl} size="lg" />
         <div className="min-w-0 flex-1 space-y-2 text-center sm:text-left">
@@ -232,6 +369,96 @@ export function BoletimView({ data }: { data: BoletimPayload }) {
           </div>
         </section>
       )}
+
+      {/* Seção de Parecer Descritivo Pedagógico */}
+      <section className="rounded-2xl border-2 border-indigo-100 bg-white p-5 shadow-sm print:border-slate-300 print:shadow-none">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-indigo-50 pb-3">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-indigo-600" aria-hidden="true" />
+            <h2 className="font-bold text-slate-900">Parecer Descritivo Pedagógico</h2>
+            <Badge variant="default" className="border-indigo-300 text-indigo-700">
+              IA Assistida
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2 print:hidden">
+            {observations && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingObservations(!isEditingObservations)}
+                  className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
+                >
+                  <Edit3 className="h-3.5 w-3.5" />
+                  {isEditingObservations ? "Visualizar" : "Editar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyObservations}
+                  className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      <span className="text-emerald-700">Copiado</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      Copiar
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleGenerateAi}
+              disabled={isPendingAi || !data.studentId}
+              className="gap-1.5 text-xs text-indigo-700 hover:bg-indigo-50"
+            >
+              {isPendingAi ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+              )}
+              {observations ? "Regenerar com IA" : "Gerar com IA"}
+            </Button>
+          </div>
+        </div>
+
+        {aiError && (
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+            {aiError}
+          </div>
+        )}
+
+        {isEditingObservations ? (
+          <textarea
+            value={observations}
+            onChange={(e) => setObservations(e.target.value)}
+            rows={8}
+            className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            placeholder="Escreva ou edite o parecer pedagógico descritivo do estudante..."
+          />
+        ) : observations ? (
+          <div className="whitespace-pre-line rounded-xl bg-slate-50/80 p-4 text-sm leading-relaxed text-slate-700 print:bg-transparent print:p-0">
+            {observations}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 py-8 text-center print:hidden">
+            <Sparkles className="mb-2 h-8 w-8 text-indigo-400" />
+            <p className="text-sm font-medium text-slate-700">
+              Nenhum parecer descritivo registrado
+            </p>
+            <p className="mt-1 max-w-md text-xs text-slate-500">
+              Clique no botão &quot;Gerar Parecer com IA&quot; para analisar o histórico
+              recente de notas, frequência e comportamento do estudante e sintetizar o documento.
+            </p>
+          </div>
+        )}
+      </section>
 
       {data.badgeNames.length > 0 && (
         <section>

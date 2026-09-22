@@ -25,7 +25,7 @@ export default async function BoletimPage({ params }: { params: Promise<{ id: st
     if (!own || own.id !== id) notFound();
   }
 
-  const [student, school, settings, attendanceRecords] = await Promise.all([
+  const [student, school, settings, attendanceRecords, parentLink] = await Promise.all([
     getStudentById(id, user.schoolId),
     getSchool(user),
     getSchoolSettings(user.schoolId),
@@ -34,6 +34,17 @@ export default async function BoletimPage({ params }: { params: Promise<{ id: st
       orderBy: { date: "desc" },
       take: 120,
       select: { status: true, date: true },
+    }),
+    prisma.parentStudent.findFirst({
+      where: { studentId: id },
+      include: {
+        parent: {
+          select: {
+            phone: true,
+            fullName: true,
+          },
+        },
+      },
     }),
   ]);
   if (!student) notFound();
@@ -53,6 +64,9 @@ export default async function BoletimPage({ params }: { params: Promise<{ id: st
         : "← Voltar ao perfil";
 
   const payload = {
+    studentId: student.id,
+    parentPhone: parentLink?.parent.phone ?? student.user.phone ?? null,
+    parentName: parentLink?.parent.fullName ?? null,
     studentName: student.user.fullName,
     avatarUrl: student.user.avatarUrl,
     enrollmentCode: student.enrollmentCode,
