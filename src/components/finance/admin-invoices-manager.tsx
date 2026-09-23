@@ -107,17 +107,6 @@ export function AdminInvoicesManager({
     }
   }
 
-  function handleApprove(invoiceId: string) {
-    const formData = new FormData();
-    formData.set("invoiceId", invoiceId);
-    formData.set("isApproved", "true");
-
-    startTransition(async () => {
-      await confirmInvoicePaymentAction(formData);
-      setSelectedInvoice(null);
-    });
-  }
-
   function handleRejectSubmit() {
     if (!selectedInvoice) return;
 

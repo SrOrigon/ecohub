@@ -171,7 +171,7 @@ export function SchoolPaymentSettingsForm({
 
               {cardMachines.length === 0 ? (
                 <p className="text-xs text-slate-500 py-2 italic text-center">
-                  Nenhuma maquininha de cartão cadastrada. Clique em "Nova Maquininha" para cadastrar.
+                  Nenhuma maquininha de cartão cadastrada. Clique em &quot;Nova Maquininha&quot; para cadastrar.
                 </p>
               ) : (
                 <div className="grid gap-2 sm:grid-cols-2">

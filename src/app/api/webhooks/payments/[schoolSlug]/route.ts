@@ -22,19 +22,17 @@ export async function POST(
     }
 
     const config = school.paymentConfigs[0];
-    let decryptedApiKey = null;
-    let decryptedApiSecret = null;
 
     if (config?.encryptedApiKey) {
       try {
-        decryptedApiKey = decryptSecret(config.encryptedApiKey);
+        decryptSecret(config.encryptedApiKey);
       } catch {
         /* ignore decrypt fallback */
       }
     }
     if (config?.encryptedApiSecret) {
       try {
-        decryptedApiSecret = decryptSecret(config.encryptedApiSecret);
+        decryptSecret(config.encryptedApiSecret);
       } catch {
         /* ignore decrypt fallback */
       }

@@ -105,7 +105,9 @@ export function useOfflineMutation() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    refreshPendingCount();
+    const timer = setTimeout(() => {
+      refreshPendingCount();
+    }, 0);
 
     function handleOnline() {
       setIsOnline(true);
@@ -125,10 +127,13 @@ export function useOfflineMutation() {
     window.addEventListener("ecohub_offline_mutations_changed", handleMutationsChanged);
 
     if (navigator.onLine) {
-      syncPendingMutations();
+      setTimeout(() => {
+        syncPendingMutations();
+      }, 0);
     }
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("ecohub_offline_mutations_changed", handleMutationsChanged);
