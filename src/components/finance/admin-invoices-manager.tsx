@@ -15,6 +15,14 @@ import {
   normalizeWhatsAppNumber,
 } from "@/lib/whatsapp-billing";
 
+export interface CardMachineOption {
+  id: string;
+  machineName: string;
+  provider: string;
+  debitFeePercent: number;
+  creditSightFeePercent: number;
+}
+
 export interface PendingInvoiceItem {
   id: string;
   title: string;
@@ -37,18 +45,41 @@ export interface PendingInvoiceItem {
 export function AdminInvoicesManager({
   pendingInvoices = [],
   overdueInvoices = [],
+  cardMachines = [],
 }: {
   pendingInvoices: PendingInvoiceItem[];
   overdueInvoices?: PendingInvoiceItem[];
+  cardMachines?: CardMachineOption[];
 }) {
   const [selectedInvoice, setSelectedInvoice] = useState<PendingInvoiceItem | null>(null);
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [previewProof, setPreviewProof] = useState<string | null>(null);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [noPhoneModalStudent, setNoPhoneModalStudent] = useState<{ id: string; name: string } | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState("MANUAL_PIX");
+  const [selectedMachineId, setSelectedMachineId] = useState("");
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [sentInvoiceIds, setSentInvoiceIds] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
+
+  function handleConfirmApprove() {
+    if (!selectedInvoice) return;
+
+    const formData = new FormData();
+    formData.set("invoiceId", selectedInvoice.id);
+    formData.set("isApproved", "true");
+    formData.set("paymentMethod", selectedMethod);
+    if (selectedMachineId) {
+      formData.set("cardMachineId", selectedMachineId);
+    }
+
+    startTransition(async () => {
+      await confirmInvoicePaymentAction(formData);
+      setApproveModalOpen(false);
+      setSelectedInvoice(null);
+    });
+  }
 
   const overdueList =
     overdueInvoices.length > 0
@@ -194,10 +225,15 @@ export function AdminInvoicesManager({
                     size="sm"
                     className="h-8 gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
                     disabled={isPending}
-                    onClick={() => handleApprove(inv.id)}
+                    onClick={() => {
+                      setSelectedInvoice(inv);
+                      setSelectedMethod("MANUAL_PIX");
+                      setSelectedMachineId("");
+                      setApproveModalOpen(true);
+                    }}
                   >
                     <Check className="h-3.5 w-3.5" />
-                    Aprovar
+                    Baixar / Aprovar
                   </Button>
 
                   <Button
@@ -219,6 +255,137 @@ export function AdminInvoicesManager({
             ))}
           </div>
         )}
+
+        {/* Modal de Aprovação / Baixa de Fatura com Seleção de Maquininha POS */}
+        {approveModalOpen && selectedInvoice && (() => {
+          const selectedMachine = cardMachines.find((m) => m.id === selectedMachineId);
+          let estimatedFeePercent = 0;
+          if (selectedMachine) {
+            estimatedFeePercent =
+              selectedMethod === "DEBIT_CARD"
+                ? selectedMachine.debitFeePercent
+                : selectedMachine.creditSightFeePercent;
+          }
+          const estimatedDiscountCents = Math.round(
+            (selectedInvoice.amountCents * estimatedFeePercent) / 100
+          );
+          const estimatedNetCents = Math.max(
+            0,
+            selectedInvoice.amountCents - estimatedDiscountCents
+          );
+
+          return (
+            <Modal
+              open={approveModalOpen}
+              onClose={() => setApproveModalOpen(false)}
+              title="Dar Baixa em Fatura / Aprovar Recebimento"
+            >
+              <div className="space-y-4 text-xs">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+                  <p className="font-bold text-slate-900 dark:text-white text-sm">
+                    {selectedInvoice.title}
+                  </p>
+                  <p className="text-slate-500">{selectedInvoice.student.user.fullName}</p>
+                  <p className="text-emerald-700 font-bold mt-1 text-sm">
+                    Valor Nominal: {formatBRL(selectedInvoice.amountCents)}
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="paymentMethod"
+                    className="font-semibold text-slate-800 dark:text-slate-200 block mb-1"
+                  >
+                    Forma de Recebimento
+                  </label>
+                  <select
+                    id="paymentMethod"
+                    value={selectedMethod}
+                    onChange={(e) => setSelectedMethod(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                  >
+                    <option value="MANUAL_PIX">Pix Direto / Chave</option>
+                    <option value="DEBIT_CARD">Cartão de Débito (POS)</option>
+                    <option value="CREDIT_CARD">Cartão de Crédito (POS)</option>
+                    <option value="CASH">Espécie / Dinheiro</option>
+                    <option value="BANK_TRANSFER">Depósito / Transferência Bancária</option>
+                  </select>
+                </div>
+
+                {(selectedMethod === "DEBIT_CARD" || selectedMethod === "CREDIT_CARD") && (
+                  <div className="space-y-2 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 dark:border-indigo-900 dark:bg-indigo-950/20">
+                    <label
+                      htmlFor="cardMachineId"
+                      className="font-semibold text-indigo-900 dark:text-indigo-200 block"
+                    >
+                      Selecione a Maquininha POS
+                    </label>
+                    {cardMachines.length === 0 ? (
+                      <p className="text-slate-500 italic">
+                        Nenhuma maquininha cadastrada nas configurações da escola.
+                      </p>
+                    ) : (
+                      <>
+                        <select
+                          id="cardMachineId"
+                          value={selectedMachineId}
+                          onChange={(e) => setSelectedMachineId(e.target.value)}
+                          className="w-full rounded-xl border border-indigo-200 bg-white p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                        >
+                          <option value="">Selecione a maquininha...</option>
+                          {cardMachines.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.machineName} ({m.provider}) - Taxa:{" "}
+                              {selectedMethod === "DEBIT_CARD"
+                                ? `${m.debitFeePercent}% (Débito)`
+                                : `${m.creditSightFeePercent}% (Crédito)`}
+                            </option>
+                          ))}
+                        </select>
+
+                        {selectedMachine && (
+                          <div className="rounded-lg bg-white p-2.5 border border-indigo-100 text-[11px] space-y-1 dark:bg-slate-900 dark:border-indigo-900">
+                            <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                              <span>Taxa da Operadora ({estimatedFeePercent}%):</span>
+                              <span className="font-semibold text-red-600">
+                                -{formatBRL(estimatedDiscountCents)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between font-bold text-emerald-700 dark:text-emerald-400 pt-1 border-t border-slate-100 dark:border-slate-800">
+                              <span>Valor Líquido Previsto:</span>
+                              <span>{formatBRL(estimatedNetCents)}</span>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setApproveModalOpen(false)}
+                    className="w-1/2"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={handleConfirmApprove}
+                    className="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {isPending ? "Processando..." : "Confirmar Baixa"}
+                  </Button>
+                </div>
+              </div>
+            </Modal>
+          );
+        })()}
 
         {/* Modal de Pré-visualização do Comprovante */}
         {previewProof && (

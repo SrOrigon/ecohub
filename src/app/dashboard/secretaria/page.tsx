@@ -28,6 +28,7 @@ export default async function SecretariaPage() {
     overdueAlerts,
     awaitingInvoices,
     overdueInvoices,
+    cardMachines,
   ] = await Promise.all([
     prisma.enrollmentApplication.count({ where: { schoolId: user.schoolId, status: "pending" } }),
     prisma.authorizationForm.count({
@@ -39,6 +40,16 @@ export default async function SecretariaPage() {
     getOverdueFinanceAlertsAction(5),
     getAwaitingConfirmationInvoicesAction(),
     getOverdueInvoicesAction(),
+    prisma.cardMachineConfig.findMany({
+      where: { schoolId: user.schoolId, isActive: true },
+      select: {
+        id: true,
+        machineName: true,
+        provider: true,
+        debitFeePercent: true,
+        creditSightFeePercent: true,
+      },
+    }),
   ]);
 
   const adjustStudents = students.map((s) => ({
@@ -111,6 +122,7 @@ export default async function SecretariaPage() {
         <AdminInvoicesManager
           pendingInvoices={awaitingInvoices}
           overdueInvoices={overdueInvoices}
+          cardMachines={cardMachines}
         />
       )}
 

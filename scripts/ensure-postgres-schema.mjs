@@ -204,9 +204,27 @@ const TABLE_PATCHES = [
     CONSTRAINT "StudentInvoice_paymentMethodId_fkey" FOREIGN KEY ("paymentMethodId") REFERENCES "SchoolPaymentConfig" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT "StudentInvoice_verifiedByUserId_fkey" FOREIGN KEY ("verifiedByUserId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
   )`,
+  `CREATE TABLE IF NOT EXISTS "CardMachineConfig" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "schoolId" TEXT NOT NULL,
+    "machineName" TEXT NOT NULL,
+    "provider" TEXT NOT NULL,
+    "serialNumber" TEXT,
+    "debitFeePercent" DOUBLE PRECISION NOT NULL DEFAULT 1.5,
+    "creditSightFeePercent" DOUBLE PRECISION NOT NULL DEFAULT 2.5,
+    "creditInstallmentFeePercent" DOUBLE PRECISION NOT NULL DEFAULT 3.8,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "CardMachineConfig_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `ALTER TABLE "StudentInvoice" ADD COLUMN IF NOT EXISTS "paymentMethod" TEXT`,
+  `ALTER TABLE "StudentInvoice" ADD COLUMN IF NOT EXISTS "cardMachineId" TEXT`,
+  `ALTER TABLE "StudentInvoice" ADD COLUMN IF NOT EXISTS "netAmountCents" INTEGER`,
 ];
 
 const INDEX_PATCHES = [
+  `CREATE INDEX IF NOT EXISTS "CardMachineConfig_schoolId_idx" ON "CardMachineConfig"("schoolId")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "User_username_key" ON "User"("username")`,
   `CREATE INDEX IF NOT EXISTS "Student_provisionedById_idx" ON "Student"("provisionedById")`,
   `CREATE INDEX IF NOT EXISTS "StudentActivity_studentId_occurredAt_idx" ON "StudentActivity"("studentId", "occurredAt")`,
