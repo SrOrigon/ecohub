@@ -18,8 +18,8 @@ export function ConnectivityBanner() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const initialTimer = setTimeout(() => {
-      void updatePendingCount();
+    const timer = setTimeout(() => {
+      updatePendingCount();
     }, 0);
 
     function handleOnline() {
@@ -48,7 +48,7 @@ export function ConnectivityBanner() {
     window.addEventListener("ecohub_offline_sync_completed", handleSyncCompleted);
 
     return () => {
-      clearTimeout(initialTimer);
+      clearTimeout(timer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("ecohub_offline_mutations_changed", handleMutationsChanged);

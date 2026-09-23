@@ -29,7 +29,7 @@ import { AdjustStudentPointsForm } from "@/components/forms/adjust-student-point
 import { getTeacherDayOverview } from "@/lib/teacher-day";
 import { getPendingMissionConfirmations } from "@/lib/mission-requests";
 import { teacherClassWhere } from "@/lib/teacher-classes";
-import { BookOpen, ClipboardList, Users, Medal, PenLine, AlertCircle, Settings2 } from "lucide-react";
+import { BookOpen, Users, Medal, PenLine, AlertCircle, Settings2 } from "lucide-react";
 import { requireSchoolPageAccess } from "@/lib/access-control";
 
 export default async function TeacherDashboardPage() {
