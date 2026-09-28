@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
 import { Search, Calendar, FileText, Printer, CheckCircle, XCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PaymentDataTable } from "./payment-data-table";
 
 const TABS = [
   "Geração de Boletos",
@@ -167,14 +168,10 @@ export function PaymentManagementPanel() {
         </CardContent>
       </Card>
 
-      {/* Resultados Placeholder */}
-      <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-8 text-center">
-        <p className="text-slate-500 dark:text-slate-400">
-          Utilize os filtros acima para buscar registros em &quot;{activeTab}&quot;.
-        </p>
-      </div>
+      {/* 3. Resultados na Tabela de Alta Densidade */}
+      <PaymentDataTable />
 
-      {/* 3. Barra Inferior de Ações em Lote */}
+      {/* 4. Barra Inferior de Ações em Lote */}
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur-sm sm:left-[240px] dark:border-slate-800 dark:bg-slate-950/95">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3">
           <Button variant="default" className="gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-xs">
