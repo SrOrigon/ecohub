@@ -323,7 +323,7 @@ export default async function GamificacaoPage() {
                   </div>
                   {isStaff && (
                     <div className="mt-3 space-y-3 border-t border-slate-100 dark:border-slate-800 pt-3">
-                      <EditMissionForm mission={mission} classes={classOptions} />
+                      <EditMissionForm mission={{...mission, frequency: (mission as any).frequency || "ONCE", autoReset: (mission as any).autoReset || false}} classes={classOptions} />
                       {mission.isActive && (
                         <StaffCompleteMissionForm missionId={mission.id} students={eligibleStudents} />
                       )}

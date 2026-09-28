@@ -743,6 +743,8 @@ export async function createMissionAction(formData: FormData) {
   );
   const classId = String(formData.get("classId") ?? "") || null;
   const dueDateStr = String(formData.get("dueDate") ?? "");
+  const frequency = String(formData.get("frequency") ?? "ONCE");
+  const autoReset = formData.get("autoReset") === "true";
 
   if (!title) return { error: "Título é obrigatório." };
 
@@ -760,6 +762,8 @@ export async function createMissionAction(formData: FormData) {
       classId,
       dueDate: dueDateStr ? new Date(dueDateStr) : null,
       isActive: true,
+      frequency,
+      autoReset,
     },
   });
 
@@ -793,6 +797,8 @@ export async function updateMissionAction(formData: FormData) {
   const coinReward = parseInt(String(formData.get("coinReward") ?? "30"), 10);
   const classId = String(formData.get("classId") ?? "") || null;
   const dueDateStr = String(formData.get("dueDate") ?? "");
+  const frequency = String(formData.get("frequency") ?? "ONCE");
+  const autoReset = formData.get("autoReset") === "true";
 
   if (!missionId || !title) return { error: "Dados inválidos." };
 
@@ -810,6 +816,8 @@ export async function updateMissionAction(formData: FormData) {
       coinReward,
       classId,
       dueDate: dueDateStr ? new Date(dueDateStr) : null,
+      frequency,
+      autoReset,
     },
   });
 

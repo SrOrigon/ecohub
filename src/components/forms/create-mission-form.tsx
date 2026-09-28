@@ -78,9 +78,27 @@ export function CreateMissionForm({
               ))}
             </Select>
           </div>
-          <div>
-            <Label htmlFor="dueDate">Prazo de entrega</Label>
-            <Input id="dueDate" name="dueDate" type="date" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="frequency">Frequência / Recorrência</Label>
+              <Select id="frequency" name="frequency" defaultValue="ONCE">
+                <option value="ONCE">Única vez</option>
+                <option value="DAILY">Diária</option>
+                <option value="WEEKLY">Semanal</option>
+                <option value="MONTHLY">Mensal</option>
+                <option value="BIMESTRAL">Bimestral</option>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="dueDate">Prazo de entrega</Label>
+              <Input id="dueDate" name="dueDate" type="date" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <input type="checkbox" id="autoReset" name="autoReset" className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500" value="true" />
+            <Label htmlFor="autoReset" className="font-normal">
+              Resetar automaticamente (conforme a frequência)
+            </Label>
           </div>
           {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
           <Button type="submit" disabled={pending} className="w-full gap-2">

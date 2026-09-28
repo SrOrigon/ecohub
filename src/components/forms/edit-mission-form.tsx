@@ -22,6 +22,8 @@ interface MissionData {
   classId: string | null;
   dueDate: Date | string | null;
   isActive: boolean;
+  frequency: string;
+  autoReset: boolean;
 }
 
 import { Pencil, Power } from "lucide-react";
@@ -120,9 +122,27 @@ export function EditMissionForm({
               ))}
             </Select>
           </div>
-          <div>
-            <Label htmlFor={`due-${mission.id}`}>Prazo</Label>
-            <Input id={`due-${mission.id}`} name="dueDate" type="date" defaultValue={dueValue} />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <Label htmlFor={`freq-${mission.id}`}>Frequência / Recorrência</Label>
+              <Select id={`freq-${mission.id}`} name="frequency" defaultValue={mission.frequency}>
+                <option value="ONCE">Única vez</option>
+                <option value="DAILY">Diária</option>
+                <option value="WEEKLY">Semanal</option>
+                <option value="MONTHLY">Mensal</option>
+                <option value="BIMESTRAL">Bimestral</option>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor={`due-${mission.id}`}>Prazo</Label>
+              <Input id={`due-${mission.id}`} name="dueDate" type="date" defaultValue={dueValue} />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <input type="checkbox" id={`autoReset-${mission.id}`} name="autoReset" className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500" value="true" defaultChecked={mission.autoReset} />
+            <Label htmlFor={`autoReset-${mission.id}`} className="font-normal">
+              Resetar automaticamente (conforme a frequência)
+            </Label>
           </div>
           {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
           <Button type="submit" disabled={pending} className="w-full">

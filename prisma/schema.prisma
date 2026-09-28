@@ -342,6 +342,8 @@ model Mission {
   coinReward  Int       @default(0)
   dueDate     DateTime?
   isActive    Boolean   @default(true)
+  frequency   String    @default("ONCE") // ONCE, DAILY, WEEKLY, MONTHLY, BIMESTRAL
+  autoReset   Boolean   @default(false)
   createdAt   DateTime  @default(now())
 
   school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
