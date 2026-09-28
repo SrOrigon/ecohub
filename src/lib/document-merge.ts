@@ -3,30 +3,69 @@ import { calculateAge } from "@/lib/student-age";
 import { formatDate } from "@/lib/utils";
 
 export const DOCUMENT_MERGE_FIELDS = [
-  { key: "NumeroContrato", label: "Número do contrato" },
-  { key: "DataContrato", label: "Data do contrato" },
-  { key: "NomeAluno", label: "Nome do aluno" },
-  { key: "DataNascAluno", label: "Data de nascimento" },
-  { key: "IdadeAluno", label: "Idade" },
-  { key: "EmailAluno", label: "E-mail do aluno" },
-  { key: "TelefoneAluno", label: "Telefone" },
-  { key: "EnderecoAluno", label: "Endereço completo" },
-  { key: "CidadeAluno", label: "Cidade do aluno" },
-  { key: "EstadoAluno", label: "Estado do aluno" },
-  { key: "CepAluno", label: "CEP" },
-  { key: "CodigoMatricula", label: "Código de matrícula" },
-  { key: "TurmaAluno", label: "Turma" },
-  { key: "CursoAluno", label: "Curso/série" },
-  { key: "NomeEscola", label: "Nome da escola" },
-  { key: "RazaoSocialEscola", label: "Razão social" },
-  { key: "CnpjEscola", label: "CNPJ da escola" },
-  { key: "CidadeEscola", label: "Cidade da escola" },
-  { key: "EstadoEscola", label: "Estado da escola" },
-  { key: "EnderecoEscola", label: "Endereço da escola" },
-  { key: "BairroEscola", label: "Bairro da escola" },
-  { key: "DataInicioContrato", label: "Data início do contrato" },
-  { key: "DataFimContrato", label: "Data fim do contrato" },
-  { key: "DataHoje", label: "Data de hoje" },
+  { key: "contractNumber", label: "Nº do Contrato" },
+  { key: "contractDate", label: "Data do Contrato" },
+
+  { key: "studentName", label: "Nome do aluno" },
+  { key: "studentBirthDate", label: "Data de Nascimento (Aluno)" },
+  { key: "studentCpf", label: "CPF do Aluno" },
+  { key: "studentRg", label: "RG do Aluno" },
+  { key: "studentAge", label: "Idade do Aluno" },
+  { key: "studentAddress", label: "Endereço do Aluno" },
+  { key: "studentNumber", label: "Número do Endereço (Aluno)" },
+  { key: "studentPhone", label: "Telefone do Aluno" },
+  { key: "studentCep", label: "CEP do Aluno" },
+  { key: "studentCityState", label: "Cidade/Estado do Aluno" },
+
+  { key: "responsibleName", label: "Nome do Responsável" },
+  { key: "responsibleBirthDate", label: "Data de Nascimento (Responsável)" },
+  { key: "responsibleCpf", label: "CPF do Responsável" },
+  { key: "responsibleRg", label: "RG do Responsável" },
+  { key: "responsiblePhone", label: "Telefone do Responsável" },
+  { key: "responsibleAddress", label: "Endereço do Responsável" },
+  { key: "responsibleNumber", label: "Número do Endereço (Resp.)" },
+  { key: "responsibleBairro", label: "Bairro do Responsável" },
+  { key: "responsibleCep", label: "CEP do Responsável" },
+  { key: "responsibleCityState", label: "Cidade/Estado do Responsável" },
+
+  { key: "enrollmentFee", label: "Taxa de Matrícula" },
+  { key: "totalAmountWithoutDiscount", label: "Valor Total sem Desconto" },
+  { key: "totalAmountWithDiscount", label: "Valor Total com Desconto" },
+  { key: "installmentValue", label: "Valor da Parcela" },
+  { key: "installmentValueWithDiscount", label: "Valor da Parcela com Desconto" },
+  { key: "installmentsCount", label: "Nº de Parcelas" },
+
+  { key: "courseName", label: "Nome do Curso" },
+  { key: "courseDurationMonths", label: "Duração do Curso (Meses)" },
+  { key: "startDate", label: "Data de Início" },
+  { key: "estimatedEndDate", label: "Data Estimada de Término" },
+  { key: "scheduleDaysAndHours", label: "Dias da Semana e Horários" },
+
+  // Backward compatibility placeholders if any old templates used them
+  { key: "NumeroContrato", label: "Número do contrato (Legado)" },
+  { key: "DataContrato", label: "Data do contrato (Legado)" },
+  { key: "NomeAluno", label: "Nome do aluno (Legado)" },
+  { key: "DataNascAluno", label: "Data de nascimento (Legado)" },
+  { key: "IdadeAluno", label: "Idade (Legado)" },
+  { key: "EmailAluno", label: "E-mail do aluno (Legado)" },
+  { key: "TelefoneAluno", label: "Telefone (Legado)" },
+  { key: "EnderecoAluno", label: "Endereço completo (Legado)" },
+  { key: "CidadeAluno", label: "Cidade do aluno (Legado)" },
+  { key: "EstadoAluno", label: "Estado do aluno (Legado)" },
+  { key: "CepAluno", label: "CEP (Legado)" },
+  { key: "CodigoMatricula", label: "Código de matrícula (Legado)" },
+  { key: "TurmaAluno", label: "Turma (Legado)" },
+  { key: "CursoAluno", label: "Curso/série (Legado)" },
+  { key: "NomeEscola", label: "Nome da escola (Legado)" },
+  { key: "RazaoSocialEscola", label: "Razão social (Legado)" },
+  { key: "CnpjEscola", label: "CNPJ da escola (Legado)" },
+  { key: "CidadeEscola", label: "Cidade da escola (Legado)" },
+  { key: "EstadoEscola", label: "Estado da escola (Legado)" },
+  { key: "EnderecoEscola", label: "Endereço da escola (Legado)" },
+  { key: "BairroEscola", label: "Bairro da escola (Legado)" },
+  { key: "DataInicioContrato", label: "Data início do contrato (Legado)" },
+  { key: "DataFimContrato", label: "Data fim do contrato (Legado)" },
+  { key: "DataHoje", label: "Data de hoje (Legado)" },
 ] as const;
 
 export type DocumentMergeKey = (typeof DOCUMENT_MERGE_FIELDS)[number]["key"];
@@ -61,6 +100,7 @@ export async function buildStudentMergeContext(
     issuedAt?: Date;
     contractStartDate?: Date | null;
     contractEndDate?: Date | null;
+    contractData?: Record<string, string>;
   }
 ) {
   const student = await prisma.student.findFirst({
@@ -73,6 +113,10 @@ export async function buildStudentMergeContext(
         include: { classGroup: true },
         orderBy: { enrolledAt: "asc" },
       },
+      parentLinks: {
+        include: { parent: true },
+        orderBy: { createdAt: "asc" },
+      }
     },
   });
   if (!student) return null;
@@ -97,7 +141,63 @@ export async function buildStudentMergeContext(
       ? activeClasses.join(", ")
       : student.classGroup?.name ?? "—");
 
+  const parentUser = student.parentLinks[0]?.parent;
+  const contractData = options?.contractData ?? {};
+
+  // For Master Tek specifically requested hardcoded fallback values
+  const razaoSocialEscola = "MASTER TEK SOLUTIONS LTDA ME";
+  const cnpjEscola = "60.916.740/0001-02";
+  const enderecoEscola = "RUA MACEDO COIMBRA, nº 138";
+  const bairroEscola = "CAMPO GRANDE";
+  const cepEscola = "23.052-130";
+  const cidadeEstadoEscola = "Rio de Janeiro/RJ";
+
   return {
+    contractNumber: options?.contractNumber ?? "—",
+    contractDate: formatDate(issuedAt),
+
+    studentName: studentUser.fullName,
+    studentBirthDate: student.birthDate ? formatDate(student.birthDate) : "—",
+    studentCpf: contractData.studentCpf ?? "—",
+    studentRg: contractData.studentRg ?? "—",
+    studentAge: age != null ? String(age) : "—",
+    studentAddress: formatAddress([
+      [studentUser.street, studentUser.streetNumber].filter(Boolean).join(", "),
+      studentUser.addressComplement
+    ]) || "—",
+    studentNumber: studentUser.streetNumber ?? "—",
+    studentPhone: studentUser.phone ?? "—",
+    studentCep: studentUser.zipCode ?? "—",
+    studentCityState: formatAddress([studentUser.city, studentUser.state]) || "—",
+
+    responsibleName: parentUser?.fullName ?? contractData.responsibleName ?? "—",
+    responsibleBirthDate: contractData.responsibleBirthDate ?? "—", // Missing from User model
+    responsibleCpf: contractData.responsibleCpf ?? "—",
+    responsibleRg: contractData.responsibleRg ?? "—",
+    responsiblePhone: parentUser?.phone ?? contractData.responsiblePhone ?? "—",
+    responsibleAddress: parentUser ? formatAddress([
+      [parentUser.street, parentUser.streetNumber].filter(Boolean).join(", "),
+      parentUser.addressComplement
+    ]) : contractData.responsibleAddress ?? "—",
+    responsibleNumber: parentUser?.streetNumber ?? contractData.responsibleNumber ?? "—",
+    responsibleBairro: contractData.responsibleBairro ?? "—", // Missing from User model natively
+    responsibleCep: parentUser?.zipCode ?? contractData.responsibleCep ?? "—",
+    responsibleCityState: parentUser ? formatAddress([parentUser.city, parentUser.state]) : contractData.responsibleCityState ?? "—",
+
+    enrollmentFee: contractData.enrollmentFee ?? "—",
+    totalAmountWithoutDiscount: contractData.totalAmountWithoutDiscount ?? "—",
+    totalAmountWithDiscount: contractData.totalAmountWithDiscount ?? "—",
+    installmentValue: contractData.installmentValue ?? "—",
+    installmentValueWithDiscount: contractData.installmentValueWithDiscount ?? "—",
+    installmentsCount: contractData.installmentsCount ?? "—",
+
+    courseName: turmaFromClassId?.gradeLevel ?? student.classGroup?.gradeLevel ?? contractData.courseName ?? "—",
+    courseDurationMonths: contractData.courseDurationMonths ?? "—",
+    startDate: options?.contractStartDate ? formatDate(options.contractStartDate) : contractData.startDate ?? "—",
+    estimatedEndDate: options?.contractEndDate ? formatDate(options.contractEndDate) : contractData.estimatedEndDate ?? "—",
+    scheduleDaysAndHours: contractData.scheduleDaysAndHours ?? "—",
+
+    // Backward compatibility mappings
     NumeroContrato: options?.contractNumber ?? "—",
     DataContrato: formatDate(issuedAt),
     NomeAluno: studentUser.fullName,
@@ -117,12 +217,12 @@ export async function buildStudentMergeContext(
     TurmaAluno: turmaLabel,
     CursoAluno: turmaFromClassId?.gradeLevel ?? student.classGroup?.gradeLevel ?? "—",
     NomeEscola: school.name,
-    RazaoSocialEscola: school.legalName ?? school.name,
-    CnpjEscola: school.cnpj ?? "—",
-    CidadeEscola: school.city ?? "—",
-    EstadoEscola: school.state ?? "—",
-    EnderecoEscola: "—",
-    BairroEscola: "—",
+    RazaoSocialEscola: razaoSocialEscola,
+    CnpjEscola: cnpjEscola,
+    CidadeEscola: cidadeEstadoEscola.split("/")[0] ?? school.city ?? "—",
+    EstadoEscola: cidadeEstadoEscola.split("/")[1] ?? school.state ?? "—",
+    EnderecoEscola: enderecoEscola,
+    BairroEscola: bairroEscola,
     DataInicioContrato: options?.contractStartDate ? formatDate(options.contractStartDate) : "—",
     DataFimContrato: options?.contractEndDate ? formatDate(options.contractEndDate) : "—",
     DataHoje: formatDate(new Date()),
