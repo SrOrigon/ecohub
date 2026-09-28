@@ -8,6 +8,7 @@ import { Label, Select } from "@/components/ui/form-fields";
 import { Search, Calendar, FileText, Printer, CheckCircle, XCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PaymentDataTable } from "./payment-data-table";
+import { RecurrenceLogPanel } from "./recurrence-log-panel";
 
 const TABS = [
   "Geração de Boletos",
@@ -41,13 +42,15 @@ export function PaymentManagementPanel() {
         ))}
       </div>
 
-      {/* 2. Seção de Filtros Avançados */}
-      <Card className="border-slate-200 shadow-sm dark:border-slate-800">
-        <CardContent className="p-5">
-          <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {activeTab !== "Log de Recorrência" ? (
+        <>
+          {/* 2. Seção de Filtros Avançados */}
+          <Card className="border-slate-200 shadow-sm dark:border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <CardContent className="p-5">
+              <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-              {/* Radio buttons - Sacado */}
+                  {/* Radio buttons - Sacado */}
               <div className="space-y-3">
                 <Label className="text-slate-700 dark:text-slate-300">Escopo do Sacado</Label>
                 <div className="flex items-center gap-4 mt-1">
@@ -156,46 +159,52 @@ export function PaymentManagementPanel() {
                 <Input id="gatewayId" name="gatewayId" placeholder="Ex: 00112233" />
               </div>
 
-              {/* Botão Filtrar no final do grid */}
-              <div className="md:col-span-2 flex items-end justify-end">
-                <Button type="submit" className="gap-2 px-6">
-                  <Search className="h-4 w-4" />
-                  Filtrar
-                </Button>
-              </div>
+                  {/* Botão Filtrar no final do grid */}
+                  <div className="md:col-span-2 flex items-end justify-end">
+                    <Button type="submit" className="gap-2 px-6">
+                      <Search className="h-4 w-4" />
+                      Filtrar
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* 3. Resultados na Tabela de Alta Densidade */}
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <PaymentDataTable />
+          </div>
+
+          {/* 4. Barra Inferior de Ações em Lote */}
+          <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur-sm sm:left-[240px] dark:border-slate-800 dark:bg-slate-950/95 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3">
+              <Button variant="default" className="gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-xs">
+                <FileText className="h-4 w-4" />
+                Gerar/Enviar
+              </Button>
+              <Button variant="outline" className="gap-2">
+                <Printer className="h-4 w-4" />
+                Imprimir
+              </Button>
+              <Button variant="outline" className="gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Consultar Situação
+              </Button>
+              <Button variant="outline" className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/50 dark:hover:bg-red-950/50">
+                <XCircle className="h-4 w-4" />
+                Cancelar
+              </Button>
+              <Button variant="ghost" className="gap-2">
+                <Clock className="h-4 w-4" />
+                Histórico
+              </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* 3. Resultados na Tabela de Alta Densidade */}
-      <PaymentDataTable />
-
-      {/* 4. Barra Inferior de Ações em Lote */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur-sm sm:left-[240px] dark:border-slate-800 dark:bg-slate-950/95">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3">
-          <Button variant="default" className="gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-xs">
-            <FileText className="h-4 w-4" />
-            Gerar/Enviar
-          </Button>
-          <Button variant="outline" className="gap-2">
-            <Printer className="h-4 w-4" />
-            Imprimir
-          </Button>
-          <Button variant="outline" className="gap-2">
-            <CheckCircle className="h-4 w-4" />
-            Consultar Situação
-          </Button>
-          <Button variant="outline" className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/50 dark:hover:bg-red-950/50">
-            <XCircle className="h-4 w-4" />
-            Cancelar
-          </Button>
-          <Button variant="ghost" className="gap-2">
-            <Clock className="h-4 w-4" />
-            Histórico
-          </Button>
-        </div>
-      </div>
+          </div>
+        </>
+      ) : (
+        <RecurrenceLogPanel />
+      )}
     </div>
   );
 }

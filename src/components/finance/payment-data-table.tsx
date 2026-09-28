@@ -83,7 +83,7 @@ export function PaymentDataTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {MOCK_DATA.map((row, i) => (
+            {MOCK_DATA.map((row) => (
               <tr
                 key={row.id}
                 className="hover:bg-slate-50 transition-colors group dark:hover:bg-slate-900/50"
