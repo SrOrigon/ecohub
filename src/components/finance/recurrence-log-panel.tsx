@@ -36,7 +36,7 @@ export function RecurrenceLogPanel() {
 
       {/* Conditional Content based on active tab */}
       {activeTab === "Log de Recorrência" && (
-        <RecurrenceLogTable />
+        <RecurrenceLogTable data={[]} />
       )}
 
       {activeTab === "Planos sem cartão cadastrado" && (

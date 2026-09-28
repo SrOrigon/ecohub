@@ -173,7 +173,7 @@ export function PaymentManagementPanel() {
 
           {/* 3. Resultados na Tabela de Alta Densidade */}
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <PaymentDataTable />
+            <PaymentDataTable data={[]} />
           </div>
 
           {/* 4. Barra Inferior de Ações em Lote */}

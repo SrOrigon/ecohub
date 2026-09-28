@@ -118,9 +118,47 @@ export function ecohubAiGenerateQuestions(
   return synthesizeQuestions(topic, subject, count, code);
 }
 
+export function parseRecurringMissionRequest(input: string): string {
+  const text = input.toLowerCase();
+
+  let frequency = "WEEKLY";
+  if (text.includes("diária") || text.includes("todo dia") || text.includes("daily") || text.includes("diariamente")) {
+    frequency = "DAILY";
+  } else if (text.includes("mensal") || text.includes("por mês") || text.includes("todo mês")) {
+    frequency = "MONTHLY";
+  } else if (text.includes("bimestral") || text.includes("por bimestre")) {
+    frequency = "BIMESTRAL";
+  }
+
+  const titleMatch = input.match(/missão (?:de |chamada |)[\"']?([^\"',.]+)/i);
+  const title = titleMatch ? titleMatch[1].trim() : "Missão de Estudo";
+
+  const targetMatch = input.match(/(?:para a |turma )([A-Z0-9]+)/i);
+  const targetAudience = targetMatch ? targetMatch[1].toUpperCase() : "TURMA_A";
+
+  const pointsMatch = input.match(/(\d+)\s*(?:pontos|xp|coins)/i);
+  const pointsReward = pointsMatch ? parseInt(pointsMatch[1], 10) : 50;
+
+  const response = {
+    title,
+    description: `Complete a missão dentro do período estabelecido para garantir seus pontos e manter o ritmo de aprendizado!`,
+    frequency,
+    autoReset: true,
+    pointsReward,
+    badgeId: null,
+    targetAudience
+  };
+
+  return "```json\n" + JSON.stringify(response, null, 2) + "\n```";
+}
+
 export function ecohubAiChat(message: string, context: AiContext): string {
   const trimmed = message.trim();
   if (!trimmed) return "Digite sua pergunta para eu ajudar.";
+
+  if (/missão|missao|exercício recorrente|exercicio recorrente/i.test(trimmed) && ["teacher", "director", "admin", "secretary"].includes(context.role)) {
+    return "Como **Arquiteto de Missões e Exercícios Recorrentes**, estruturei o seu pedido no seguinte formato:\n\n" + parseRecurringMissionRequest(trimmed);
+  }
 
   const firstName = context.userName?.split(" ")[0];
   const roleHint = ROLE_GREETINGS[context.role] ?? "";
