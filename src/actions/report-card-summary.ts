@@ -175,7 +175,7 @@ export async function generatePedagogicalSummary(
     }
 
     // Bloco C: Recomendação acolhedora para os responsáveis apoiarem a rotina de estudos em casa
-    let blockC = `Para potencializar o desenvolvimento de ${firstName}, recomendamos aos responsáveis estruturar uma rotina acolhedora e constante em casa, com 30 a 45 minutos diários de estudo em local calmo, além do acompanhamento regular das tarefas pelo portal escolar. Dialogar sobre o cotidiano das aulas e incentivar a leitura são atitudes que fortalecem a autoconfiança estudantil. A união entre família e escola é a chave do sucesso!`;
+    const blockC = `Para potencializar o desenvolvimento de ${firstName}, recomendamos aos responsáveis estruturar uma rotina acolhedora e constante em casa, com 30 a 45 minutos diários de estudo em local calmo, além do acompanhamento regular das tarefas pelo portal escolar. Dialogar sobre o cotidiano das aulas e incentivar a leitura são atitudes que fortalecem a autoconfiança estudantil. A união entre família e escola é a chave do sucesso!`;
 
     const formattedSummary = `1. Pontos Fortes e Destaques Acadêmicos:
 ${blockA}

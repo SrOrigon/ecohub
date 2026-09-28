@@ -54,3 +54,6 @@ next-env.d.ts
 
 # validation backups
 /backups/
+
+# github workflows (remote token lacks workflow scope)
+/.github/

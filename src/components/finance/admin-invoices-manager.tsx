@@ -8,6 +8,8 @@ import { Modal } from "@/components/ui/modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatBRL } from "@/lib/student-finance";
 import { formatDate } from "@/lib/utils";
+import { useToday } from "@/hooks/use-today";
+import { toDateKey } from "@/lib/date-only";
 import { Check, ExternalLink, Eye, X, MessageSquare, AlertCircle } from "lucide-react";
 import {
   generateInvoiceWhatsAppMessage,
@@ -81,11 +83,16 @@ export function AdminInvoicesManager({
     });
   }
 
+  const today = useToday();
+
   const overdueList =
     overdueInvoices.length > 0
       ? overdueInvoices
       : pendingInvoices.filter((inv) => {
-          return inv.status === "OVERDUE" || new Date(inv.dueDate).getTime() < Date.now();
+          return (
+            inv.status === "OVERDUE" ||
+            (Boolean(today) && toDateKey(new Date(inv.dueDate)) < today)
+          );
         });
 
   function handleWhatsAppCharge(inv: PendingInvoiceItem) {
