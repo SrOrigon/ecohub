@@ -5,52 +5,29 @@ import { formatBRL } from "@/lib/student-finance";
 import { X, CheckCircle2, XCircle, Settings, XSquare, CreditCard, Send, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Dummy data mirroring real recurrence events
-const RECURRENCE_DATA = [
-  {
-    id: "REC-98213",
-    billingNo: "55912",
-    sacado: {
-      name: "João Silva Sauro",
-      role: "Responsável Financeiro",
-      student: "Maria Eduarda Silva",
-    },
-    category: "Mensalidade",
-    installment: "7 / 12",
-    dates: {
-      dueDate: "10/11/2026",
-      sentAt: "10/11/2026 08:30",
-      updatedAt: "10/11/2026 08:35",
-    },
-    amount: 145000, // in cents
-    status: { label: "Paga", color: "green" },
-    card: { brand: "Mastercard", last4: "4412" },
-    apiMessage: "Transação autorizada com sucesso.",
-  },
-  {
-    id: "REC-98214",
-    billingNo: "55913",
-    sacado: {
-      name: "Ana Costa",
-      role: "Responsável Financeiro",
-      student: "Pedro Costa",
-    },
-    category: "Mensalidade",
-    installment: "7 / 12",
-    dates: {
-      dueDate: "15/11/2026",
-      sentAt: "15/11/2026 08:30",
-      updatedAt: "15/11/2026 08:31",
-    },
-    amount: 145000,
-    status: { label: "Recusada", color: "red" },
-    card: { brand: "Visa", last4: "1190" },
-    apiMessage: "Transação negada pelo banco emissor (Saldo insuficiente).",
-  },
-];
+export interface RecurrenceLogDataRow {
+  id: string;
+  billingNo: string;
+  sacado: {
+    name: string;
+    role: string;
+    student: string;
+  };
+  category: string;
+  installment: string;
+  dates: {
+    dueDate: string;
+    sentAt: string;
+    updatedAt: string;
+  };
+  amount: number; // in cents
+  status: { label: string; color: "green" | "red" };
+  card: { brand: string; last4: string };
+  apiMessage: string;
+}
 
-export function RecurrenceLogTable() {
-  const [selectedRow, setSelectedRow] = useState<typeof RECURRENCE_DATA[0] | null>(null);
+export function RecurrenceLogTable({ data = [] }: { data?: RecurrenceLogDataRow[] }) {
+  const [selectedRow, setSelectedRow] = useState<RecurrenceLogDataRow | null>(null);
 
   return (
     <>
@@ -72,7 +49,7 @@ export function RecurrenceLogTable() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {RECURRENCE_DATA.map((row) => (
+              {data.map((row) => (
                 <tr
                   key={row.id}
                   className={cn(

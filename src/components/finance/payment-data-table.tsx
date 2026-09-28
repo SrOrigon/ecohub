@@ -3,65 +3,26 @@
 import { MessageCircle, Link as LinkIcon, Printer, History, Info, User, CheckCircle2, CircleDashed } from "lucide-react";
 import { formatBRL } from "@/lib/student-finance";
 
-// Dummy data structure mirroring exact hierarchical needs
-const MOCK_DATA = [
-  {
-    id: "B-10923",
-    type: "Boleto",
-    plan: "Mensalidade 2026",
-    sacado: {
-      name: "João Silva Sauro",
-      role: "Responsável Financeiro",
-      student: "Maria Eduarda Silva",
-    },
-    amount: 145000, // in cents
-    dates: {
-      dueDate: "10/11/2026",
-      generatedAt: "01/11/2026",
-      displayedAt: "02/11/2026",
-    },
-    category: "Mensalidade",
-    status: { label: "Gerado", color: "blue" },
-  },
-  {
-    id: "P-55912",
-    type: "Pix",
-    plan: "Material Didático",
-    sacado: {
-      name: "Ana Costa",
-      role: "Responsável Financeiro",
-      student: "Pedro Costa",
-    },
-    amount: 35000,
-    dates: {
-      dueDate: "15/11/2026",
-      generatedAt: "05/11/2026",
-      displayedAt: "05/11/2026",
-    },
-    category: "Material",
-    status: { label: "Pago", color: "green" },
-  },
-  {
-    id: "B-10924",
-    type: "Boleto",
-    plan: "Taxa de Matrícula",
-    sacado: {
-      name: "Empresa XPTO Ltda",
-      role: "Pessoa Jurídica",
-      student: "Lucas XPTO",
-    },
-    amount: 50000,
-    dates: {
-      dueDate: "05/11/2026",
-      generatedAt: "20/10/2026",
-      displayedAt: "21/10/2026",
-    },
-    category: "Taxa",
-    status: { label: "Vencido", color: "red" },
-  },
-];
+export interface PaymentDataRow {
+  id: string;
+  type: string;
+  plan: string;
+  sacado: {
+    name: string;
+    role: string;
+    student: string;
+  };
+  amount: number; // in cents
+  dates: {
+    dueDate: string;
+    generatedAt: string;
+    displayedAt: string;
+  };
+  category: string;
+  status: { label: string; color: "green" | "blue" | "red" };
+}
 
-export function PaymentDataTable() {
+export function PaymentDataTable({ data = [] }: { data?: PaymentDataRow[] }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 overflow-hidden">
       <div className="overflow-x-auto">
@@ -83,7 +44,7 @@ export function PaymentDataTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {MOCK_DATA.map((row) => (
+            {data.map((row) => (
               <tr
                 key={row.id}
                 className="hover:bg-slate-50 transition-colors group dark:hover:bg-slate-900/50"
@@ -166,7 +127,7 @@ export function PaymentDataTable() {
         </table>
       </div>
       <div className="bg-slate-50/50 border-t border-slate-200 px-4 py-3 text-xs text-slate-500 dark:bg-slate-900/50 dark:border-slate-800 flex justify-between items-center">
-        <span>Mostrando {MOCK_DATA.length} registros</span>
+        <span>Mostrando {data.length} registros</span>
         <div className="flex gap-1">
           <button className="px-2 py-1 border border-slate-200 rounded-md bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-900 disabled:opacity-50">Anterior</button>
           <button className="px-2 py-1 border border-slate-200 rounded-md bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-900">Próxima</button>
