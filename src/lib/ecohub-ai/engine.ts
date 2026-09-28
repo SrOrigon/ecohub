@@ -187,6 +187,10 @@ export function ecohubAiChat(message: string, context: AiContext): string {
     return draftAnnouncement(topic, kind);
   }
 
+  if (/ajuda|help|socorro|erro|bug|problema/i.test(trimmed)) {
+    return "Por favor, especifique o problema ou a área do sistema. Posso ajudar com rotinas de estudo (alunos/pais), geração de documentos/contratos, integração de pagamentos e recorrências (Sponte Pay), geração de conteúdo (professores) ou análise de desempenho.";
+  }
+
   if (/alerta|risco|evas|desempenho|panorama/i.test(trimmed) && ["director", "secretary", "admin"].includes(context.role)) {
     return ecohubAiDirectorInsight(context);
   }
@@ -257,6 +261,9 @@ function suggestionsForRole(role: EcohubAiRole): string[] {
   }
   if (role === "parent") {
     return ["Como está meu filho?", "Plano de estudo para prova", "Justificar falta", "Tarefas de casa gamificadas"];
+  }
+  if (role === "director" || role === "admin" || role === "secretary") {
+    return ["Como usar o Sponte Pay?", "Gerar Contratos", "Rascunho comunicado festa junina"];
   }
   return SUGGESTED_TOPICS.slice(0, 4);
 }
@@ -334,13 +341,13 @@ export function ecohubAiSuggestionsForRole(role: EcohubAiRole): string[] {
     ],
     director: [
       "Panorama e alertas de risco",
-      "Como fechar bimestre?",
-      "BNCC equações 7º ano",
+      "Como usar o Sponte Pay?",
+      "Gerar Contratos",
       "Rascunho comunicado festa junina",
     ],
     secretary: [
-      "Como funciona matrícula online?",
-      "Rascunho comunicado secretaria",
+      "Gerar Contratos",
+      "Como usar o Sponte Pay?",
       "Autorizações digitais",
       "Agenda compartilhada feriados",
     ],
@@ -356,7 +363,7 @@ export function ecohubAiSuggestionsForRole(role: EcohubAiRole): string[] {
       "Como ganhar mais XP?",
       "Explicar frações",
     ],
-    admin: ["Panorama da escola", "Alertas de risco", "BNCC interpretação de texto"],
+    admin: ["Como usar o Sponte Pay?", "Panorama da escola", "Gerar Contratos"],
   };
   return byRole[role] ?? SUGGESTED_TOPICS.slice(0, 5);
 }

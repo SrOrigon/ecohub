@@ -88,6 +88,22 @@ export const EXTENDED_SNIPPETS: TutorSnippet[] = [
     answer:
       "Ansiedade de prova: respire 4-4-4, durma bem, simule condições reais. Peça apoio se for frequente.",
   },
+  {
+    patterns: [/sponte pay|pagamento|financeiro|fatura|boleto|pix/i],
+    answer:
+      "O módulo financeiro fica em **Gestão de Pagamentos** (/dashboard/financeiro). Lá você pode gerar faturas via Sponte Pay, ver Pix ou Boletos liquidados na tabela de alta densidade e realizar ações em lote.",
+    followUp: "Lembre-se de verificar as configurações do gateway na aba Configurar Pagamentos.",
+  },
+  {
+    patterns: [/contrato|template de contrato|documento|master tek/i],
+    answer:
+      "Os contratos educacionais usam templates com tags (ex: <<studentName>>). A importação de .docx ou geração nativa já mapeia os dados do sistema, com fallbacks caso os dados não estejam preenchidos, incluindo layout homologado Master Tek.",
+  },
+  {
+    patterns: [/recorrência|assinatura|cartão|log de recorr/i],
+    answer:
+      "Para gerenciar mensalidades no cartão de crédito, acesse a aba 'Log de Recorrência' em Gestão de Pagamentos. Clicando em um registro, um painel lateral permite Editar, Cancelar, Reenviar Cobrança ou Solicitar Dados novos do cartão.",
+  },
 ];
 
 export const ROLE_GREETINGS: Record<string, string> = {

@@ -1,6 +1,6 @@
 # Relatório de Validação Ecohub
 
-Gerado em: 2026-09-28T21:49:02.975Z
+Gerado em: 2026-09-28T23:01:23.829Z
 
 ## Resumo
 
@@ -29,7 +29,7 @@ Gerado em: 2026-09-28T21:49:02.975Z
   "status": "degraded",
   "service": "ecohub",
   "version": "1.0.0",
-  "uptime": 4670.567209472,
+  "uptime": 5739.241911442,
   "checks": {
     "database": "ok",
     "authSecret": "ok",
@@ -65,7 +65,7 @@ Gerado em: 2026-09-28T21:49:02.975Z
     "lastBackup": null
   },
   "mode": "institutional",
-  "responseMs": 4
+  "responseMs": 5
 }
 ```
 
@@ -76,7 +76,7 @@ Gerado em: 2026-09-28T21:49:02.975Z
   "status": "ok",
   "service": "ecohub",
   "version": "0.1.0",
-  "uptime": 20607.264893349,
+  "uptime": 2127.412269654,
   "checks": {
     "database": "ok",
     "authSecret": "ok",
@@ -102,9 +102,9 @@ Gerado em: 2026-09-28T21:49:02.975Z
     },
     "cache": {
       "entries": 2,
-      "hits": 5,
-      "misses": 466,
-      "hitRate": 1.1,
+      "hits": 6,
+      "misses": 57,
+      "hitRate": 9.5,
       "maxEntries": 800,
       "durable": false,
       "note": "Cache só acelera leitura. Contas ficam no Postgres."
@@ -112,7 +112,7 @@ Gerado em: 2026-09-28T21:49:02.975Z
     "lastBackup": null
   },
   "mode": "institutional",
-  "responseMs": 7
+  "responseMs": 5
 }
 ```
 
