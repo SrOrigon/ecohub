@@ -81,11 +81,12 @@ export function AdminInvoicesManager({
     });
   }
 
+  const now = new Date().getTime();
   const overdueList =
     overdueInvoices.length > 0
       ? overdueInvoices
       : pendingInvoices.filter((inv) => {
-          return inv.status === "OVERDUE" || new Date(inv.dueDate).getTime() < Date.now();
+          return inv.status === "OVERDUE" || new Date(inv.dueDate).getTime() < now;
         });
 
   function handleWhatsAppCharge(inv: PendingInvoiceItem) {

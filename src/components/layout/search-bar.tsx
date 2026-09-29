@@ -32,7 +32,7 @@ export function SearchBar({ className }: { className?: string }) {
       <Input
         id="global-search"
         placeholder="Buscar alunos, turmas..."
-        className="h-9 min-h-9 pl-9 pr-14 text-xs rounded-xl border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 shadow-2xs focus:bg-white dark:focus:bg-slate-900 transition-all"
+        className="h-9 min-h-9 w-full pl-9 pr-14 text-sm rounded-xl border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 shadow-2xs focus:bg-white dark:focus:bg-slate-900 transition-all"
         name="q"
         autoComplete="off"
       />
