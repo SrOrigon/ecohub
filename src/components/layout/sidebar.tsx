@@ -575,11 +575,14 @@ function SidebarContent({
         <Link
           href="/dashboard/perfil"
           onClick={onNavigate}
-          className="mb-2 flex items-center gap-2.5 rounded-xl p-2 transition-all hover:bg-[var(--hover)] active:scale-[0.98]"
+          className="mb-2 flex items-center gap-2.5 rounded-xl p-2 transition-all hover:bg-[var(--hover)] active:scale-[0.98] group"
         >
-          <ProfileAvatar name={userName} avatarUrl={avatarUrl} size="sm" className="ring-2 ring-indigo-500/20" />
+          <div className="relative shrink-0">
+            <ProfileAvatar name={userName} avatarUrl={avatarUrl} size="sm" className="ring-2 ring-indigo-500/20 group-hover:ring-indigo-500/40 transition-all" />
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[var(--surface)]" title="Online" />
+          </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-[var(--foreground)]">{userName}</p>
+            <p className="truncate text-xs font-semibold text-[var(--foreground)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{userName}</p>
             <p className="truncate text-[11px] text-[var(--muted-foreground)]">{schoolName}</p>
           </div>
         </Link>

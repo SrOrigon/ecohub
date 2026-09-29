@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: light;
-  --background: #f1f5f9;
+  --background: #f8fafc;
   --foreground: #0f172a;
   --muted: #64748b;
   --muted-foreground: #64748b;
@@ -16,22 +16,23 @@
   --accent: #eef2ff;
   --hover: #f1f5f9;
   --input-bg: #ffffff;
-  --shell-bg: #f1f5f9;
-  --header-bg: rgba(255, 255, 255, 0.92);
-  --overlay: rgba(15, 23, 42, 0.45);
+  --shell-bg: #f8fafc;
+  --header-bg: rgba(255, 255, 255, 0.90);
+  --overlay: rgba(15, 23, 42, 0.50);
   --focus-ring: #4f46e5;
   --ring-offset: #ffffff;
   --school-primary: #4f46e5;
   --school-primary-hover: #4338ca;
   --school-primary-soft: #eef2ff;
-  --school-primary-ring: #c7d2fe;
+  --school-primary-ring: rgba(99, 102, 241, 0.25);
   --school-accent: #f59e0b;
-  --auth-gradient-from: #eef2ff;
-  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 10px 25px -3px rgba(15, 23, 42, 0.09), 0 4px 10px -4px rgba(15, 23, 42, 0.04);
+  --auth-gradient-from: #f8fafc;
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.07), 0 2px 6px -2px rgba(15, 23, 42, 0.03);
+  --shadow-lg: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -4px rgba(15, 23, 42, 0.03);
   --shadow-glow: 0 0 24px -2px rgba(99, 102, 241, 0.22);
-  --touch-min: 48px;
+  --touch-min: 44px;
   --page-padding: clamp(1rem, 3vw, 2.5rem);
   --layout-gap: clamp(1rem, 2vw, 2rem);
   --content-max: min(100%, 100rem);
@@ -59,28 +60,29 @@
 
 .dark {
   color-scheme: dark;
-  --background: #000000;
-  --foreground: #f5f5f5;
-  --muted: #a3a3a3;
-  --muted-foreground: #a3a3a3;
-  --border: #2e2e2e;
-  --border-subtle: #1a1a1a;
-  --card: #0a0a0a;
-  --surface: #0a0a0a;
-  --surface-elevated: #141414;
-  --accent: rgba(99, 102, 241, 0.14);
-  --hover: #1a1a1a;
-  --input-bg: #0f0f0f;
-  --shell-bg: #000000;
-  --header-bg: rgba(10, 10, 10, 0.96);
-  --overlay: rgba(0, 0, 0, 0.78);
+  --background: #090d16;
+  --foreground: #f8fafc;
+  --muted: #94a3b8;
+  --muted-foreground: #94a3b8;
+  --border: #1e293b;
+  --border-subtle: #131d2e;
+  --card: #0e1526;
+  --surface: #0e1526;
+  --surface-elevated: #162035;
+  --accent: rgba(99, 102, 241, 0.16);
+  --hover: #162035;
+  --input-bg: #0b111e;
+  --shell-bg: #090d16;
+  --header-bg: rgba(14, 21, 38, 0.90);
+  --overlay: rgba(3, 7, 18, 0.82);
   --focus-ring: #818cf8;
-  --ring-offset: #0a0a0a;
+  --ring-offset: #0e1526;
   --school-primary-soft: rgba(99, 102, 241, 0.2);
-  --school-primary-ring: rgba(129, 140, 248, 0.4);
-  --auth-gradient-from: #0a0a0a;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --school-primary-ring: rgba(129, 140, 248, 0.35);
+  --auth-gradient-from: #090d16;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.55);
 }
 
 
@@ -168,6 +170,30 @@ button {
   outline-offset: 2px;
 }
 
+/* Custom Ergonomic Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 35%, transparent) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 28%, transparent);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted) 48%, transparent);
+}
+
 /* Layout responsivo compartilhado */
 .app-shell {
   display: flex;
@@ -179,11 +205,9 @@ button {
   max-width: 100vw;
   overflow: hidden;
   background: var(--shell-bg);
-  background-image: radial-gradient(
-    ellipse 80% 50% at 50% -20%,
-    color-mix(in srgb, var(--school-primary) 7%, transparent),
-    transparent
-  );
+  background-image:
+    radial-gradient(ellipse 90% 55% at 50% -20%, color-mix(in srgb, var(--school-primary) 7%, transparent), transparent 70%),
+    radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--school-accent) 2.5%, transparent), transparent 40%);
 }
 
 .app-shell[data-mobile-nav-open="true"] .app-content {
@@ -775,6 +799,11 @@ html.scroll-locked .app-content {
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.nav-link {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .nav-link-inactive {
   color: var(--muted-foreground);
 }
@@ -782,15 +811,26 @@ html.scroll-locked .app-content {
 .nav-link-inactive:hover {
   background: var(--hover);
   color: var(--foreground);
-  transform: translateX(2px);
+  transform: translateX(3px);
 }
 
 .nav-link-active {
-  background: linear-gradient(90deg, var(--school-primary-soft), transparent);
+  background: color-mix(in srgb, var(--school-primary) 10%, transparent);
   color: var(--school-primary);
   font-weight: 600;
-  border-left: 3.5px solid var(--school-primary);
-  box-shadow: 0 1px 4px -1px rgba(99, 102, 241, 0.15);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--school-primary) 20%, transparent);
+}
+
+.nav-link-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 3.5px;
+  border-radius: 0 4px 4px 0;
+  background: var(--school-primary);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--school-primary) 80%, transparent);
 }
 
 .stat-grid {
@@ -1689,70 +1729,29 @@ input[type="radio"] {
   top: 0;
 }
 
-/* Custom Modern Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.35);
-  border-radius: 9999px;
-  transition: background 0.2s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.6);
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.35);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(129, 140, 248, 0.6);
-}
-
 /* Custom Selection */
 ::selection {
   background: rgba(99, 102, 241, 0.22);
   color: inherit;
 }
 
-/* High-End UI Enhancements */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  scroll-behavior: smooth;
-}
-
+/* High-End UI Glassmorphism & Micro-Interactions */
 .ui-glass {
   background: color-mix(in srgb, var(--header-bg) 85%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 60%, transparent);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
 }
 
 .ui-interactive {
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ui-interactive:hover {
-  transform: translateY(-1px);
+  transform: translateY(-1.5px);
 }
 .ui-interactive:active {
-  transform: scale(0.96) translateY(0);
-}
-
-/* Enhanced Focus State */
-*:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px var(--school-primary-ring);
+  transform: scale(0.98) translateY(0);
 }
 
 /* High-End Animations */
@@ -1768,17 +1767,17 @@ body {
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
 }
 
-/* Stagger utilities for lists */
-.stagger-1 { animation-delay: 50ms; }
-.stagger-2 { animation-delay: 100ms; }
-.stagger-3 { animation-delay: 150ms; }
-.stagger-4 { animation-delay: 200ms; }
-.stagger-5 { animation-delay: 250ms; }
-.stagger-6 { animation-delay: 300ms; }
-.stagger-7 { animation-delay: 350ms; }
-.stagger-8 { animation-delay: 400ms; }
+/* Stagger utilities for smooth progressive loading */
+.stagger-1 { animation-delay: 40ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 120ms; }
+.stagger-4 { animation-delay: 160ms; }
+.stagger-5 { animation-delay: 200ms; }
+.stagger-6 { animation-delay: 240ms; }
+.stagger-7 { animation-delay: 280ms; }
+.stagger-8 { animation-delay: 320ms; }
 

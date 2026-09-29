@@ -34,7 +34,7 @@ export function Header({
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--header-bg)] backdrop-blur-md safe-area-top transition-colors shadow-2xs">
+    <header className="sticky top-0 z-40 ui-glass safe-area-top transition-colors">
       <div className="flex h-14 items-center gap-2 px-2 sm:gap-3 sm:px-3 md:h-16 md:gap-4 md:px-4 lg:px-6">
         <button
           type="button"
