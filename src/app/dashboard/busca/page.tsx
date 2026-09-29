@@ -155,8 +155,8 @@ export default async function BuscaPage({
         user: { schoolId: user.schoolId },
         OR: [
           { enrollmentCode: { contains: query } },
-          { user: { fullName: { contains: query } } },
-          { user: { email: { contains: query } } },
+          { user: { is: { fullName: { contains: query } } } },
+          { user: { is: { email: { contains: query } } } },
         ],
       },
       include: { user: true, classGroup: true },
