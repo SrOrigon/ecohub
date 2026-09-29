@@ -30,7 +30,9 @@ export async function requestPasswordReset(formData: FormData) {
     },
   });
 
-  const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/redefinir-senha?token=${token}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "";
+  const resetPath = `/redefinir-senha?token=${encodeURIComponent(token)}`;
+  const resetLink = baseUrl ? `${baseUrl.replace(/\/$/, "")}${resetPath}` : resetPath;
 
   await sendEmail({
     to: user.email,
@@ -39,6 +41,8 @@ export async function requestPasswordReset(formData: FormData) {
       <h1>Redefinição de senha</h1>
       <p>Clique no link abaixo para redefinir sua senha:</p>
       <a href="${resetLink}">Redefinir senha</a>
+      <p>Se o botão não funcionar, copie e cole o link a seguir no seu navegador:</p>
+      <p><code>${resetLink}</code></p>
     `,
   });
 
