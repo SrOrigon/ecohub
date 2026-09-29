@@ -11,7 +11,7 @@ export default async function FinanceiroGestaoPage() {
   }
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6 pb-8">
       <PageHeader
         title="Gestão de Pagamentos"
         description="Filtros avançados e operações em lote para geração, liquidação e consulta de pagamentos via Sponte Pay."

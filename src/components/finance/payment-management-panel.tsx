@@ -177,28 +177,62 @@ export function PaymentManagementPanel() {
           </div>
 
           {/* 4. Barra Inferior de Ações em Lote */}
-          <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur-sm sm:left-[240px] dark:border-slate-800 dark:bg-slate-950/95 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3">
-              <Button variant="default" className="gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-xs">
-                <FileText className="h-4 w-4" />
-                Gerar/Enviar
-              </Button>
-              <Button variant="outline" className="gap-2">
-                <Printer className="h-4 w-4" />
-                Imprimir
-              </Button>
-              <Button variant="outline" className="gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Consultar Situação
-              </Button>
-              <Button variant="outline" className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/50 dark:hover:bg-red-950/50">
-                <XCircle className="h-4 w-4" />
-                Cancelar
-              </Button>
-              <Button variant="ghost" className="gap-2">
-                <Clock className="h-4 w-4" />
-                Histórico
-              </Button>
+          <div className="sticky bottom-4 z-20 mt-6 rounded-2xl border border-slate-200/90 bg-white/95 p-3.5 shadow-xl shadow-slate-200/50 backdrop-blur-md dark:border-slate-800/90 dark:bg-slate-900/95 dark:shadow-none animate-in fade-in slide-in-from-bottom-3 duration-300">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              {/* Contexto / Indicador de Lote */}
+              <div className="flex items-center gap-2.5 px-1">
+                <span className="flex h-2.5 w-2.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-600" />
+                </span>
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    Ações em Lote
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden md:inline">
+                    Operações rápidas nos boletos e Pix filtrados
+                  </span>
+                </div>
+              </div>
+
+              {/* Botões de Ação */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="default"
+                  className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs font-medium text-xs sm:text-sm"
+                >
+                  <FileText className="h-4 w-4" />
+                  Gerar/Enviar
+                </Button>
+                <Button
+                  variant="outline"
+                  className="gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm"
+                >
+                  <Printer className="h-4 w-4" />
+                  Imprimir
+                </Button>
+                <Button
+                  variant="outline"
+                  className="gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Consultar Situação
+                </Button>
+                <Button
+                  variant="outline"
+                  className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/50 text-xs sm:text-sm"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Cancelar
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="gap-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 text-xs sm:text-sm"
+                >
+                  <Clock className="h-4 w-4" />
+                  Histórico
+                </Button>
+              </div>
             </div>
           </div>
         </>

@@ -44,7 +44,17 @@ export function PaymentDataTable({ data = [] }: { data?: PaymentDataRow[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {data.map((row) => (
+            {data.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="px-4 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <CircleDashed className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                    <span>Nenhum registro encontrado para os filtros selecionados.</span>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              data.map((row) => (
               <tr
                 key={row.id}
                 className="hover:bg-slate-50 transition-colors group dark:hover:bg-slate-900/50"
@@ -122,7 +132,7 @@ export function PaymentDataTable({ data = [] }: { data?: PaymentDataRow[] }) {
                   </div>
                 </td>
               </tr>
-            ))}
+            )))}
           </tbody>
         </table>
       </div>
