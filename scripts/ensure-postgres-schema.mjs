@@ -40,6 +40,24 @@ const STUDENT_COLUMN_PATCHES = [
   `ALTER TABLE "Student" ADD COLUMN IF NOT EXISTS "lastRiskAssessment" TIMESTAMP(3)`,
 ];
 
+const MISSION_COLUMN_PATCHES = [
+  `ALTER TABLE "Mission" ADD COLUMN IF NOT EXISTS "frequency" TEXT NOT NULL DEFAULT 'ONCE'`,
+  `ALTER TABLE "Mission" ADD COLUMN IF NOT EXISTS "autoReset" BOOLEAN NOT NULL DEFAULT false`,
+];
+
+const AUTH_TABLE_PATCHES = [
+  `CREATE TABLE IF NOT EXISTS "PasswordResetToken" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "email" TEXT NOT NULL,
+    "token" TEXT NOT NULL UNIQUE,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "PasswordResetToken_token_key" ON "PasswordResetToken"("token")`,
+  `CREATE INDEX IF NOT EXISTS "PasswordResetToken_email_idx" ON "PasswordResetToken"("email")`,
+  `CREATE INDEX IF NOT EXISTS "PasswordResetToken_token_idx" ON "PasswordResetToken"("token")`,
+];
+
 const REWARD_COLUMN_PATCHES = [
   `ALTER TABLE "Reward" ADD COLUMN IF NOT EXISTS "itemType" TEXT NOT NULL DEFAULT 'physical'`,
   `ALTER TABLE "Reward" ADD COLUMN IF NOT EXISTS "cosmeticKey" TEXT`,
@@ -353,9 +371,11 @@ const BADGE_COLUMN_PATCHES = [
 
 const ALL_PATCHES = [
   ...TABLE_PATCHES,
+  ...AUTH_TABLE_PATCHES,
   ...DUEL_TABLE_PATCHES,
   ...USER_COLUMN_PATCHES,
   ...STUDENT_COLUMN_PATCHES,
+  ...MISSION_COLUMN_PATCHES,
   ...REWARD_COLUMN_PATCHES,
   ...EXERCISE_COLUMN_PATCHES,
   ...DOCUMENT_AND_ENROLLMENT_PATCHES,
@@ -375,6 +395,8 @@ const CRITICAL_COLUMNS = [
   { table: "Student", column: "status" },
   { table: "Exercise", column: "audienceType" },
   { table: "Badge", column: "classId" },
+  { table: "Mission", column: "frequency" },
+  { table: "Mission", column: "autoReset" },
 ];
 
 const CRITICAL_TABLES = [
@@ -388,6 +410,7 @@ const CRITICAL_TABLES = [
   "Invoice",
   "SchoolPaymentConfig",
   "StudentInvoice",
+  "PasswordResetToken",
 ];
 
 async function columnExists(prisma, table, column) {
