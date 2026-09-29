@@ -11,21 +11,22 @@ import { UserIdentity } from "@/components/profile/user-identity";
 import { Search, BookOpen, Sparkles } from "lucide-react";
 import { sortByTextPt } from "@/lib/sort-order";
 import {
+  normalizeSearchText,
+  matchPersonName,
+  matchEmail,
+  matchEnrollmentCode,
+  matchUsername,
+  matchGeneralText,
+} from "@/lib/search-matcher";
+import {
   BuscaView,
   type SearchStudent,
-  type SearchTeacher,
+  type SearchStaff,
+  type SearchParent,
   type SearchClass,
   type SearchMission,
+  type SearchApplication,
 } from "./busca-view";
-
-function normalizeText(text?: string | null): string {
-  if (!text) return "";
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-}
 
 export default async function BuscaPage({
   searchParams,
@@ -38,7 +39,7 @@ export default async function BuscaPage({
 
   const { q = "" } = await searchParams;
   const rawQuery = q.trim();
-  const query = normalizeText(rawQuery);
+  const query = normalizeSearchText(rawQuery);
 
   if (!query) {
     return (
@@ -50,7 +51,7 @@ export default async function BuscaPage({
               ? "Encontre informações sobre seus filhos vinculados."
               : user.role === "student"
                 ? "Consulte suas notas e missões."
-                : "Digite um termo na barra de busca do topo para encontrar alunos, turmas, professores ou missões."
+                : "Digite um termo na barra de busca do topo para encontrar alunos, responsáveis, equipe ou turmas."
           }
         />
         <EmptyState
@@ -62,15 +63,15 @@ export default async function BuscaPage({
     );
   }
 
-  // Busca do perfil Responsável
+  // 1. Perfil RESPONSÁVEL (Parent)
   if (user.role === "parent") {
     try {
       const children = await fetchParentChildren(user, user.id);
       const matches = sortByTextPt(
         children.filter(({ student }) => {
-          const name = normalizeText(student.user?.fullName);
-          const code = normalizeText(student.enrollmentCode);
-          return name.includes(query) || code.includes(query);
+          const nameMatch = matchPersonName(student.user?.fullName, query);
+          const codeMatch = matchEnrollmentCode(student.enrollmentCode, query);
+          return nameMatch.matches || codeMatch.matches;
         }),
         ({ student }) => student.user?.fullName ?? ""
       );
@@ -82,7 +83,10 @@ export default async function BuscaPage({
             description={`${matches.length} filho(s) encontrado(s)`}
           />
           {matches.length === 0 ? (
-            <EmptyState title="Nenhum filho encontrado" description="Tente buscar pelo nome ou matrícula." />
+            <EmptyState
+              title="Nenhum filho encontrado"
+              description="Tente buscar pelo nome ou número de matrícula."
+            />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {matches.map(({ student }) => (
@@ -120,7 +124,7 @@ export default async function BuscaPage({
     }
   }
 
-  // Busca do perfil Aluno
+  // 2. Perfil ALUNO (Student)
   if (user.role === "student") {
     try {
       const student = await prisma.student.findFirst({
@@ -132,16 +136,16 @@ export default async function BuscaPage({
       });
       if (!student) redirect("/dashboard/aluno");
 
-      const gradeMatches = (student.grades ?? []).filter(
-        (g) =>
-          normalizeText(g.subject).includes(query) ||
-          normalizeText(g.period).includes(query)
-      );
+      const gradeMatches = (student.grades ?? []).filter((g) => {
+        const subMatch = matchGeneralText(g.subject, query, "Disciplina");
+        const perMatch = matchGeneralText(g.period, query, "Período");
+        return subMatch.matches || perMatch.matches;
+      });
 
       const missionMatches = (student.studentMissions ?? []).filter((sm) => {
-        const title = normalizeText(sm.mission?.title);
-        const desc = normalizeText(sm.mission?.description);
-        return title.includes(query) || desc.includes(query);
+        const titleMatch = matchGeneralText(sm.mission?.title, query, "Missão");
+        const descMatch = matchGeneralText(sm.mission?.description, query, "Descrição");
+        return titleMatch.matches || descMatch.matches;
       });
 
       const total = gradeMatches.length + missionMatches.length;
@@ -163,7 +167,9 @@ export default async function BuscaPage({
               <CardContent className="space-y-2">
                 {gradeMatches.map((g) => (
                   <div key={g.id} className="flex justify-between rounded-xl border border-[var(--border)] p-3">
-                    <span className="font-medium text-[var(--foreground)]">{g.subject} · {g.period}</span>
+                    <span className="font-medium text-[var(--foreground)]">
+                      {g.subject} · {g.period}
+                    </span>
                     <Badge variant="secondary">{g.value.toFixed(1)}</Badge>
                   </div>
                 ))}
@@ -206,82 +212,214 @@ export default async function BuscaPage({
     }
   }
 
-  // Busca Geral para Gestão (Diretor, Admin, Secretária, Professor)
+  // 3. Perfil GESTÃO & DOCÊNCIA (Admin, Diretor, Secretária, Professor)
   const isManagement = user.role === "admin" || user.role === "director" || user.role === "secretary";
 
   try {
-    const [studentsRaw, classesRaw, missionsRaw, teachersRaw] = await Promise.all([
-      // 1. Alunos da escola
-      prisma.student.findMany({
-        where: { user: { schoolId: user.schoolId } },
-        include: {
-          user: {
-            select: { id: true, fullName: true, email: true, avatarUrl: true },
-          },
-          classGroup: {
-            select: { id: true, name: true, gradeLevel: true },
-          },
-        },
-        take: 350,
-      }).catch((err) => {
-        console.error("[busca:students]", err);
-        return [];
-      }),
-
-      // 2. Turmas da escola
-      prisma.classGroup.findMany({
-        where: { schoolId: user.schoolId },
-        select: { id: true, name: true, gradeLevel: true, year: true },
-        take: 100,
-      }).catch((err) => {
-        console.error("[busca:classes]", err);
-        return [];
-      }),
-
-      // 3. Missões da escola
-      prisma.mission.findMany({
-        where: { schoolId: user.schoolId },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          xpReward: true,
-          coinReward: true,
-        },
-        take: 100,
-      }).catch((err) => {
-        console.error("[busca:missions]", err);
-        return [];
-      }),
-
-      // 4. Professores da escola
-      isManagement
-        ? prisma.user.findMany({
-            where: { schoolId: user.schoolId, role: "teacher" },
-            select: { id: true, fullName: true, email: true, avatarUrl: true },
-            take: 60,
-          }).catch((err) => {
-            console.error("[busca:teachers]", err);
-            return [];
+    const [studentsRaw, classesRaw, missionsRaw, staffRaw, parentsRaw, applicationsRaw] =
+      await Promise.all([
+        // 1. Alunos da escola (via user.schoolId ou turma da escola)
+        prisma.student
+          .findMany({
+            where: {
+              OR: [
+                { user: { schoolId: user.schoolId } },
+                { classGroup: { schoolId: user.schoolId } },
+                { classEnrollments: { some: { classGroup: { schoolId: user.schoolId } } } },
+              ],
+            },
+            include: {
+              user: {
+                select: { id: true, fullName: true, email: true, username: true, avatarUrl: true },
+              },
+              classGroup: {
+                select: { id: true, name: true, gradeLevel: true },
+              },
+              parentLinks: {
+                include: {
+                  parent: {
+                    select: { id: true, fullName: true, email: true, phone: true },
+                  },
+                },
+              },
+            },
+            take: 1000,
           })
-        : Promise.resolve([]),
-    ]);
+          .catch((err) => {
+            console.error("[busca:students]", err);
+            return [];
+          }),
 
-    // Filtragem e mapeamento de Alunos com detecção de correspondência
-    const matchingStudents: SearchStudent[] = [];
+        // 2. Turmas da escola
+        prisma.classGroup
+          .findMany({
+            where: { schoolId: user.schoolId },
+            select: { id: true, name: true, gradeLevel: true, year: true },
+            take: 150,
+          })
+          .catch((err) => {
+            console.error("[busca:classes]", err);
+            return [];
+          }),
+
+        // 3. Missões da escola
+        prisma.mission
+          .findMany({
+            where: { schoolId: user.schoolId },
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              xpReward: true,
+              coinReward: true,
+            },
+            take: 150,
+          })
+          .catch((err) => {
+            console.error("[busca:missions]", err);
+            return [];
+          }),
+
+        // 4. Professores e Equipe escolar
+        isManagement
+          ? prisma.user
+              .findMany({
+                where: {
+                  schoolId: user.schoolId,
+                  role: { in: ["teacher", "secretary", "director", "admin", "staff"] },
+                },
+                select: { id: true, fullName: true, email: true, role: true, avatarUrl: true },
+                take: 300,
+              })
+              .catch((err) => {
+                console.error("[busca:staff]", err);
+                return [];
+              })
+          : prisma.user
+              .findMany({
+                where: { schoolId: user.schoolId, role: "teacher" },
+                select: { id: true, fullName: true, email: true, role: true, avatarUrl: true },
+                take: 60,
+              })
+              .catch((err) => {
+                console.error("[busca:teachers]", err);
+                return [];
+              }),
+
+        // 5. Responsáveis vinculados à escola
+        isManagement
+          ? prisma.user
+              .findMany({
+                where: {
+                  role: "parent",
+                  OR: [
+                    { schoolId: user.schoolId },
+                    { parentLinks: { some: { student: { user: { schoolId: user.schoolId } } } } },
+                    { parentLinks: { some: { student: { classGroup: { schoolId: user.schoolId } } } } },
+                  ],
+                },
+                select: {
+                  id: true,
+                  fullName: true,
+                  email: true,
+                  phone: true,
+                  avatarUrl: true,
+                  parentLinks: {
+                    include: {
+                      student: {
+                        include: {
+                          user: { select: { fullName: true } },
+                          classGroup: { select: { name: true } },
+                        },
+                      },
+                    },
+                  },
+                },
+                take: 500,
+              })
+              .catch((err) => {
+                console.error("[busca:parents]", err);
+                return [];
+              })
+          : Promise.resolve([]),
+
+        // 6. Inscrições / Pré-Matrículas
+        isManagement
+          ? prisma.enrollmentApplication
+              .findMany({
+                where: { schoolId: user.schoolId },
+                select: {
+                  id: true,
+                  studentName: true,
+                  parentName: true,
+                  parentEmail: true,
+                  parentPhone: true,
+                  gradeLevel: true,
+                  status: true,
+                },
+                take: 100,
+              })
+              .catch((err) => {
+                console.error("[busca:applications]", err);
+                return [];
+              })
+          : Promise.resolve([]),
+      ]);
+
+    // Processamento ALUNOS com pontuação de precisão
+    const matchingStudents: Array<SearchStudent & { score: number }> = [];
     for (const s of studentsRaw) {
-      const name = normalizeText(s.user?.fullName);
-      const email = normalizeText(s.user?.email);
-      const code = normalizeText(s.enrollmentCode);
-      const className = normalizeText(s.classGroup?.name);
-
+      let score = 0;
       const matchReasons: string[] = [];
-      if (name.includes(query)) matchReasons.push("Nome");
-      if (code.includes(query)) matchReasons.push("Matrícula");
-      if (email.includes(query)) matchReasons.push("E-mail");
-      if (className.includes(query)) matchReasons.push("Turma");
+      let parentNote: string | null = null;
 
-      if (matchReasons.length > 0) {
+      // 1. Nome do aluno (prioridade máxima)
+      const nameMatch = matchPersonName(s.user?.fullName, query);
+      if (nameMatch.matches) {
+        score += nameMatch.score;
+        matchReasons.push(nameMatch.reason || "Nome");
+      }
+
+      // 2. Matrícula
+      const codeMatch = matchEnrollmentCode(s.enrollmentCode, query);
+      if (codeMatch.matches) {
+        score += codeMatch.score;
+        matchReasons.push(codeMatch.reason || "Matrícula");
+      }
+
+      // 3. Username (@usuario)
+      const userMatch = matchUsername(s.user?.username, query);
+      if (userMatch.matches) {
+        score += userMatch.score;
+        matchReasons.push(userMatch.reason || "Usuário");
+      }
+
+      // 4. E-mail (preciso, sem falsos positivos de substrings como luciana/allana)
+      const emailMatch = matchEmail(s.user?.email, query);
+      if (emailMatch.matches) {
+        score += emailMatch.score;
+        matchReasons.push(emailMatch.reason || "E-mail");
+      }
+
+      // 5. Turma
+      const classMatch = matchGeneralText(s.classGroup?.name, query, "Turma");
+      if (classMatch.matches) {
+        score += classMatch.score;
+        matchReasons.push("Turma");
+      }
+
+      // 6. Responsável vinculado ao aluno
+      for (const pl of s.parentLinks ?? []) {
+        const parentMatch = matchPersonName(pl.parent?.fullName, query);
+        if (parentMatch.matches) {
+          score += Math.max(100, parentMatch.score - 200);
+          parentNote = `Responsável: ${pl.parent?.fullName}`;
+          matchReasons.push("Responsável");
+          break;
+        }
+      }
+
+      if (score > 0 && matchReasons.length > 0) {
         matchingStudents.push({
           id: s.id,
           fullName: s.user?.fullName ?? "Aluno",
@@ -291,46 +429,107 @@ export default async function BuscaPage({
           className: s.classGroup?.name ?? "Sem turma",
           level: s.level ?? 1,
           matchReasons,
+          parentNote,
+          score,
         });
       }
     }
 
-    // Priorizar alunos cujo Nome ou Matrícula contenha o termo de busca
-    matchingStudents.sort((a, b) => {
-      const aName = a.matchReasons.includes("Nome") || a.matchReasons.includes("Matrícula");
-      const bName = b.matchReasons.includes("Nome") || b.matchReasons.includes("Matrícula");
-      if (aName && !bName) return -1;
-      if (!aName && bName) return 1;
-      return a.fullName.localeCompare(b.fullName, "pt-BR");
-    });
+    // Ordenar alunos: maior pontuação primeiro, depois ordem alfabética
+    matchingStudents.sort(
+      (a, b) => b.score - a.score || a.fullName.localeCompare(b.fullName, "pt-BR")
+    );
 
-    // Professores
-    const matchingTeachers: SearchTeacher[] = [];
-    for (const t of teachersRaw) {
-      const name = normalizeText(t.fullName);
-      const email = normalizeText(t.email);
+    // Processamento RESPONSÁVEIS
+    const matchingParents: Array<SearchParent & { score: number }> = [];
+    for (const p of parentsRaw) {
+      let score = 0;
       const matchReasons: string[] = [];
-      if (name.includes(query)) matchReasons.push("Nome");
-      if (email.includes(query)) matchReasons.push("E-mail");
 
-      if (matchReasons.length > 0) {
-        matchingTeachers.push({
-          id: t.id,
-          fullName: t.fullName ?? "Professor",
-          email: t.email ?? "",
-          avatarUrl: t.avatarUrl ?? null,
+      const nameMatch = matchPersonName(p.fullName, query);
+      if (nameMatch.matches) {
+        score += nameMatch.score;
+        matchReasons.push(nameMatch.reason || "Nome");
+      }
+
+      const emailMatch = matchEmail(p.email, query);
+      if (emailMatch.matches) {
+        score += emailMatch.score;
+        matchReasons.push(emailMatch.reason || "E-mail");
+      }
+
+      if (p.phone && normalizeSearchText(p.phone).includes(query)) {
+        score += 200;
+        matchReasons.push("Telefone");
+      }
+
+      if (score > 0) {
+        const children = (p.parentLinks ?? [])
+          .map((pl) => ({
+            id: pl.student?.id ?? "",
+            fullName: pl.student?.user?.fullName ?? "Aluno",
+            className: pl.student?.classGroup?.name ?? "Sem turma",
+          }))
+          .filter((c) => Boolean(c.id));
+
+        matchingParents.push({
+          id: p.id,
+          fullName: p.fullName,
+          email: p.email ?? null,
+          phone: p.phone ?? null,
+          avatarUrl: p.avatarUrl ?? null,
+          children,
           matchReasons,
+          score,
         });
       }
     }
-    matchingTeachers.sort((a, b) => a.fullName.localeCompare(b.fullName, "pt-BR"));
 
-    // Turmas
+    matchingParents.sort(
+      (a, b) => b.score - a.score || a.fullName.localeCompare(b.fullName, "pt-BR")
+    );
+
+    // Processamento PROFESSORES E EQUIPE
+    const matchingStaff: Array<SearchStaff & { score: number }> = [];
+    for (const st of staffRaw) {
+      let score = 0;
+      const matchReasons: string[] = [];
+
+      const nameMatch = matchPersonName(st.fullName, query);
+      if (nameMatch.matches) {
+        score += nameMatch.score;
+        matchReasons.push(nameMatch.reason || "Nome");
+      }
+
+      const emailMatch = matchEmail(st.email, query);
+      if (emailMatch.matches) {
+        score += emailMatch.score;
+        matchReasons.push(emailMatch.reason || "E-mail");
+      }
+
+      if (score > 0) {
+        matchingStaff.push({
+          id: st.id,
+          fullName: st.fullName,
+          email: st.email,
+          role: st.role,
+          avatarUrl: st.avatarUrl ?? null,
+          matchReasons,
+          score,
+        });
+      }
+    }
+
+    matchingStaff.sort(
+      (a, b) => b.score - a.score || a.fullName.localeCompare(b.fullName, "pt-BR")
+    );
+
+    // Processamento TURMAS
     const matchingClasses: SearchClass[] = classesRaw
       .filter((c) => {
-        const name = normalizeText(c.name);
-        const grade = normalizeText(String(c.gradeLevel ?? ""));
-        return name.includes(query) || grade.includes(query);
+        const matchName = matchGeneralText(c.name, query, "Turma");
+        const matchGrade = matchGeneralText(String(c.gradeLevel ?? ""), query, "Ano");
+        return matchName.matches || matchGrade.matches;
       })
       .map((c) => ({
         id: c.id,
@@ -340,12 +539,12 @@ export default async function BuscaPage({
       }))
       .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
-    // Missões
+    // Processamento MISSÕES
     const matchingMissions: SearchMission[] = missionsRaw
       .filter((m) => {
-        const title = normalizeText(m.title);
-        const desc = normalizeText(m.description);
-        return title.includes(query) || desc.includes(query);
+        const matchTitle = matchGeneralText(m.title, query, "Missão");
+        const matchDesc = matchGeneralText(m.description, query, "Descrição");
+        return matchTitle.matches || matchDesc.matches;
       })
       .map((m) => ({
         id: m.id,
@@ -356,13 +555,41 @@ export default async function BuscaPage({
       }))
       .sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
 
+    // Processamento INSCRIÇÕES / PRÉ-MATRÍCULAS
+    const matchingApplications: SearchApplication[] = [];
+    for (const app of applicationsRaw) {
+      const matchStudent = matchPersonName(app.studentName, query);
+      const matchParent = matchPersonName(app.parentName, query);
+      const matchEmailRes = matchEmail(app.parentEmail, query);
+
+      const matchReasons: string[] = [];
+      if (matchStudent.matches) matchReasons.push("Candidato");
+      if (matchParent.matches) matchReasons.push("Responsável");
+      if (matchEmailRes.matches) matchReasons.push("E-mail");
+
+      if (matchReasons.length > 0) {
+        matchingApplications.push({
+          id: app.id,
+          studentName: app.studentName,
+          parentName: app.parentName,
+          parentEmail: app.parentEmail,
+          parentPhone: app.parentPhone ?? null,
+          gradeLevel: app.gradeLevel,
+          status: app.status,
+          matchReasons,
+        });
+      }
+    }
+
     return (
       <BuscaView
         initialQuery={rawQuery}
         students={matchingStudents}
-        teachers={matchingTeachers}
+        staff={matchingStaff}
+        parents={matchingParents}
         classes={matchingClasses}
         missions={matchingMissions}
+        applications={matchingApplications}
       />
     );
   } catch (error) {
