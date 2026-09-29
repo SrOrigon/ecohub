@@ -35,7 +35,7 @@ export function Header({
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--header-bg)] backdrop-blur-md safe-area-top transition-colors shadow-2xs">
-      <div className="flex h-14 items-center gap-1.5 px-2 sm:gap-2 sm:px-3 md:h-16 md:gap-3 md:px-4 lg:px-6">
+      <div className="flex h-14 items-center gap-2 px-2 sm:gap-3 sm:px-3 md:h-16 md:gap-4 md:px-4 lg:px-6">
         <button
           type="button"
           className="icon-btn shrink-0 md:hidden"
@@ -70,7 +70,7 @@ export function Header({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-0.5 sm:gap-1.5">
+        <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-2 lg:gap-3">
           {showSearch && (
             <button
               type="button"

@@ -122,33 +122,33 @@ export function PaymentManagementPanel() {
               </div>
 
               {/* Datas de Vencimento */}
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <Label>Vencimento entre</Label>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                    <Input type="date" className="pl-9 text-sm" />
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="relative flex-1 min-w-0">
+                    <Input type="date" className="pl-3 pr-8 text-sm w-full min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                    <Calendar className="absolute right-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                   </div>
-                  <span className="text-slate-400">e</span>
-                  <div className="relative flex-1">
-                    <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                    <Input type="date" className="pl-9 text-sm" />
+                  <span className="text-slate-400 shrink-0">e</span>
+                  <div className="relative flex-1 min-w-0">
+                    <Input type="date" className="pl-3 pr-8 text-sm w-full min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                    <Calendar className="absolute right-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               </div>
 
               {/* Datas de Geração */}
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <Label>Gerado entre</Label>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                    <Input type="date" className="pl-9 text-sm" />
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="relative flex-1 min-w-0">
+                    <Input type="date" className="pl-3 pr-8 text-sm w-full min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                    <Calendar className="absolute right-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                   </div>
-                  <span className="text-slate-400">e</span>
-                  <div className="relative flex-1">
-                    <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                    <Input type="date" className="pl-9 text-sm" />
+                  <span className="text-slate-400 shrink-0">e</span>
+                  <div className="relative flex-1 min-w-0">
+                    <Input type="date" className="pl-3 pr-8 text-sm w-full min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                    <Calendar className="absolute right-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -156,12 +156,12 @@ export function PaymentManagementPanel() {
               {/* ID Sponte Pay / Gateway */}
               <div>
                 <Label htmlFor="gatewayId">ID Sponte Pay / Gateway</Label>
-                <Input id="gatewayId" name="gatewayId" placeholder="Ex: 00112233" />
+                <Input id="gatewayId" name="gatewayId" placeholder="Ex: 00112233" className="w-full" />
               </div>
 
                   {/* Botão Filtrar no final do grid */}
-                  <div className="md:col-span-2 flex items-end justify-end">
-                    <Button type="submit" className="gap-2 px-6">
+              <div className="md:col-span-2 flex items-end justify-end pt-1">
+                <Button type="submit" className="gap-2 px-6 min-w-[120px]">
                       <Search className="h-4 w-4" />
                       Filtrar
                     </Button>
