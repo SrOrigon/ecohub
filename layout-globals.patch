@@ -1,0 +1,58 @@
+<<<<<<< SEARCH
+  --page-padding: clamp(0.625rem, 1.5vw + 0.25rem, 2rem);
+  --layout-gap: clamp(0.75rem, 1.5vw, 1.5rem);
+  --content-max: min(100%, 96rem);
+  --sidebar-width: clamp(13.5rem, 14vw, 17.5rem);
+  --aside-width: clamp(16rem, 20vw, 20rem);
+  --app-header-offset: calc(3.5rem + env(safe-area-inset-top, 0px));
+}
+
+@media (min-width: 768px) {
+  :root {
+    --app-header-offset: calc(4rem + env(safe-area-inset-top, 0px));
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --app-header-offset: calc(4rem + env(safe-area-inset-top, 0px));
+    --sidebar-width: clamp(14rem, 15vw, 18rem);
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --content-max: min(100%, 100rem);
+  }
+}
+=======
+  --page-padding: clamp(1rem, 3vw, 2.5rem);
+  --layout-gap: clamp(1rem, 2vw, 2rem);
+  --content-max: min(100%, 96rem);
+  --sidebar-width: clamp(15rem, 16vw, 18rem);
+  --aside-width: clamp(17rem, 22vw, 22rem);
+  --app-header-offset: calc(4rem + env(safe-area-inset-top, 0px));
+}
+
+@media (min-width: 768px) {
+  :root {
+    --app-header-offset: calc(4.5rem + env(safe-area-inset-top, 0px));
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --app-header-offset: calc(4.5rem + env(safe-area-inset-top, 0px));
+    --sidebar-width: clamp(16rem, 18vw, 20rem);
+    --page-padding: clamp(1.5rem, 4vw, 3rem);
+    --layout-gap: clamp(1.25rem, 2.5vw, 2.5rem);
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --content-max: min(100%, 110rem);
+    --sidebar-width: 20rem;
+  }
+}
+>>>>>>> REPLACE
