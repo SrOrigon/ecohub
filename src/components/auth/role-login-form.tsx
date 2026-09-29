@@ -161,6 +161,7 @@ export function RoleLoginForm({
           <Button type="submit" className="w-full" size="lg" disabled={pending}>
             {pending ? "Entrando..." : "Entrar"}
           </Button>
+          <p className="mt-4 text-center text-sm text-[var(--muted-foreground)]"><Link href="/esqueci-a-senha" className="font-semibold text-[color:var(--school-primary)] hover:underline">Esqueci a senha</Link></p>
         </form>
 
         {portal === "aluno" && (

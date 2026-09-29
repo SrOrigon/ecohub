@@ -20,6 +20,8 @@ function isPublicPath(pathname: string) {
   if (pathname.startsWith("/e/")) return true;
   if (pathname.startsWith("/inscricao/")) return true;
   if (pathname.startsWith("/entrar")) return true;
+  if (pathname.startsWith("/esqueci-a-senha")) return true;
+  if (pathname.startsWith("/redefinir-senha")) return true;
   return false;
 }
 
