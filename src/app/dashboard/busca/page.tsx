@@ -8,8 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { UserIdentity } from "@/components/profile/user-identity";
-import { Search, GraduationCap, Users, BookOpen, Sparkles, Shield } from "lucide-react";
-import { sortByTextPt, sortStudentsByName, sortTeachersByName } from "@/lib/sort-order";
+import { Search, BookOpen, Sparkles } from "lucide-react";
+import { sortByTextPt } from "@/lib/sort-order";
+import {
+  BuscaView,
+  type SearchStudent,
+  type SearchTeacher,
+  type SearchClass,
+  type SearchMission,
+} from "./busca-view";
 
 function normalizeText(text?: string | null): string {
   if (!text) return "";
@@ -37,7 +44,7 @@ export default async function BuscaPage({
     return (
       <div className="space-y-6">
         <PageHeader
-          title="Busca"
+          title="Busca Geral"
           description={
             user.role === "parent"
               ? "Encontre informações sobre seus filhos vinculados."
@@ -215,7 +222,7 @@ export default async function BuscaPage({
             select: { id: true, name: true, gradeLevel: true },
           },
         },
-        take: 300,
+        take: 350,
       }).catch((err) => {
         console.error("[busca:students]", err);
         return [];
@@ -231,7 +238,7 @@ export default async function BuscaPage({
         return [];
       }),
 
-      // 3. Missões da escola (apenas colunas existentes)
+      // 3. Missões da escola
       prisma.mission.findMany({
         where: { schoolId: user.schoolId },
         select: {
@@ -252,7 +259,7 @@ export default async function BuscaPage({
         ? prisma.user.findMany({
             where: { schoolId: user.schoolId, role: "teacher" },
             select: { id: true, fullName: true, email: true, avatarUrl: true },
-            take: 50,
+            take: 60,
           }).catch((err) => {
             console.error("[busca:teachers]", err);
             return [];
@@ -260,205 +267,103 @@ export default async function BuscaPage({
         : Promise.resolve([]),
     ]);
 
-    // Filtros em memória (tolerantes a maiúsculas/minúsculas e acentos)
-    const matchingStudents = studentsRaw.filter((s) => {
+    // Filtragem e mapeamento de Alunos com detecção de correspondência
+    const matchingStudents: SearchStudent[] = [];
+    for (const s of studentsRaw) {
       const name = normalizeText(s.user?.fullName);
       const email = normalizeText(s.user?.email);
       const code = normalizeText(s.enrollmentCode);
       const className = normalizeText(s.classGroup?.name);
-      return name.includes(query) || email.includes(query) || code.includes(query) || className.includes(query);
+
+      const matchReasons: string[] = [];
+      if (name.includes(query)) matchReasons.push("Nome");
+      if (code.includes(query)) matchReasons.push("Matrícula");
+      if (email.includes(query)) matchReasons.push("E-mail");
+      if (className.includes(query)) matchReasons.push("Turma");
+
+      if (matchReasons.length > 0) {
+        matchingStudents.push({
+          id: s.id,
+          fullName: s.user?.fullName ?? "Aluno",
+          email: s.user?.email ?? null,
+          avatarUrl: s.user?.avatarUrl ?? null,
+          enrollmentCode: s.enrollmentCode ?? "",
+          className: s.classGroup?.name ?? "Sem turma",
+          level: s.level ?? 1,
+          matchReasons,
+        });
+      }
+    }
+
+    // Priorizar alunos cujo Nome ou Matrícula contenha o termo de busca
+    matchingStudents.sort((a, b) => {
+      const aName = a.matchReasons.includes("Nome") || a.matchReasons.includes("Matrícula");
+      const bName = b.matchReasons.includes("Nome") || b.matchReasons.includes("Matrícula");
+      if (aName && !bName) return -1;
+      if (!aName && bName) return 1;
+      return a.fullName.localeCompare(b.fullName, "pt-BR");
     });
 
-    const matchingClasses = classesRaw.filter((c) => {
-      const name = normalizeText(c.name);
-      const grade = normalizeText(String(c.gradeLevel ?? ""));
-      return name.includes(query) || grade.includes(query);
-    });
-
-    const matchingMissions = missionsRaw.filter((m) => {
-      const title = normalizeText(m.title);
-      const desc = normalizeText(m.description);
-      return title.includes(query) || desc.includes(query);
-    });
-
-    const matchingTeachers = teachersRaw.filter((t) => {
+    // Professores
+    const matchingTeachers: SearchTeacher[] = [];
+    for (const t of teachersRaw) {
       const name = normalizeText(t.fullName);
       const email = normalizeText(t.email);
-      return name.includes(query) || email.includes(query);
-    });
+      const matchReasons: string[] = [];
+      if (name.includes(query)) matchReasons.push("Nome");
+      if (email.includes(query)) matchReasons.push("E-mail");
 
-    const sortedStudents = sortStudentsByName(matchingStudents);
-    const sortedClasses = sortByTextPt(matchingClasses, (turma) => turma.name);
-    const sortedMissions = sortByTextPt(matchingMissions, (mission) => mission.title);
-    const sortedTeachers = sortTeachersByName(matchingTeachers);
+      if (matchReasons.length > 0) {
+        matchingTeachers.push({
+          id: t.id,
+          fullName: t.fullName ?? "Professor",
+          email: t.email ?? "",
+          avatarUrl: t.avatarUrl ?? null,
+          matchReasons,
+        });
+      }
+    }
+    matchingTeachers.sort((a, b) => a.fullName.localeCompare(b.fullName, "pt-BR"));
 
-    const total =
-      sortedStudents.length +
-      sortedClasses.length +
-      sortedMissions.length +
-      sortedTeachers.length;
+    // Turmas
+    const matchingClasses: SearchClass[] = classesRaw
+      .filter((c) => {
+        const name = normalizeText(c.name);
+        const grade = normalizeText(String(c.gradeLevel ?? ""));
+        return name.includes(query) || grade.includes(query);
+      })
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        gradeLevel: String(c.gradeLevel ?? ""),
+        year: c.year ?? 2026,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+
+    // Missões
+    const matchingMissions: SearchMission[] = missionsRaw
+      .filter((m) => {
+        const title = normalizeText(m.title);
+        const desc = normalizeText(m.description);
+        return title.includes(query) || desc.includes(query);
+      })
+      .map((m) => ({
+        id: m.id,
+        title: m.title,
+        description: m.description ?? null,
+        xpReward: m.xpReward ?? 0,
+        coinReward: m.coinReward ?? 0,
+      }))
+      .sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
 
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title={`Resultados para "${rawQuery}"`}
-          description={`${total} resultado(s) encontrado(s)`}
-        />
-
-        {/* ALUNOS */}
-        {sortedStudents.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <GraduationCap className="h-4 w-4 text-[color:var(--school-primary)]" />
-                Alunos ({sortedStudents.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="grid gap-2 sm:grid-cols-2">
-                {sortedStudents.map((s) => (
-                  <Link
-                    key={s.id}
-                    href={`/dashboard/alunos/${s.id}`}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 transition hover:border-[color:var(--school-primary)] hover:bg-[var(--hover)] hover:shadow-xs"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--school-primary-soft)] text-xs font-bold text-[color:var(--school-primary)]">
-                        {(s.user?.fullName ?? "A").charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[var(--foreground)]">
-                          {s.user?.fullName ?? "Aluno"}
-                        </p>
-                        <p className="truncate text-xs text-[var(--muted-foreground)]">
-                          Matrícula: {s.enrollmentCode || "—"} · {s.classGroup?.name ?? "Sem turma"}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="shrink-0 text-xs">
-                      Nv. {s.level ?? 1}
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* PROFESSORES */}
-        {sortedTeachers.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                Professores ({sortedTeachers.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="grid gap-2 sm:grid-cols-2">
-                {sortedTeachers.map((t) => (
-                  <Link
-                    key={t.id}
-                    href="/dashboard/professores"
-                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 transition hover:border-[color:var(--school-primary)] hover:bg-[var(--hover)] hover:shadow-xs"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                        {(t.fullName ?? "P").charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[var(--foreground)]">
-                          {t.fullName}
-                        </p>
-                        <p className="truncate text-xs text-[var(--muted-foreground)]">
-                          {t.email}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="shrink-0 text-xs text-emerald-700 dark:text-emerald-300">
-                      Professor
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* TURMAS */}
-        {sortedClasses.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                Turmas ({sortedClasses.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {sortedClasses.map((c) => (
-                  <Link
-                    key={c.id}
-                    href="/dashboard/turmas"
-                    className="flex items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 transition hover:border-[color:var(--school-primary)] hover:bg-[var(--hover)] hover:shadow-xs"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[var(--foreground)]">{c.name}</p>
-                      <p className="truncate text-xs text-[var(--muted-foreground)]">
-                        {c.gradeLevel}º ano · {c.year}
-                      </p>
-                    </div>
-                    <Badge variant="secondary" className="shrink-0 text-xs">
-                      Turma
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* MISSÕES */}
-        {sortedMissions.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                Missões ({sortedMissions.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="grid gap-2 sm:grid-cols-2">
-                {sortedMissions.map((m) => (
-                  <Link
-                    key={m.id}
-                    href="/dashboard/gamificacao"
-                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 transition hover:border-amber-400 hover:bg-[var(--hover)] hover:shadow-xs"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[var(--foreground)]">{m.title}</p>
-                      <p className="truncate text-xs text-[var(--muted-foreground)]">{m.description || "Sem descrição"}</p>
-                    </div>
-                    {m.xpReward > 0 && (
-                      <Badge variant="secondary" className="shrink-0 text-xs font-semibold text-amber-600 dark:text-amber-400">
-                        +{m.xpReward} XP
-                      </Badge>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {total === 0 && (
-          <EmptyState
-            icon={Search}
-            title={`Nenhum resultado para "${rawQuery}"`}
-            description="Tente buscar por outro nome de aluno, turma, professor ou missão."
-          />
-        )}
-      </div>
+      <BuscaView
+        initialQuery={rawQuery}
+        students={matchingStudents}
+        teachers={matchingTeachers}
+        classes={matchingClasses}
+        missions={matchingMissions}
+      />
     );
   } catch (error) {
     console.error("[busca:general] Erro inesperado:", error);
