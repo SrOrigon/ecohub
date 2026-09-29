@@ -70,7 +70,7 @@ export function Header({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-2 lg:gap-3">
+        <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-2 lg:gap-3">
           {showSearch && (
             <button
               type="button"
@@ -82,11 +82,13 @@ export function Header({
             </button>
           )}
           <SoundToggle className="hidden sm:flex" />
-          <ThemeToggle compact className="theme-toggle-btn shrink-0" />
-          <LiveConnectionBadge />
+          <ThemeToggle compact className="theme-toggle-btn shrink-0 hidden sm:flex" />
+          <div className="hidden sm:flex">
+            <LiveConnectionBadge />
+          </div>
           {role === "parent" && <AttentionAlertBadge />}
           <NotificationBell />
-          <Badge variant="secondary" className="hidden md:inline-flex">
+          <Badge variant="secondary" className="hidden lg:inline-flex">
             {ROLE_LABELS[role]}
           </Badge>
           <Link

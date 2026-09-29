@@ -122,7 +122,7 @@ export function PaymentManagementPanel() {
               </div>
 
               {/* Datas de Vencimento */}
-              <div className="space-y-1 min-w-0">
+              <div className="space-y-1 min-w-0 md:col-span-2">
                 <Label>Vencimento entre</Label>
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="relative flex-1 min-w-0">
@@ -138,7 +138,7 @@ export function PaymentManagementPanel() {
               </div>
 
               {/* Datas de Geração */}
-              <div className="space-y-1 min-w-0">
+              <div className="space-y-1 min-w-0 md:col-span-2">
                 <Label>Gerado entre</Label>
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="relative flex-1 min-w-0">
