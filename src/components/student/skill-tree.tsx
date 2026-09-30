@@ -37,7 +37,6 @@ export function SkillTree({
   unlockedKeys?: string[];
 }) {
   const [unlocked, setUnlocked] = useState<string[]>(unlockedKeys);
-  const [selectedTalent, setSelectedTalent] = useState<TalentDefinition | null>(null);
   const [isPending, startTransition] = useTransition();
 
   // Total de pontos de talento = nível do aluno
@@ -98,9 +97,8 @@ export function SkillTree({
             return (
               <div
                 key={t.key}
-                onClick={() => setSelectedTalent(t)}
                 className={cn(
-                  "relative flex flex-col justify-between rounded-xl border p-3.5 shadow-sm transition-all cursor-pointer",
+                  "relative flex flex-col justify-between rounded-xl border p-3.5 shadow-sm transition-all",
                   isUnlocked
                     ? "border-amber-300 bg-gradient-to-br from-amber-50/80 to-white shadow-amber-100/50 dark:border-amber-900 dark:from-amber-950/30 dark:to-slate-900"
                     : canUnlock

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BrainCircuit, AlertTriangle, CheckCircle2, Sparkles, Send, Users } from "lucide-react";
+import { BrainCircuit, CheckCircle2, Sparkles, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

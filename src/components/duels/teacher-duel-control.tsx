@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Swords, ShieldAlert, CheckCircle2, Lock, Unlock, Users, Sparkles } from "lucide-react";
+import { Swords, ShieldAlert, Lock, Unlock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

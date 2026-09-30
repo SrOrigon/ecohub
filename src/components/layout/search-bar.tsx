@@ -38,6 +38,12 @@ function SearchBarContent({ className }: { className?: string }) {
   const currentQ = searchParams?.get("q") ?? "";
 
   const [value, setValue] = useState(currentQ);
+  const [prevQ, setPrevQ] = useState(currentQ);
+  if (currentQ !== prevQ) {
+    setPrevQ(currentQ);
+    setValue(currentQ);
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<LiveSearchResults>({
@@ -50,10 +56,6 @@ function SearchBarContent({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    setValue(currentQ);
-  }, [currentQ]);
-
   // Fechar dropdown ao clicar fora
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -65,10 +67,13 @@ function SearchBarContent({ className }: { className?: string }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Busca instantânea ao digitar (debounced)
-  useEffect(() => {
-    const trimmed = value.trim();
+  function handleInputChange(newVal: string) {
+    setValue(newVal);
+    const trimmed = newVal.trim();
     if (trimmed.length < 2) {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       setResults({ students: [], classes: [], teachers: [], missions: [] });
       setIsOpen(false);
       return;
@@ -93,11 +98,13 @@ function SearchBarContent({ className }: { className?: string }) {
         setLoading(false);
       }
     }, 150);
+  }
 
+  useEffect(() => {
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
-  }, [value]);
+  }, []);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -142,7 +149,7 @@ function SearchBarContent({ className }: { className?: string }) {
           className="h-9 min-h-9 w-full pl-9 pr-18 text-sm rounded-xl border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 shadow-2xs focus:bg-white dark:focus:bg-slate-900 transition-all"
           name="q"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => {
             if (value.trim().length >= 2 && hasAnyResults) setIsOpen(true);
           }}

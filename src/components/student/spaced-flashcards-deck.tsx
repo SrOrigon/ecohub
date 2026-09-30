@@ -12,7 +12,6 @@ import {
   type FlashcardItem,
 } from "@/lib/spaced-repetition";
 import { playQuestCompleteSound, playLevelUpSound } from "@/lib/sound-effects";
-import { cn } from "@/lib/utils";
 
 export function SpacedFlashcardsDeck() {
   const [cards, setCards] = useState<FlashcardItem[]>(DEFAULT_FLASHCARDS);

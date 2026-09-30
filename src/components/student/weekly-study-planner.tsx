@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, CheckCircle2, Circle, Clock, Sparkles } from "lucide-react";
+import { CalendarDays, CheckCircle2, Circle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { type DayPlan } from "@/lib/weekly-study-planner";

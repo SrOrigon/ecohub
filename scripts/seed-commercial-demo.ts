@@ -137,7 +137,7 @@ async function main() {
     },
   });
 
-  const profGeo = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: "prof.juliana@colegiomodelo.com.br" },
     update: { schoolId: school.id, role: "teacher" },
     create: {

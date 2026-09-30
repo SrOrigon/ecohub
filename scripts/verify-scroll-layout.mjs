@@ -14,16 +14,6 @@ function log(entry) {
   console.log(entry.message, entry.data ?? "");
 }
 
-function measure(el) {
-  if (!el) return null;
-  return {
-    clientH: el.clientHeight,
-    scrollH: el.scrollHeight,
-    overflowY: getComputedStyle(el).overflowY,
-    canScroll: el.scrollHeight > el.clientHeight + 2,
-  };
-}
-
 async function login(page, email = "diretor.piloto@instituicao.local") {
   await page.context().clearCookies();
   await page.goto(`${BASE}/login/escola`, { waitUntil: "domcontentloaded", timeout: 60000 });
@@ -157,7 +147,6 @@ async function main() {
     await page.waitForTimeout(700);
     const alunosHud = await page.evaluate(() => {
       const content = document.querySelector(".app-content");
-      const search = document.querySelector("#student-list-search");
       const nav = document.querySelector(".mobile-bottom-nav");
       const title = document.querySelector(".header-bar .md\\:hidden p, .header-bar p");
       const navRect = nav?.getBoundingClientRect();

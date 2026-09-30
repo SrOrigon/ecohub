@@ -16,10 +16,8 @@ import {
   Mail,
   Fingerprint,
   HeartHandshake,
-  UserCheck,
   FileCheck2,
   Phone,
-  Briefcase,
 } from "lucide-react";
 
 export type SearchStudent = {
@@ -102,27 +100,31 @@ function HighlightText({ text, query }: { text: string; query: string }) {
   if (!query.trim() || !text) return <>{text}</>;
 
   const cleanQ = query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  let parts: string[] | null = null;
   try {
-    const parts = text.split(new RegExp(`(${cleanQ})`, "gi"));
-    return (
-      <>
-        {parts.map((part, i) =>
-          part.toLowerCase() === query.trim().toLowerCase() ? (
-            <mark
-              key={i}
-              className="rounded-xs bg-amber-200/90 px-0.5 py-0.2 font-bold text-amber-950 dark:bg-amber-500/40 dark:text-amber-200"
-            >
-              {part}
-            </mark>
-          ) : (
-            part
-          )
-        )}
-      </>
-    );
+    parts = text.split(new RegExp(`(${cleanQ})`, "gi"));
   } catch {
-    return <>{text}</>;
+    parts = null;
   }
+
+  if (!parts) return <>{text}</>;
+
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.trim().toLowerCase() ? (
+          <mark
+            key={i}
+            className="rounded-xs bg-amber-200/90 px-0.5 py-0.2 font-bold text-amber-950 dark:bg-amber-500/40 dark:text-amber-200"
+          >
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
 }
 
 function getStaffRoleLabel(role: string): string {

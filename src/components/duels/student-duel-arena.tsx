@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Swords, Trophy, Flame, Coins, Sparkles, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Swords, Trophy, Sparkles, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

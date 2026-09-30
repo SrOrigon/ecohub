@@ -61,7 +61,6 @@ export function ProfileAvatar({
 
       if (isDataUrl) {
         return (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={avatarUrl!}
             alt={`Foto de ${safeName}`}

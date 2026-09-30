@@ -177,7 +177,10 @@ export function PrintableOfficialBoletim({ data }: { data: PrintableBoletimData 
               <p className="font-bold text-[10px] uppercase text-slate-700">Acesse para validar</p>
               <p className="font-mono text-[9px] text-slate-500">ecohub.app/validar</p>
             </div>
-            <div className="flex h-14 w-14 items-center justify-center rounded border border-slate-300 bg-white p-1">
+            <div
+              className="flex h-14 w-14 items-center justify-center rounded border border-slate-300 bg-white p-1"
+              title={qrVerificationUrl}
+            >
               <QrCode className="h-10 w-10 text-slate-800" />
             </div>
           </div>

@@ -65,56 +65,16 @@ export default async function BuscaPage({
 
   // 1. Perfil RESPONSÁVEL (Parent)
   if (user.role === "parent") {
+    let children: Awaited<ReturnType<typeof fetchParentChildren>> = [];
+    let hasParentError = false;
     try {
-      const children = await fetchParentChildren(user, user.id);
-      const matches = sortByTextPt(
-        children.filter(({ student }) => {
-          const nameMatch = matchPersonName(student.user?.fullName, query);
-          const codeMatch = matchEnrollmentCode(student.enrollmentCode, query);
-          return nameMatch.matches || codeMatch.matches;
-        }),
-        ({ student }) => student.user?.fullName ?? ""
-      );
-
-      return (
-        <div className="space-y-6">
-          <PageHeader
-            title={`Resultados para "${rawQuery}"`}
-            description={`${matches.length} filho(s) encontrado(s)`}
-          />
-          {matches.length === 0 ? (
-            <EmptyState
-              title="Nenhum filho encontrado"
-              description="Tente buscar pelo nome ou número de matrícula."
-            />
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {matches.map(({ student }) => (
-                <Card key={student.id} className="transition-all hover:shadow-md">
-                  <CardHeader>
-                    <UserIdentity
-                      name={student.user?.fullName ?? "Aluno"}
-                      avatarUrl={student.user?.avatarUrl}
-                      subtitle={student.classGroup?.name ?? "Sem turma"}
-                      size="md"
-                    />
-                  </CardHeader>
-                  <CardContent className="flex flex-wrap gap-2">
-                    <Link href={`/dashboard/responsavel/filho/${student.id}`}>
-                      <Badge variant="default">Ver detalhes</Badge>
-                    </Link>
-                    <Link href={`/dashboard/alunos/${student.id}/boletim`}>
-                      <Badge variant="secondary">Boletim</Badge>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      );
+      children = await fetchParentChildren(user, user.id);
     } catch (error) {
       console.error("[busca:parent] Falha ao pesquisar filhos:", error);
+      hasParentError = true;
+    }
+
+    if (hasParentError) {
       return (
         <div className="space-y-6">
           <PageHeader title={`Resultados para "${rawQuery}"`} description="Erro ao buscar dados." />
@@ -122,87 +82,73 @@ export default async function BuscaPage({
         </div>
       );
     }
+
+    const matches = sortByTextPt(
+      children.filter(({ student }) => {
+        const nameMatch = matchPersonName(student.user?.fullName, query);
+        const codeMatch = matchEnrollmentCode(student.enrollmentCode, query);
+        return nameMatch.matches || codeMatch.matches;
+      }),
+      ({ student }) => student.user?.fullName ?? ""
+    );
+
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title={`Resultados para "${rawQuery}"`}
+          description={`${matches.length} filho(s) encontrado(s)`}
+        />
+        {matches.length === 0 ? (
+          <EmptyState
+            title="Nenhum filho encontrado"
+            description="Tente buscar pelo nome ou número de matrícula."
+          />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {matches.map(({ student }) => (
+              <Card key={student.id} className="transition-all hover:shadow-md">
+                <CardHeader>
+                  <UserIdentity
+                    name={student.user?.fullName ?? "Aluno"}
+                    avatarUrl={student.user?.avatarUrl}
+                    subtitle={student.classGroup?.name ?? "Sem turma"}
+                    size="md"
+                  />
+                </CardHeader>
+                <CardContent className="flex flex-wrap gap-2">
+                  <Link href={`/dashboard/responsavel/filho/${student.id}`}>
+                    <Badge variant="default">Ver detalhes</Badge>
+                  </Link>
+                  <Link href={`/dashboard/alunos/${student.id}/boletim`}>
+                    <Badge variant="secondary">Boletim</Badge>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   }
 
   // 2. Perfil ALUNO (Student)
   if (user.role === "student") {
+    let student = null;
+    let hasStudentError = false;
     try {
-      const student = await prisma.student.findFirst({
+      student = await prisma.student.findFirst({
         where: { userId: user.id },
         include: {
           grades: true,
           studentMissions: { include: { mission: true } },
         },
       });
-      if (!student) redirect("/dashboard/aluno");
-
-      const gradeMatches = (student.grades ?? []).filter((g) => {
-        const subMatch = matchGeneralText(g.subject, query, "Disciplina");
-        const perMatch = matchGeneralText(g.period, query, "Período");
-        return subMatch.matches || perMatch.matches;
-      });
-
-      const missionMatches = (student.studentMissions ?? []).filter((sm) => {
-        const titleMatch = matchGeneralText(sm.mission?.title, query, "Missão");
-        const descMatch = matchGeneralText(sm.mission?.description, query, "Descrição");
-        return titleMatch.matches || descMatch.matches;
-      });
-
-      const total = gradeMatches.length + missionMatches.length;
-
-      return (
-        <div className="space-y-6">
-          <PageHeader
-            title={`Resultados para "${rawQuery}"`}
-            description={`${total} resultado(s) nas suas informações`}
-          />
-          {gradeMatches.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <BookOpen className="h-4 w-4 text-[color:var(--school-primary)]" />
-                  Suas notas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {gradeMatches.map((g) => (
-                  <div key={g.id} className="flex justify-between rounded-xl border border-[var(--border)] p-3">
-                    <span className="font-medium text-[var(--foreground)]">
-                      {g.subject} · {g.period}
-                    </span>
-                    <Badge variant="secondary">{g.value.toFixed(1)}</Badge>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-          {missionMatches.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Sparkles className="h-4 w-4 text-amber-500" />
-                  Suas missões
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {missionMatches.map((sm) => (
-                  <div key={sm.id} className="rounded-xl border border-[var(--border)] p-3">
-                    <p className="font-medium text-[var(--foreground)]">{sm.mission.title}</p>
-                    <p className="text-xs text-[var(--muted-foreground)]">
-                      {sm.completedAt ? "Concluída" : "Em andamento"}
-                    </p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-          {total === 0 && (
-            <EmptyState title="Nada encontrado" description="Tente buscar por disciplina ou nome de missão." />
-          )}
-        </div>
-      );
     } catch (error) {
       console.error("[busca:student] Falha ao pesquisar:", error);
+      hasStudentError = true;
+    }
+
+    if (hasStudentError) {
       return (
         <div className="space-y-6">
           <PageHeader title={`Resultados para "${rawQuery}"`} description="Erro ao buscar dados." />
@@ -210,14 +156,83 @@ export default async function BuscaPage({
         </div>
       );
     }
+
+    if (!student) redirect("/dashboard/aluno");
+
+    const gradeMatches = (student.grades ?? []).filter((g) => {
+      const subMatch = matchGeneralText(g.subject, query, "Disciplina");
+      const perMatch = matchGeneralText(g.period, query, "Período");
+      return subMatch.matches || perMatch.matches;
+    });
+
+    const missionMatches = (student.studentMissions ?? []).filter((sm) => {
+      const titleMatch = matchGeneralText(sm.mission?.title, query, "Missão");
+      const descMatch = matchGeneralText(sm.mission?.description, query, "Descrição");
+      return titleMatch.matches || descMatch.matches;
+    });
+
+    const total = gradeMatches.length + missionMatches.length;
+
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title={`Resultados para "${rawQuery}"`}
+          description={`${total} resultado(s) nas suas informações`}
+        />
+        {gradeMatches.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <BookOpen className="h-4 w-4 text-[color:var(--school-primary)]" />
+                Suas notas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {gradeMatches.map((g) => (
+                <div key={g.id} className="flex justify-between rounded-xl border border-[var(--border)] p-3">
+                  <span className="font-medium text-[var(--foreground)]">
+                    {g.subject} · {g.period}
+                  </span>
+                  <Badge variant="secondary">{g.value.toFixed(1)}</Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+        {missionMatches.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                Suas missões
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {missionMatches.map((sm) => (
+                <div key={sm.id} className="rounded-xl border border-[var(--border)] p-3">
+                  <p className="font-medium text-[var(--foreground)]">{sm.mission.title}</p>
+                  <p className="text-xs text-[var(--muted-foreground)]">
+                    {sm.completedAt ? "Concluída" : "Em andamento"}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+        {total === 0 && (
+          <EmptyState title="Nada encontrado" description="Tente buscar por disciplina ou nome de missão." />
+        )}
+      </div>
+    );
   }
 
   // 3. Perfil GESTÃO & DOCÊNCIA (Admin, Diretor, Secretária, Professor)
   const isManagement = user.role === "admin" || user.role === "director" || user.role === "secretary";
 
+  let rawData = null;
+
   try {
-    const [studentsRaw, classesRaw, missionsRaw, staffRaw, parentsRaw, applicationsRaw] =
-      await Promise.all([
+    rawData = await Promise.all([
         // 1. Alunos da escola (via user.schoolId ou turma da escola)
         prisma.student
           .findMany({
@@ -365,9 +380,27 @@ export default async function BuscaPage({
               })
           : Promise.resolve([]),
       ]);
+  } catch (error) {
+    console.error("[busca:general] Erro inesperado:", error);
+  }
 
-    // Processamento ALUNOS com pontuação de precisão
-    const matchingStudents: Array<SearchStudent & { score: number }> = [];
+  if (!rawData) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title={`Resultados para "${rawQuery}"`} description="Busca temporariamente indisponível." />
+        <EmptyState
+          icon={Search}
+          title="Não foi possível concluir a busca"
+          description="Ocorreu uma instabilidade na consulta. Tente pesquisar novamente em instantes."
+        />
+      </div>
+    );
+  }
+
+  const [studentsRaw, classesRaw, missionsRaw, staffRaw, parentsRaw, applicationsRaw] = rawData;
+
+  // Processamento ALUNOS com pontuação de precisão
+  const matchingStudents: Array<SearchStudent & { score: number }> = [];
     for (const s of studentsRaw) {
       let score = 0;
       const matchReasons: string[] = [];
@@ -592,17 +625,4 @@ export default async function BuscaPage({
         applications={matchingApplications}
       />
     );
-  } catch (error) {
-    console.error("[busca:general] Erro inesperado:", error);
-    return (
-      <div className="space-y-6">
-        <PageHeader title={`Resultados para "${rawQuery}"`} description="Busca temporariamente indisponível." />
-        <EmptyState
-          icon={Search}
-          title="Não foi possível concluir a busca"
-          description="Ocorreu uma instabilidade na consulta. Tente pesquisar novamente em instantes."
-        />
-      </div>
-    );
-  }
 }

@@ -223,6 +223,7 @@ export async function buildStudentMergeContext(
     EstadoEscola: cidadeEstadoEscola.split("/")[1] ?? school.state ?? "—",
     EnderecoEscola: enderecoEscola,
     BairroEscola: bairroEscola,
+    CepEscola: cepEscola,
     DataInicioContrato: options?.contractStartDate ? formatDate(options.contractStartDate) : "—",
     DataFimContrato: options?.contractEndDate ? formatDate(options.contractEndDate) : "—",
     DataHoje: formatDate(new Date()),

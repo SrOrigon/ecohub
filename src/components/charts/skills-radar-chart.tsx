@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Trophy } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export type SkillAxis = {
   label: string;

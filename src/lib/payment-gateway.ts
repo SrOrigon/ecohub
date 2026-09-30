@@ -26,11 +26,12 @@ export function generateSyntheticPixCopyPaste(
  * Gera um Data URL SVG do QR Code do Pix.
  */
 export function generatePixQrCodeDataUrl(pixCopyPaste: string): string {
+  const hash = pixCopyPaste ? pixCopyPaste.slice(-8) : "";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
     <rect width="200" height="200" fill="#ffffff"/>
     <rect x="20" y="20" width="160" height="160" fill="#0f172a" rx="12"/>
     <text x="100" y="105" font-family="monospace" font-size="16" font-weight="bold" fill="#38bdf8" text-anchor="middle">PIX QR CODE</text>
-    <text x="100" y="130" font-family="sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Ecohub Gateway</text>
+    <text x="100" y="130" font-family="sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">${hash ? `ID: ${hash}` : "Ecohub Gateway"}</text>
   </svg>`;
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }

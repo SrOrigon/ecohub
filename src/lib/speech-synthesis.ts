@@ -52,5 +52,5 @@ export function stopSpeaking(): void {
 
 export function isSpeaking(): boolean {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
-  return window.speechSynthesis.speaking;
+  return window.speechSynthesis.speaking || Boolean(currentUtterance);
 }

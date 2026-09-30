@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/modal";
 import { formatBRL } from "@/lib/student-finance";
 import { formatDate } from "@/lib/utils";
-import { AlertCircle, Check, CheckCircle2, Copy, FileUp, QrCode, Upload } from "lucide-react";
+import { AlertCircle, Check, CheckCircle2, Copy, FileUp, QrCode } from "lucide-react";
 import type { StudentInvoiceDTO } from "@/types/payment-methods";
 
 export function InvoiceReceiptModal({
