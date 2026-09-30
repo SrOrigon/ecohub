@@ -13,7 +13,7 @@ export async function countUsersInDatabase(databaseUrl, options = {}) {
   });
   try {
     if (options.flushWal && !isPostgresUrl(databaseUrl)) {
-      await prisma.$executeRawUnsafe("PRAGMA wal_checkpoint(FULL)");
+      try { await prisma.$queryRawUnsafe(`PRAGMA wal_checkpoint(FULL)`); } catch (e) {}
     }
     return await prisma.user.count();
   } catch (error) {

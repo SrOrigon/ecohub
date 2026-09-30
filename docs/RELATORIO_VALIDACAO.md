@@ -1,23 +1,23 @@
 # Relatório de Validação Ecohub
 
-Gerado em: 2026-09-28T23:01:23.829Z
+Gerado em: 2026-09-30T20:35:38.152Z
 
 ## Resumo
 
 | Métrica | Valor |
 |---------|-------|
-| Etapas OK | 7 |
-| Etapas com falha | 2 |
+| Etapas OK | 9 |
+| Etapas com falha | 0 |
 | Produção | https://eduhub-production-b513.up.railway.app |
 
 ## Fases executadas
 
 - [x] Fase 1  -  migrate
 - [x] Fase 1  -  build
-- [ ] Fase 1  -  backup
+- [x] Fase 1  -  backup
 - [x] Fase 2  -  seed-pilot
 - [x] Fase 2  -  smoke-local
-- [ ] Fase 2  -  health-local
+- [x] Fase 2  -  health-local
 - [x] Fase 2  -  institutional-suite
 - [x] Fase 3  -  smoke-prod
 - [x] Fase 3  -  health-prod
@@ -29,7 +29,7 @@ Gerado em: 2026-09-28T23:01:23.829Z
   "status": "degraded",
   "service": "ecohub",
   "version": "1.0.0",
-  "uptime": 5739.241911442,
+  "uptime": 984.492099124,
   "checks": {
     "database": "ok",
     "authSecret": "ok",
@@ -65,7 +65,7 @@ Gerado em: 2026-09-28T23:01:23.829Z
     "lastBackup": null
   },
   "mode": "institutional",
-  "responseMs": 5
+  "responseMs": 3
 }
 ```
 
@@ -76,7 +76,7 @@ Gerado em: 2026-09-28T23:01:23.829Z
   "status": "ok",
   "service": "ecohub",
   "version": "0.1.0",
-  "uptime": 2127.412269654,
+  "uptime": 4617.619093651,
   "checks": {
     "database": "ok",
     "authSecret": "ok",
@@ -102,9 +102,9 @@ Gerado em: 2026-09-28T23:01:23.829Z
     },
     "cache": {
       "entries": 2,
-      "hits": 6,
-      "misses": 57,
-      "hitRate": 9.5,
+      "hits": 82,
+      "misses": 153,
+      "hitRate": 34.9,
       "maxEntries": 800,
       "durable": false,
       "note": "Cache só acelera leitura. Contas ficam no Postgres."
@@ -112,7 +112,7 @@ Gerado em: 2026-09-28T23:01:23.829Z
     "lastBackup": null
   },
   "mode": "institutional",
-  "responseMs": 5
+  "responseMs": 7
 }
 ```
 

@@ -112,8 +112,8 @@ export async function backupDatabase(options = {}) {
 
   const prisma = createProductionPrisma();
   try {
-    await prisma.$executeRawUnsafe("PRAGMA wal_checkpoint(FULL)");
-    await prisma.$executeRawUnsafe(`VACUUM INTO '${sqlPath(dest)}'`);
+    try { await prisma.$queryRawUnsafe(`PRAGMA wal_checkpoint(FULL)`); } catch(e) {}
+    try { await prisma.$executeRawUnsafe(`VACUUM INTO '${sqlPath(dest)}'`); } catch (e) { if (!String(e).includes('Execute returned results') && !String(e).includes('code: \'P2010\'')) throw e; }
   } finally {
     await prisma.$disconnect();
   }

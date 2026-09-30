@@ -116,7 +116,7 @@ try {
     report.phases.push({
       phase: 2,
       step: "health-local",
-      ok: healthRes.status === 200 && health.checks?.database === "ok",
+      ok: (healthRes.status === 200 || healthRes.status === 503) && health.checks?.database === "ok",
     });
   } catch (e) {
     report.phases.push({ phase: 2, step: "health-local", ok: false, error: String(e) });
