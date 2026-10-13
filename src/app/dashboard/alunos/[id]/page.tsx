@@ -373,7 +373,6 @@ export default async function StudentDetailPage({
               }
             />
             <ProfileRow label="Gênero" value={genderLabel(student.user.gender)} />
-            <ProfileRow label="Pronomes" value={student.user.pronouns || "Não informado"} />
           </CardContent>
         </Card>
 

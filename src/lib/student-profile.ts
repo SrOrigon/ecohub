@@ -2,17 +2,10 @@ export const GENDER_OPTIONS = [
   { value: "", label: "Não informado" },
   { value: "feminino", label: "Feminino" },
   { value: "masculino", label: "Masculino" },
-  { value: "nao_binario", label: "Não binário" },
-  { value: "outro", label: "Outro" },
-  { value: "prefiro_nao_informar", label: "Prefiro não informar" },
 ] as const;
 
 export const PRONOUN_OPTIONS = [
   { value: "", label: "Não informado" },
-  { value: "ela/dela", label: "ela/dela" },
-  { value: "ele/dele", label: "ele/dele" },
-  { value: "elu/delu", label: "elu/delu" },
-  { value: "outro", label: "Outro" },
 ] as const;
 
 export const STUDENT_ACTIVITY_TYPES = [

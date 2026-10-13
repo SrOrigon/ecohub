@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label, Select, Textarea } from "@/components/ui/form-fields";
 import {
   GENDER_OPTIONS,
-  PRONOUN_OPTIONS,
   SOCIAL_NETWORKS,
   parseInterests,
   type SocialLinks,
@@ -46,27 +45,15 @@ function ExtraProfileFields({
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <Label htmlFor={`${idPrefix}-gender`}>Gênero (opcional)</Label>
-          <Select id={`${idPrefix}-gender`} name="gender" defaultValue={values?.gender ?? ""}>
-            {GENDER_OPTIONS.map((option) => (
-              <option key={option.value || "empty"} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor={`${idPrefix}-pronouns`}>Pronomes (opcional)</Label>
-          <Select id={`${idPrefix}-pronouns`} name="pronouns" defaultValue={values?.pronouns ?? ""}>
-            {PRONOUN_OPTIONS.map((option) => (
-              <option key={option.value || "empty"} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </div>
+      <div>
+        <Label htmlFor={`${idPrefix}-gender`}>Gênero (opcional)</Label>
+        <Select id={`${idPrefix}-gender`} name="gender" defaultValue={values?.gender ?? ""}>
+          {GENDER_OPTIONS.map((option) => (
+            <option key={option.value || "empty"} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
       </div>
 
       <section className="space-y-3">
