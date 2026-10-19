@@ -18,6 +18,8 @@
     "db:backup": "node scripts/backup-db.mjs",
     "db:reset-user": "node scripts/reset-user-by-email.mjs",
     "db:pilot": "npx tsx scripts/seed-pilot-institution.ts",
+    "db:demo": "npx tsx scripts/seed-commercial-demo.ts",
+    "db:demo:verify": "npx tsx scripts/verify-demo-login.ts",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx scripts/seed-pilot-institution.ts",
     "db:reset": "node scripts/guard-destructive-db.mjs && prisma migrate reset --force",

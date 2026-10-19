@@ -2,11 +2,195 @@ import { PrismaClient } from "@prisma/client";
 import { ensureDefaultBadges, ensureDefaultRewards } from "../src/lib/school-setup";
 import { hashStudentPin } from "../src/lib/student-pin";
 import { hashPassword } from "../src/lib/security/password-policy";
+import {
+  DEMO_PASSWORD,
+  DEMO_SCHOOL_SLUG,
+  DEMO_DIRECTOR_EMAIL,
+  DEMO_TEACHER_EMAIL,
+  DEMO_STUDENT_EMAIL,
+  DEMO_STUDENT_ENROLLMENT,
+} from "../src/lib/demo-accounts";
 
 const prisma = new PrismaClient();
 
-const DEMO_SLUG = "colegio-modelo-ecohub";
-const DEFAULT_PASS = "EcoHub2026!";
+const DEMO_SLUG = DEMO_SCHOOL_SLUG;
+const DEFAULT_PASS = DEMO_PASSWORD;
+
+async function ensureDemoShowcaseContent(schoolId: string, teacherId: string) {
+  const class6 = await prisma.classGroup.findFirst({
+    where: { schoolId, name: "6º Ano A" },
+  });
+  if (!class6) return;
+
+  const mathExerciseTitle = "Demo: Aventura Matemática";
+  const existingMath = await prisma.exercise.findFirst({
+    where: { schoolId, title: mathExerciseTitle },
+  });
+
+  if (!existingMath) {
+    await prisma.exercise.create({
+      data: {
+        schoolId,
+        classId: class6.id,
+        teacherId,
+        title: mathExerciseTitle,
+        description:
+          "Para a apresentação: responda as questões e veja XP, moedas e a animação de vitória ao concluir.",
+        kind: "homework",
+        audienceType: "class",
+        maxPoints: 10,
+        xpReward: 100,
+        coinReward: 30,
+        dueDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+        questions: {
+          create: [
+            {
+              prompt: "Qual é o resultado de 3/4 + 1/4?",
+              type: "choice",
+              points: 3,
+              xpReward: 20,
+              sortOrder: 0,
+              options: JSON.stringify([
+                { id: "a", text: "1 inteiro", isCorrect: true },
+                { id: "b", text: "4/8", isCorrect: false },
+                { id: "c", text: "2/4", isCorrect: false },
+                { id: "d", text: "1/2", isCorrect: false },
+              ]),
+            },
+            {
+              prompt: "Um triângulo equilátero tem todos os lados com a mesma medida.",
+              type: "true_false",
+              points: 2,
+              xpReward: 15,
+              sortOrder: 1,
+              options: JSON.stringify([
+                { id: "true", text: "Verdadeiro", isCorrect: true },
+                { id: "false", text: "Falso", isCorrect: false },
+              ]),
+            },
+            {
+              prompt: "7 × 8 = ?",
+              type: "choice",
+              points: 3,
+              xpReward: 20,
+              sortOrder: 2,
+              options: JSON.stringify([
+                { id: "a", text: "54", isCorrect: false },
+                { id: "b", text: "56", isCorrect: true },
+                { id: "c", text: "64", isCorrect: false },
+              ]),
+            },
+            {
+              prompt: "O que é um número primo?",
+              type: "text",
+              points: 2,
+              xpReward: 10,
+              sortOrder: 3,
+              options: null,
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  const flashTitle = "Demo: Flashcards de Ciências";
+  const existingFlash = await prisma.exercise.findFirst({
+    where: { schoolId, title: flashTitle },
+  });
+
+  if (!existingFlash) {
+    await prisma.exercise.create({
+      data: {
+        schoolId,
+        classId: class6.id,
+        teacherId,
+        title: flashTitle,
+        description: "Cartões com animação de virar — ideal para mostrar o modo flashcard do aluno.",
+        kind: "homework",
+        audienceType: "class",
+        maxPoints: 6,
+        xpReward: 60,
+        coinReward: 15,
+        dueDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+        questions: {
+          create: [
+            {
+              prompt: "Fotossíntese",
+              type: "flashcard",
+              points: 2,
+              xpReward: 15,
+              sortOrder: 0,
+              options: JSON.stringify([
+                { id: "back", text: "Processo em que plantas transformam luz em energia química.", isCorrect: true },
+              ]),
+            },
+            {
+              prompt: "Sistema Solar",
+              type: "flashcard",
+              points: 2,
+              xpReward: 15,
+              sortOrder: 1,
+              options: JSON.stringify([
+                { id: "back", text: "Conjunto de planetas, asteroides e cometas que orbitam o Sol.", isCorrect: true },
+              ]),
+            },
+            {
+              prompt: "Estados da matéria",
+              type: "flashcard",
+              points: 2,
+              xpReward: 15,
+              sortOrder: 2,
+              options: JSON.stringify([
+                { id: "back", text: "Sólido, líquido e gasoso (e plasma em condições extremas).", isCorrect: true },
+              ]),
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  const missionTitle = "Demo: Completar exercícios da semana";
+  const missionExists = await prisma.mission.findFirst({
+    where: { schoolId, title: missionTitle },
+  });
+
+  if (!missionExists) {
+    await prisma.mission.create({
+      data: {
+        schoolId,
+        classId: class6.id,
+        title: missionTitle,
+        description: "Finalize pelo menos um exercício demo para ganhar XP extra na apresentação.",
+        xpReward: 50,
+        coinReward: 20,
+        frequency: "WEEKLY",
+        isActive: true,
+      },
+    });
+  }
+
+  const missionDailyTitle = "Demo: Check-in diário";
+  const dailyExists = await prisma.mission.findFirst({
+    where: { schoolId, title: missionDailyTitle },
+  });
+
+  if (!dailyExists) {
+    await prisma.mission.create({
+      data: {
+        schoolId,
+        classId: class6.id,
+        title: missionDailyTitle,
+        description: "Marque presença virtual abrindo o painel do aluno hoje.",
+        xpReward: 15,
+        coinReward: 5,
+        frequency: "DAILY",
+        isActive: true,
+      },
+    });
+  }
+}
 
 async function main() {
   console.log("[demo-seed] Iniciando geração da massa de dados comercial...");
@@ -39,6 +223,40 @@ async function main() {
   await ensureDefaultBadges(school.id);
   await ensureDefaultRewards(school.id);
 
+  const teacherForDemo = await prisma.user.findUnique({
+    where: { email: DEMO_TEACHER_EMAIL },
+    select: { id: true },
+  });
+  const demoStudentCount = await prisma.student.count({
+    where: { user: { schoolId: school.id } },
+  });
+
+  if (demoStudentCount >= 40 && teacherForDemo) {
+    await prisma.user.updateMany({
+      where: { email: { in: [DEMO_DIRECTOR_EMAIL, DEMO_TEACHER_EMAIL, DEMO_STUDENT_EMAIL] } },
+      data: { passwordHash },
+    });
+    const featured = await prisma.student.findFirst({
+      where: { enrollmentCode: DEMO_STUDENT_ENROLLMENT, user: { schoolId: school.id } },
+      select: { id: true, userId: true },
+    });
+    if (featured) {
+      await prisma.user.update({
+        where: { id: featured.userId },
+        data: { fullName: "Gabriel Demo (Apresentação)", passwordHash, role: "student", schoolId: school.id },
+      });
+      await prisma.student.update({
+        where: { id: featured.id },
+        data: { accessPinHash: pinHash },
+      });
+    }
+    await ensureDemoShowcaseContent(school.id, teacherForDemo.id);
+    console.log("\n[demo-seed] Ambiente demo já existente — credenciais e exercícios sincronizados (modo rápido).");
+    console.log("  Login demo: /login/demo");
+    console.log("  Acesso apenas pelos botões em /login/demo\n");
+    return;
+  }
+
   // 2. Configuração de Pagamento Pix
   await prisma.schoolPaymentConfig.upsert({
     where: { schoolId: school.id },
@@ -65,10 +283,10 @@ async function main() {
 
   // 3. Gestores (Diretor e Secretários)
   const directorUser = await prisma.user.upsert({
-    where: { email: "diretora.helena@colegiomodelo.com.br" },
-    update: { schoolId: school.id, role: "director" },
+    where: { email: DEMO_DIRECTOR_EMAIL },
+    update: { schoolId: school.id, role: "director", passwordHash },
     create: {
-      email: "diretora.helena@colegiomodelo.com.br",
+      email: DEMO_DIRECTOR_EMAIL,
       fullName: "Helena Souza",
       passwordHash,
       role: "director",
@@ -102,10 +320,10 @@ async function main() {
 
   // 4. Professores
   const profMath = await prisma.user.upsert({
-    where: { email: "prof.ricardo@colegiomodelo.com.br" },
-    update: { schoolId: school.id, role: "teacher" },
+    where: { email: DEMO_TEACHER_EMAIL },
+    update: { schoolId: school.id, role: "teacher", passwordHash },
     create: {
-      email: "prof.ricardo@colegiomodelo.com.br",
+      email: DEMO_TEACHER_EMAIL,
       fullName: "Ricardo Santos (Matemática)",
       passwordHash,
       role: "teacher",
@@ -189,10 +407,13 @@ async function main() {
     console.log(`[demo-seed] Gerando ${cData.studentCount} alunos para a turma "${cData.name}"...`);
 
     for (let i = 1; i <= cData.studentCount; i++) {
-      const fn = firstNames[(i + cData.studentCount) % firstNames.length];
-      const ln = lastNames[(i * 3) % lastNames.length];
-      const fullName = `${fn} ${ln}`;
       const code = `DEMO-${cData.grade}-${i.toString().padStart(2, "0")}`;
+      const isFeaturedDemoStudent = code === DEMO_STUDENT_ENROLLMENT;
+      const fn = isFeaturedDemoStudent
+        ? "Gabriel"
+        : firstNames[(i + cData.studentCount) % firstNames.length];
+      const ln = isFeaturedDemoStudent ? "Demo" : lastNames[(i * 3) % lastNames.length];
+      const fullName = isFeaturedDemoStudent ? "Gabriel Demo (Apresentação)" : `${fn} ${ln}`;
       const studentEmail = `aluno.${code.toLowerCase()}@colegiomodelo.com.br`;
       const parentEmail = `resp.${code.toLowerCase()}@colegiomodelo.com.br`;
 
@@ -213,7 +434,12 @@ async function main() {
       // Student User
       const studentUser = await prisma.user.upsert({
         where: { email: studentEmail },
-        update: { schoolId: school.id },
+        update: {
+          schoolId: school.id,
+          fullName,
+          passwordHash,
+          role: "student",
+        },
         create: {
           email: studentEmail,
           fullName,
@@ -226,7 +452,7 @@ async function main() {
       // Student Profile
       const student = await prisma.student.upsert({
         where: { userId: studentUser.id },
-        update: { classId: classGroup.id },
+        update: { classId: classGroup.id, accessPinHash: pinHash, enrollmentCode: code },
         create: {
           userId: studentUser.id,
           classId: classGroup.id,
@@ -300,14 +526,16 @@ async function main() {
     }
   }
 
+  await ensureDemoShowcaseContent(school.id, profMath.id);
+
   console.log("\n========================================================");
   console.log("[demo-seed] Escola de Demonstração Comercial Pronta! 🚀");
   console.log("  Instituição: Colégio Modelo EcoHub (SP)");
   console.log("  Slug:", DEMO_SLUG);
+  console.log("  Login demo (1 clique): /login/demo");
+  console.log("  Aluno destaque:", DEMO_STUDENT_EMAIL);
   console.log("  Portal da Escola: /e/" + DEMO_SLUG + "/entrar");
-  console.log("  Acesso Diretor: diretora.helena@colegiomodelo.com.br / " + DEFAULT_PASS);
-  console.log("  Acesso Professor: prof.ricardo@colegiomodelo.com.br / " + DEFAULT_PASS);
-  console.log("  Acesso Aluno PIN: DEMO-6-01 / 123456");
+  console.log("  Use os botões em /login/demo (sem digitar senha).");
   console.log("========================================================\n");
 }
 

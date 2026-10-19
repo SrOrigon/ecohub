@@ -10,7 +10,7 @@ function authSecret() {
   return getAuthSecret();
 }
 
-const publicPaths = ["/", "/login", "/registro", "/entrar", "/convite"];
+const publicPaths = ["/", "/login", "/registro", "/entrar", "/convite", "/demo"];
 
 function isPublicPath(pathname: string) {
   if (publicPaths.includes(pathname)) return true;
@@ -27,10 +27,6 @@ function isPublicPath(pathname: string) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  if (pathname.startsWith("/demo")) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
 
   const hostname = request.headers.get("host") ?? "localhost";
   const tenantSlug = resolveTenantSlug(hostname, pathname);

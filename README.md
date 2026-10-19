@@ -59,6 +59,7 @@ npm run dev          # servidor de desenvolvimento
 npm run build        # compilar produção
 npm run db:migrate   # aplicar migrations
 npm run db:pilot     # escola piloto para testes locais
+npm run db:demo      # escola + exercícios demo para apresentação (/login/demo)
 npm run db:reset     # resetar banco + migrations
 npm run check        # lint + build
 npm run test:smoke -- https://sua-url   # smoke pós-deploy

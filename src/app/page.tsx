@@ -54,6 +54,11 @@ export default function HomePage() {
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           <ThemeToggle compact className="sm:mr-1" />
+          <Link href="/login/demo" className="flex-1 sm:flex-none">
+            <Button variant="ghost" className="w-full sm:w-auto">
+              Login demo
+            </Button>
+          </Link>
           <Link href="/login" className="flex-1 sm:flex-none">
             <Button variant="ghost" className="w-full sm:w-auto">
               Entrar
@@ -81,6 +86,11 @@ export default function HomePage() {
             <Link href="/registro/escola" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">
                 Registrar instituição
+              </Button>
+            </Link>
+            <Link href="/login/demo" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                Ver demonstração
               </Button>
             </Link>
             <Link href="/login" className="w-full sm:w-auto">

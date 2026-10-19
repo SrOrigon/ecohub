@@ -50,6 +50,7 @@ import {
   normalizePassword,
   validatePassword,
 } from "@/lib/security/password-policy";
+import { demoCredentialsForPortal, isDemoPortal, DEMO_SCHOOL_SLUG } from "@/lib/demo-accounts";
 
 function handleRateLimitError(error: unknown): { error: string } | null {
   if (error instanceof RateLimitError) {
@@ -96,6 +97,43 @@ function matchesPortal(role: UserRole, portal: string) {
   if (portal === "aluno") return role === "student";
   if (portal === "responsavel") return role === "parent";
   return true;
+}
+
+const DEMO_NOT_READY_MESSAGE =
+  "Ambiente de demonstração ainda não foi preparado neste servidor. Quem mantém o sistema deve executar: npm run db:demo";
+
+/** Entrada rápida na escola de demonstração (`/login/demo`). */
+export async function demoLoginAction(formData: FormData) {
+  const portalRaw = String(formData.get("portal") ?? "");
+  if (!isDemoPortal(portalRaw)) {
+    return { error: "Perfil de demonstração inválido." };
+  }
+  const portal = portalRaw;
+
+  const demoSchool = await findSchoolBySlug(DEMO_SCHOOL_SLUG);
+  if (!demoSchool) {
+    return { error: DEMO_NOT_READY_MESSAGE };
+  }
+
+  const creds = demoCredentialsForPortal(portal);
+  if (!creds.loginPortal && portal !== "aluno-pin") {
+    return { error: "Perfil de demonstração inválido." };
+  }
+
+  if (portal === "aluno" || portal === "aluno-pin") {
+    const pinCreds = demoCredentialsForPortal("aluno-pin");
+    const pinForm = new FormData();
+    pinForm.set("schoolSlug", pinCreds.schoolSlug ?? "");
+    pinForm.set("enrollmentCode", pinCreds.enrollmentCode ?? "");
+    pinForm.set("pin", pinCreds.pin ?? "");
+    return studentPinLoginAction(pinForm);
+  }
+
+  const loginForm = new FormData();
+  loginForm.set("email", creds.email ?? "");
+  loginForm.set("password", creds.password ?? "");
+  loginForm.set("portal", creds.loginPortal ?? "");
+  return loginAction(loginForm);
 }
 
 export async function loginAction(formData: FormData) {
