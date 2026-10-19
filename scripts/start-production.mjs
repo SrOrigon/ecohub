@@ -317,6 +317,12 @@ async function main() {
 
   await bootstrapDatabase(dbPath, previousUsers);
 
+  if (process.env.ECOHUB_SKIP_DEMO_SEED !== "1") {
+    void import("./ensure-demo-school.mjs").catch((error) => {
+      console.warn("[ecohub] Demo seed em background ignorado:", error?.message ?? error);
+    });
+  }
+
   const authSecret = await ensureAuthSecretInDatabase();
   if (!authSecret || authSecret.length < 32) {
     console.error("[ecohub] ERRO CRÍTICO: não foi possível obter AUTH_SECRET válido.");
