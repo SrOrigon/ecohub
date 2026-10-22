@@ -38,6 +38,11 @@ export function PublicBookingFlow({ school, services, instructors, availabilitie
     }
   }, [selectedDate, selectedService, selectedInstructor, school.id]);
 
+  const [confirmationData, setConfirmationData] = useState<{
+    whatsappUrl?: string;
+    googleCalendarUrl?: string;
+  } | null>(null);
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -54,9 +59,12 @@ export function PublicBookingFlow({ school, services, instructors, availabilitie
 
     if (res.error) {
       alert(res.error);
-    } else if (res.url) {
-      alert("Agendamento pré-confirmado! Redirecionando para WhatsApp...");
-      window.location.href = res.url;
+    } else {
+      setConfirmationData({
+        whatsappUrl: res.url,
+        googleCalendarUrl: res.googleCalendarUrl,
+      });
+      setStep(5);
     }
   }
 
@@ -195,6 +203,66 @@ export function PublicBookingFlow({ school, services, instructors, availabilitie
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {step === 5 && confirmationData && (
+        <Card className="border-none shadow-xl bg-white/70 backdrop-blur-sm text-center">
+          <CardContent className="pt-6 space-y-4">
+            <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+              ✓
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800">Agendamento Realizado!</h2>
+            <p className="text-sm text-muted-foreground">
+              Seu horário para <strong>{services.find((s: any) => s.id === selectedService)?.name}</strong> foi registrado para o dia{" "}
+              <strong>{format(new Date(selectedDate), "dd/MM/yyyy")}</strong> às <strong>{selectedTime}</strong>.
+            </p>
+
+            <div className="pt-2 space-y-3">
+              {confirmationData.googleCalendarUrl && (
+                <a
+                  href={confirmationData.googleCalendarUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full"
+                >
+                  <Button className="w-full bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5h5v5h-5z"/>
+                    </svg>
+                    Adicionar ao Google Agenda
+                  </Button>
+                </a>
+              )}
+
+              {confirmationData.whatsappUrl && (
+                <a
+                  href={confirmationData.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full"
+                >
+                  <Button variant="outline" className="w-full border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+                    Enviar Confirmação no WhatsApp
+                  </Button>
+                </a>
+              )}
+            </div>
+
+            <Button
+              variant="ghost"
+              className="text-xs text-muted-foreground mt-4"
+              onClick={() => {
+                setStep(1);
+                setSelectedService("");
+                setSelectedTime("");
+                setSelectedDate("");
+                setConfirmationData(null);
+              }}
+            >
+              Fazer novo agendamento
+            </Button>
           </CardContent>
         </Card>
       )}

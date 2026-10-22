@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { Settings, Calendar } from "lucide-react";
 
 export default async function AgendamentosPage() {
   const user = await getSessionUser();
@@ -60,6 +60,12 @@ export default async function AgendamentosPage() {
           description={`Visão geral da grade de aulas e atendimentos — ${school.name}.`}
         />
         <div className="flex flex-wrap items-center gap-2">
+          <a href="/api/calendar/appointments-ics" target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" className="gap-2">
+              <Calendar className="w-4 h-4" />
+              Sincronizar Google Agenda (.ics)
+            </Button>
+          </a>
           <Link href={`/agendar/${school.slug}`} target="_blank">
             <Button variant="secondary">
               Ver Link Público do Aluno

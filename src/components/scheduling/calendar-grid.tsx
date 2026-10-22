@@ -101,13 +101,34 @@ export function CalendarGrid({ appointments, instructors, services }: { appointm
                         <td key={dayIndex} className="px-2 py-2 border-l relative min-w-[150px] align-top">
                           {dayApps.length > 0 ? (
                             <div className="space-y-1">
-                              {dayApps.map((app: any) => (
-                                <div key={app.id} className="p-2 rounded-md text-xs font-medium text-white shadow-sm" style={{ backgroundColor: app.instructor.colorCode || "#4F46E5" }}>
-                                  <p className="truncate font-bold">{app.service.name}</p>
-                                  <p className="truncate opacity-90">{app.studentName}</p>
-                                  <p className="truncate opacity-80">{app.startTime} - {app.endTime}</p>
-                                </div>
-                              ))}
+                              {dayApps.map((app: any) => {
+                                const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+                                  `${app.service.name} - ${app.studentName}`
+                                )}&dates=${new Date(app.date).toISOString().slice(0, 10).replace(/-/g, "")}T${(app.startTime || "08:00").replace(":", "")}00Z/${new Date(app.date).toISOString().slice(0, 10).replace(/-/g, "")}T${(app.endTime || "09:00").replace(":", "")}00Z&details=${encodeURIComponent(
+                                  `Aluno: ${app.studentName}\nWhatsApp: ${app.studentWhatsapp || "N/A"}\nServiço: ${app.service.name}`
+                                )}`;
+
+                                return (
+                                  <div
+                                    key={app.id}
+                                    className="p-2 rounded-md text-xs font-medium text-white shadow-sm group relative"
+                                    style={{ backgroundColor: app.instructor.colorCode || "#4F46E5" }}
+                                  >
+                                    <p className="truncate font-bold">{app.service.name}</p>
+                                    <p className="truncate opacity-90">{app.studentName}</p>
+                                    <p className="truncate opacity-80">{app.startTime} - {app.endTime}</p>
+                                    <a
+                                      href={googleUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-block mt-1 text-[10px] bg-black/25 hover:bg-black/40 px-1.5 py-0.5 rounded transition-colors"
+                                      title="Adicionar aula ao Google Agenda"
+                                    >
+                                      + Google Agenda
+                                    </a>
+                                  </div>
+                                );
+                              })}
                             </div>
                           ) : (
                             <div className="h-12 border-2 border-dashed border-transparent hover:border-muted-foreground/30 rounded-md transition-colors cursor-pointer flex items-center justify-center text-muted-foreground/50 text-xs">

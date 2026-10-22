@@ -278,7 +278,16 @@ export async function createAppointmentAction(formData: FormData) {
     const message = `Olá! Meu nome é *${studentName}* e gostaria de confirmar meu agendamento para *${service.name}* no dia ${date.toLocaleDateString("pt-BR")} às ${startTime}.`;
     const whatsappUrl = buildWhatsAppLink(studentWhatsapp, message);
 
-    return { success: true, url: whatsappUrl, appointmentId: appointment.id };
+    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+      `${service.name} - ${school.name}`
+    )}&dates=${date.toISOString().slice(0, 10).replace(/-/g, "")}T${startTime.replace(":", "")}00Z/${date
+      .toISOString()
+      .slice(0, 10)
+      .replace(/-/g, "")}T${endTime.replace(":", "")}00Z&details=${encodeURIComponent(
+      `Agendamento para ${studentName}.\nServiço: ${service.name}\nInstituição: ${school.name}`
+    )}&location=${encodeURIComponent(service.isOnline ? "Online" : school.name)}`;
+
+    return { success: true, url: whatsappUrl, googleCalendarUrl, appointmentId: appointment.id };
   } catch (error) {
     console.error("Error creating appointment:", error);
     return { error: "Ocorreu um erro ao processar o agendamento." };
