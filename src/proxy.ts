@@ -22,6 +22,7 @@ function isPublicPath(pathname: string) {
   if (pathname.startsWith("/entrar")) return true;
   if (pathname.startsWith("/esqueci-a-senha")) return true;
   if (pathname.startsWith("/redefinir-senha")) return true;
+  if (pathname.startsWith("/agendar/")) return true;
   return false;
 }
 

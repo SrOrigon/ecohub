@@ -8,95 +8,99 @@ datasource db {
 }
 
 model School {
-  id                 String    @id @default(cuid())
+  schedulingServices SchedulingService[]
+  instructorProfiles InstructorProfile[]
+  appointments       Appointment[]
+  id                 String              @id @default(cuid())
   name               String
-  slug               String    @unique
-  cnpj               String?   @unique
+  slug               String              @unique
+  cnpj               String?             @unique
   legalName          String?
-  verificationStatus String    @default("pending")
+  verificationStatus String              @default("pending")
   cnpjCheckedAt      DateTime?
   city               String?
   state              String?
-  settings           String    @default("{}")
-  createdAt          DateTime  @default(now())
+  settings           String              @default("{}")
+  createdAt          DateTime            @default(now())
 
-  users       User[]
-  classGroups ClassGroup[]
-  missions    Mission[]
-  badges      Badge[]
-  rewards     Reward[]
-  rewardCategories RewardCategory[]
-  exercises   Exercise[]
-  trails      LearningTrail[]
-  announcements Announcement[]
-  teacherInvites TeacherInvite[]
+  users                  User[]
+  classGroups            ClassGroup[]
+  missions               Mission[]
+  badges                 Badge[]
+  rewards                Reward[]
+  rewardCategories       RewardCategory[]
+  exercises              Exercise[]
+  trails                 LearningTrail[]
+  announcements          Announcement[]
+  teacherInvites         TeacherInvite[]
   enrollmentApplications EnrollmentApplication[]
-  authorizationForms AuthorizationForm[]
-  chatThreads ChatThread[]
-  issuedDocuments IssuedDocument[]
-  scheduleSlots ClassScheduleSlot[]
-  studentProjects StudentProject[]
-  auditLogs AuditLog[]
-  invoices Invoice[]
-  paymentConfigs SchoolPaymentConfig[]
-  cardMachines CardMachineConfig[]
-  studentInvoices StudentInvoice[]
+  authorizationForms     AuthorizationForm[]
+  chatThreads            ChatThread[]
+  issuedDocuments        IssuedDocument[]
+  scheduleSlots          ClassScheduleSlot[]
+  studentProjects        StudentProject[]
+  auditLogs              AuditLog[]
+  invoices               Invoice[]
+  paymentConfigs         SchoolPaymentConfig[]
+  cardMachines           CardMachineConfig[]
+  studentInvoices        StudentInvoice[]
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  fullName     String
-  role         String   @default("student")
-  avatarUrl    String?
-  displayName  String?
-  username     String?   @unique
-  phone        String?
-  gender       String?
-  pronouns     String?
-  bio          String?
-  interests    String    @default("[]")
-  socialLinks  String    @default("{}")
-  city         String?
-  state        String?
-  street       String?
-  streetNumber String?
+  instructorProfile InstructorProfile?
+  id                String             @id @default(cuid())
+  email             String             @unique
+  passwordHash      String
+  fullName          String
+  role              String             @default("student")
+  avatarUrl         String?
+  displayName       String?
+  username          String?            @unique
+  phone             String?
+  gender            String?
+  pronouns          String?
+  bio               String?
+  interests         String             @default("[]")
+  socialLinks       String             @default("{}")
+  city              String?
+  state             String?
+  street            String?
+  streetNumber      String?
   addressComplement String?
-  zipCode      String?
-  latitude     Float?
-  longitude    Float?
-  schoolId     String?
-  createdAt    DateTime @default(now())
+  zipCode           String?
+  latitude          Float?
+  longitude         Float?
+  schoolId          String?
+  createdAt         DateTime           @default(now())
 
-  school         School?      @relation(fields: [schoolId], references: [id], onDelete: SetNull)
-  student        Student?
-  taughtClasses  ClassGroup[] @relation("ClassTeacher")
-  coTaughtClasses ClassGroupCoTeacher[] @relation("ClassCoTeacher")
-  gradesGiven    Grade[]          @relation("GradeTeacher")
-  exercisesCreated Exercise[]     @relation("ExerciseTeacher")
-  exercisesGraded  ExerciseSubmission[] @relation("ExerciseGrader")
-  sessions       Session[]
-  parentLinks    ParentStudent[]  @relation("ParentUser")
-  notifications  Notification[]
-  homeTasksCreated HomeTask[]     @relation("HomeTaskParent")
-  diaryEntries   ClassDiaryEntry[]
-  occurrences    Occurrence[]     @relation("OccurrenceTeacher")
-  announcements  Announcement[]
-  announcementReads AnnouncementRead[]
-  personalNotes  UserNote[]
-  teacherInvitesSent TeacherInvite[] @relation("TeacherInvitesSent")
-  teacherInvitesUsed TeacherInvite[] @relation("TeacherInvitesUsed")
-  studentsProvisioned Student[] @relation("StudentProvisionedBy")
-  attendanceJustifications Attendance[] @relation("AttendanceJustifier")
-  aiChatLogs AiChatLog[]
-  chatMessagesSent ChatMessage[] @relation("ChatSender")
-  authorizationFormsCreated AuthorizationForm[] @relation("AuthFormCreator")
-  authorizationResponses AuthorizationResponse[] @relation("AuthParent")
-  documentsIssued IssuedDocument[] @relation("DocIssuer")
-  enrollmentReviews EnrollmentApplication[] @relation("EnrollmentReviewer")
-  chatThreadsAsParent ChatThread[] @relation("ChatParent")
-  verifiedInvoices StudentInvoice[] @relation("VerifiedInvoices")
+  school                    School?                 @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  student                   Student?
+  taughtClasses             ClassGroup[]            @relation("ClassTeacher")
+  coTaughtClasses           ClassGroupCoTeacher[]   @relation("ClassCoTeacher")
+  gradesGiven               Grade[]                 @relation("GradeTeacher")
+  exercisesCreated          Exercise[]              @relation("ExerciseTeacher")
+  exercisesGraded           ExerciseSubmission[]    @relation("ExerciseGrader")
+  sessions                  Session[]
+  parentLinks               ParentStudent[]         @relation("ParentUser")
+  notifications             Notification[]
+  homeTasksCreated          HomeTask[]              @relation("HomeTaskParent")
+  diaryEntries              ClassDiaryEntry[]
+  occurrences               Occurrence[]            @relation("OccurrenceTeacher")
+  announcements             Announcement[]
+  announcementReads         AnnouncementRead[]
+  personalNotes             UserNote[]
+  teacherInvitesSent        TeacherInvite[]         @relation("TeacherInvitesSent")
+  teacherInvitesUsed        TeacherInvite[]         @relation("TeacherInvitesUsed")
+  studentsProvisioned       Student[]               @relation("StudentProvisionedBy")
+  attendanceJustifications  Attendance[]            @relation("AttendanceJustifier")
+  aiChatLogs                AiChatLog[]
+  chatMessagesSent          ChatMessage[]           @relation("ChatSender")
+  authorizationFormsCreated AuthorizationForm[]     @relation("AuthFormCreator")
+  authorizationResponses    AuthorizationResponse[] @relation("AuthParent")
+  documentsIssued           IssuedDocument[]        @relation("DocIssuer")
+  enrollmentReviews         EnrollmentApplication[] @relation("EnrollmentReviewer")
+  chatThreadsAsParent       ChatThread[]            @relation("ChatParent")
+  verifiedInvoices          StudentInvoice[]        @relation("VerifiedInvoices")
 
   @@index([schoolId])
   @@index([schoolId, role])
@@ -140,24 +144,24 @@ model ClassGroup {
   teacherId  String?
   createdAt  DateTime @default(now())
 
-  school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  teacher     User?        @relation("ClassTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
-  students    Student[]
-  enrollments StudentClassEnrollment[]
-  attendance  Attendance[]
-  missions    Mission[]
-  exercises   Exercise[]
-  diaryEntries ClassDiaryEntry[]
-  occurrences Occurrence[]
-  trails      LearningTrail[]
-  classGoals  ClassGoal[]
-  badges      Badge[]
-  badgeClasses BadgeClass[]
-  coTeachers  ClassGroupCoTeacher[]
-  announcements Announcement[]
-  scheduleSlots ClassScheduleSlot[]
+  school             School                   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher            User?                    @relation("ClassTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  students           Student[]
+  enrollments        StudentClassEnrollment[]
+  attendance         Attendance[]
+  missions           Mission[]
+  exercises          Exercise[]
+  diaryEntries       ClassDiaryEntry[]
+  occurrences        Occurrence[]
+  trails             LearningTrail[]
+  classGoals         ClassGoal[]
+  badges             Badge[]
+  badgeClasses       BadgeClass[]
+  coTeachers         ClassGroupCoTeacher[]
+  announcements      Announcement[]
+  scheduleSlots      ClassScheduleSlot[]
   authorizationForms AuthorizationForm[]
-  issuedDocuments IssuedDocument[]
+  issuedDocuments    IssuedDocument[]
 
   @@index([schoolId])
   @@index([courseId])
@@ -177,55 +181,55 @@ model ClassGroupCoTeacher {
 }
 
 model Student {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  enrollmentCode  String    @unique
-  birthDate       DateTime?
-  accessPinHash   String?
-  accountType     String    @default("standard")
-  provisionedById String?
-  classId         String?
-  xpTotal         Int       @default(0)
-  level           Int       @default(1)
-  coins           Int       @default(0)
-  equippedFrame   String?
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  enrollmentCode     String    @unique
+  birthDate          DateTime?
+  accessPinHash      String?
+  accountType        String    @default("standard")
+  provisionedById    String?
+  classId            String?
+  xpTotal            Int       @default(0)
+  level              Int       @default(1)
+  coins              Int       @default(0)
+  equippedFrame      String?
   equippedBackground String?
-  equippedPet     String?
-  status          String    @default("active")
-  dropoutRiskScore Int      @default(0)
-  dropoutRiskLevel String   @default("LOW")
-  dropoutFactors   String   @default("[]")
+  equippedPet        String?
+  status             String    @default("active")
+  dropoutRiskScore   Int       @default(0)
+  dropoutRiskLevel   String    @default("LOW")
+  dropoutFactors     String    @default("[]")
   lastRiskAssessment DateTime?
-  createdAt       DateTime  @default(now())
+  createdAt          DateTime  @default(now())
 
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provisionedBy   User?             @relation("StudentProvisionedBy", fields: [provisionedById], references: [id], onDelete: SetNull)
-  classGroup      ClassGroup?       @relation(fields: [classId], references: [id], onDelete: SetNull)
-  classEnrollments StudentClassEnrollment[]
-  grades          Grade[]
-  attendance      Attendance[]
-  xpTransactions  XpTransaction[]
-  studentMissions   StudentMission[]
-  studentBadges     StudentBadge[]
-  rewardRedemptions RewardRedemption[]
-  parentLinks       ParentStudent[]
-  exerciseSubmissions ExerciseSubmission[]
-  exerciseTargets     ExerciseStudentTarget[]
-  trailProgress     StudentTrailProgress[]
-  occurrences       Occurrence[]
-  homeTasks         HomeTask[]
-  chatThreads       ChatThread[]
+  user                   User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provisionedBy          User?                    @relation("StudentProvisionedBy", fields: [provisionedById], references: [id], onDelete: SetNull)
+  classGroup             ClassGroup?              @relation(fields: [classId], references: [id], onDelete: SetNull)
+  classEnrollments       StudentClassEnrollment[]
+  grades                 Grade[]
+  attendance             Attendance[]
+  xpTransactions         XpTransaction[]
+  studentMissions        StudentMission[]
+  studentBadges          StudentBadge[]
+  rewardRedemptions      RewardRedemption[]
+  parentLinks            ParentStudent[]
+  exerciseSubmissions    ExerciseSubmission[]
+  exerciseTargets        ExerciseStudentTarget[]
+  trailProgress          StudentTrailProgress[]
+  occurrences            Occurrence[]
+  homeTasks              HomeTask[]
+  chatThreads            ChatThread[]
   authorizationResponses AuthorizationResponse[]
-  issuedDocuments   IssuedDocument[]
-  enrollmentLinks   EnrollmentApplication[] @relation("EnrollmentStudent")
-  profileActivities StudentActivity[]
-  financeAccount    StudentFinanceAccount?
-  tuitionPayments   TuitionPayment[]
-  challengerMatches DuelMatch[] @relation("ChallengerStudent")
-  challengedMatches DuelMatch[] @relation("ChallengedStudent")
-  projects          StudentProject[]
-  invoices          Invoice[]
-  studentInvoices   StudentInvoice[]
+  issuedDocuments        IssuedDocument[]
+  enrollmentLinks        EnrollmentApplication[]  @relation("EnrollmentStudent")
+  profileActivities      StudentActivity[]
+  financeAccount         StudentFinanceAccount?
+  tuitionPayments        TuitionPayment[]
+  challengerMatches      DuelMatch[]              @relation("ChallengerStudent")
+  challengedMatches      DuelMatch[]              @relation("ChallengedStudent")
+  projects               StudentProject[]
+  invoices               Invoice[]
+  studentInvoices        StudentInvoice[]
 
   @@index([classId])
 }
@@ -381,7 +385,7 @@ model Badge {
   createdAt   DateTime @default(now())
 
   school        School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  classGroup    ClassGroup?   @relation(fields: [classId], references: [id], onDelete: SetNull)
+  classGroup    ClassGroup?    @relation(fields: [classId], references: [id], onDelete: SetNull)
   classes       BadgeClass[]
   studentBadges StudentBadge[]
 
@@ -498,26 +502,26 @@ model ParentStudent {
 }
 
 model Exercise {
-  id                   String    @id @default(cuid())
-  schoolId             String
-  classId              String?
-  teacherId            String
-  title                String
-  description          String?
-  kind                 String    @default("homework")
-  audienceType         String    @default("class")
-  personalizationTag   String?
-  maxPoints            Float     @default(10)
-  xpReward             Int       @default(0)
-  coinReward           Int       @default(0)
-  dueDate              DateTime?
-  isActive             Boolean   @default(true)
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id                 String    @id @default(cuid())
+  schoolId           String
+  classId            String?
+  teacherId          String
+  title              String
+  description        String?
+  kind               String    @default("homework")
+  audienceType       String    @default("class")
+  personalizationTag String?
+  maxPoints          Float     @default(10)
+  xpReward           Int       @default(0)
+  coinReward         Int       @default(0)
+  dueDate            DateTime?
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  school         School                 @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  classGroup     ClassGroup?            @relation(fields: [classId], references: [id], onDelete: SetNull)
-  teacher        User                   @relation("ExerciseTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  school         School                  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classGroup     ClassGroup?             @relation(fields: [classId], references: [id], onDelete: SetNull)
+  teacher        User                    @relation("ExerciseTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
   questions      ExerciseQuestion[]
   submissions    ExerciseSubmission[]
   studentTargets ExerciseStudentTarget[]
@@ -583,7 +587,7 @@ model ExerciseSubmission {
 }
 
 model ExerciseAnswer {
-  id               String  @id @default(cuid())
+  id               String   @id @default(cuid())
   submissionId     String
   questionId       String
   textAnswer       String?
@@ -641,10 +645,10 @@ model LearningTrail {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
 
-  school   School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  classGroup ClassGroup?        @relation(fields: [classId], references: [id], onDelete: SetNull)
-  steps    TrailStep[]
-  progress StudentTrailProgress[]
+  school     School                 @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classGroup ClassGroup?            @relation(fields: [classId], references: [id], onDelete: SetNull)
+  steps      TrailStep[]
+  progress   StudentTrailProgress[]
 
   @@index([schoolId])
 }
@@ -705,29 +709,29 @@ model AnnouncementPoll {
   announcementId String @unique
   question       String
 
-  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  announcement Announcement             @relation(fields: [announcementId], references: [id], onDelete: Cascade)
   options      AnnouncementPollOption[]
   votes        AnnouncementPollVote[]
 }
 
 model AnnouncementPollOption {
-  id     String @id @default(cuid())
-  pollId String
-  label  String
-  sortOrder Int @default(0)
+  id        String @id @default(cuid())
+  pollId    String
+  label     String
+  sortOrder Int    @default(0)
 
-  poll  AnnouncementPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  poll  AnnouncementPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
   votes AnnouncementPollVote[]
 }
 
 model AnnouncementPollVote {
-  id       String @id @default(cuid())
+  id       String   @id @default(cuid())
   pollId   String
   optionId String
   userId   String
   votedAt  DateTime @default(now())
 
-  poll   AnnouncementPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  poll   AnnouncementPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
   option AnnouncementPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
 
   @@unique([pollId, userId])
@@ -841,19 +845,19 @@ model EnrollmentApplication {
 }
 
 model AuthorizationForm {
-  id        String    @id @default(cuid())
-  schoolId  String
-  classId   String?
-  title     String
-  body      String
-  deadline  DateTime?
+  id          String    @id @default(cuid())
+  schoolId    String
+  classId     String?
+  title       String
+  body        String
+  deadline    DateTime?
   createdById String
-  createdAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
 
-  school    School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  classGroup ClassGroup? @relation(fields: [classId], references: [id], onDelete: SetNull)
-  createdBy User       @relation("AuthFormCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  responses AuthorizationResponse[]
+  school     School                  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classGroup ClassGroup?             @relation(fields: [classId], references: [id], onDelete: SetNull)
+  createdBy  User                    @relation("AuthFormCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  responses  AuthorizationResponse[]
 }
 
 model AuthorizationResponse {
@@ -879,9 +883,9 @@ model ChatThread {
   subject   String?
   updatedAt DateTime @updatedAt
 
-  school   School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  student  Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  parent   User    @relation("ChatParent", fields: [parentId], references: [id], onDelete: Cascade)
+  school   School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student  Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parent   User          @relation("ChatParent", fields: [parentId], references: [id], onDelete: Cascade)
   messages ChatMessage[]
 
   @@unique([schoolId, studentId, parentId])
@@ -903,7 +907,7 @@ model ChatMessage {
 }
 
 model ClassScheduleSlot {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   schoolId  String
   classId   String
   weekday   Int
@@ -984,22 +988,22 @@ model DuelSession {
 }
 
 model DuelMatch {
-  id                    String       @id @default(cuid())
+  id                    String    @id @default(cuid())
   schoolId              String
   classId               String
   sessionId             String?
   challengerId          String
   challengedId          String
-  betCoins              Int          @default(0)
-  betXp                 Int          @default(0)
-  status                String       @default("pending") // pending, active, completed, cancelled, rejected
+  betCoins              Int       @default(0)
+  betXp                 Int       @default(0)
+  status                String    @default("pending") // pending, active, completed, cancelled, rejected
   winnerId              String?
-  questionsJson         String       @default("[]")
-  challengerAnswersJson String       @default("[]")
-  challengedAnswersJson String       @default("[]")
-  challengerScore       Int          @default(0)
-  challengedScore       Int          @default(0)
-  createdAt             DateTime     @default(now())
+  questionsJson         String    @default("[]")
+  challengerAnswersJson String    @default("[]")
+  challengedAnswersJson String    @default("[]")
+  challengerScore       Int       @default(0)
+  challengedScore       Int       @default(0)
+  createdAt             DateTime  @default(now())
   completedAt           DateTime?
 
   session    DuelSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
@@ -1022,8 +1026,8 @@ model StudentProject {
   imageUrl    String?
   createdAt   DateTime @default(now())
 
-  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([schoolId])
   @@index([studentId])
@@ -1065,8 +1069,8 @@ model Invoice {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  school            School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  student           Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([schoolId, status])
   @@index([studentId, status])
@@ -1077,7 +1081,7 @@ model CardMachineConfig {
   id                          String   @id @default(cuid())
   schoolId                    String
   machineName                 String
-  provider                    String   // Stone, Cielo, PagSeguro, Rede, SumUp, Getnet, etc.
+  provider                    String // Stone, Cielo, PagSeguro, Rede, SumUp, Getnet, etc.
   serialNumber                String?
   debitFeePercent             Float    @default(1.5)
   creditSightFeePercent       Float    @default(2.5)
@@ -1097,7 +1101,7 @@ model SchoolPaymentConfig {
   providerType       String   @default("MANUAL_PIX") // MANUAL_PIX, MANUAL_BANK_TRANSFER, ASAAS, MERCADO_PAGO, EFI_BANK, CUSTOM_INSTRUCTIONS
   isActive           Boolean  @default(true)
   pixKey             String?
-  pixKeyType         String?  // CPF, CNPJ, EMAIL, PHONE, RANDOM
+  pixKeyType         String? // CPF, CNPJ, EMAIL, PHONE, RANDOM
   beneficiaryName    String?
   bankName           String?
   encryptedApiKey    String?
@@ -1107,8 +1111,8 @@ model SchoolPaymentConfig {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  school             School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  studentInvoices    StudentInvoice[]
+  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  studentInvoices StudentInvoice[]
 
   @@index([providerType])
 }
@@ -1129,16 +1133,16 @@ model StudentInvoice {
   proofUploadedAt    DateTime?
   paidAt             DateTime?
   verifiedByUserId   String?
-  paymentMethod      String?   // MANUAL_PIX, DEBIT_CARD, CREDIT_CARD, CASH, BANK_TRANSFER
+  paymentMethod      String? // MANUAL_PIX, DEBIT_CARD, CREDIT_CARD, CASH, BANK_TRANSFER
   cardMachineId      String?
   netAmountCents     Int?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  school             School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  student            Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  paymentConfig      SchoolPaymentConfig? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
-  verifiedByUser     User?                @relation("VerifiedInvoices", fields: [verifiedByUserId], references: [id], onDelete: SetNull)
+  school         School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student        Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  paymentConfig  SchoolPaymentConfig? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  verifiedByUser User?                @relation("VerifiedInvoices", fields: [verifiedByUserId], references: [id], onDelete: SetNull)
 
   @@index([schoolId, status])
   @@index([studentId, status])
@@ -1155,4 +1159,83 @@ model PasswordResetToken {
 
   @@index([email])
   @@index([token])
+}
+
+// --- ORION SCHEDULING MODULE ---
+
+model SchedulingService {
+  id                 String   @id @default(cuid())
+  schoolId           String
+  name               String
+  durationMinutes    Int
+  maxStudentsPerSlot Int      @default(1)
+  isOnline           Boolean  @default(false)
+  priceCents         Int?     @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  instructors  InstructorService[]
+  appointments Appointment[]
+}
+
+model InstructorProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  schoolId  String
+  colorCode String?
+  bio       String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  services       InstructorService[]
+  availabilities InstructorAvailability[]
+  appointments   Appointment[]
+}
+
+model InstructorService {
+  id                  String @id @default(cuid())
+  instructorProfileId String
+  schedulingServiceId String
+
+  instructor InstructorProfile @relation(fields: [instructorProfileId], references: [id], onDelete: Cascade)
+  service    SchedulingService @relation(fields: [schedulingServiceId], references: [id], onDelete: Cascade)
+
+  @@unique([instructorProfileId, schedulingServiceId])
+}
+
+model InstructorAvailability {
+  id                  String  @id @default(cuid())
+  instructorProfileId String
+  dayOfWeek           Int // 0 to 6
+  startTime           String // "08:00"
+  endTime             String // "12:00"
+  isActive            Boolean @default(true)
+
+  instructor InstructorProfile @relation(fields: [instructorProfileId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id                  String   @id @default(cuid())
+  schoolId            String
+  schedulingServiceId String
+  instructorProfileId String
+  studentName         String
+  studentWhatsapp     String
+  studentEmail        String?
+  date                DateTime
+  startTime           String
+  endTime             String
+  status              String   @default("PENDING")
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  school     School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  service    SchedulingService @relation(fields: [schedulingServiceId], references: [id], onDelete: Cascade)
+  instructor InstructorProfile @relation(fields: [instructorProfileId], references: [id], onDelete: Cascade)
 }

@@ -1,18 +1,18 @@
 # Relatório de Validação Ecohub
 
-Gerado em: 2026-09-30T21:03:54.275Z
+Gerado em: 2026-10-22T22:44:14.635Z
 
 ## Resumo
 
 | Métrica | Valor |
 |---------|-------|
-| Etapas OK | 9 |
-| Etapas com falha | 0 |
+| Etapas OK | 8 |
+| Etapas com falha | 1 |
 | Produção | https://eduhub-production-b513.up.railway.app |
 
 ## Fases executadas
 
-- [x] Fase 1  -  migrate
+- [ ] Fase 1  -  migrate
 - [x] Fase 1  -  build
 - [x] Fase 1  -  backup
 - [x] Fase 2  -  seed-pilot
@@ -29,7 +29,7 @@ Gerado em: 2026-09-30T21:03:54.275Z
   "status": "degraded",
   "service": "ecohub",
   "version": "1.0.0",
-  "uptime": 1547.078576763,
+  "uptime": 278.068213788,
   "checks": {
     "database": "ok",
     "authSecret": "ok",
@@ -65,7 +65,7 @@ Gerado em: 2026-09-30T21:03:54.275Z
     "lastBackup": null
   },
   "mode": "institutional",
-  "responseMs": 6
+  "responseMs": 3
 }
 ```
 
@@ -76,7 +76,7 @@ Gerado em: 2026-09-30T21:03:54.275Z
   "status": "ok",
   "service": "ecohub",
   "version": "0.1.0",
-  "uptime": 516.973052876,
+  "uptime": 268.864085866,
   "checks": {
     "database": "ok",
     "authSecret": "ok",
@@ -92,19 +92,19 @@ Gerado em: 2026-09-30T21:03:54.275Z
     "volumeReason": null,
     "volumeWritable": true,
     "accounts": {
-      "users": 43,
-      "schools": 1,
-      "students": 36,
-      "classGroups": 16,
+      "users": 155,
+      "schools": 2,
+      "students": 90,
+      "classGroups": 19,
       "persisted": true,
       "store": "postgresql",
       "goldenBackup": true
     },
     "cache": {
-      "entries": 2,
-      "hits": 25,
-      "misses": 21,
-      "hitRate": 54.3,
+      "entries": 0,
+      "hits": 0,
+      "misses": 0,
+      "hitRate": 0,
       "maxEntries": 800,
       "durable": false,
       "note": "Cache só acelera leitura. Contas ficam no Postgres."
@@ -112,7 +112,7 @@ Gerado em: 2026-09-30T21:03:54.275Z
     "lastBackup": null
   },
   "mode": "institutional",
-  "responseMs": 17
+  "responseMs": 3
 }
 ```
 
