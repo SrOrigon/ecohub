@@ -57,16 +57,23 @@ export default async function AgendamentosPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <PageHeader
           title="Agendamentos"
-          description="Visão geral da grade de aulas e atendimentos da instituição."
+          description={`Visão geral da grade de aulas e atendimentos — ${school.name}.`}
         />
-        {["admin", "director", "secretary", "teacher"].includes(user.role) && (
-          <Link href="/dashboard/agendamentos/configuracoes">
-            <Button variant="outline">
-              <Settings className="w-4 h-4 mr-2" />
-              Configurar Horários e Serviços
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href={`/agendar/${school.slug}`} target="_blank">
+            <Button variant="secondary">
+              Ver Link Público do Aluno
             </Button>
           </Link>
-        )}
+          {["admin", "director", "secretary", "teacher"].includes(user.role) && (
+            <Link href="/dashboard/agendamentos/configuracoes">
+              <Button variant="outline">
+                <Settings className="w-4 h-4 mr-2" />
+                Configurar Horários e Serviços
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       <CalendarGrid
