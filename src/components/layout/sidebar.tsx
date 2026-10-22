@@ -97,6 +97,7 @@ const allNavItems: NavItem[] = [
   { href: "/dashboard/documentos", label: "Documentos", icon: FileText, roles: ["admin", "director", "secretary"] },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, roles: ["admin", "director", "secretary", "teacher", "parent"] },
   { href: "/dashboard/alertas", label: "Alertas de atenção", icon: AlertTriangle, roles: ["admin", "director", "secretary"] },
+  { href: "/dashboard/agendamentos", label: "Agendamentos", icon: CalendarDays, roles: ["admin", "director", "secretary", "teacher"] },
   { href: "/dashboard/horarios", label: "Horários", icon: Clock, roles: ["admin", "director", "secretary", "teacher"] },
   {
     href: "/dashboard/exercicios",

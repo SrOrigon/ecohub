@@ -8,7 +8,7 @@ import { sanitizeBrazilianPhone } from "@/lib/whatsapp-billing";
 
 export async function createSchedulingServiceAction(formData: FormData) {
   const user = await getSessionUser();
-  if (!user || (user.role !== "admin" && user.role !== "director")) {
+  if (!user || !["admin", "director", "secretary"].includes(user.role)) {
     return { error: "Não autorizado" };
   }
 
@@ -54,7 +54,7 @@ export async function createSchedulingServiceAction(formData: FormData) {
 
 export async function createAvailabilityAction(formData: FormData) {
   const user = await getSessionUser();
-  if (!user || (user.role !== "admin" && user.role !== "director")) {
+  if (!user || !["admin", "director", "secretary", "teacher"].includes(user.role)) {
     return { error: "Não autorizado" };
   }
 

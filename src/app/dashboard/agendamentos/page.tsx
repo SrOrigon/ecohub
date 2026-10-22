@@ -13,18 +13,42 @@ export default async function AgendamentosPage() {
   if (!user) redirect("/login");
 
   const school = await getSchool(user);
+  if (!school) redirect("/login");
+
+  // Garantir que todos os professores da escola possuam perfil de instrutor
+  const teachers = await prisma.user.findMany({
+    where: { schoolId: school.id, role: "teacher" },
+  });
+
+  const colors = ["#4F46E5", "#059669", "#D97706", "#DC2626", "#7C3AED", "#2563EB", "#DB2777"];
+  for (let i = 0; i < teachers.length; i++) {
+    const teacher = teachers[i];
+    await prisma.instructorProfile.upsert({
+      where: { userId: teacher.id },
+      update: { schoolId: school.id, isActive: true },
+      create: {
+        userId: teacher.id,
+        schoolId: school.id,
+        colorCode: colors[i % colors.length],
+        isActive: true,
+      },
+    });
+  }
 
   const instructors = await prisma.instructorProfile.findMany({
-    where: { schoolId: school!.id, isActive: true },
+    where: { schoolId: school.id, isActive: true },
     include: { user: true }
   });
 
   const services = await prisma.schedulingService.findMany({
-    where: { schoolId: school!.id }
+    where: { schoolId: school.id }
   });
 
   const appointments = await prisma.appointment.findMany({
-    where: { schoolId: school!.id },
+    where: {
+      schoolId: school.id,
+      ...(user.role === "teacher" ? { instructor: { userId: user.id } } : {}),
+    },
     include: { instructor: true, service: true }
   });
 
@@ -35,11 +59,11 @@ export default async function AgendamentosPage() {
           title="Agendamentos"
           description="Visão geral da grade de aulas e atendimentos da instituição."
         />
-        {(user.role === "admin" || user.role === "director") && (
+        {["admin", "director", "secretary", "teacher"].includes(user.role) && (
           <Link href="/dashboard/agendamentos/configuracoes">
             <Button variant="outline">
               <Settings className="w-4 h-4 mr-2" />
-              Configurações
+              Configurar Horários e Serviços
             </Button>
           </Link>
         )}

@@ -10,13 +10,38 @@ import { InstructorAvailabilityForm } from "@/components/forms/instructor-availa
 export default async function AgendamentosConfiguracoesPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
-  if (user.role !== "admin" && user.role !== "director") redirect("/dashboard");
+  if (!["admin", "director", "secretary", "teacher"].includes(user.role)) redirect("/dashboard");
 
   const school = await getSchool(user);
+  if (!school) redirect("/login");
+
+  // Garantir que todos os professores da escola possuam perfil de instrutor
+  const teachers = await prisma.user.findMany({
+    where: { schoolId: school.id, role: "teacher" },
+  });
+
+  const colors = ["#4F46E5", "#059669", "#D97706", "#DC2626", "#7C3AED", "#2563EB", "#DB2777"];
+  for (let i = 0; i < teachers.length; i++) {
+    const teacher = teachers[i];
+    await prisma.instructorProfile.upsert({
+      where: { userId: teacher.id },
+      update: { schoolId: school.id, isActive: true },
+      create: {
+        userId: teacher.id,
+        schoolId: school.id,
+        colorCode: colors[i % colors.length],
+        isActive: true,
+      },
+    });
+  }
 
   const instructors = await prisma.instructorProfile.findMany({
-    where: { schoolId: school!.id, isActive: true },
-    include: { user: true }
+    where: {
+      schoolId: school.id,
+      isActive: true,
+      ...(user.role === "teacher" ? { userId: user.id } : {}),
+    },
+    include: { user: true },
   });
 
   return (

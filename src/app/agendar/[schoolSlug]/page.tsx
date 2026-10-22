@@ -2,9 +2,14 @@ import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { PublicBookingFlow } from "@/components/scheduling/public-booking-flow";
 
-export default async function PublicBookingPage({ params }: { params: { schoolSlug: string } }) {
+export default async function PublicBookingPage({
+  params,
+}: {
+  params: Promise<{ schoolSlug: string }>;
+}) {
+  const { schoolSlug } = await params;
   const school = await prisma.school.findUnique({
-    where: { slug: params.schoolSlug }
+    where: { slug: schoolSlug },
   });
 
   if (!school) {
