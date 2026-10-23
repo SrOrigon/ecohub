@@ -8,26 +8,37 @@ export default async function PublicBookingPage({
   params: Promise<{ schoolSlug: string }>;
 }) {
   const { schoolSlug } = await params;
-  const school = await prisma.school.findUnique({
-    where: { slug: schoolSlug },
-  });
+  let school = null;
+  let services: any[] = [];
+  let instructors: any[] = [];
+  let availabilities: any[] = [];
+
+  try {
+    school = await prisma.school.findUnique({
+      where: { slug: schoolSlug },
+    });
+
+    if (school) {
+      [services, instructors, availabilities] = await Promise.all([
+        prisma.schedulingService.findMany({
+          where: { schoolId: school.id },
+        }),
+        prisma.instructorProfile.findMany({
+          where: { schoolId: school.id, isActive: true },
+          include: { user: true, services: true },
+        }),
+        prisma.instructorAvailability.findMany({
+          where: { instructor: { schoolId: school.id, isActive: true } },
+        }),
+      ]);
+    }
+  } catch (error) {
+    console.error("[agendar] Erro ao carregar agendamento:", error);
+  }
 
   if (!school) {
     notFound();
   }
-
-  const services = await prisma.schedulingService.findMany({
-    where: { schoolId: school.id }
-  });
-
-  const instructors = await prisma.instructorProfile.findMany({
-    where: { schoolId: school.id, isActive: true },
-    include: { user: true, services: true } // Include services to filter correctly
-  });
-
-  const availabilities = await prisma.instructorAvailability.findMany({
-    where: { instructor: { schoolId: school.id, isActive: true } }
-  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex flex-col">
