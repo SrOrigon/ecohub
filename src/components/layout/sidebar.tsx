@@ -80,6 +80,7 @@ const allNavItems: NavItem[] = [
   { href: "/dashboard/responsavel", label: "Meus Filhos", icon: Heart, roles: ["parent"] },
   { href: "/dashboard/responsavel/alertas", label: "Alertas de atenção", icon: AlertTriangle, roles: ["parent"] },
   { href: "/dashboard/assistente", label: "Ecohub IA", icon: Bot, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
+  { href: "/dashboard/agendamentos", label: "Agendamentos", icon: CalendarDays, roles: ["admin", "director", "secretary", "teacher"] },
   { href: "/dashboard/calendario", label: "Agenda compartilhada", icon: CalendarDays, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/agenda", label: "Minha agenda", icon: NotebookPen, roles: ["admin", "director", "secretary", "teacher", "student", "parent"] },
   { href: "/dashboard/alunos", label: "Alunos", icon: Users, roles: ["admin", "director", "secretary", "teacher"] },
@@ -97,7 +98,6 @@ const allNavItems: NavItem[] = [
   { href: "/dashboard/documentos", label: "Documentos", icon: FileText, roles: ["admin", "director", "secretary"] },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, roles: ["admin", "director", "secretary", "teacher", "parent"] },
   { href: "/dashboard/alertas", label: "Alertas de atenção", icon: AlertTriangle, roles: ["admin", "director", "secretary"] },
-  { href: "/dashboard/agendamentos", label: "Agendamentos", icon: CalendarDays, roles: ["admin", "director", "secretary", "teacher"] },
   { href: "/dashboard/horarios", label: "Horários", icon: Clock, roles: ["admin", "director", "secretary", "teacher"] },
   {
     href: "/dashboard/exercicios",

@@ -17,7 +17,7 @@ export function PublicBookingFlow({ school, services, instructors, availabilitie
   const [selectedTime, setSelectedTime] = useState("");
   const [loading, setLoading] = useState(false);
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
-  const [rawSlots, setRawSlots] = useState<any[]>([]);
+  const [rawSlots, setRawSlots] = useState<unknown[]>([]);
 
   const today = new Date();
   const dates = Array.from({ length: 14 }).map((_, i) => addDays(today, i));
@@ -29,7 +29,7 @@ export function PublicBookingFlow({ school, services, instructors, availabilitie
             .then(res => {
                 if (res.slots) {
                     setTimeSlots(res.slots);
-                    setRawSlots(res.rawSlots || []);
+                    setRawSlots((res.rawSlots as unknown[]) || []);
                 } else {
                     setTimeSlots([]);
                 }
