@@ -1161,7 +1161,7 @@ model PasswordResetToken {
   @@index([token])
 }
 
-// --- ORION SCHEDULING MODULE ---
+// --- AGENDAMENTOS MODULE ---
 
 model SchedulingService {
   id                 String   @id @default(cuid())
