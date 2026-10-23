@@ -369,6 +369,71 @@ const BADGE_COLUMN_PATCHES = [
   `CREATE INDEX IF NOT EXISTS "ClassGroup_courseId_idx" ON "ClassGroup"("courseId")`,
 ];
 
+const SCHEDULING_TABLE_PATCHES = [
+  `CREATE TABLE IF NOT EXISTS "SchedulingService" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "schoolId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "durationMinutes" INTEGER NOT NULL,
+    "maxStudentsPerSlot" INTEGER NOT NULL DEFAULT 1,
+    "isOnline" BOOLEAN NOT NULL DEFAULT false,
+    "priceCents" INTEGER DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "SchedulingService_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS "InstructorProfile" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL UNIQUE,
+    "schoolId" TEXT NOT NULL,
+    "colorCode" TEXT,
+    "bio" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "InstructorProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "InstructorProfile_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS "InstructorService" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "instructorProfileId" TEXT NOT NULL,
+    "schedulingServiceId" TEXT NOT NULL,
+    CONSTRAINT "InstructorService_instructorProfileId_fkey" FOREIGN KEY ("instructorProfileId") REFERENCES "InstructorProfile" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "InstructorService_schedulingServiceId_fkey" FOREIGN KEY ("schedulingServiceId") REFERENCES "SchedulingService" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "InstructorService_instructorProfileId_schedulingServiceId_key" ON "InstructorService"("instructorProfileId", "schedulingServiceId")`,
+  `CREATE TABLE IF NOT EXISTS "InstructorAvailability" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "instructorProfileId" TEXT NOT NULL,
+    "dayOfWeek" INTEGER NOT NULL,
+    "startTime" TEXT NOT NULL,
+    "endTime" TEXT NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    CONSTRAINT "InstructorAvailability_instructorProfileId_fkey" FOREIGN KEY ("instructorProfileId") REFERENCES "InstructorProfile" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS "Appointment" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "schoolId" TEXT NOT NULL,
+    "schedulingServiceId" TEXT NOT NULL,
+    "instructorProfileId" TEXT NOT NULL,
+    "studentName" TEXT NOT NULL,
+    "studentWhatsapp" TEXT NOT NULL,
+    "studentEmail" TEXT,
+    "date" TIMESTAMP(3) NOT NULL,
+    "startTime" TEXT NOT NULL,
+    "endTime" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Appointment_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "Appointment_schedulingServiceId_fkey" FOREIGN KEY ("schedulingServiceId") REFERENCES "SchedulingService" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "Appointment_instructorProfileId_fkey" FOREIGN KEY ("instructorProfileId") REFERENCES "InstructorProfile" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE INDEX IF NOT EXISTS "Appointment_schoolId_idx" ON "Appointment"("schoolId")`,
+  `CREATE INDEX IF NOT EXISTS "Appointment_instructorProfileId_date_idx" ON "Appointment"("instructorProfileId", "date")`,
+];
+
 const ALL_PATCHES = [
   ...TABLE_PATCHES,
   ...AUTH_TABLE_PATCHES,
@@ -380,6 +445,7 @@ const ALL_PATCHES = [
   ...EXERCISE_COLUMN_PATCHES,
   ...DOCUMENT_AND_ENROLLMENT_PATCHES,
   ...BADGE_COLUMN_PATCHES,
+  ...SCHEDULING_TABLE_PATCHES,
   ...INDEX_PATCHES,
 ];
 
@@ -411,6 +477,11 @@ const CRITICAL_TABLES = [
   "SchoolPaymentConfig",
   "StudentInvoice",
   "PasswordResetToken",
+  "SchedulingService",
+  "InstructorProfile",
+  "InstructorService",
+  "InstructorAvailability",
+  "Appointment",
 ];
 
 async function columnExists(prisma, table, column) {
