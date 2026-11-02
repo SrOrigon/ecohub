@@ -415,43 +415,6 @@ export async function equipStudentCosmeticAction(formData: FormData) {
   };
 }
 
-export async function seedPresetCosmeticsForSchoolAction() {
-  const session = await requireSessionResult(["admin", "director"]);
-  if (!session.ok) return { error: session.error };
-  const user = session.user;
-  if (!user.schoolId) return { error: "Escola não configurada." };
-
-  const { ALL_PRESET_COSMETICS } = await import("@/lib/cosmetics-catalog");
-
-  let createdCount = 0;
-
-  for (const preset of ALL_PRESET_COSMETICS) {
-    const exists = await prisma.reward.findFirst({
-      where: { schoolId: user.schoolId, cosmeticKey: preset.key },
-    });
-    if (!exists) {
-      await prisma.reward.create({
-        data: {
-          schoolId: user.schoolId,
-          name: preset.name,
-          description: preset.description,
-          coinCost: preset.defaultCoinCost,
-          itemType: preset.itemType,
-          cosmeticKey: preset.key,
-          isActive: true,
-        },
-      });
-      createdCount++;
-    }
-  }
-
-  revalidateLoja(user.schoolId);
-  return {
-    success: true,
-    message: createdCount > 0 ? `${createdCount} cosmético(s) adicionado(s) à loja da escola!` : "Todos os cosméticos já foram adicionados.",
-  };
-}
-
 export async function fulfillRedemptionAction(formData: FormData) {
   const session = await requireSessionResult(["admin", "director", "teacher"]);
   if (!session.ok) return { error: session.error };

@@ -25,6 +25,8 @@ import { DeleteStudentButton } from "@/components/forms/delete-student-button";
 import { StudentPerformanceDashboard } from "@/components/students/student-performance-dashboard";
 import { Student360Nav, parseStudent360Tab } from "@/components/students/student-360-nav";
 import { StudentFinancePanel } from "@/components/students/student-finance-panel";
+import { listBillingCharges } from "@/lib/billing-charges";
+import { summarizeCharges } from "@/lib/billing-status";
 import { Button } from "@/components/ui/button";
 import { calculateAge } from "@/lib/student-age";
 import {
@@ -86,6 +88,14 @@ export default async function StudentDetailPage({
     user.schoolId ? calculateStudentDropoutRisk(id, user.schoolId) : Promise.resolve(null),
   ]);
   if (!student) notFound();
+
+  const billingCharges = user.schoolId
+    ? await listBillingCharges(user.schoolId, student.id).catch((error) => {
+        console.error("[aluno] cobranças", error);
+        return [];
+      })
+    : [];
+  const billingSummary = summarizeCharges(billingCharges);
 
   const classOptions = classes.map((c) => ({ id: c.id, name: c.name }));
   const canManage =
@@ -322,9 +332,13 @@ export default async function StudentDetailPage({
             </div>
             <p className="text-sm text-slate-600">
               Carteira: {student.coins} moedas
-              {wallet.finance.netAmountCents > 0
-                ? ` · Mensalidade ${formatBRL(wallet.finance.netAmountCents)} · ${wallet.finance.statusLabel}`
-                : " · Financeiro ainda não configurado"}
+              {billingSummary.state === "pending"
+                ? ` · Há pendências a pagar (${billingSummary.pendingCount})`
+                : billingSummary.state === "clear"
+                  ? " · Sem pendências a pagar"
+                  : wallet.finance.netAmountCents > 0
+                    ? ` · Mensalidade ${formatBRL(wallet.finance.netAmountCents)} · ${wallet.finance.statusLabel}`
+                    : " · Financeiro ainda não configurado"}
             </p>
           </div>
         </CardContent>
@@ -565,7 +579,12 @@ export default async function StudentDetailPage({
       )}
 
       {tab === "financeiro" && (
-        <StudentFinancePanel studentId={student.id} finance={wallet.finance} canWrite={canWriteFinance} />
+        <StudentFinancePanel
+          studentId={student.id}
+          finance={wallet.finance}
+          canWrite={canWriteFinance}
+          charges={billingCharges}
+        />
       )}
 
       {tab === "frequencia" && (

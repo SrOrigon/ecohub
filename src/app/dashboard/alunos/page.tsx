@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StudentsListPanel } from "@/components/students/students-list-panel";
 import { InstitutionalSetupHint } from "@/components/school/institutional-setup-hint";
 import { requirePageAccess, STAFF_ROLES } from "@/lib/access-control";
+import { getBillingFlags } from "@/lib/billing-charges";
 
 export default async function AlunosPage() {
   const user = await requirePageAccess(STAFF_ROLES);
@@ -19,10 +20,16 @@ export default async function AlunosPage() {
   const canDeleteStudents =
     user.role === "admin" || user.role === "director" || user.role === "secretary";
 
-  const [students, classes, settings] = await Promise.all([
+  const [students, classes, settings, financeFlags] = await Promise.all([
     getStudents(user.schoolId).catch(() => []),
     getClasses(user.schoolId).catch(() => []),
     getSchoolSettings(user.schoolId),
+    user.schoolId
+      ? getBillingFlags(user.schoolId).catch((error) => {
+          console.error("[alunos] pendências", error);
+          return {} as Record<string, "pending" | "clear" | "none">;
+        })
+      : Promise.resolve({} as Record<string, "pending" | "clear" | "none">),
   ]);
 
   const classOptions = classes.map((c) => ({ id: c.id, name: c.name }));
@@ -49,6 +56,7 @@ export default async function AlunosPage() {
         status: item.status,
         classGroup: item.classGroup,
       })),
+      financeState: financeFlags[student.id] ?? "none",
     };
   });
 

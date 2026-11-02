@@ -44,6 +44,7 @@ model School {
   paymentConfigs         SchoolPaymentConfig[]
   cardMachines           CardMachineConfig[]
   studentInvoices        StudentInvoice[]
+  whatsappBillingLogs    WhatsAppBillingLog[]
 }
 
 model User {
@@ -1103,13 +1104,17 @@ model SchoolPaymentConfig {
   pixKey             String?
   pixKeyType         String? // CPF, CNPJ, EMAIL, PHONE, RANDOM
   beneficiaryName    String?
-  bankName           String?
-  encryptedApiKey    String?
-  encryptedApiSecret String?
-  webhookSecret      String?
-  instructions       String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  bankName                 String?
+  encryptedApiKey          String?
+  encryptedApiSecret       String?
+  webhookSecret            String?
+  instructions             String?
+  whatsappBillingEnabled   Boolean  @default(true)
+  whatsappRemindDaysBefore Int      @default(3)
+  whatsappPhoneNumberId    String?
+  encryptedWhatsappToken   String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
   school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   studentInvoices StudentInvoice[]
@@ -1148,6 +1153,25 @@ model StudentInvoice {
   @@index([studentId, status])
   @@index([externalInvoiceId])
   @@index([paymentMethodId])
+}
+
+model WhatsAppBillingLog {
+  id          String   @id @default(cuid())
+  schoolId    String
+  invoiceKind String
+  invoiceId   String
+  studentId   String
+  phone       String
+  status      String
+  provider    String
+  error       String?
+  createdAt   DateTime @default(now())
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, createdAt])
+  @@index([invoiceId])
+  @@index([studentId])
 }
 
 model PasswordResetToken {

@@ -36,6 +36,11 @@ export async function getSchoolPaymentConfigAction() {
     hasApiSecret: !!config.encryptedApiSecret,
     maskedApiKey: maskSecret(config.encryptedApiKey),
     instructions: config.instructions,
+    whatsappBillingEnabled: config.whatsappBillingEnabled,
+    whatsappRemindDaysBefore: config.whatsappRemindDaysBefore,
+    whatsappPhoneNumberId: config.whatsappPhoneNumberId,
+    hasWhatsappToken: !!config.encryptedWhatsappToken,
+    maskedWhatsappToken: maskSecret(config.encryptedWhatsappToken),
     createdAt: config.createdAt.toISOString(),
     updatedAt: config.updatedAt.toISOString(),
   };
@@ -52,6 +57,13 @@ export async function saveSchoolPaymentConfigAction(formData: FormData) {
   const beneficiaryName = String(formData.get("beneficiaryName") ?? "").trim() || null;
   const bankName = String(formData.get("bankName") ?? "").trim() || null;
   const instructions = String(formData.get("instructions") ?? "").trim() || null;
+  const whatsappBillingEnabled = formData.get("whatsappBillingEnabled") === "on";
+  const remindRaw = Number(formData.get("whatsappRemindDaysBefore"));
+  const whatsappRemindDaysBefore = Number.isFinite(remindRaw)
+    ? Math.min(30, Math.max(0, Math.trunc(remindRaw)))
+    : 3;
+  const whatsappPhoneNumberId = String(formData.get("whatsappPhoneNumberId") ?? "").trim() || null;
+  const whatsappTokenInput = String(formData.get("whatsappAccessToken") ?? "").trim();
 
   const apiKeyInput = String(formData.get("apiKey") ?? "").trim();
   const apiSecretInput = String(formData.get("apiSecret") ?? "").trim();
@@ -70,6 +82,11 @@ export async function saveSchoolPaymentConfigAction(formData: FormData) {
     encryptedApiSecret = encryptSecret(apiSecretInput);
   }
 
+  let encryptedWhatsappToken = existing?.encryptedWhatsappToken ?? null;
+  if (whatsappTokenInput && !whatsappTokenInput.startsWith("****")) {
+    encryptedWhatsappToken = encryptSecret(whatsappTokenInput);
+  }
+
   const saved = await prisma.schoolPaymentConfig.upsert({
     where: { schoolId: user.schoolId },
     create: {
@@ -83,6 +100,10 @@ export async function saveSchoolPaymentConfigAction(formData: FormData) {
       encryptedApiKey,
       encryptedApiSecret,
       instructions,
+      whatsappBillingEnabled,
+      whatsappRemindDaysBefore,
+      whatsappPhoneNumberId,
+      encryptedWhatsappToken,
     },
     update: {
       providerType,
@@ -94,6 +115,10 @@ export async function saveSchoolPaymentConfigAction(formData: FormData) {
       encryptedApiKey,
       encryptedApiSecret,
       instructions,
+      whatsappBillingEnabled,
+      whatsappRemindDaysBefore,
+      whatsappPhoneNumberId,
+      encryptedWhatsappToken,
     },
   });
 

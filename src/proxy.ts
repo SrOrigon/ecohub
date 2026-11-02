@@ -10,7 +10,7 @@ function authSecret() {
   return getAuthSecret();
 }
 
-const publicPaths = ["/", "/login", "/registro", "/entrar", "/convite", "/demo"];
+const publicPaths = ["/", "/login", "/registro", "/entrar", "/convite"];
 
 function isPublicPath(pathname: string) {
   if (publicPaths.includes(pathname)) return true;

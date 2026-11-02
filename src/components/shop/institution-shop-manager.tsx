@@ -10,7 +10,6 @@ import { AdjustRewardStockForm } from "@/components/forms/adjust-reward-stock-fo
 import { EmptyState } from "@/components/ui/empty-state";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { InstitutionShopCategories, type RewardCategoryRow } from "@/components/shop/institution-shop-categories";
-import { SeedCosmeticsButton } from "@/components/shop/seed-cosmetics-button";
 
 type RewardRow = {
   id: string;
@@ -58,7 +57,6 @@ export function InstitutionShopManager({
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
-            <SeedCosmeticsButton />
             <CreateRewardForm categories={categoryOptions} />
           </div>
         </CardHeader>

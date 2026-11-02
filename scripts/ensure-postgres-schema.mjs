@@ -239,6 +239,23 @@ const TABLE_PATCHES = [
   `ALTER TABLE "StudentInvoice" ADD COLUMN IF NOT EXISTS "paymentMethod" TEXT`,
   `ALTER TABLE "StudentInvoice" ADD COLUMN IF NOT EXISTS "cardMachineId" TEXT`,
   `ALTER TABLE "StudentInvoice" ADD COLUMN IF NOT EXISTS "netAmountCents" INTEGER`,
+  `ALTER TABLE "SchoolPaymentConfig" ADD COLUMN IF NOT EXISTS "whatsappBillingEnabled" BOOLEAN NOT NULL DEFAULT true`,
+  `ALTER TABLE "SchoolPaymentConfig" ADD COLUMN IF NOT EXISTS "whatsappRemindDaysBefore" INTEGER NOT NULL DEFAULT 3`,
+  `ALTER TABLE "SchoolPaymentConfig" ADD COLUMN IF NOT EXISTS "whatsappPhoneNumberId" TEXT`,
+  `ALTER TABLE "SchoolPaymentConfig" ADD COLUMN IF NOT EXISTS "encryptedWhatsappToken" TEXT`,
+  `CREATE TABLE IF NOT EXISTS "WhatsAppBillingLog" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "schoolId" TEXT NOT NULL,
+    "invoiceKind" TEXT NOT NULL,
+    "invoiceId" TEXT NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "provider" TEXT NOT NULL,
+    "error" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "WhatsAppBillingLog_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
 ];
 
 const INDEX_PATCHES = [
@@ -267,6 +284,9 @@ const INDEX_PATCHES = [
   `CREATE INDEX IF NOT EXISTS "StudentInvoice_studentId_status_idx" ON "StudentInvoice"("studentId", "status")`,
   `CREATE INDEX IF NOT EXISTS "StudentInvoice_externalInvoiceId_idx" ON "StudentInvoice"("externalInvoiceId")`,
   `CREATE INDEX IF NOT EXISTS "StudentInvoice_paymentMethodId_idx" ON "StudentInvoice"("paymentMethodId")`,
+  `CREATE INDEX IF NOT EXISTS "WhatsAppBillingLog_schoolId_createdAt_idx" ON "WhatsAppBillingLog"("schoolId", "createdAt")`,
+  `CREATE INDEX IF NOT EXISTS "WhatsAppBillingLog_invoiceId_idx" ON "WhatsAppBillingLog"("invoiceId")`,
+  `CREATE INDEX IF NOT EXISTS "WhatsAppBillingLog_studentId_idx" ON "WhatsAppBillingLog"("studentId")`,
 ];
 
 const DOCUMENT_AND_ENROLLMENT_PATCHES = [
@@ -476,6 +496,7 @@ const CRITICAL_TABLES = [
   "Invoice",
   "SchoolPaymentConfig",
   "StudentInvoice",
+  "WhatsAppBillingLog",
   "PasswordResetToken",
   "SchedulingService",
   "InstructorProfile",

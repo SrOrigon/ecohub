@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, GraduationCap, Heart, KeyRound, Sparkles, UserRound } from "lucide-react";
+import { Building2, GraduationCap, Heart, KeyRound, UserRound } from "lucide-react";
 import { portalLoginPath, registerPathForPortal } from "@/lib/login-paths";
 import { tenantEntrarPath } from "@/lib/tenant";
 import { AUTH_ICON_WRAP_CLASS } from "@/components/auth/auth-shell";
@@ -61,18 +61,6 @@ export function AuthPortalPicker({
             description: "Entrada rápida com matrícula e PIN.",
             key: "pin",
           },
-          ...(!tenantSlug
-            ? [
-                {
-                  href: "/login/demo",
-                  icon: Sparkles,
-                  title: "Login demo",
-                  description: "Entrada automática — instituição, professor ou aluno, sem senha.",
-                  key: "demo",
-                  highlight: true,
-                },
-              ]
-            : []),
         ]
       : []),
   ];
@@ -101,10 +89,7 @@ export function AuthPortalPicker({
       <div className="grid gap-3 sm:grid-cols-2">
         {items.map((p) => {
           const Icon = p.icon;
-          const tileClass =
-            "highlight" in p && p.highlight
-              ? `${TILE_CLASS} border-amber-300/80 bg-gradient-to-br from-amber-50/90 to-[var(--surface)] dark:border-amber-700/60 dark:from-amber-950/30`
-              : TILE_CLASS;
+          const tileClass = TILE_CLASS;
           return (
             <Link key={p.key ?? p.href} href={p.href} className={tileClass}>
               <div className={`${AUTH_ICON_WRAP_CLASS} mb-3 h-10 w-10`}>

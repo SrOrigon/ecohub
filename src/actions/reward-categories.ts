@@ -7,12 +7,6 @@ import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
 import { invalidateSchoolCaches } from "@/lib/runtime-cache";
 
-const DEFAULT_SHOP_CATEGORIES = [
-  { name: "Lanches", description: "Lanches, bebidas e recompensas da cantina.", sortOrder: 0 },
-  { name: "Material escolar", description: "Itens de papelaria e material didático.", sortOrder: 1 },
-  { name: "Benefícios", description: "Vantagens, vales e privilégios na escola.", sortOrder: 2 },
-];
-
 function revalidateShop(schoolId?: string | null) {
   ["/dashboard/loja", "/dashboard/gamificacao"].forEach((p) => revalidatePath(p));
   invalidateSchoolCaches(schoolId);
@@ -103,51 +97,6 @@ export async function createRewardCategoryAction(formData: FormData) {
 
   revalidateShop(user.schoolId);
   return { success: true };
-}
-
-export async function seedDefaultShopCategoriesAction() {
-  const session = await requireSessionResult(["admin", "director"]);
-  if (!session.ok) return { error: session.error };
-  const user = session.user;
-
-  const permError = await checkDirectorManageRewards(user);
-  if (permError) return { error: permError };
-
-  let created = 0;
-  for (const item of DEFAULT_SHOP_CATEGORIES) {
-    const existing = await prisma.rewardCategory.findFirst({
-      where: { schoolId: user.schoolId!, name: item.name },
-    });
-    if (existing) {
-      if (!existing.isActive) {
-        await prisma.rewardCategory.update({
-          where: { id: existing.id },
-          data: { isActive: true },
-        });
-        created += 1;
-      }
-      continue;
-    }
-    await prisma.rewardCategory.create({
-      data: {
-        schoolId: user.schoolId!,
-        name: item.name,
-        description: item.description,
-        sortOrder: item.sortOrder,
-        isActive: true,
-      },
-    });
-    created += 1;
-  }
-
-  revalidateShop(user.schoolId);
-  if (created === 0) {
-    return { success: true, message: "As categorias iniciais já existem. Você já pode cadastrar itens." };
-  }
-  return {
-    success: true,
-    message: `${created} categoria(s) pronta(s). Agora você pode cadastrar os prêmios.`,
-  };
 }
 
 export async function updateRewardCategoryAction(formData: FormData) {

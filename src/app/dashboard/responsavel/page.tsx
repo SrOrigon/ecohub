@@ -18,6 +18,7 @@ import { CreateHomeTaskForm } from "@/components/forms/create-home-task-form";
 import { ParentHomeTasksPanel } from "@/components/home-tasks/parent-home-tasks-panel";
 import { AttentionAlertsPanel } from "@/components/alerts/attention-alerts-panel";
 import { getAttentionAlertsSnapshot } from "@/lib/attention-alerts";
+import { getBillingFlags } from "@/lib/billing-charges";
 import { redirect } from "next/navigation";
 
 const relationLabels: Record<string, string> = {
@@ -62,6 +63,9 @@ export default async function ResponsavelPortalPage() {
         })
       : [];
   const pendingMap = new Map(pendingByStudent.map((p) => [p.studentId, p._count.id]));
+  const financeFlags = user.schoolId
+    ? await getBillingFlags(user.schoolId).catch(() => ({} as Record<string, "pending" | "clear" | "none">))
+    : {};
 
   const childSummaries = children.map(({ student }) => {
     const avg =
@@ -171,6 +175,11 @@ export default async function ResponsavelPortalPage() {
                       </Button>
                     </Link>
                   </div>
+                  {financeFlags[student.id] === "pending" ? (
+                    <Badge variant="danger">Há pendências a pagar</Badge>
+                  ) : financeFlags[student.id] === "clear" ? (
+                    <Badge variant="success">Sem pendências</Badge>
+                  ) : null}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="stat-grid gap-2 text-center">

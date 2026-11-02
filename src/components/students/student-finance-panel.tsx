@@ -8,15 +8,19 @@ import { Label } from "@/components/ui/form-fields";
 import { formatBRL, type FinanceSnapshot, type FinancePaymentRecord } from "@/lib/student-finance";
 import { formatDate } from "@/lib/utils";
 import { Check, Copy, Download, QrCode } from "lucide-react";
+import { BillingChargesBoard } from "@/components/finance/billing-charges-board";
+import { summarizeCharges, type BillingCharge } from "@/lib/billing-status";
 
 export function StudentFinancePanel({
   studentId,
   finance,
   canWrite,
+  charges = [],
 }: {
   studentId: string;
   finance: FinanceSnapshot;
   canWrite: boolean;
+  charges?: BillingCharge[];
 }) {
   const [planState, planAction, planPending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) =>
@@ -37,7 +41,10 @@ export function StudentFinancePanel({
   const [copied, setCopyState] = useState(false);
   const [generatingPix, setGeneratingPix] = useState(false);
 
-  const monthlyDefault = (finance.monthlyAmountCents / 100).toFixed(2).replace(".", ",");
+  const monthlyDefault =
+    finance.monthlyAmountCents > 0
+      ? (finance.monthlyAmountCents / 100).toFixed(2).replace(".", ",")
+      : "";
 
   async function handleGeneratePix() {
     setGeneratingPix(true);
@@ -102,26 +109,32 @@ export function StudentFinancePanel({
     printWindow.document.close();
   }
 
+  const billing = summarizeCharges(charges);
+  const statusValue = charges.length > 0 ? billing.label : finance.statusLabel;
+  const statusTone =
+    billing.state === "pending" || finance.status === "overdue"
+      ? "warn"
+      : billing.state === "clear" || finance.status === "current"
+        ? "ok"
+        : "muted";
+
   return (
     <div className="space-y-6">
+      <BillingChargesBoard charges={charges} canCharge={canWrite} studentId={studentId} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Mensalidade" value={finance.netAmountCents > 0 ? formatBRL(finance.netAmountCents) : "—"} />
         <Stat
           label="Próximo vencimento"
           value={finance.nextDueDate ? formatDate(finance.nextDueDate) : "—"}
         />
-        <Stat
-          label="Status"
-          value={finance.statusLabel}
-          tone={finance.status === "overdue" ? "warn" : finance.status === "current" ? "ok" : "muted"}
-        />
+        <Stat label="Status" value={statusValue} tone={statusTone} />
         <Stat
           label="Pagamentos"
           value={`${finance.paidCount}/${finance.expectedInstallments}`}
         />
       </div>
 
-      {finance.status === "overdue" && (
+      {(billing.state === "pending" || finance.status === "overdue") && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Há uma pendência financeira. Isso fica separado da gamificação  -  o aluno não perde XP nem moedas por atraso.
         </p>
@@ -172,19 +185,35 @@ export function StudentFinancePanel({
         <div className="grid gap-6 lg:grid-cols-2">
           <form action={planAction} className="space-y-3 rounded-xl border border-slate-100 p-4">
             <input type="hidden" name="studentId" value={studentId} />
-            <p className="font-medium text-slate-800">Plano de mensalidade</p>
+            <p className="font-medium text-slate-800">Plano definido pela instituição</p>
+            <p className="text-sm text-slate-600">
+              O sistema não traz um valor pronto. A escola informa a mensalidade, o vencimento e as parcelas deste aluno.
+            </p>
             <div>
               <Label htmlFor="monthlyAmount">Valor mensal (R$)</Label>
-              <Input id="monthlyAmount" name="monthlyAmount" defaultValue={monthlyDefault} />
+              <Input id="monthlyAmount" name="monthlyAmount" defaultValue={monthlyDefault} placeholder="Definir pela instituição" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="dueDay">Vencimento (dia)</Label>
-                <Input id="dueDay" name="dueDay" type="number" min={1} max={28} defaultValue={finance.dueDay} />
+                <Input
+                  id="dueDay"
+                  name="dueDay"
+                  type="number"
+                  min={1}
+                  max={28}
+                  defaultValue={finance.monthlyAmountCents > 0 ? finance.dueDay : ""}
+                  placeholder="Dia"
+                />
               </div>
               <div>
                 <Label htmlFor="discountPercent">Desconto %</Label>
-                <Input id="discountPercent" name="discountPercent" defaultValue={String(finance.discountPercent)} />
+                <Input
+                  id="discountPercent"
+                  name="discountPercent"
+                  defaultValue={finance.monthlyAmountCents > 0 ? String(finance.discountPercent) : ""}
+                  placeholder="0"
+                />
               </div>
             </div>
             <div>
@@ -195,7 +224,8 @@ export function StudentFinancePanel({
                 type="number"
                 min={1}
                 max={24}
-                defaultValue={finance.expectedInstallments}
+                defaultValue={finance.monthlyAmountCents > 0 ? finance.expectedInstallments : ""}
+                placeholder="Qtd."
               />
             </div>
             {planState?.error && <p className="text-sm text-red-600">{planState.error}</p>}

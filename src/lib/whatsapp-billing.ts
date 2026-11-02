@@ -37,22 +37,99 @@ export function formatBRL(value: number): string {
 /**
  * Constrói a mensagem formal e amigável com os detalhes da fatura e Pix.
  */
-export function buildWhatsAppBillingMessage(payload: WhatsAppInvoicePayload): string {
+export function buildBillingMessageText(payload: WhatsAppInvoicePayload): string {
   const formattedVal = formatCurrencyBRL(payload.amount);
+  const dueDate = prettyDueDate(payload.dueDate);
   const ref = payload.referenceMonth ? ` referente a *${payload.referenceMonth}*` : "";
 
   let msg = `Olá, ${payload.parentName}!\n\n`;
   msg += `Lembramos sobre a fatura escolar de *${payload.studentName}*${ref}, `;
-  msg += `com vencimento em *${payload.dueDate}* no valor de *${formattedVal}*.\n\n`;
+  msg += `com vencimento em *${dueDate}* no valor de *${formattedVal}*.\n\n`;
 
   if (payload.pixCode) {
-    msg += `📌 *Código Pix Copia e Cola:*\n\`\`\`${payload.pixCode}\`\`\`\n\n`;
+    msg += `📌 *Código Pix Copia e Cola:*\n${payload.pixCode}\n\n`;
   }
 
   msg += `Caso já tenha efetuado o pagamento, por favor desconsidere este aviso.\n\n`;
   msg += `Atenciosamente,\n*${payload.schoolName}*`;
+  return msg;
+}
 
-  return encodeURIComponent(msg);
+function prettyDueDate(value: string) {
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return value;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return new Intl.DateTimeFormat("pt-BR").format(parsed);
+}
+
+/**
+ * Constrói a mensagem formal e amigável com os detalhes da fatura e Pix.
+ */
+export function buildWhatsAppBillingMessage(payload: WhatsAppInvoicePayload): string {
+  return encodeURIComponent(buildBillingMessageText(payload));
+}
+
+export async function sendWhatsAppCloudMessage(params: {
+  phone: string;
+  text: string;
+  phoneNumberId: string;
+  accessToken: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const to = normalizeWhatsAppNumber(params.phone);
+  if (!to) return { ok: false, error: "Telefone de WhatsApp inválido." };
+
+  const response = await fetch(
+    `https://graph.facebook.com/v21.0/${params.phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${params.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "text",
+        text: { preview_url: false, body: params.text },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const body = await response.text();
+    return { ok: false, error: body.slice(0, 280) || "Falha ao enviar pelo WhatsApp." };
+  }
+
+  return { ok: true };
+}
+
+export async function sendWhatsAppWebhookMessage(params: {
+  webhookUrl: string;
+  phone: string;
+  text: string;
+  studentName: string;
+  amountCents: number;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const to = normalizeWhatsAppNumber(params.phone);
+  if (!to) return { ok: false, error: "Telefone de WhatsApp inválido." };
+
+  const response = await fetch(params.webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      phone: to,
+      message: params.text,
+      studentName: params.studentName,
+      amountCents: params.amountCents,
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    return { ok: false, error: body.slice(0, 280) || "Webhook de WhatsApp recusou o envio." };
+  }
+
+  return { ok: true };
 }
 
 /**

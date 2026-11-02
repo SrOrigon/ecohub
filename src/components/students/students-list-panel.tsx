@@ -30,6 +30,7 @@ export type StudentListRow = {
     status: string;
     classGroup: { id: string; name: string; gradeLevel?: string | null };
   }>;
+  financeState?: "pending" | "clear" | "none";
 };
 
 type ClassOption = { id: string; name: string };
@@ -157,7 +158,7 @@ export function StudentsListPanel({
       ) : (
         <>
           <div className="overflow-hidden">
-            <ResponsiveTable minWidth="40rem">
+            <ResponsiveTable minWidth="52rem">
               <thead>
                 <tr className="text-left">
                   <th>Matrícula</th>
@@ -165,6 +166,7 @@ export function StudentsListPanel({
                   <th className="hidden md:table-cell">E-mail</th>
                   <th>Turmas / cursos</th>
                   <th>Média</th>
+                  <th>Pendência</th>
                   <th>Nível</th>
                   <th className="hidden lg:table-cell">XP</th>
                   <th>Moedas</th>
@@ -206,6 +208,15 @@ export function StudentsListPanel({
                       {student.average !== null && !Number.isNaN(student.average)
                         ? student.average.toFixed(1)
                         : "-"}
+                    </td>
+                    <td>
+                      {student.financeState === "pending" ? (
+                        <Badge variant="danger">Pendência</Badge>
+                      ) : student.financeState === "clear" ? (
+                        <Badge variant="success">Em dia</Badge>
+                      ) : (
+                        <Badge variant="secondary">Sem lançamento</Badge>
+                      )}
                     </td>
                     <td>
                       <Badge className="whitespace-nowrap">Nv. {student.level}</Badge>

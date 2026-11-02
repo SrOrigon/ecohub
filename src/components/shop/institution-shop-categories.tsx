@@ -2,7 +2,6 @@ import { FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateRewardCategoryForm } from "@/components/forms/create-reward-category-form";
-import { SeedShopCategoriesButton } from "@/components/shop/seed-shop-categories-button";
 import { EditRewardCategoryForm } from "@/components/forms/edit-reward-category-form";
 import { ToggleRewardCategoryButton } from "@/components/forms/toggle-reward-category-button";
 import { DeleteRewardCategoryButton } from "@/components/forms/delete-reward-category-button";
@@ -35,7 +34,6 @@ export function InstitutionShopCategories({ categories }: { categories: RewardCa
           </CardDescription>
         </div>
         <div className="flex flex-wrap items-start gap-2">
-          <SeedShopCategoriesButton />
           <CreateRewardCategoryForm />
         </div>
       </CardHeader>
@@ -49,10 +47,9 @@ export function InstitutionShopCategories({ categories }: { categories: RewardCa
             <EmptyState
               icon={FolderOpen}
               title="Nenhuma categoria"
-              description='Crie uma categoria (ex.: "Lanches") ou use as categorias iniciais para voltar a cadastrar prêmios.'
+              description="Crie a primeira categoria da loja. Nome, descrição e ordem ficam a cargo da instituição."
               className="py-6"
             >
-              <SeedShopCategoriesButton />
               <CreateRewardCategoryForm variant="default" size="default" label="Criar categoria agora" />
             </EmptyState>
         ) : (

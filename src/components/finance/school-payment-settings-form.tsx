@@ -34,6 +34,10 @@ export interface SchoolPaymentConfigInitial {
   bankName?: string | null;
   maskedApiKey?: string | null;
   instructions?: string | null;
+  whatsappBillingEnabled?: boolean;
+  whatsappRemindDaysBefore?: number;
+  whatsappPhoneNumberId?: string | null;
+  maskedWhatsappToken?: string | null;
 }
 
 export function SchoolPaymentSettingsForm({
@@ -319,6 +323,56 @@ export function SchoolPaymentSettingsForm({
                 </div>
               </div>
             )}
+
+            <div className="space-y-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 dark:border-emerald-950 dark:bg-emerald-950/20">
+              <p className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">
+                Cobrança automática no WhatsApp
+              </p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                O sistema avisa o WhatsApp do responsável antes do vencimento e quando a mensalidade fica pendente. Use o token da API oficial do WhatsApp Business (Cloud API). O número do responsável precisa estar no cadastro.
+              </p>
+              <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                <input
+                  type="checkbox"
+                  name="whatsappBillingEnabled"
+                  defaultChecked={initial?.whatsappBillingEnabled !== false}
+                  className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                />
+                Enviar cobranças automaticamente
+              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="whatsappRemindDaysBefore">Avisar com quantos dias de antecedência</Label>
+                  <Input
+                    id="whatsappRemindDaysBefore"
+                    name="whatsappRemindDaysBefore"
+                    type="number"
+                    min={0}
+                    max={30}
+                    defaultValue={initial?.whatsappRemindDaysBefore ?? 3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="whatsappPhoneNumberId">ID do número (Phone Number ID)</Label>
+                  <Input
+                    id="whatsappPhoneNumberId"
+                    name="whatsappPhoneNumberId"
+                    defaultValue={initial?.whatsappPhoneNumberId ?? ""}
+                    placeholder="Ex: 109876543210987"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="whatsappAccessToken">Token de acesso do WhatsApp</Label>
+                <Input
+                  id="whatsappAccessToken"
+                  name="whatsappAccessToken"
+                  type="password"
+                  defaultValue={initial?.maskedWhatsappToken ?? ""}
+                  placeholder="Cole o token permanente. Deixe em branco para manter o atual."
+                />
+              </div>
+            </div>
 
             {state?.error && (
               <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm font-medium text-red-600 border border-red-200">

@@ -70,7 +70,93 @@ export async function upsertStudentFinanceAction(formData: FormData) {
   });
 
   revalidatePath(`/dashboard/alunos/${studentId}`);
+  revalidatePath("/dashboard/financeiro");
+  revalidatePath("/dashboard/alunos");
+  revalidatePath("/dashboard/responsavel");
   return { success: true };
+}
+
+export async function applyClassTuitionPlanAction(formData: FormData) {
+  const user = await requireSession(["admin", "director", "secretary"]);
+  if (!user.schoolId) return { error: "Escola não configurada." };
+  if (!canWriteFinance(user.role)) return { error: "Sem permissão financeira." };
+
+  const classId = String(formData.get("classId") ?? "");
+  const amountCents = parseReaisToCents(String(formData.get("monthlyAmount") ?? ""));
+  const dueDay = Number(formData.get("dueDay") ?? 10);
+  const discountPercent = Number(String(formData.get("discountPercent") ?? "0").replace(",", "."));
+  const expectedInstallments = Number(formData.get("expectedInstallments") ?? 10);
+
+  if (!classId) return { error: "Escolha a turma." };
+  if (amountCents == null || amountCents <= 0) {
+    return { error: "Informe o valor da mensalidade que a instituição cobra." };
+  }
+  if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 28) {
+    return { error: "Dia de vencimento deve ser entre 1 e 28." };
+  }
+  if (!Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent > 100) {
+    return { error: "Desconto deve ser entre 0 e 100%." };
+  }
+  if (!Number.isInteger(expectedInstallments) || expectedInstallments < 1 || expectedInstallments > 24) {
+    return { error: "Quantidade de parcelas inválida." };
+  }
+
+  const classGroup = await prisma.classGroup.findFirst({
+    where: { id: classId, schoolId: user.schoolId },
+    select: { id: true, name: true, students: { select: { id: true } } },
+  });
+  if (!classGroup) return { error: "Turma não encontrada." };
+  if (classGroup.students.length === 0) return { error: "Essa turma não tem alunos." };
+
+  await prisma.$transaction(
+    classGroup.students.map((student) =>
+      prisma.studentFinanceAccount.upsert({
+        where: { studentId: student.id },
+        create: {
+          studentId: student.id,
+          monthlyAmountCents: amountCents,
+          dueDay,
+          discountPercent,
+          expectedInstallments,
+        },
+        update: {
+          monthlyAmountCents: amountCents,
+          dueDay,
+          discountPercent,
+          expectedInstallments,
+        },
+      })
+    )
+  );
+
+  await logAuditEvent({
+    schoolId: user.schoolId,
+    actorId: user.id,
+    actorRole: user.role,
+    action: "FINANCE_ACCOUNT_UPDATE",
+    entityType: "ClassGroup",
+    entityId: classGroup.id,
+    diffAfter: {
+      className: classGroup.name,
+      students: classGroup.students.length,
+      amountCents,
+      dueDay,
+      discountPercent,
+      expectedInstallments,
+    },
+  });
+
+  revalidatePath("/dashboard/financeiro");
+  revalidatePath("/dashboard/alunos");
+  revalidatePath("/dashboard/responsavel");
+  for (const student of classGroup.students) {
+    revalidatePath(`/dashboard/alunos/${student.id}`);
+  }
+
+  return {
+    success: true,
+    message: `Mensalidade aplicada a ${classGroup.students.length} aluno(s) de ${classGroup.name}.`,
+  };
 }
 
 export async function recordTuitionPaymentAction(formData: FormData) {
@@ -94,7 +180,7 @@ export async function recordTuitionPaymentAction(formData: FormData) {
   }
 
   if (account.monthlyAmountCents <= 0) {
-    return { error: "Configure a mensalidade antes de registrar o pagamento." };
+    return { error: "A instituição ainda não definiu a mensalidade deste aluno." };
   }
 
   const net = Math.max(
@@ -157,9 +243,19 @@ export async function createStudentInvoiceAction(formData: FormData) {
   });
   if (!student) return { error: "Aluno não encontrado." };
 
-  const amountCents = student.financeAccount?.monthlyAmountCents ?? 15000;
+  const account = student.financeAccount;
+  if (!account || account.monthlyAmountCents <= 0) {
+    return { error: "A instituição ainda não definiu a mensalidade deste aluno." };
+  }
+  const amountCents = Math.max(
+    0,
+    Math.round(account.monthlyAmountCents * (1 - Math.min(100, Math.max(0, account.discountPercent)) / 100))
+  );
+  if (amountCents <= 0) {
+    return { error: "O valor definido pela instituição ficou zerado depois do desconto." };
+  }
   const now = new Date();
-  const dueDate = new Date(now.getFullYear(), now.getMonth(), 10);
+  const dueDate = new Date(now.getFullYear(), now.getMonth(), Math.min(Math.max(account.dueDay, 1), 28));
 
   const invoice = await createPixInvoice({
     schoolId: user.schoolId,
