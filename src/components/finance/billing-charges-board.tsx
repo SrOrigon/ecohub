@@ -82,17 +82,21 @@ export function BillingChargesBoard({
   return (
     <div className="space-y-4">
       <BillingStandingBanner summary={summary} />
-      <div className="grid gap-3 sm:grid-cols-3">
+      {studentId && (
+        <p className="text-sm text-slate-700">
+          {summary.total === 0
+            ? "Este aluno ainda não tem parcelas. A instituição define o valor, o vencimento e a quantidade."
+            : `Pagou ${summary.paidCount} parcela(s). Faltam ${summary.unpaidCount}.`}
+        </p>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Metric label="Parcelas pagas" value={String(summary.paidCount)} tone="ok" />
+        <Metric label="Parcelas a pagar" value={String(summary.unpaidCount)} tone={summary.unpaidCount > 0 ? "danger" : "ok"} />
         <Metric label="Com pendência" value={String(summary.pendingCount)} tone="danger" />
         <Metric
           label="A vencer"
           value={String(charges.filter((charge) => charge.standing === "upcoming").length)}
           tone="muted"
-        />
-        <Metric
-          label="Quitadas"
-          value={String(charges.filter((charge) => charge.standing === "paid").length)}
-          tone="ok"
         />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">

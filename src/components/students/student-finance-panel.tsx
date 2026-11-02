@@ -121,7 +121,7 @@ export function StudentFinancePanel({
   return (
     <div className="space-y-6">
       <BillingChargesBoard charges={charges} canCharge={canWrite} studentId={studentId} />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Stat label="Mensalidade" value={finance.netAmountCents > 0 ? formatBRL(finance.netAmountCents) : "—"} />
         <Stat
           label="Próximo vencimento"
@@ -129,8 +129,22 @@ export function StudentFinancePanel({
         />
         <Stat label="Status" value={statusValue} tone={statusTone} />
         <Stat
-          label="Pagamentos"
-          value={`${finance.paidCount}/${finance.expectedInstallments}`}
+          label="Parcelas pagas"
+          value={String(charges.length > 0 ? billing.paidCount : finance.paidCount)}
+          tone="ok"
+        />
+        <Stat
+          label="Parcelas a pagar"
+          value={String(
+            charges.length > 0
+              ? billing.unpaidCount
+              : Math.max(0, finance.expectedInstallments - finance.paidCount)
+          )}
+          tone={
+            (charges.length > 0 ? billing.unpaidCount : finance.expectedInstallments - finance.paidCount) > 0
+              ? "warn"
+              : "ok"
+          }
         />
       </div>
 

@@ -1,8 +1,8 @@
 import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
-import { BillingChargesBoard } from "@/components/finance/billing-charges-board";
 import { InstitutionTuitionPlans } from "@/components/finance/institution-tuition-plans";
+import { StudentBillingTabs } from "@/components/finance/student-billing-tabs";
 import { listBillingCharges } from "@/lib/billing-charges";
 import { listInstitutionTuitionPlans, type InstitutionTuitionClass, type InstitutionTuitionPlan } from "@/lib/institution-tuition";
 import type { BillingCharge } from "@/lib/billing-status";
@@ -41,7 +41,7 @@ export default async function FinanceiroGestaoPage() {
 
       <InstitutionTuitionPlans classes={tuition.classes} plans={tuition.plans} />
 
-      <BillingChargesBoard charges={charges} canCharge initialFilter="pending" />
+      <StudentBillingTabs plans={tuition.plans} charges={charges} canCharge />
     </div>
   );
 }

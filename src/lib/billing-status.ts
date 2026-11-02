@@ -26,6 +26,8 @@ export type BillingSummary = {
   overdueCount: number;
   dueTodayCount: number;
   pendingAmountCents: number;
+  paidCount: number;
+  unpaidCount: number;
   total: number;
 };
 
@@ -75,6 +77,8 @@ export function summarizeCharges(charges: BillingCharge[]): BillingSummary {
   const overdueCount = charges.filter((charge) => charge.standing === "overdue").length;
   const dueTodayCount = charges.filter((charge) => charge.standing === "due").length;
   const pendingCount = overdueCount + dueTodayCount;
+  const paidCount = charges.filter((charge) => charge.standing === "paid").length;
+  const unpaidCount = charges.length - paidCount;
   const pendingAmountCents = charges
     .filter((charge) => isOpenStanding(charge.standing))
     .reduce((sum, charge) => sum + charge.amountCents, 0);
@@ -93,6 +97,8 @@ export function summarizeCharges(charges: BillingCharge[]): BillingSummary {
     overdueCount,
     dueTodayCount,
     pendingAmountCents,
+    paidCount,
+    unpaidCount,
     total: charges.length,
   };
 }
