@@ -19,7 +19,7 @@ export function Modal({
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  size?: "md" | "lg";
+  size?: "md" | "lg" | "xl";
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -87,7 +87,7 @@ export function Modal({
         className={cn(
           "relative z-10 flex max-h-[calc(100dvh-var(--mobile-nav-offset)-0.5rem)] w-full flex-col",
           "rounded-t-3xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl md:max-h-[90dvh] md:rounded-2xl transition-all duration-200",
-          size === "lg" ? "md:max-w-2xl" : "md:max-w-xl"
+          size === "xl" ? "md:max-w-5xl" : size === "lg" ? "md:max-w-2xl" : "md:max-w-xl"
         )}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4 sm:px-6">

@@ -581,6 +581,8 @@ export default async function StudentDetailPage({
       {tab === "financeiro" && (
         <StudentFinancePanel
           studentId={student.id}
+          studentName={displayName}
+          className={student.classGroup?.name ?? null}
           finance={wallet.finance}
           canWrite={canWriteFinance}
           charges={billingCharges}

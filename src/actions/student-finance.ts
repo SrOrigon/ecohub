@@ -191,7 +191,23 @@ export async function recordTuitionPaymentAction(formData: FormData) {
   const awardedXp = settings.finance.tuitionXp;
   const awardedCoins = settings.finance.tuitionCoins;
   const now = new Date();
-  const dueDate = new Date(now.getFullYear(), now.getMonth(), Math.min(account.dueDay, 28));
+  const dueRaw = String(formData.get("dueDate") ?? "");
+  const dueDate = parseInstallmentDueDate(dueRaw, now, account.dueDay);
+  if (!dueDate) return { error: "Data da parcela inválida." };
+
+  const monthStart = new Date(dueDate.getFullYear(), dueDate.getMonth(), 1);
+  const monthEnd = new Date(dueDate.getFullYear(), dueDate.getMonth() + 1, 1);
+  const alreadyPaid = await prisma.tuitionPayment.findFirst({
+    where: {
+      studentId,
+      OR: [
+        { dueDate: { gte: monthStart, lt: monthEnd } },
+        { paidAt: { gte: monthStart, lt: monthEnd } },
+      ],
+    },
+    select: { id: true },
+  });
+  if (alreadyPaid) return { error: "Essa parcela já está quitada." };
 
   const payment = await prisma.tuitionPayment.create({
     data: {
@@ -199,6 +215,7 @@ export async function recordTuitionPaymentAction(formData: FormData) {
       studentId,
       amountCents: net,
       dueDate,
+      paidAt: dueRaw ? dueDate : now,
       method: "manual",
       receiptCode: makeReceiptCode(student.enrollmentCode),
       awardedXp,
@@ -227,7 +244,22 @@ export async function recordTuitionPaymentAction(formData: FormData) {
   );
 
   revalidatePath(`/dashboard/alunos/${studentId}`);
-  return { success: true, message: `Pagamento registrado. +${awardedXp} XP e +${awardedCoins} moedas na carteira.` };
+  revalidatePath("/dashboard/financeiro");
+  revalidatePath("/dashboard/alunos");
+  revalidatePath("/dashboard/responsavel");
+  return { success: true, message: `Parcela quitada. +${awardedXp} XP e +${awardedCoins} moedas na carteira.` };
+}
+
+function parseInstallmentDueDate(raw: string, now: Date, dueDay: number) {
+  if (!raw) return new Date(now.getFullYear(), now.getMonth(), Math.min(dueDay, 28));
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return date;
 }
 
 export async function createStudentInvoiceAction(formData: FormData) {

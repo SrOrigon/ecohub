@@ -9,15 +9,20 @@ import { formatBRL, type FinanceSnapshot, type FinancePaymentRecord } from "@/li
 import { formatDate } from "@/lib/utils";
 import { Check, Copy, Download, QrCode } from "lucide-react";
 import { BillingChargesBoard } from "@/components/finance/billing-charges-board";
+import { StudentInstallmentsBox } from "@/components/finance/student-installments-box";
 import { summarizeCharges, type BillingCharge } from "@/lib/billing-status";
 
 export function StudentFinancePanel({
   studentId,
+  studentName,
+  className = null,
   finance,
   canWrite,
   charges = [],
 }: {
   studentId: string;
+  studentName: string;
+  className?: string | null;
   finance: FinanceSnapshot;
   canWrite: boolean;
   charges?: BillingCharge[];
@@ -39,6 +44,7 @@ export function StudentFinancePanel({
     pixQrCode: string;
   } | null>(null);
   const [copied, setCopyState] = useState(false);
+  const [boxOpen, setBoxOpen] = useState(false);
   const [generatingPix, setGeneratingPix] = useState(false);
 
   const monthlyDefault =
@@ -120,6 +126,22 @@ export function StudentFinancePanel({
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-slate-600">A caixa mostra as parcelas deste aluno, uma a uma.</p>
+        <Button type="button" size="sm" onClick={() => setBoxOpen(true)}>
+          Caixa de mensalidades
+        </Button>
+      </div>
+      <StudentInstallmentsBox
+        open={boxOpen}
+        onClose={() => setBoxOpen(false)}
+        studentId={studentId}
+        studentName={studentName}
+        className={className}
+        discountPercent={finance.discountPercent}
+        charges={charges}
+        canSettle={canWrite}
+      />
       <BillingChargesBoard charges={charges} canCharge={canWrite} studentId={studentId} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Stat label="Mensalidade" value={finance.netAmountCents > 0 ? formatBRL(finance.netAmountCents) : "—"} />

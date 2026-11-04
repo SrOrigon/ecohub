@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { BillingChargesBoard } from "@/components/finance/billing-charges-board";
+import { StudentInstallmentsBox } from "@/components/finance/student-installments-box";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form-fields";
-import type { BillingCharge } from "@/lib/billing-status";
+import { summarizeCharges, type BillingCharge } from "@/lib/billing-status";
 import type { InstitutionTuitionPlan } from "@/lib/institution-tuition";
 import { cn } from "@/lib/utils";
 
@@ -12,12 +14,15 @@ export function StudentBillingTabs({
   plans,
   charges,
   canCharge,
+  initialStudentId = null,
 }: {
   plans: InstitutionTuitionPlan[];
   charges: BillingCharge[];
   canCharge: boolean;
+  initialStudentId?: string | null;
 }) {
-  const [studentId, setStudentId] = useState<string | null>(null);
+  const [studentId, setStudentId] = useState<string | null>(initialStudentId);
+  const [boxStudentId, setBoxStudentId] = useState<string | null>(initialStudentId);
   const [query, setQuery] = useState("");
 
   const visible = useMemo(() => {
@@ -31,14 +36,16 @@ export function StudentBillingTabs({
   }, [plans, query]);
 
   const selected = plans.find((plan) => plan.studentId === studentId) ?? null;
+  const boxStudent = plans.find((plan) => plan.studentId === boxStudentId) ?? null;
   const studentCharges = selected ? charges.filter((charge) => charge.studentId === selected.studentId) : charges;
+  const boxCharges = boxStudent ? charges.filter((charge) => charge.studentId === boxStudent.studentId) : [];
 
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">Abas dos alunos</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Caixa de mensalidades</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Abra a aba de um aluno para ver o status financeiro dele, quantas parcelas já pagou e quantas ainda faltam.
+          Cada aluno tem a própria caixa, com as parcelas, a situação e quantas já foram pagas.
         </p>
       </div>
 
@@ -76,11 +83,49 @@ export function StudentBillingTabs({
         </div>
       )}
 
+      {plans.length > 0 && (
+        <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          {visible.map((plan) => {
+            const summary = summarizeCharges(charges.filter((charge) => charge.studentId === plan.studentId));
+            return (
+              <li key={plan.studentId} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-medium text-slate-900">{plan.studentName}</p>
+                  <p className="text-sm text-slate-500">
+                    {plan.className ?? "Sem turma"}
+                    {summary.total === 0
+                      ? " · Sem parcelas"
+                      : ` · Pagou ${summary.paidCount}. Faltam ${summary.unpaidCount}.`}
+                  </p>
+                </div>
+                <Button type="button" size="sm" onClick={() => setBoxStudentId(plan.studentId)}>
+                  Mensalidades
+                </Button>
+              </li>
+            );
+          })}
+          {visible.length === 0 && <li className="px-4 py-3 text-sm text-slate-500">Nenhum aluno encontrado.</li>}
+        </ul>
+      )}
+
       {selected && (
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
           <p className="font-semibold text-slate-900">{selected.studentName}</p>
           <p className="text-sm text-slate-500">{selected.className ?? "Sem turma"}</p>
         </div>
+      )}
+
+      {boxStudent && (
+        <StudentInstallmentsBox
+          open
+          onClose={() => setBoxStudentId(null)}
+          studentId={boxStudent.studentId}
+          studentName={boxStudent.studentName}
+          className={boxStudent.className}
+          discountPercent={boxStudent.discountPercent}
+          charges={boxCharges}
+          canSettle={canCharge}
+        />
       )}
 
       <BillingChargesBoard

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight, Search, Users, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -210,13 +211,23 @@ export function StudentsListPanel({
                         : "-"}
                     </td>
                     <td>
-                      {student.financeState === "pending" ? (
-                        <Badge variant="danger">Pendência</Badge>
-                      ) : student.financeState === "clear" ? (
-                        <Badge variant="success">Em dia</Badge>
-                      ) : (
-                        <Badge variant="secondary">Sem lançamento</Badge>
-                      )}
+                      <div className="flex flex-col items-start gap-1">
+                        {student.financeState === "pending" ? (
+                          <Badge variant="danger">Pendência</Badge>
+                        ) : student.financeState === "clear" ? (
+                          <Badge variant="success">Em dia</Badge>
+                        ) : (
+                          <Badge variant="secondary">Sem lançamento</Badge>
+                        )}
+                        {canManage && (
+                          <Link
+                            href={`/dashboard/financeiro?aluno=${student.id}`}
+                            className="text-xs font-semibold text-indigo-700 hover:underline"
+                          >
+                            Mensalidades
+                          </Link>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <Badge className="whitespace-nowrap">Nv. {student.level}</Badge>

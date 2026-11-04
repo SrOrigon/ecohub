@@ -7,7 +7,12 @@ import { listBillingCharges } from "@/lib/billing-charges";
 import { listInstitutionTuitionPlans, type InstitutionTuitionClass, type InstitutionTuitionPlan } from "@/lib/institution-tuition";
 import type { BillingCharge } from "@/lib/billing-status";
 
-export default async function FinanceiroGestaoPage() {
+export default async function FinanceiroGestaoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ aluno?: string }>;
+}) {
+  const params = await searchParams;
   const user = await getSessionUser();
   if (!user) redirect("/login");
   if (user.role !== "admin" && user.role !== "director" && user.role !== "secretary") {
@@ -41,7 +46,12 @@ export default async function FinanceiroGestaoPage() {
 
       <InstitutionTuitionPlans classes={tuition.classes} plans={tuition.plans} />
 
-      <StudentBillingTabs plans={tuition.plans} charges={charges} canCharge />
+      <StudentBillingTabs
+        plans={tuition.plans}
+        charges={charges}
+        canCharge
+        initialStudentId={params.aluno ?? null}
+      />
     </div>
   );
 }
