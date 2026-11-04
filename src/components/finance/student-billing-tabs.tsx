@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BillingChargesBoard } from "@/components/finance/billing-charges-board";
 import { StudentInstallmentsBox } from "@/components/finance/student-installments-box";
-import { Button } from "@/components/ui/button";
+import { StudentPlanRow } from "@/components/finance/institution-tuition-plans";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/form-fields";
+import { Label, Select } from "@/components/ui/form-fields";
 import { summarizeCharges, type BillingCharge } from "@/lib/billing-status";
 import type { InstitutionTuitionPlan } from "@/lib/institution-tuition";
 import { cn } from "@/lib/utils";
@@ -22,41 +21,43 @@ export function StudentBillingTabs({
   initialStudentId?: string | null;
 }) {
   const [studentId, setStudentId] = useState<string | null>(initialStudentId);
-  const [boxStudentId, setBoxStudentId] = useState<string | null>(initialStudentId);
   const [query, setQuery] = useState("");
+  const [classId, setClassId] = useState("");
+
+  const classes = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const plan of plans) {
+      if (plan.classId && plan.className) map.set(plan.classId, plan.className);
+    }
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], "pt-BR"));
+  }, [plans]);
 
   const visible = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return plans;
-    return plans.filter(
-      (plan) =>
+    return plans.filter((plan) => {
+      if (classId && plan.classId !== classId) return false;
+      if (!term) return true;
+      return (
         plan.studentName.toLowerCase().includes(term) ||
         (plan.className ?? "").toLowerCase().includes(term)
-    );
-  }, [plans, query]);
+      );
+    });
+  }, [plans, query, classId]);
 
-  const selected = plans.find((plan) => plan.studentId === studentId) ?? null;
-  const boxStudent = plans.find((plan) => plan.studentId === boxStudentId) ?? null;
-  const studentCharges = selected ? charges.filter((charge) => charge.studentId === selected.studentId) : charges;
-  const boxCharges = boxStudent ? charges.filter((charge) => charge.studentId === boxStudent.studentId) : [];
+  const selected = visible.find((plan) => plan.studentId === studentId) ?? visible[0] ?? null;
+  const selectedCharges = selected ? charges.filter((charge) => charge.studentId === selected.studentId) : [];
+  const school = summarizeCharges(charges);
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       <div>
         <h2 className="text-lg font-semibold text-slate-900">Caixa de mensalidades</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Cada aluno tem a própria caixa, com as parcelas, a situação e quantas já foram pagas.
+          A lista de alunos fica ao lado. As parcelas do aluno escolhido aparecem na hora, sem descer a página.
+          {school.total > 0
+            ? ` ${school.paidCount} pagas no total e ${school.unpaidCount} ainda em aberto.`
+            : ""}
         </p>
-      </div>
-
-      <div className="max-w-sm">
-        <Label htmlFor="studentTabSearch">Buscar aluno</Label>
-        <Input
-          id="studentTabSearch"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Nome ou turma"
-        />
       </div>
 
       {plans.length === 0 ? (
@@ -64,100 +65,86 @@ export function StudentBillingTabs({
           Nenhum aluno cadastrado. A instituição inclui os alunos e, em seguida, define as parcelas de cada um.
         </p>
       ) : (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <TabButton active={!selected} onClick={() => setStudentId(null)}>
-            Todos
-          </TabButton>
-          {visible.map((plan) => (
-            <TabButton
-              key={plan.studentId}
-              active={selected?.studentId === plan.studentId}
-              onClick={() => setStudentId(plan.studentId)}
-            >
-              {plan.studentName}
-            </TabButton>
-          ))}
-          {visible.length === 0 && (
-            <p className="self-center text-sm text-slate-500">Nenhum aluno encontrado.</p>
+        <div className="grid items-start gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <div className="space-y-2 border-b border-slate-100 p-3">
+              <div>
+                <Label htmlFor="studentTabSearch">Buscar aluno</Label>
+                <Input
+                  id="studentTabSearch"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Nome ou turma"
+                />
+              </div>
+              {classes.length > 1 && (
+                <div>
+                  <Label htmlFor="studentClassFilter">Turma</Label>
+                  <Select id="studentClassFilter" value={classId} onChange={(event) => setClassId(event.target.value)}>
+                    <option value="">Todas</option>
+                    {classes.map(([id, name]) => (
+                      <option key={id} value={id}>
+                        {name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
+            </div>
+            <ul className="max-h-[32rem] overflow-y-auto">
+              {visible.length === 0 ? (
+                <li className="px-3 py-4 text-sm text-slate-500">Nenhum aluno encontrado.</li>
+              ) : (
+                visible.map((plan) => {
+                  const summary = summarizeCharges(charges.filter((charge) => charge.studentId === plan.studentId));
+                  const active = selected?.studentId === plan.studentId;
+                  return (
+                    <li key={plan.studentId} className="border-b border-slate-100 last:border-b-0">
+                      <button
+                        type="button"
+                        onClick={() => setStudentId(plan.studentId)}
+                        className={cn(
+                          "flex w-full flex-col items-start px-3 py-2 text-left",
+                          active ? "bg-indigo-50" : "hover:bg-slate-50"
+                        )}
+                      >
+                        <span className={cn("text-sm font-medium", active ? "text-indigo-800" : "text-slate-900")}>
+                          {plan.studentName}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {summary.total === 0
+                            ? "Sem parcelas"
+                            : `Pagou ${summary.paidCount} · faltam ${summary.unpaidCount}`}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+          </div>
+
+          {selected ? (
+            <div className="space-y-3">
+              <StudentPlanRow key={selected.studentId} plan={selected} />
+              <StudentInstallmentsBox
+                key={selected.studentId}
+                embedded
+                studentId={selected.studentId}
+                studentName={selected.studentName}
+                className={selected.className}
+                discountPercent={selected.discountPercent}
+                charges={selectedCharges}
+                canSettle={canCharge}
+              />
+            </div>
+          ) : (
+            <p className="rounded-2xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
+              Nenhum aluno neste filtro.
+            </p>
           )}
         </div>
       )}
-
-      {plans.length > 0 && (
-        <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          {visible.map((plan) => {
-            const summary = summarizeCharges(charges.filter((charge) => charge.studentId === plan.studentId));
-            return (
-              <li key={plan.studentId} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-medium text-slate-900">{plan.studentName}</p>
-                  <p className="text-sm text-slate-500">
-                    {plan.className ?? "Sem turma"}
-                    {summary.total === 0
-                      ? " · Sem parcelas"
-                      : ` · Pagou ${summary.paidCount}. Faltam ${summary.unpaidCount}.`}
-                  </p>
-                </div>
-                <Button type="button" size="sm" onClick={() => setBoxStudentId(plan.studentId)}>
-                  Mensalidades
-                </Button>
-              </li>
-            );
-          })}
-          {visible.length === 0 && <li className="px-4 py-3 text-sm text-slate-500">Nenhum aluno encontrado.</li>}
-        </ul>
-      )}
-
-      {selected && (
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-          <p className="font-semibold text-slate-900">{selected.studentName}</p>
-          <p className="text-sm text-slate-500">{selected.className ?? "Sem turma"}</p>
-        </div>
-      )}
-
-      {boxStudent && (
-        <StudentInstallmentsBox
-          open
-          onClose={() => setBoxStudentId(null)}
-          studentId={boxStudent.studentId}
-          studentName={boxStudent.studentName}
-          className={boxStudent.className}
-          discountPercent={boxStudent.discountPercent}
-          charges={boxCharges}
-          canSettle={canCharge}
-        />
-      )}
-
-      <BillingChargesBoard
-        key={selected?.studentId ?? "all"}
-        charges={studentCharges}
-        canCharge={canCharge}
-        studentId={selected?.studentId}
-        initialFilter={selected ? "all" : "pending"}
-      />
     </section>
-  );
-}
-
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "shrink-0 rounded-full px-4 py-2 text-sm font-medium",
-        active ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-      )}
-    >
-      {children}
-    </button>
   );
 }

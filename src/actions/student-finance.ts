@@ -191,63 +191,84 @@ export async function recordTuitionPaymentAction(formData: FormData) {
   const awardedXp = settings.finance.tuitionXp;
   const awardedCoins = settings.finance.tuitionCoins;
   const now = new Date();
-  const dueRaw = String(formData.get("dueDate") ?? "");
-  const dueDate = parseInstallmentDueDate(dueRaw, now, account.dueDay);
-  if (!dueDate) return { error: "Data da parcela inválida." };
+  const dueValues = formData.getAll("dueDate").map((value) => String(value)).filter(Boolean);
+  const targets = dueValues.length > 0 ? dueValues : [""];
+  let settled = 0;
+  let lastReceipt = "";
 
-  const monthStart = new Date(dueDate.getFullYear(), dueDate.getMonth(), 1);
-  const monthEnd = new Date(dueDate.getFullYear(), dueDate.getMonth() + 1, 1);
-  const alreadyPaid = await prisma.tuitionPayment.findFirst({
-    where: {
-      studentId,
-      OR: [
-        { dueDate: { gte: monthStart, lt: monthEnd } },
-        { paidAt: { gte: monthStart, lt: monthEnd } },
-      ],
-    },
-    select: { id: true },
-  });
-  if (alreadyPaid) return { error: "Essa parcela já está quitada." };
+  for (const dueRaw of targets) {
+    const dueDate = parseInstallmentDueDate(dueRaw, now, account.dueDay);
+    if (!dueDate) return { error: "Data da parcela inválida." };
 
-  const payment = await prisma.tuitionPayment.create({
-    data: {
-      accountId: account.id,
+    const monthStart = new Date(dueDate.getFullYear(), dueDate.getMonth(), 1);
+    const monthEnd = new Date(dueDate.getFullYear(), dueDate.getMonth() + 1, 1);
+    const alreadyPaid = await prisma.tuitionPayment.findFirst({
+      where: {
+        studentId,
+        OR: [
+          { dueDate: { gte: monthStart, lt: monthEnd } },
+          { paidAt: { gte: monthStart, lt: monthEnd } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (alreadyPaid) {
+      if (targets.length === 1) return { error: "Essa parcela já está quitada." };
+      continue;
+    }
+
+    const payment = await prisma.tuitionPayment.create({
+      data: {
+        accountId: account.id,
+        studentId,
+        amountCents: net,
+        dueDate,
+        paidAt: dueRaw ? dueDate : now,
+        method: "manual",
+        receiptCode: makeReceiptCode(student.enrollmentCode),
+        awardedXp,
+        awardedCoins,
+        note: "Pagamento registrado pela instituição",
+      },
+    });
+    lastReceipt = payment.receiptCode;
+    settled += 1;
+
+    await logAuditEvent({
+      schoolId: user.schoolId,
+      actorId: user.id,
+      actorRole: user.role,
+      action: "FINANCE_PAYMENT_RECORD",
+      entityType: "TuitionPayment",
+      entityId: payment.id,
+      diffAfter: { studentId, netAmountCents: net, receiptCode: payment.receiptCode },
+    });
+
+    await awardXp(
       studentId,
-      amountCents: net,
-      dueDate,
-      paidAt: dueRaw ? dueDate : now,
-      method: "manual",
-      receiptCode: makeReceiptCode(student.enrollmentCode),
       awardedXp,
+      "Mensalidade paga",
+      "tuition",
       awardedCoins,
-      note: "Pagamento registrado pela instituição",
-    },
-  });
+      settings
+    );
+  }
 
-  await logAuditEvent({
-    schoolId: user.schoolId,
-    actorId: user.id,
-    actorRole: user.role,
-    action: "FINANCE_PAYMENT_RECORD",
-    entityType: "TuitionPayment",
-    entityId: payment.id,
-    diffAfter: { studentId, netAmountCents: net, receiptCode: payment.receiptCode },
-  });
-
-  await awardXp(
-    studentId,
-    awardedXp,
-    "Mensalidade paga",
-    "tuition",
-    awardedCoins,
-    settings
-  );
+  if (settled === 0) return { error: "Nenhuma parcela em aberto para quitar." };
 
   revalidatePath(`/dashboard/alunos/${studentId}`);
   revalidatePath("/dashboard/financeiro");
   revalidatePath("/dashboard/alunos");
   revalidatePath("/dashboard/responsavel");
-  return { success: true, message: `Parcela quitada. +${awardedXp} XP e +${awardedCoins} moedas na carteira.` };
+  const reward = `+${awardedXp * settled} XP e +${awardedCoins * settled} moedas na carteira.`;
+  return {
+    success: true,
+    message:
+      settled === 1
+        ? `Parcela quitada. ${reward}`
+        : `${settled} parcelas quitadas. ${reward}`,
+    receiptCode: lastReceipt,
+  };
 }
 
 function parseInstallmentDueDate(raw: string, now: Date, dueDay: number) {

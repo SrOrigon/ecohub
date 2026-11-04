@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState } from "react";
 import { applyClassTuitionPlanAction, upsertStudentFinanceAction } from "@/actions/student-finance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,21 +24,6 @@ export function InstitutionTuitionPlans({
       applyClassTuitionPlanAction(formData),
     null
   );
-  const [query, setQuery] = useState("");
-  const [classFilter, setClassFilter] = useState("");
-
-  const visible = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    return plans.filter((plan) => {
-      if (classFilter && plan.classId !== classFilter) return false;
-      if (!term) return true;
-      return (
-        plan.studentName.toLowerCase().includes(term) ||
-        (plan.className ?? "").toLowerCase().includes(term)
-      );
-    });
-  }, [plans, query, classFilter]);
-
   const missing = plans.filter((plan) => plan.monthlyAmountCents <= 0).length;
 
   return (
@@ -93,41 +78,14 @@ export function InstitutionTuitionPlans({
         </div>
       </form>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="planSearch">Buscar aluno</Label>
-          <Input
-            id="planSearch"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Nome do aluno ou da turma"
-          />
-        </div>
-        <div>
-          <Label htmlFor="planClass">Filtrar turma</Label>
-          <Select id="planClass" value={classFilter} onChange={(event) => setClassFilter(event.target.value)}>
-            <option value="">Todas</option>
-            {classes.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {visible.length === 0 ? (
-          <p className="text-sm text-slate-500">Nenhum aluno encontrado.</p>
-        ) : (
-          visible.map((plan) => <StudentPlanRow key={plan.studentId} plan={plan} />)
-        )}
-      </div>
+      <p className="text-sm text-slate-600">
+        O valor de um aluno específico fica na caixa dele, ao lado da lista.
+      </p>
     </section>
   );
 }
 
-function StudentPlanRow({ plan }: { plan: InstitutionTuitionPlan }) {
+export function StudentPlanRow({ plan }: { plan: InstitutionTuitionPlan }) {
   const [state, action, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) =>
       upsertStudentFinanceAction(formData),
