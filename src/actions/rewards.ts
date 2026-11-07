@@ -8,6 +8,7 @@ import { getSchoolSettings } from "@/lib/school-settings";
 import { hasPermission } from "@/lib/permissions";
 import { assertStudentInScope, canReadStudentData } from "@/lib/tenant-guards";
 import { invalidateSchoolCaches } from "@/lib/runtime-cache";
+import { resolveProductImageFromForm } from "@/lib/avatar";
 
 function revalidateLoja(schoolId?: string | null) {
   ["/dashboard/loja", "/dashboard/aluno", "/dashboard/gamificacao", "/dashboard/notificacoes"].forEach((p) =>
@@ -38,6 +39,10 @@ export async function createRewardAction(formData: FormData) {
 
   if (!name || coinCost <= 0) return { error: "Nome e custo em moedas são obrigatórios." };
 
+  const imageResult = await resolveProductImageFromForm(formData);
+  if (imageResult && typeof imageResult === "object" && "error" in imageResult) return imageResult;
+  const imageUrl = typeof imageResult === "string" ? imageResult : null;
+
   if (categoryId) {
     const cat = await prisma.rewardCategory.findFirst({
       where: { id: categoryId, schoolId: user.schoolId, isActive: true },
@@ -55,6 +60,7 @@ export async function createRewardAction(formData: FormData) {
       stock: stock !== null && !Number.isNaN(stock) && stock >= 0 ? stock : null,
       itemType,
       cosmeticKey,
+      imageUrl,
       isActive: true,
     },
   });
@@ -104,6 +110,10 @@ export async function updateRewardAction(formData: FormData) {
     if (!cat) return { error: "Categoria inválida." };
   }
 
+  const imageResult = await resolveProductImageFromForm(formData, reward.imageUrl);
+  if (imageResult && typeof imageResult === "object" && "error" in imageResult) return imageResult;
+  const imageUrl = typeof imageResult === "string" ? imageResult : imageResult;
+
   await prisma.reward.update({
     where: { id: rewardId },
     data: {
@@ -113,6 +123,7 @@ export async function updateRewardAction(formData: FormData) {
       coinCost,
       stock: unlimited ? null : stockParsed,
       itemType: itemTypeRaw || reward.itemType,
+      imageUrl,
       cosmeticKey:
         cosmeticKeyRaw === null
           ? reward.cosmeticKey

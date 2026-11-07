@@ -27,6 +27,7 @@ type RewardItem = {
   itemType?: string;
   cosmeticKey?: string | null;
   categoryId: string | null;
+  imageUrl?: string | null;
   category: { id: string; name: string; isActive: boolean } | null;
   _count?: { redemptions: number };
 };
@@ -66,6 +67,10 @@ function RewardCard({
             <ProfileAvatar name="Prévia" size="xl" />
           </CosmeticFrame>
         </div>
+      )}
+
+      {reward.imageUrl && (
+        <img src={reward.imageUrl} alt="" className="h-40 w-full object-cover" />
       )}
 
       {isBackground && reward.cosmeticKey && (
@@ -132,6 +137,9 @@ function StaffRewardManageCard({
 
   return (
     <Card className={!reward.isActive ? "opacity-80" : undefined}>
+      {reward.imageUrl && (
+        <img src={reward.imageUrl} alt="" className="h-40 w-full object-cover" />
+      )}
       <CardHeader>
         <CardTitle className="text-base">{reward.name}</CardTitle>
         <CardDescription>{reward.description}</CardDescription>
@@ -290,6 +298,9 @@ export function StudentShopByCategory({
             />
           ) : (
             <Card key={reward.id} className={kidFriendly ? "kid-card" : ""}>
+              {reward.imageUrl && (
+                <img src={reward.imageUrl} alt="" className="h-40 w-full object-cover" />
+              )}
               <CardHeader>
                 <CardTitle className={kidFriendly ? "text-xl" : "text-base"}>{reward.name}</CardTitle>
                 <CardDescription>{reward.description}</CardDescription>

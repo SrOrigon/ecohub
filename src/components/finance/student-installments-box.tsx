@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState } from "react";
@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/modal";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StandingDot } from "@/components/finance/billing-charges-board";
 import { recordTuitionPaymentAction } from "@/actions/student-finance";
+import { dispatchWhatsAppBillingAction } from "@/actions/whatsapp-billing";
 import { formatBRL } from "@/lib/student-finance";
 import { summarizeCharges, type BillingCharge } from "@/lib/billing-status";
 import { cn, formatDate } from "@/lib/utils";
@@ -22,6 +23,7 @@ export function StudentInstallmentsBox({
   charges,
   canSettle,
   embedded = false,
+  editHref,
 }: {
   open?: boolean;
   onClose?: () => void;
@@ -32,6 +34,7 @@ export function StudentInstallmentsBox({
   charges: BillingCharge[];
   canSettle: boolean;
   embedded?: boolean;
+  editHref?: string;
 }) {
   const router = useRouter();
   const rows = useMemo(
@@ -44,6 +47,8 @@ export function StudentInstallmentsBox({
   const selectedOpen = openRows.filter((row) => selectedIds.includes(row.id));
   const allOpenSelected = openRows.length > 0 && selectedOpen.length === openRows.length;
   const selectAllRef = useRef<HTMLInputElement>(null);
+  const [chargeNote, setChargeNote] = useState<string | null>(null);
+  const [charging, startCharge] = useTransition();
   const [state, formAction, pending] = useActionState(
     async (
       _prev: { error?: string; success?: boolean; message?: string } | null,
@@ -79,6 +84,19 @@ export function StudentInstallmentsBox({
     setSelectedIds(allOpenSelected ? [] : openRows.map((row) => row.id));
   }
 
+  function generateCharges() {
+    setChargeNote(null);
+    startCharge(async () => {
+      const result = await dispatchWhatsAppBillingAction({ studentId });
+      if ("error" in result && result.error) {
+        setChargeNote(result.error);
+        return;
+      }
+      setChargeNote(result.message);
+      router.refresh();
+    });
+  }
+
   const statusText = state?.error
     ? state.error
     : state?.message
@@ -92,15 +110,20 @@ export function StudentInstallmentsBox({
   const footer = (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-slate-600" role="status">
-        {statusText}
+        {chargeNote ?? statusText}
       </p>
       <div className="flex flex-wrap gap-2">
         <Link
-          href={`/dashboard/alunos/${studentId}?aba=financeiro`}
+          href={editHref ?? `/dashboard/alunos/${studentId}?aba=financeiro#dados-do-plano`}
           className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
         >
           Editar
         </Link>
+        {canSettle && (
+          <Button type="button" size="sm" variant="secondary" disabled={charging} onClick={generateCharges}>
+            {charging ? "Gerando..." : "Gerar cobranças"}
+          </Button>
+        )}
         {canSettle && (
           <form action={formAction}>
             <input type="hidden" name="studentId" value={studentId} />

@@ -19,6 +19,7 @@ export interface RewardEditData {
   categoryId: string | null;
   itemType?: string;
   cosmeticKey?: string | null;
+  imageUrl?: string | null;
 }
 
 export function EditRewardForm({
@@ -30,6 +31,8 @@ export function EditRewardForm({
 }) {
   const [open, setOpen] = useState(false);
   const [unlimited, setUnlimited] = useState(reward.stock === null);
+  const [preview, setPreview] = useState<string | null>(reward.imageUrl ?? null);
+  const [removePhoto, setRemovePhoto] = useState(false);
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
       const result = await runServerAction(async () => updateRewardAction(formData));
@@ -47,6 +50,8 @@ export function EditRewardForm({
         variant="outline"
         onClick={() => {
           setUnlimited(reward.stock === null);
+          setPreview(reward.imageUrl ?? null);
+          setRemovePhoto(false);
           setOpen(true);
         }}
       >
@@ -57,6 +62,34 @@ export function EditRewardForm({
           <input type="hidden" name="rewardId" value={reward.id} />
           <input type="hidden" name="itemType" value={reward.itemType ?? "physical"} />
           <input type="hidden" name="cosmeticKey" value={reward.cosmeticKey ?? ""} />
+          {removePhoto ? <input type="hidden" name="removeProductImage" value="1" /> : null}
+          <div>
+            <Label htmlFor={`edit-photo-${reward.id}`}>Foto do produto</Label>
+            <Input
+              id={`edit-photo-${reward.id}`}
+              name="productImage"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                setRemovePhoto(false);
+                setPreview(file ? URL.createObjectURL(file) : reward.imageUrl ?? null);
+              }}
+            />
+            {preview && !removePhoto && (
+              <img src={preview} alt="" className="mt-2 h-28 w-28 rounded-lg object-cover" />
+            )}
+            {reward.imageUrl && (
+              <label className="mt-2 flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={removePhoto}
+                  onChange={(event) => setRemovePhoto(event.target.checked)}
+                />
+                Remover foto
+              </label>
+            )}
+          </div>
           {unlimited ? <input type="hidden" name="unlimitedStock" value="1" /> : null}
           <div>
             <Label htmlFor={`edit-cat-${reward.id}`}>Categoria</Label>

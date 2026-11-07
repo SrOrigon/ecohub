@@ -460,6 +460,7 @@ model Reward {
   stock       Int?
   itemType    String   @default("physical")
   cosmeticKey String?
+  imageUrl    String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
 

@@ -1,16 +1,15 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { createStudentInvoiceAction, recordTuitionPaymentAction, upsertStudentFinanceAction } from "@/actions/student-finance";
+import { createStudentInvoiceAction, upsertStudentFinanceAction } from "@/actions/student-finance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form-fields";
-import { formatBRL, type FinanceSnapshot, type FinancePaymentRecord } from "@/lib/student-finance";
+import { formatBRL, parseReaisToCents, type FinanceSnapshot, type FinancePaymentRecord } from "@/lib/student-finance";
 import { formatDate } from "@/lib/utils";
 import { Check, Copy, Download, QrCode } from "lucide-react";
-import { BillingChargesBoard } from "@/components/finance/billing-charges-board";
 import { StudentInstallmentsBox } from "@/components/finance/student-installments-box";
-import { summarizeCharges, type BillingCharge } from "@/lib/billing-status";
+import { type BillingCharge } from "@/lib/billing-status";
 
 export function StudentFinancePanel({
   studentId,
@@ -32,25 +31,34 @@ export function StudentFinancePanel({
       upsertStudentFinanceAction(formData),
     null
   );
-  const [payState, payAction, payPending] = useActionState(
-    async (_prev: { error?: string; success?: boolean; message?: string } | null, formData: FormData) =>
-      recordTuitionPaymentAction(formData),
-    null
-  );
-
   const [createdInvoice, setCreatedInvoice] = useState<{
     amountCents: number;
     pixCopyPaste: string;
     pixQrCode: string;
   } | null>(null);
   const [copied, setCopyState] = useState(false);
-  const [boxOpen, setBoxOpen] = useState(false);
   const [generatingPix, setGeneratingPix] = useState(false);
-
   const monthlyDefault =
     finance.monthlyAmountCents > 0
       ? (finance.monthlyAmountCents / 100).toFixed(2).replace(".", ",")
       : "";
+  const [amountInput, setAmountInput] = useState(monthlyDefault);
+  const [installmentInput, setInstallmentInput] = useState(
+    finance.monthlyAmountCents > 0 ? String(finance.expectedInstallments) : ""
+  );
+  const [discountInput, setDiscountInput] = useState(
+    finance.monthlyAmountCents > 0 ? String(finance.discountPercent) : ""
+  );
+
+  const amountCents = parseReaisToCents(amountInput) ?? 0;
+  const installmentCount = Number(installmentInput);
+  const discountPercent = Number(discountInput.replace(",", "."));
+  const netCents =
+    Number.isFinite(discountPercent) && discountPercent >= 0 && discountPercent <= 100
+      ? Math.max(0, Math.round(amountCents * (1 - discountPercent / 100)))
+      : amountCents;
+  const totalCents =
+    Number.isInteger(installmentCount) && installmentCount > 0 ? netCents * installmentCount : 0;
 
   async function handleGeneratePix() {
     setGeneratingPix(true);
@@ -115,26 +123,11 @@ export function StudentFinancePanel({
     printWindow.document.close();
   }
 
-  const billing = summarizeCharges(charges);
-  const statusValue = charges.length > 0 ? billing.label : finance.statusLabel;
-  const statusTone =
-    billing.state === "pending" || finance.status === "overdue"
-      ? "warn"
-      : billing.state === "clear" || finance.status === "current"
-        ? "ok"
-        : "muted";
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-slate-600">A caixa mostra as parcelas deste aluno, uma a uma.</p>
-        <Button type="button" size="sm" onClick={() => setBoxOpen(true)}>
-          Caixa de mensalidades
-        </Button>
-      </div>
       <StudentInstallmentsBox
-        open={boxOpen}
-        onClose={() => setBoxOpen(false)}
+        embedded
+        editHref="#dados-do-plano"
         studentId={studentId}
         studentName={studentName}
         className={className}
@@ -142,39 +135,6 @@ export function StudentFinancePanel({
         charges={charges}
         canSettle={canWrite}
       />
-      <BillingChargesBoard charges={charges} canCharge={canWrite} studentId={studentId} />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Stat label="Mensalidade" value={finance.netAmountCents > 0 ? formatBRL(finance.netAmountCents) : "—"} />
-        <Stat
-          label="Próximo vencimento"
-          value={finance.nextDueDate ? formatDate(finance.nextDueDate) : "—"}
-        />
-        <Stat label="Status" value={statusValue} tone={statusTone} />
-        <Stat
-          label="Parcelas pagas"
-          value={String(charges.length > 0 ? billing.paidCount : finance.paidCount)}
-          tone="ok"
-        />
-        <Stat
-          label="Parcelas a pagar"
-          value={String(
-            charges.length > 0
-              ? billing.unpaidCount
-              : Math.max(0, finance.expectedInstallments - finance.paidCount)
-          )}
-          tone={
-            (charges.length > 0 ? billing.unpaidCount : finance.expectedInstallments - finance.paidCount) > 0
-              ? "warn"
-              : "ok"
-          }
-        />
-      </div>
-
-      {(billing.state === "pending" || finance.status === "overdue") && (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Há uma pendência financeira. Isso fica separado da gamificação  -  o aluno não perde XP nem moedas por atraso.
-        </p>
-      )}
 
       {/* Seção de Regularização Pix */}
       <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 space-y-3">
@@ -218,74 +178,73 @@ export function StudentFinancePanel({
       </div>
 
       {canWrite && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <form action={planAction} className="space-y-3 rounded-xl border border-slate-100 p-4">
-            <input type="hidden" name="studentId" value={studentId} />
-            <p className="font-medium text-slate-800">Plano definido pela instituição</p>
+        <form id="dados-do-plano" action={planAction} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+          <input type="hidden" name="studentId" value={studentId} />
+          <div>
+            <p className="font-medium text-slate-900">Dados do plano</p>
             <p className="text-sm text-slate-600">
-              O sistema não traz um valor pronto. A escola informa a mensalidade, o vencimento e as parcelas deste aluno.
+              A escola informa o valor da parcela, a quantidade, o dia de vencimento e a bolsa. O total é calculado em seguida.
             </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <Label htmlFor="monthlyAmount">Valor mensal (R$)</Label>
-              <Input id="monthlyAmount" name="monthlyAmount" defaultValue={monthlyDefault} placeholder="Definir pela instituição" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="dueDay">Vencimento (dia)</Label>
-                <Input
-                  id="dueDay"
-                  name="dueDay"
-                  type="number"
-                  min={1}
-                  max={28}
-                  defaultValue={finance.monthlyAmountCents > 0 ? finance.dueDay : ""}
-                  placeholder="Dia"
-                />
-              </div>
-              <div>
-                <Label htmlFor="discountPercent">Desconto %</Label>
-                <Input
-                  id="discountPercent"
-                  name="discountPercent"
-                  defaultValue={finance.monthlyAmountCents > 0 ? String(finance.discountPercent) : ""}
-                  placeholder="0"
-                />
-              </div>
+              <Label htmlFor="monthlyAmount">Valor da parcela (R$)</Label>
+              <Input
+                id="monthlyAmount"
+                name="monthlyAmount"
+                value={amountInput}
+                onChange={(event) => setAmountInput(event.target.value)}
+                placeholder="Definir"
+                inputMode="decimal"
+              />
             </div>
             <div>
-              <Label htmlFor="expectedInstallments">Parcelas do ano</Label>
+              <Label htmlFor="expectedInstallments">Parcelas</Label>
               <Input
                 id="expectedInstallments"
                 name="expectedInstallments"
                 type="number"
                 min={1}
                 max={24}
-                defaultValue={finance.monthlyAmountCents > 0 ? finance.expectedInstallments : ""}
+                value={installmentInput}
+                onChange={(event) => setInstallmentInput(event.target.value)}
                 placeholder="Qtd."
               />
             </div>
-            {planState?.error && <p className="text-sm text-red-600">{planState.error}</p>}
-            {planState?.success && <p className="text-sm text-emerald-600">Plano salvo.</p>}
-            <Button type="submit" disabled={planPending} size="sm">
-              {planPending ? "Salvando..." : "Salvar plano"}
-            </Button>
-          </form>
-
-          <form action={payAction} className="space-y-3 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
-            <input type="hidden" name="studentId" value={studentId} />
-            <p className="font-medium text-slate-800">Registrar pagamento</p>
-            <p className="text-sm text-slate-600">
-              Ao quitar a mensalidade, o aluno recebe XP e moedas na carteira. O atraso nunca remove gamificação.
-            </p>
-            {payState?.error && <p className="text-sm text-red-600">{payState.error}</p>}
-            {payState?.success && payState.message && (
-              <p className="text-sm text-emerald-700">{payState.message}</p>
-            )}
-            <Button type="submit" disabled={payPending || finance.monthlyAmountCents <= 0}>
-              {payPending ? "Registrando..." : "Confirmar pagamento do mês"}
-            </Button>
-          </form>
-        </div>
+            <div>
+              <Label htmlFor="planTotal">Valor total</Label>
+              <Input id="planTotal" value={totalCents > 0 ? formatBRL(totalCents) : "—"} readOnly />
+            </div>
+            <div>
+              <Label htmlFor="dueDay">Vencimento (dia)</Label>
+              <Input
+                id="dueDay"
+                name="dueDay"
+                type="number"
+                min={1}
+                max={28}
+                defaultValue={finance.monthlyAmountCents > 0 ? finance.dueDay : ""}
+                placeholder="Dia"
+              />
+            </div>
+            <div>
+              <Label htmlFor="discountPercent">Bolsa de desconto %</Label>
+              <Input
+                id="discountPercent"
+                name="discountPercent"
+                value={discountInput}
+                onChange={(event) => setDiscountInput(event.target.value)}
+                placeholder="0"
+                inputMode="decimal"
+              />
+            </div>
+          </div>
+          {planState?.error && <p className="text-sm text-red-600">{planState.error}</p>}
+          {planState?.success && <p className="text-sm text-emerald-600">Plano salvo pela instituição.</p>}
+          <Button type="submit" disabled={planPending} size="sm">
+            {planPending ? "Salvando..." : "Salvar plano"}
+          </Button>
+        </form>
       )}
 
       <div>
@@ -320,25 +279,6 @@ export function StudentFinancePanel({
           </ul>
         )}
       </div>
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  tone = "muted",
-}: {
-  label: string;
-  value: string;
-  tone?: "ok" | "warn" | "muted";
-}) {
-  const color =
-    tone === "ok" ? "text-emerald-700" : tone === "warn" ? "text-amber-700" : "text-slate-900";
-  return (
-    <div className="rounded-xl border border-slate-100 bg-white p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className={`mt-1 text-lg font-bold ${color}`}>{value}</p>
     </div>
   );
 }

@@ -20,6 +20,7 @@ export function CreateRewardForm({ categories }: { categories: ShopCategoryOptio
   const formId = useId();
   const activeCategories = categories.filter((c) => c.isActive);
   const [open, setOpen] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
       const result = await runServerAction(async () => createRewardAction(formData));
@@ -39,6 +40,22 @@ export function CreateRewardForm({ categories }: { categories: ShopCategoryOptio
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} title="Cadastrar item na loja de moedas">
         <form action={formAction} className="space-y-4">
+          <div>
+            <Label htmlFor={`${formId}-productImage`}>Foto do produto</Label>
+            <Input
+              id={`${formId}-productImage`}
+              name="productImage"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                setPreview(file ? URL.createObjectURL(file) : null);
+              }}
+            />
+            {preview && (
+              <img src={preview} alt="" className="mt-2 h-28 w-28 rounded-lg object-cover" />
+            )}
+          </div>
           <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
             Os alunos gastam <strong>moedas</strong> para resgatar. O XP não é usado na loja.
           </p>
@@ -61,7 +78,7 @@ export function CreateRewardForm({ categories }: { categories: ShopCategoryOptio
           )}
           <div>
             <Label htmlFor={`${formId}-name`}>Nome do prêmio</Label>
-            <Input id={`${formId}-name`} name="name" required placeholder="Ex.: Vale-lanche" />
+            <Input id={`${formId}-name`} name="name" required />
           </div>
           <div>
             <Label htmlFor={`${formId}-description`}>Descrição</Label>
@@ -79,7 +96,6 @@ export function CreateRewardForm({ categories }: { categories: ShopCategoryOptio
                 name="coinCost"
                 type="number"
                 min="1"
-                defaultValue={50}
                 required
               />
             </div>

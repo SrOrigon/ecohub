@@ -96,3 +96,28 @@ export async function resolveBadgeImageFromForm(
 
   return currentImage;
 }
+
+export const PRODUCT_IMAGE_MAX_BYTES = 1_200_000;
+
+export async function resolveProductImageFromForm(
+  formData: FormData,
+  currentImage: string | null = null
+): Promise<string | null | { error: string }> {
+  if (formData.get("removeProductImage") === "1") return null;
+
+  const imageFile = formData.get("productImage");
+  if (!(imageFile instanceof File) || imageFile.size <= 0) return currentImage;
+  if (!isAllowedAvatarMime(imageFile.type)) {
+    return { error: "Use uma foto JPG, PNG, WebP ou GIF." };
+  }
+  if (imageFile.size > PRODUCT_IMAGE_MAX_BYTES) {
+    return { error: "A foto do produto deve ter no máximo 1 MB." };
+  }
+
+  try {
+    const buffer = Buffer.from(await imageFile.arrayBuffer());
+    return `data:${imageFile.type};base64,${buffer.toString("base64")}`;
+  } catch {
+    return { error: "Não foi possível guardar a foto. Envie o arquivo novamente." };
+  }
+}

@@ -21,6 +21,7 @@ type RewardRow = {
   itemType?: string;
   cosmeticKey?: string | null;
   categoryId: string | null;
+  imageUrl?: string | null;
   category: { id: string; name: string; isActive: boolean } | null;
   _count: { redemptions: number };
 };
@@ -99,12 +100,19 @@ export function InstitutionShopManager({
                   return (
                     <tr key={reward.id} className="border-b border-slate-50 last:border-0">
                       <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          {reward.imageUrl ? (
+                            <img src={reward.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover" />
+                          ) : null}
+                          <div>
                         <p className="font-medium text-slate-900">{reward.name}</p>
                         {reward.description && (
                           <p className="mt-0.5 max-w-xs truncate text-xs text-slate-500">
                             {reward.description}
                           </p>
                         )}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         {reward.category ? (
