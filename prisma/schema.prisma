@@ -276,6 +276,7 @@ model StudentFinanceAccount {
   dueDay               Int      @default(10)
   discountPercent      Float    @default(0)
   expectedInstallments Int      @default(10)
+  firstDueDate         DateTime?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

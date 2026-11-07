@@ -39,6 +39,7 @@ export async function getStudentWallet(studentId: string): Promise<StudentWallet
   const finance = buildFinanceSnapshot({
     monthlyAmountCents: student?.financeAccount?.monthlyAmountCents ?? 0,
     dueDay: student?.financeAccount?.dueDay ?? 10,
+    firstDueDate: student?.financeAccount?.firstDueDate ?? null,
     discountPercent: student?.financeAccount?.discountPercent ?? 0,
     expectedInstallments: student?.financeAccount?.expectedInstallments ?? 10,
     payments: student?.financeAccount?.payments ?? [],

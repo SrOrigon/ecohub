@@ -74,6 +74,7 @@ const TUITION_INSTALLMENT_PATCHES = [
     CONSTRAINT "TuitionInstallment_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student" ("id") ON DELETE CASCADE ON UPDATE CASCADE
   )`,
   `ALTER TABLE "TuitionPayment" ADD COLUMN IF NOT EXISTS "installmentId" TEXT`,
+  `ALTER TABLE "StudentFinanceAccount" ADD COLUMN IF NOT EXISTS "firstDueDate" TIMESTAMP(3)`,
 ];
 
 const REWARD_COLUMN_PATCHES = [

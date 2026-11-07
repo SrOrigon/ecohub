@@ -15,6 +15,7 @@ export type FinanceStatus = "not_configured" | "current" | "overdue" | "exempt";
 export type FinanceSnapshot = {
   monthlyAmountCents: number;
   dueDay: number;
+  firstDueDate: string | null;
   discountPercent: number;
   expectedInstallments: number;
   paidCount: number;
@@ -59,6 +60,7 @@ function dueDateForMonth(year: number, month: number, dueDay: number) {
 export function buildFinanceSnapshot(input: {
   monthlyAmountCents: number;
   dueDay: number;
+  firstDueDate?: Date | null;
   discountPercent: number;
   expectedInstallments: number;
   payments: FinancePaymentInput[];
@@ -74,6 +76,7 @@ export function buildFinanceSnapshot(input: {
     return {
       monthlyAmountCents: 0,
       dueDay: input.dueDay,
+      firstDueDate: input.firstDueDate?.toISOString() ?? null,
       discountPercent: input.discountPercent,
       expectedInstallments: input.expectedInstallments,
       paidCount: input.payments.length,
@@ -105,6 +108,7 @@ export function buildFinanceSnapshot(input: {
   return {
     monthlyAmountCents: input.monthlyAmountCents,
     dueDay: input.dueDay,
+    firstDueDate: input.firstDueDate?.toISOString() ?? null,
     discountPercent: input.discountPercent,
     expectedInstallments: input.expectedInstallments,
     paidCount: input.payments.length,

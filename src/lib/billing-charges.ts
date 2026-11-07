@@ -63,6 +63,7 @@ export async function listBillingCharges(schoolId: string, studentId?: string) {
           select: {
             monthlyAmountCents: true,
             dueDay: true,
+            firstDueDate: true,
             discountPercent: true,
             expectedInstallments: true,
             createdAt: true,
@@ -189,11 +190,15 @@ export async function listBillingCharges(schoolId: string, studentId?: string) {
       }
     } else if (account && account.monthlyAmountCents > 0) {
       const count = Math.min(24, Math.max(1, account.expectedInstallments));
-      const start = planStartMonth(account.createdAt, now);
+      const anchor = account.firstDueDate;
+      const start = anchor
+        ? new Date(anchor.getFullYear(), anchor.getMonth(), 1)
+        : planStartMonth(account.createdAt, now);
+      const dueDay = anchor ? anchor.getDate() : account.dueDay;
       const amount = netAmountCents(account.monthlyAmountCents, account.discountPercent);
 
       for (let index = 0; index < count; index += 1) {
-        const due = dueDateForMonth(start.getFullYear(), start.getMonth() + index, account.dueDay);
+        const due = dueDateForMonth(start.getFullYear(), start.getMonth() + index, dueDay);
         const key = monthKey(due);
         covered.add(key);
         const monthInvoices = invoices.filter((invoice) => monthKey(invoice.dueDate) === key);

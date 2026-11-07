@@ -39,6 +39,7 @@ export function StudentInstallmentsBox({
   canSettle,
   embedded = false,
   editHref,
+  onOpenPlan,
 }: {
   open?: boolean;
   onClose?: () => void;
@@ -50,6 +51,7 @@ export function StudentInstallmentsBox({
   canSettle: boolean;
   embedded?: boolean;
   editHref?: string;
+  onOpenPlan?: () => void;
 }) {
   const router = useRouter();
   const rows = useMemo(
@@ -230,14 +232,19 @@ export function StudentInstallmentsBox({
             </Button>
           </>
         )}
-        {!editing && (
-        <Link
-          href={editHref ?? `/dashboard/alunos/${studentId}?aba=financeiro#dados-do-plano`}
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-        >
-          Dados do plano
-        </Link>
-        )}
+        {!editing &&
+          (onOpenPlan ? (
+            <Button type="button" size="sm" variant="outline" onClick={onOpenPlan}>
+              Dados do plano
+            </Button>
+          ) : (
+            <Link
+              href={editHref ?? `/dashboard/alunos/${studentId}?aba=financeiro#dados-do-plano`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              Dados do plano
+            </Link>
+          ))}
         {canSettle && !editing && (
           <Button type="button" size="sm" variant="secondary" disabled={charging} onClick={generateCharges}>
             {charging ? "Gerando..." : "Gerar cobranças"}

@@ -4,12 +4,41 @@ import { useActionState, useState } from "react";
 import { createStudentInvoiceAction, upsertStudentFinanceAction } from "@/actions/student-finance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/form-fields";
+import { Label, Select } from "@/components/ui/form-fields";
 import { formatBRL, parseReaisToCents, type FinanceSnapshot, type FinancePaymentRecord } from "@/lib/student-finance";
 import { formatDate } from "@/lib/utils";
 import { Check, Copy, Download, QrCode } from "lucide-react";
 import { StudentInstallmentsBox } from "@/components/finance/student-installments-box";
 import { type BillingCharge } from "@/lib/billing-status";
+
+const MONTHS = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
+function planStartParts(finance: FinanceSnapshot, charges: BillingCharge[]) {
+  const stored = finance.firstDueDate ? new Date(finance.firstDueDate) : null;
+  const fromCharge = charges.find((charge) => charge.source !== "invoice");
+  const start = stored && !Number.isNaN(stored.getTime()) ? stored : fromCharge ? new Date(fromCharge.dueDate) : null;
+  if (!start || Number.isNaN(start.getTime()) || finance.monthlyAmountCents <= 0) {
+    return { day: "", month: "", year: "" };
+  }
+  return {
+    day: String(start.getDate()),
+    month: String(start.getMonth() + 1),
+    year: String(start.getFullYear()),
+  };
+}
 
 export function StudentFinancePanel({
   studentId,
@@ -38,6 +67,11 @@ export function StudentFinancePanel({
   } | null>(null);
   const [copied, setCopyState] = useState(false);
   const [generatingPix, setGeneratingPix] = useState(false);
+  const [tab, setTab] = useState<"plano" | "parcelas">(canWrite ? "plano" : "parcelas");
+  const startParts = planStartParts(finance, charges);
+  const [dueDayInput, setDueDayInput] = useState(startParts.day);
+  const [dueMonthInput, setDueMonthInput] = useState(startParts.month);
+  const [dueYearInput, setDueYearInput] = useState(startParts.year);
   const monthlyDefault =
     finance.monthlyAmountCents > 0
       ? (finance.monthlyAmountCents / 100).toFixed(2).replace(".", ",")
@@ -125,9 +159,29 @@ export function StudentFinancePanel({
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap gap-2">
+        {canWrite && (
+        <button
+          type="button"
+          onClick={() => setTab("plano")}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "plano" ? "bg-violet-700 text-white" : "bg-slate-100 text-slate-700"}`}
+        >
+          Dados do plano
+        </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setTab("parcelas")}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "parcelas" ? "bg-violet-700 text-white" : "bg-slate-100 text-slate-700"}`}
+        >
+          Parcelas
+        </button>
+      </div>
+
+      {tab === "parcelas" && (
       <StudentInstallmentsBox
         embedded
-        editHref="#dados-do-plano"
+        onOpenPlan={() => setTab("plano")}
         studentId={studentId}
         studentName={studentName}
         className={className}
@@ -135,8 +189,9 @@ export function StudentFinancePanel({
         charges={charges}
         canSettle={canWrite}
       />
+      )}
 
-      {/* Seção de Regularização Pix */}
+      {tab !== "plano" && (
       <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
@@ -176,17 +231,18 @@ export function StudentFinancePanel({
           </div>
         )}
       </div>
+      )}
 
-      {canWrite && (
+      {canWrite && tab === "plano" && (
         <form id="dados-do-plano" action={planAction} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
           <input type="hidden" name="studentId" value={studentId} />
           <div>
             <p className="font-medium text-slate-900">Dados do plano</p>
             <p className="text-sm text-slate-600">
-              A escola informa o valor da parcela, a quantidade, o dia de vencimento e a bolsa. O total é calculado em seguida.
+              A escola informa o valor, a quantidade e o primeiro vencimento, com dia, mês e ano. O total é calculado em seguida.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <Label htmlFor="monthlyAmount">Valor da parcela (R$)</Label>
               <Input
@@ -216,15 +272,48 @@ export function StudentFinancePanel({
               <Input id="planTotal" value={totalCents > 0 ? formatBRL(totalCents) : "—"} readOnly />
             </div>
             <div>
-              <Label htmlFor="dueDay">Vencimento (dia)</Label>
+              <Label htmlFor="dueDay">Dia</Label>
               <Input
                 id="dueDay"
                 name="dueDay"
                 type="number"
                 min={1}
-                max={28}
-                defaultValue={finance.monthlyAmountCents > 0 ? finance.dueDay : ""}
+                max={31}
+                required
+                value={dueDayInput}
+                onChange={(event) => setDueDayInput(event.target.value)}
                 placeholder="Dia"
+              />
+            </div>
+            <div>
+              <Label htmlFor="dueMonth">Mês</Label>
+              <Select
+                id="dueMonth"
+                name="dueMonth"
+                required
+                value={dueMonthInput}
+                onChange={(event) => setDueMonthInput(event.target.value)}
+              >
+                <option value="">Mês</option>
+                {MONTHS.map((name, index) => (
+                  <option key={name} value={String(index + 1)}>
+                    {name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="dueYear">Ano</Label>
+              <Input
+                id="dueYear"
+                name="dueYear"
+                type="number"
+                min={2000}
+                max={2100}
+                required
+                value={dueYearInput}
+                onChange={(event) => setDueYearInput(event.target.value)}
+                placeholder="Ano"
               />
             </div>
             <div>

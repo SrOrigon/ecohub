@@ -21,14 +21,17 @@ export async function upsertStudentFinanceAction(formData: FormData) {
 
   const studentId = String(formData.get("studentId") ?? "");
   const amountCents = parseReaisToCents(String(formData.get("monthlyAmount") ?? ""));
-  const dueDay = Number(formData.get("dueDay") ?? 10);
+  const dueDay = Number(formData.get("dueDay") ?? "");
+  const dueMonth = Number(formData.get("dueMonth") ?? "");
+  const dueYear = Number(formData.get("dueYear") ?? "");
   const discountPercent = Number(String(formData.get("discountPercent") ?? "0").replace(",", "."));
   const expectedInstallments = Number(formData.get("expectedInstallments") ?? 10);
+  const firstDueDate = parsePlanStart(dueDay, dueMonth, dueYear);
 
   if (!studentId) return { error: "Aluno não informado." };
   if (amountCents == null) return { error: "Valor da mensalidade inválido." };
-  if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 28) {
-    return { error: "Dia de vencimento deve ser entre 1 e 28." };
+  if (!firstDueDate) {
+    return { error: "Informe um dia, mês e ano de vencimento válidos." };
   }
   if (!Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent > 100) {
     return { error: "Desconto deve ser entre 0 e 100%." };
@@ -48,17 +51,24 @@ export async function upsertStudentFinanceAction(formData: FormData) {
     create: {
       studentId,
       monthlyAmountCents: amountCents,
-      dueDay,
+      dueDay: firstDueDate.getDate(),
+      firstDueDate,
       discountPercent,
       expectedInstallments,
     },
     update: {
       monthlyAmountCents: amountCents,
-      dueDay,
+      dueDay: firstDueDate.getDate(),
+      firstDueDate,
       discountPercent,
       expectedInstallments,
     },
   });
+
+  const payments = await prisma.tuitionPayment.count({ where: { studentId } });
+  if (payments === 0) {
+    await prisma.tuitionInstallment.deleteMany({ where: { studentId } });
+  }
 
   await logAuditEvent({
     schoolId: user.schoolId,
@@ -67,7 +77,13 @@ export async function upsertStudentFinanceAction(formData: FormData) {
     action: "FINANCE_ACCOUNT_UPDATE",
     entityType: "StudentFinanceAccount",
     entityId: studentId,
-    diffAfter: { amountCents, dueDay, discountPercent, expectedInstallments },
+    diffAfter: {
+      amountCents,
+      dueDay: firstDueDate.getDate(),
+      firstDueDate: firstDueDate.toISOString(),
+      discountPercent,
+      expectedInstallments,
+    },
   });
 
   revalidatePath(`/dashboard/alunos/${studentId}`);
@@ -449,6 +465,15 @@ export async function recordTuitionPaymentAction(formData: FormData) {
         : `${settled} parcelas quitadas. ${reward}`,
     receiptCode: lastReceipt,
   };
+}
+
+function parsePlanStart(day: number, month: number, year: number) {
+  if (!Number.isInteger(day) || day < 1 || day > 31) return null;
+  if (!Number.isInteger(month) || month < 1 || month > 12) return null;
+  if (!Number.isInteger(year) || year < 2000 || year > 2100) return null;
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return date;
 }
 
 function parseInstallmentDueDate(raw: string, now: Date, dueDay: number) {
