@@ -26,9 +26,20 @@ type InvoiceRow = {
 };
 
 type PaymentRow = {
+  id: string;
   amountCents: number;
   paidAt: Date;
   dueDate: Date;
+  installmentId: string | null;
+};
+
+type InstallmentRow = {
+  id: string;
+  sequence: number;
+  title: string;
+  dueDate: Date;
+  amountCents: number;
+  paymentMethod: string | null;
 };
 
 export async function listBillingCharges(schoolId: string, studentId?: string) {
@@ -56,7 +67,18 @@ export async function listBillingCharges(schoolId: string, studentId?: string) {
             expectedInstallments: true,
             createdAt: true,
             payments: {
-              select: { amountCents: true, paidAt: true, dueDate: true },
+              select: { id: true, amountCents: true, paidAt: true, dueDate: true, installmentId: true },
+            },
+            installments: {
+              select: {
+                id: true,
+                sequence: true,
+                title: true,
+                dueDate: true,
+                amountCents: true,
+                paymentMethod: true,
+              },
+              orderBy: { sequence: "asc" },
             },
           },
         },
@@ -146,7 +168,26 @@ export async function listBillingCharges(schoolId: string, studentId?: string) {
     const covered = new Set<string>();
     const account = student.financeAccount;
 
-    if (account && account.monthlyAmountCents > 0) {
+    if (account && account.installments.length > 0) {
+      const usedPayments = new Set<string>();
+      for (const installment of account.installments) {
+        covered.add(monthKey(installment.dueDate));
+        const payment = takeInstallmentPayment(account.payments, installment, usedPayments);
+        charges.push(
+          chargeFromInstallment({
+            installment,
+            studentId: student.id,
+            studentName: student.user.fullName,
+            className: student.classGroup?.name ?? null,
+            parentName: contact.name,
+            parentPhone: contact.phone,
+            payment,
+            lastWhatsapp,
+            now,
+          })
+        );
+      }
+    } else if (account && account.monthlyAmountCents > 0) {
       const count = Math.min(24, Math.max(1, account.expectedInstallments));
       const start = planStartMonth(account.createdAt, now);
       const amount = netAmountCents(account.monthlyAmountCents, account.discountPercent);
@@ -220,6 +261,54 @@ export async function getBillingFlags(schoolId: string) {
   return flags;
 }
 
+function takeInstallmentPayment(payments: PaymentRow[], installment: InstallmentRow, used: Set<string>) {
+  const linked = payments.find((item) => item.installmentId === installment.id && !used.has(item.id));
+  if (linked) {
+    used.add(linked.id);
+    return linked;
+  }
+  const key = monthKey(installment.dueDate);
+  const byMonth = payments.find(
+    (item) => !item.installmentId && !used.has(item.id) && (monthKey(item.dueDate) === key || monthKey(item.paidAt) === key)
+  );
+  if (byMonth) used.add(byMonth.id);
+  return byMonth ?? null;
+}
+
+function chargeFromInstallment(input: {
+  installment: InstallmentRow;
+  studentId: string;
+  studentName: string;
+  className: string | null;
+  parentName: string | null;
+  parentPhone: string | null;
+  payment: PaymentRow | null;
+  lastWhatsapp: Map<string, string>;
+  now: Date;
+}): BillingCharge {
+  const paid = Boolean(input.payment);
+  const standing = chargeStanding(input.installment.dueDate, paid, input.now);
+  return {
+    id: input.installment.id,
+    kind: "plan",
+    studentId: input.studentId,
+    studentName: input.studentName,
+    className: input.className,
+    parentName: input.parentName,
+    parentPhone: input.parentPhone,
+    title: input.installment.title,
+    amountCents: input.installment.amountCents,
+    dueDate: input.installment.dueDate.toISOString(),
+    paidAt: input.payment?.paidAt.toISOString() ?? null,
+    standing,
+    standingLabel: standingLabel(standing),
+    paymentMethod: input.installment.paymentMethod,
+    source: "installment",
+    pixCopyPaste: null,
+    lastWhatsappAt: input.lastWhatsapp.get(input.installment.id) ?? null,
+  };
+}
+
 function pushInvoice(map: Map<string, InvoiceRow[]>, invoice: InvoiceRow) {
   const rows = map.get(invoice.studentId) ?? [];
   rows.push(invoice);
@@ -274,6 +363,8 @@ function buildMonthCharge(input: {
     paidAt: (paidInvoice?.paidAt ?? input.payment?.paidAt ?? null)?.toISOString() ?? null,
     standing,
     standingLabel: standingLabel(standing),
+    paymentMethod: null,
+    source: "plan",
     pixCopyPaste: source?.pixCopyPaste ?? null,
     lastWhatsappAt: input.lastWhatsapp.get(id) ?? null,
   };
@@ -304,6 +395,8 @@ function chargeFromInvoice(input: {
     paidAt: input.invoice.paidAt?.toISOString() ?? null,
     standing,
     standingLabel: standingLabel(standing),
+    paymentMethod: null,
+    source: "invoice",
     pixCopyPaste: input.invoice.pixCopyPaste,
     lastWhatsappAt: input.lastWhatsapp.get(input.invoice.id) ?? null,
   };

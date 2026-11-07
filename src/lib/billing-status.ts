@@ -15,6 +15,8 @@ export type BillingCharge = {
   paidAt: string | null;
   standing: ChargeStanding;
   standingLabel: string;
+  paymentMethod: string | null;
+  source: "installment" | "plan" | "invoice";
   pixCopyPaste: string | null;
   lastWhatsappAt: string | null;
 };

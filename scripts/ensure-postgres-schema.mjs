@@ -58,6 +58,24 @@ const AUTH_TABLE_PATCHES = [
   `CREATE INDEX IF NOT EXISTS "PasswordResetToken_token_idx" ON "PasswordResetToken"("token")`,
 ];
 
+const TUITION_INSTALLMENT_PATCHES = [
+  `CREATE TABLE IF NOT EXISTS "TuitionInstallment" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "accountId" TEXT NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "sequence" INTEGER NOT NULL,
+    "title" TEXT NOT NULL,
+    "dueDate" TIMESTAMP(3) NOT NULL,
+    "amountCents" INTEGER NOT NULL,
+    "paymentMethod" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "TuitionInstallment_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "StudentFinanceAccount" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "TuitionInstallment_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `ALTER TABLE "TuitionPayment" ADD COLUMN IF NOT EXISTS "installmentId" TEXT`,
+];
+
 const REWARD_COLUMN_PATCHES = [
   `ALTER TABLE "Reward" ADD COLUMN IF NOT EXISTS "itemType" TEXT NOT NULL DEFAULT 'physical'`,
   `ALTER TABLE "Reward" ADD COLUMN IF NOT EXISTS "cosmeticKey" TEXT`,
@@ -267,6 +285,9 @@ const INDEX_PATCHES = [
   `CREATE UNIQUE INDEX IF NOT EXISTS "StudentFinanceAccount_studentId_key" ON "StudentFinanceAccount"("studentId")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "TuitionPayment_receiptCode_key" ON "TuitionPayment"("receiptCode")`,
   `CREATE INDEX IF NOT EXISTS "TuitionPayment_studentId_paidAt_idx" ON "TuitionPayment"("studentId", "paidAt")`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "TuitionInstallment_accountId_sequence_key" ON "TuitionInstallment"("accountId", "sequence")`,
+  `CREATE INDEX IF NOT EXISTS "TuitionInstallment_studentId_dueDate_idx" ON "TuitionInstallment"("studentId", "dueDate")`,
+  `CREATE INDEX IF NOT EXISTS "TuitionPayment_installmentId_idx" ON "TuitionPayment"("installmentId")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "TeacherInvite_token_key" ON "TeacherInvite"("token")`,
   `CREATE INDEX IF NOT EXISTS "TeacherInvite_schoolId_idx" ON "TeacherInvite"("schoolId")`,
   `CREATE INDEX IF NOT EXISTS "TeacherInvite_token_idx" ON "TeacherInvite"("token")`,
@@ -463,6 +484,7 @@ const ALL_PATCHES = [
   ...STUDENT_COLUMN_PATCHES,
   ...MISSION_COLUMN_PATCHES,
   ...REWARD_COLUMN_PATCHES,
+  ...TUITION_INSTALLMENT_PATCHES,
   ...EXERCISE_COLUMN_PATCHES,
   ...DOCUMENT_AND_ENROLLMENT_PATCHES,
   ...BADGE_COLUMN_PATCHES,

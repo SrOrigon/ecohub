@@ -226,6 +226,7 @@ model Student {
   profileActivities      StudentActivity[]
   financeAccount         StudentFinanceAccount?
   tuitionPayments        TuitionPayment[]
+  tuitionInstallments    TuitionInstallment[]
   challengerMatches      DuelMatch[]              @relation("ChallengerStudent")
   challengedMatches      DuelMatch[]              @relation("ChallengedStudent")
   projects               StudentProject[]
@@ -278,8 +279,29 @@ model StudentFinanceAccount {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
-  student  Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student      Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  payments     TuitionPayment[]
+  installments TuitionInstallment[]
+}
+
+model TuitionInstallment {
+  id            String   @id @default(cuid())
+  accountId     String
+  studentId     String
+  sequence      Int
+  title         String
+  dueDate       DateTime
+  amountCents   Int
+  paymentMethod String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  account  StudentFinanceAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  student  Student               @relation(fields: [studentId], references: [id], onDelete: Cascade)
   payments TuitionPayment[]
+
+  @@unique([accountId, sequence])
+  @@index([studentId, dueDate])
 }
 
 model TuitionPayment {
@@ -293,13 +315,16 @@ model TuitionPayment {
   receiptCode  String   @unique
   awardedXp    Int      @default(0)
   awardedCoins Int      @default(0)
-  note         String?
-  createdAt    DateTime @default(now())
+  note          String?
+  installmentId String?
+  createdAt     DateTime @default(now())
 
-  account StudentFinanceAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  student Student               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  account     StudentFinanceAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  student     Student               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  installment TuitionInstallment?   @relation(fields: [installmentId], references: [id], onDelete: SetNull)
 
   @@index([studentId, paidAt])
+  @@index([installmentId])
 }
 
 model Grade {
