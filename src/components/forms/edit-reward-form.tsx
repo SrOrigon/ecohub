@@ -34,10 +34,17 @@ export function EditRewardForm({
   const [preview, setPreview] = useState<string | null>(reward.imageUrl ?? null);
   const [removePhoto, setRemovePhoto] = useState(false);
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
+    async (
+      _prev: { error: string } | { success: true } | null,
+      formData: FormData
+    ): Promise<{ error: string } | { success: true } | null> => {
       const result = await runServerAction(async () => updateRewardAction(formData));
-      if (result && "success" in result && result.success) setOpen(false);
-      return result;
+      if (result && "success" in result && result.success) {
+        setOpen(false);
+        return { success: true };
+      }
+      if (result && "error" in result && result.error) return { error: result.error };
+      return { error: "Não foi possível salvar o item." };
     },
     null
   );
@@ -149,7 +156,9 @@ export function EditRewardForm({
               )}
             </div>
           </div>
-          {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state && "error" in state && state.error && (
+            <p className="text-sm text-red-600">{state.error}</p>
+          )}
           <Button type="submit" disabled={pending} className="w-full">
             {pending ? "Salvando..." : "Salvar alterações"}
           </Button>

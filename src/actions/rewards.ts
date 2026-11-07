@@ -40,7 +40,9 @@ export async function createRewardAction(formData: FormData) {
   if (!name || coinCost <= 0) return { error: "Nome e custo em moedas são obrigatórios." };
 
   const imageResult = await resolveProductImageFromForm(formData);
-  if (imageResult && typeof imageResult === "object" && "error" in imageResult) return imageResult;
+  if (imageResult && typeof imageResult === "object" && "error" in imageResult) {
+    return { error: imageResult.error };
+  }
   const imageUrl = typeof imageResult === "string" ? imageResult : null;
 
   if (categoryId) {
@@ -69,7 +71,9 @@ export async function createRewardAction(formData: FormData) {
   return { success: true };
 }
 
-export async function updateRewardAction(formData: FormData) {
+export async function updateRewardAction(
+  formData: FormData
+): Promise<{ error: string } | { success: true }> {
   const session = await requireSessionResult(["admin", "director"]);
   if (!session.ok) return { error: session.error };
   const user = session.user;
@@ -111,8 +115,10 @@ export async function updateRewardAction(formData: FormData) {
   }
 
   const imageResult = await resolveProductImageFromForm(formData, reward.imageUrl);
-  if (imageResult && typeof imageResult === "object" && "error" in imageResult) return imageResult;
-  const imageUrl = typeof imageResult === "string" ? imageResult : imageResult;
+  if (imageResult && typeof imageResult === "object" && "error" in imageResult) {
+    return { error: imageResult.error };
+  }
+  const imageUrl = typeof imageResult === "string" ? imageResult : null;
 
   await prisma.reward.update({
     where: { id: rewardId },

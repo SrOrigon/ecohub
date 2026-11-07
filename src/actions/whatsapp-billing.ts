@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
-import { dispatchSchoolWhatsAppBilling } from "@/lib/billing-dispatch";
+import { dispatchSchoolWhatsAppBilling, type BillingDispatchResult } from "@/lib/billing-dispatch";
 
 export async function dispatchWhatsAppBillingAction(input?: {
   studentId?: string;
   chargeId?: string;
-}) {
+}): Promise<{ error: string } | ({ success: true } & BillingDispatchResult)> {
   const user = await requireSession(["admin", "director", "secretary"]);
   if (!user.schoolId) return { error: "Escola não configurada." };
 

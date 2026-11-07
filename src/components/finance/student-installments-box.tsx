@@ -88,7 +88,7 @@ export function StudentInstallmentsBox({
     setChargeNote(null);
     startCharge(async () => {
       const result = await dispatchWhatsAppBillingAction({ studentId });
-      if ("error" in result && result.error) {
+      if ("error" in result) {
         setChargeNote(result.error);
         return;
       }
