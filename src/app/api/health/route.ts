@@ -1,23 +1,13 @@
-import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { prisma } from "@/lib/db";
 import { isUsableAuthSecret, ensureAuthSecretAtRuntime } from "@/lib/auth-secret-runtime";
 import { getPersistentVolumeStatus, isDurablePersistenceReady } from "@/lib/persistence-guard";
 import { ensureDatabaseUrlAtRuntime } from "@/lib/database-url-runtime";
 import { isManagedPostgres, isPostgresUrl, isSqliteFileUrl } from "@/lib/database-mode";
-import { cacheStats } from "@/lib/runtime-cache";
 import { NextResponse } from "next/server";
 
-const GOLDEN_BACKUP_PATH = "/data/backups/ecohub-golden.db";
-
 export const dynamic = "force-dynamic";
-
-type PersistenceManifest = {
-  volumeWritable?: boolean;
-  userCount?: number | null;
-  lastBackup?: string | null;
-  databasePath?: string | null;
-};
 
 /** Testa escrita real no volume — manifesto ausente não prova nada. */
 function probeVolumeWritable(databasePath: string): boolean | null {
@@ -34,36 +24,14 @@ function probeVolumeWritable(databasePath: string): boolean | null {
   }
 }
 
-function readPersistenceManifest(): PersistenceManifest | null {
-  const manifestPath = process.env.ECOHUB_PERSISTENCE_MANIFEST?.trim() || "/data/.ecohub-persistence.json";
-  if (!existsSync(/* turbopackIgnore: true */ manifestPath)) return null;
-  try {
-    return JSON.parse(
-      readFileSync(/* turbopackIgnore: true */ manifestPath, "utf8")
-    ) as PersistenceManifest;
-  } catch {
-    return null;
-  }
-}
-
 export async function GET() {
   const started = Date.now();
   const productionDeploy = process.env.NODE_ENV === "production";
   let dbOk = false;
-  let userCount: number | null = null;
-  let schoolCount: number | null = null;
-  let studentCount: number | null = null;
-  let classGroupCount: number | null = null;
 
   try {
     await prisma.$queryRaw`SELECT 1`;
     dbOk = true;
-    [userCount, schoolCount, studentCount, classGroupCount] = await Promise.all([
-      prisma.user.count(),
-      prisma.school.count(),
-      prisma.student.count(),
-      prisma.classGroup.count(),
-    ]);
   } catch {
     dbOk = false;
   }
@@ -91,7 +59,6 @@ export async function GET() {
     ? true
     : Boolean(databasePath && (databasePath.startsWith("/data/") || databasePath === "/data"));
 
-  const manifest = readPersistenceManifest();
   const volumeStatus = getPersistentVolumeStatus();
   const volumeWritable = postgres
     ? true
@@ -102,16 +69,6 @@ export async function GET() {
         : null;
   const volumeMounted = postgres || !productionDeploy || volumeStatus.mounted;
   const durable = postgres || isDurablePersistenceReady();
-
-  const goldenExists = existsSync(/* turbopackIgnore: true */ GOLDEN_BACKUP_PATH);
-  let lastBackup = manifest?.lastBackup ?? null;
-  if (!lastBackup && goldenExists) {
-    try {
-      lastBackup = statSync(/* turbopackIgnore: true */ GOLDEN_BACKUP_PATH).mtime.toISOString();
-    } catch {
-      lastBackup = GOLDEN_BACKUP_PATH;
-    }
-  }
 
   const persistenceOk = !productionDeploy || durable;
   const status = dbOk && persistenceOk ? "ok" : "degraded";
@@ -131,24 +88,10 @@ export async function GET() {
       persistence: productionDeploy
         ? {
             engine: postgres ? "postgresql" : "sqlite",
-            databasePath: postgres ? "postgresql" : databasePath || null,
             onPersistentVolume,
             volumeMounted,
-            volumeMountPath: volumeStatus.mountPath,
-            volumeSource: postgres ? "postgresql" : volumeStatus.source,
-            volumeReason: postgres ? null : volumeStatus.reason,
             volumeWritable,
-            accounts: {
-              users: userCount ?? manifest?.userCount ?? null,
-              schools: schoolCount,
-              students: studentCount,
-              classGroups: classGroupCount,
-              persisted: durable && dbOk,
-              store: postgres ? "postgresql" : "sqlite",
-              goldenBackup: postgres ? durable && dbOk : goldenExists,
-            },
-            cache: cacheStats(),
-            lastBackup,
+            persisted: durable && dbOk,
           }
         : undefined,
       mode: institutional ? "institutional" : "production",

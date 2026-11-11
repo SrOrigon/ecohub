@@ -29,16 +29,7 @@ export function rateLimitMessage(retryAfterSec: number): string {
   return `Muitas tentativas. Aguarde ${minutes} minuto(s) e tente novamente.`;
 }
 
-/** Rate limit por IP + identificador (e-mail, matrícula, etc.) e opcionalmente por escola. */
-export async function enforceRateLimit(
-  namespace: string,
-  identifier: string,
-  opts: { limit: number; windowMs: number },
-  schoolId?: string | null
-): Promise<void> {
-  const ip = await getClientIp();
-  const schoolKey = schoolId ? `:school:${schoolId}` : "";
-  const key = `${namespace}:${ip}${schoolKey}:${identifier.toLowerCase().slice(0, 256)}`;
+function hitBucket(key: string, opts: { limit: number; windowMs: number }) {
   const now = Date.now();
   cleanupExpired(now);
 
@@ -53,6 +44,29 @@ export async function enforceRateLimit(
   }
 
   bucket.count += 1;
+}
+
+/** Rate limit por IP + identificador (e-mail, matrícula, etc.) e opcionalmente por escola. */
+export async function enforceRateLimit(
+  namespace: string,
+  identifier: string,
+  opts: { limit: number; windowMs: number },
+  schoolId?: string | null
+): Promise<void> {
+  const ip = await getClientIp();
+  const schoolKey = schoolId ? `:school:${schoolId}` : "";
+  const key = `${namespace}:${ip}${schoolKey}:${identifier.toLowerCase().slice(0, 256)}`;
+  hitBucket(key, opts);
+}
+
+/** Limite pela conta, independente do IP. Fecha tentativa distribuída. */
+export async function enforceAccountRateLimit(
+  namespace: string,
+  identifier: string,
+  opts: { limit: number; windowMs: number }
+): Promise<void> {
+  const key = `account:${namespace}:${identifier.toLowerCase().slice(0, 256)}`;
+  hitBucket(key, opts);
 }
 
 /** Bloqueio estrito de máximo 5 tentativas por minuto para rotas sensíveis. */
@@ -76,6 +90,7 @@ export async function enforceStrictSensitiveLimit(
 
 export const AUTH_RATE_LIMIT = {
   login: { limit: 5, windowMs: 15 * 60 * 1000 },
+  loginAccount: { limit: 20, windowMs: 15 * 60 * 1000 },
   pinLogin: { limit: 5, windowMs: 15 * 60 * 1000 },
   register: { limit: 3, windowMs: 60 * 60 * 1000 },
   inviteAccept: { limit: 5, windowMs: 15 * 60 * 1000 },

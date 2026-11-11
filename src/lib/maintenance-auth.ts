@@ -11,10 +11,7 @@ export function getMaintenanceSecrets(): string[] {
 
   const secrets = new Set<string>();
   const maintenance = process.env.MAINTENANCE_SECRET?.trim();
-  const auth = process.env.AUTH_SECRET?.trim();
-
   if (maintenance && maintenance.length >= 32) secrets.add(maintenance);
-  if (auth && auth.length >= 32) secrets.add(auth);
 
   return [...secrets];
 }

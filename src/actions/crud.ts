@@ -1309,6 +1309,7 @@ export async function updateStudentAction(formData: FormData) {
     email: string;
     avatarUrl: string | null;
     passwordHash?: string;
+    passwordChangedAt?: Date;
   } & typeof profile.data = {
     fullName,
     email: nextEmail,
@@ -1320,6 +1321,7 @@ export async function updateStudentAction(formData: FormData) {
     const passwordCheck = validatePassword(password);
     if (!passwordCheck.ok) return { error: passwordCheck.error };
     userUpdate.passwordHash = await hashPassword(password);
+    userUpdate.passwordChangedAt = new Date();
   }
 
   await prisma.$transaction([
@@ -1556,6 +1558,7 @@ async function updateTeacherActionImpl(formData: FormData) {
     city: string | null;
     state: string | null;
     passwordHash?: string;
+    passwordChangedAt?: Date;
   } = {
     fullName,
     email,
@@ -1569,6 +1572,7 @@ async function updateTeacherActionImpl(formData: FormData) {
 
   if (password) {
     updateData.passwordHash = await hashPassword(password);
+    updateData.passwordChangedAt = new Date();
   }
 
   await prisma.user.update({

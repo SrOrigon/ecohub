@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireCronSecret } from "@/lib/request-secret";
 
 export async function GET(req: Request) {
   try {
-    const authHeader = req.headers.get("authorization");
-    if (
-      process.env.CRON_SECRET &&
-      authHeader !== `Bearer ${process.env.CRON_SECRET}`
-    ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const denied = requireCronSecret(req);
+    if (denied) return denied;
 
     const today = new Date();
     const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { CONTRACT_STATUSES, type ContractStatus } from "@/lib/contract-types";
 import { getContractTemplateHtml } from "@/lib/contract-template";
 import { applyMergeTags, buildStudentMergeContext, nextContractNumber, stripHtmlToText } from "@/lib/document-merge";
+import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 import { getSchoolSettings } from "@/lib/school-settings";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -65,7 +66,9 @@ export async function createStudentDocumentAction(formData: FormData): Promise<v
     contractStartDate: startDate,
     contractEndDate: endDate,
   });
-  const contentHtml = mergeContext ? applyMergeTags(templateHtml, mergeContext) : templateHtml;
+  const contentHtml = sanitizeDocumentHtml(
+    mergeContext ? applyMergeTags(templateHtml, mergeContext) : templateHtml
+  );
   const body = stripHtmlToText(contentHtml);
 
   const document = await prisma.issuedDocument.create({
@@ -101,7 +104,7 @@ export async function saveStudentDocumentAction(
 
   const documentId = String(formData.get("documentId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
-  const contentHtml = String(formData.get("contentHtml") ?? "");
+  const contentHtml = sanitizeDocumentHtml(String(formData.get("contentHtml") ?? ""));
   const contractNumber = String(formData.get("contractNumber") ?? "").trim() || null;
   const classId = String(formData.get("classId") ?? "").trim() || null;
   const status = String(formData.get("status") ?? "draft");
@@ -209,7 +212,7 @@ export async function duplicateStudentDocumentAction(formData: FormData): Promis
       type: existing.type,
       title: `${existing.title} (cópia)`,
       body: existing.body,
-      contentHtml: existing.contentHtml,
+      contentHtml: sanitizeDocumentHtml(existing.contentHtml ?? ""),
       status: "draft",
       contractNumber,
       contractStatus: "rascunho",

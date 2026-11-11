@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DOCUMENT_MERGE_FIELDS } from "@/lib/document-merge";
+import { escapeHtml, sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 
 type DocumentRichEditorProps = {
   initialHtml: string;
@@ -57,15 +58,34 @@ export function DocumentRichEditor({ initialHtml, onChange, disabled }: Document
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== initialHtml) {
-      editorRef.current.innerHTML = initialHtml;
+    const safe = sanitizeDocumentHtml(initialHtml);
+    if (editorRef.current && editorRef.current.innerHTML !== safe) {
+      editorRef.current.innerHTML = safe;
     }
   }, [initialHtml]);
 
   const sync = useCallback(() => {
     if (!editorRef.current) return;
-    onChange(editorRef.current.innerHTML);
+    onChange(sanitizeDocumentHtml(editorRef.current.innerHTML));
   }, [onChange]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const onPaste = (event: ClipboardEvent) => {
+      event.preventDefault();
+      const html = event.clipboardData?.getData("text/html") ?? "";
+      const text = event.clipboardData?.getData("text/plain") ?? "";
+      const fragment = html.trim()
+        ? sanitizeDocumentHtml(html)
+        : escapeHtml(text).replace(/\n/g, "<br>");
+      editor.focus();
+      document.execCommand("insertHTML", false, fragment);
+      sync();
+    };
+    editor.addEventListener("paste", onPaste);
+    return () => editor.removeEventListener("paste", onPaste);
+  }, [sync]);
 
   const exec = useCallback(
     (command: string, value?: string) => {

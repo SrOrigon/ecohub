@@ -38,6 +38,7 @@ export interface SchoolPaymentConfigInitial {
   whatsappRemindDaysBefore?: number;
   whatsappPhoneNumberId?: string | null;
   maskedWhatsappToken?: string | null;
+  maskedWebhookSecret?: string | null;
 }
 
 export function SchoolPaymentSettingsForm({
@@ -83,7 +84,10 @@ export function SchoolPaymentSettingsForm({
   }
 
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string; success?: boolean; message?: string } | null, formData: FormData) => {
+    async (
+      _prev: { error?: string; success?: boolean; message?: string; webhookSecretOnce?: string } | null,
+      formData: FormData
+    ) => {
       return saveSchoolPaymentConfigAction(formData);
     },
     null
@@ -372,6 +376,40 @@ export function SchoolPaymentSettingsForm({
                   placeholder="Cole o token permanente. Deixe em branco para manter o atual."
                 />
               </div>
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Segredo do webhook de pagamentos
+              </p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                O gateway precisa enviar este valor no cabeçalho x-webhook-secret, ou em Authorization: Bearer.
+                Sem ele, a confirmação automática de pagamento fica fechada.
+              </p>
+              <p className="text-xs text-slate-700 dark:text-slate-300">
+                {initial?.maskedWebhookSecret
+                  ? `Segredo atual: ${initial.maskedWebhookSecret}`
+                  : "Ainda não há segredo. Ao salvar, um será gerado."}
+              </p>
+              <div>
+                <Label htmlFor="webhookSecret">Colar o segredo informado pelo gateway (opcional)</Label>
+                <Input
+                  id="webhookSecret"
+                  name="webhookSecret"
+                  type="password"
+                  autoComplete="off"
+                  placeholder="Deixe em branco para manter o atual ou gerar um novo"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
+                <input type="checkbox" name="rotateWebhookSecret" className="h-4 w-4" />
+                Gerar um segredo novo. O anterior deixa de valer.
+              </label>
+              {state?.webhookSecretOnce && (
+                <p className="break-all rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">
+                  Copie agora. Este valor não será mostrado de novo: {state.webhookSecretOnce}
+                </p>
+              )}
             </div>
 
             {state?.error && (

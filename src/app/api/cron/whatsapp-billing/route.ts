@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { dispatchSchoolWhatsAppBilling } from "@/lib/billing-dispatch";
+import { requireCronSecret } from "@/lib/request-secret";
 
 export async function GET(req: Request) {
   try {
-    const authHeader = req.headers.get("authorization");
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const denied = requireCronSecret(req);
+    if (denied) return denied;
 
     const schools = await prisma.school.findMany({ select: { id: true, name: true } });
     const results = [];

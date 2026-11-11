@@ -38,6 +38,7 @@ import { normalizeWhatsAppNumber } from "@/lib/whatsapp-billing";
 import type { UserRole } from "@/lib/constants";
 import {
   AUTH_RATE_LIMIT,
+  enforceAccountRateLimit,
   enforceRateLimit,
   RateLimitError,
   rateLimitMessage,
@@ -122,6 +123,7 @@ async function loginActionImpl(formData: FormData) {
 
   try {
     await enforceRateLimit("login", email, AUTH_RATE_LIMIT.login);
+    await enforceAccountRateLimit("login", email, AUTH_RATE_LIMIT.loginAccount);
   } catch (error) {
     const limited = handleRateLimitError(error);
     if (limited) return limited;
@@ -131,7 +133,7 @@ async function loginActionImpl(formData: FormData) {
   const user = await findUserByEmailForLogin(email);
 
   if (!user) {
-    console.warn("[auth] login: usuário não encontrado:", email);
+    console.warn("[auth] login: usuário não encontrado");
     if (process.env.NODE_ENV === "production") {
       const totalUsers = await prisma.user.count();
       if (totalUsers === 0) {
@@ -145,16 +147,12 @@ async function loginActionImpl(formData: FormData) {
   }
 
   if (!(await verifyAndUpgradePassword(user, password))) {
-    console.warn("[auth] login: senha incorreta:", email);
+    console.warn("[auth] login: senha incorreta");
     return { error: GENERIC_AUTH_ERROR };
   }
 
   if (portal && !matchesPortal(user.role as UserRole, portal)) {
-    console.info("[auth] portal diferente do papel; login segue para o painel correto:", {
-      email,
-      portal,
-      role: user.role,
-    });
+    console.info("[auth] portal diferente do papel; login segue para o painel correto");
   }
 
   const remember = formData.get("rememberMe") === "true";
@@ -589,7 +587,10 @@ async function studentPinLoginActionImpl(formData: FormData) {
   }
 
   try {
-    await enforceRateLimit("pin-login", `${schoolSlug}:${enrollmentCode}`, AUTH_RATE_LIMIT.pinLogin);
+    const pinKey = `${schoolSlug}:${enrollmentCode}`;
+    await enforceRateLimit("pin-login", pinKey, AUTH_RATE_LIMIT.pinLogin);
+    await enforceAccountRateLimit("pin-login", pinKey, AUTH_RATE_LIMIT.pinLogin);
+    await enforceRateLimit("pin-login-school", schoolSlug, AUTH_RATE_LIMIT.loginAccount);
   } catch (error) {
     const limited = handleRateLimitError(error);
     if (limited) return limited;

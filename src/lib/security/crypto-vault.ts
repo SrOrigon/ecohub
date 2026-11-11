@@ -6,12 +6,19 @@ const IV_LEN = 12;
 const SALT_LEN = 16;
 const PBKDF2_ITERATIONS = 10000;
 
+let warnedAboutDefaultKey = false;
+
 function getMasterKeySecret(): string {
-  return (
-    process.env.PAYMENT_ENCRYPTION_KEY?.trim() ||
-    process.env.AUTH_SECRET?.trim() ||
-    "ecohub-master-payment-vault-secret-key-32chars!"
-  );
+  const configured =
+    process.env.PAYMENT_ENCRYPTION_KEY?.trim() || process.env.AUTH_SECRET?.trim() || "";
+  if (configured) return configured;
+  if (process.env.NODE_ENV === "production" && !warnedAboutDefaultKey) {
+    warnedAboutDefaultKey = true;
+    console.error(
+      "[vault] PAYMENT_ENCRYPTION_KEY ausente. O cofre está usando a chave padrão. Defina PAYMENT_ENCRYPTION_KEY no servidor."
+    );
+  }
+  return "ecohub-master-payment-vault-secret-key-32chars!";
 }
 
 function deriveKey(masterSecret: string, salt: Buffer): Buffer {
@@ -74,4 +81,21 @@ export function decryptSecret(cipherText: string): string {
   ]);
 
   return decrypted.toString("utf8");
+}
+
+function isVaultCipher(value: string) {
+  const parts = value.split(":");
+  return parts.length === 4 && parts.every((part) => /^[0-9a-f]+$/i.test(part) && part.length >= 16);
+}
+
+/** Lê segredo gravado em texto ou no cofre. Valor ilegível vira string vazia. */
+export function readStoredSecret(stored: string | null | undefined): string {
+  const value = stored?.trim() ?? "";
+  if (!value) return "";
+  if (!isVaultCipher(value)) return value;
+  try {
+    return decryptSecret(value);
+  } catch {
+    return "";
+  }
 }

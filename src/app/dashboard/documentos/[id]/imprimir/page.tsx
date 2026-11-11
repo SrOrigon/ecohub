@@ -1,5 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
 import { applyMergeTags, buildDocumentMergeContext } from "@/lib/document-merge";
+import { escapeHtml, sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 import { PrintDocumentButton } from "@/components/documents/print-document-button";
 import { notFound, redirect } from "next/navigation";
 
@@ -12,10 +13,10 @@ export default async function DocumentPrintPage({ params }: { params: Promise<{ 
   const merge = await buildDocumentMergeContext(id, user.schoolId);
   if (!merge) notFound();
 
-  const html = applyMergeTags(
-    merge.document.contentHtml ?? `<p>${merge.document.body}</p>`,
-    merge.context
-  );
+  const source = merge.document.contentHtml?.trim()
+    ? merge.document.contentHtml
+    : `<p>${escapeHtml(merge.document.body)}</p>`;
+  const html = sanitizeDocumentHtml(applyMergeTags(source, merge.context));
 
   return (
     <div className="document-print-shell min-h-screen bg-white">

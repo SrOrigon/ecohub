@@ -30,9 +30,6 @@ export async function POST(request: Request) {
     prisma.school.count(),
   ]);
 
-  const databaseUrl = process.env.DATABASE_URL?.trim() ?? "";
-  const databasePath = databaseUrl.replace(/^file:/, "");
-
   return NextResponse.json({
     email,
     userExists: !!user,
@@ -41,8 +38,6 @@ export async function POST(request: Request) {
     passwordHashValid: !!user?.passwordHash?.startsWith("$2"),
     userCount,
     schoolCount,
-    databasePath: databasePath || null,
-    onPersistentVolume: databasePath.startsWith("/data/"),
     authSecretConfigured: isUsableAuthSecret(process.env.AUTH_SECRET),
     institutionalMode:
       process.env.ECOHUB_INSTITUTIONAL === "1" ||

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { escapeHtml } from "@/lib/sanitize-document-html";
 import { calculateAge } from "@/lib/student-age";
 import { formatDate } from "@/lib/utils";
 
@@ -87,8 +88,15 @@ export function stripHtmlToText(html: string) {
     .trim();
 }
 
+function mergeTagValue(match: string, key: string, context: Record<string, string>) {
+  if (!Object.prototype.hasOwnProperty.call(context, key)) return match;
+  return escapeHtml(context[key] ?? "");
+}
+
 export function applyMergeTags(html: string, context: Record<string, string>) {
-  return html.replace(/&lt;&lt;([A-Za-z0-9_]+)&gt;&gt;/g, (_, key: string) => context[key] ?? `&lt;&lt;${key}&gt;&gt;`).replace(/<<([A-Za-z0-9_]+)>>/g, (_, key: string) => context[key] ?? `<<${key}>>`);
+  return html
+    .replace(/&lt;&lt;([A-Za-z0-9_]+)&gt;&gt;/g, (match, key: string) => mergeTagValue(match, key, context))
+    .replace(/<<([A-Za-z0-9_]+)>>/g, (match, key: string) => mergeTagValue(match, key, context));
 }
 
 export async function buildStudentMergeContext(
@@ -143,14 +151,10 @@ export async function buildStudentMergeContext(
 
   const parentUser = student.parentLinks[0]?.parent;
   const contractData = options?.contractData ?? {};
-
-  // For Master Tek specifically requested hardcoded fallback values
-  const razaoSocialEscola = "MASTER TEK SOLUTIONS LTDA ME";
-  const cnpjEscola = "60.916.740/0001-02";
-  const enderecoEscola = "RUA MACEDO COIMBRA, nº 138";
-  const bairroEscola = "CAMPO GRANDE";
-  const cepEscola = "23.052-130";
-  const cidadeEstadoEscola = "Rio de Janeiro/RJ";
+  const razaoSocialEscola = school.legalName?.trim() || school.name;
+  const cnpjEscola = school.cnpj?.trim() || "—";
+  const cidadeEscola = school.city?.trim() || "—";
+  const estadoEscola = school.state?.trim() || "—";
 
   return {
     contractNumber: options?.contractNumber ?? "—",
@@ -219,11 +223,11 @@ export async function buildStudentMergeContext(
     NomeEscola: school.name,
     RazaoSocialEscola: razaoSocialEscola,
     CnpjEscola: cnpjEscola,
-    CidadeEscola: cidadeEstadoEscola.split("/")[0] ?? school.city ?? "—",
-    EstadoEscola: cidadeEstadoEscola.split("/")[1] ?? school.state ?? "—",
-    EnderecoEscola: enderecoEscola,
-    BairroEscola: bairroEscola,
-    CepEscola: cepEscola,
+    CidadeEscola: cidadeEscola,
+    EstadoEscola: estadoEscola,
+    EnderecoEscola: "—",
+    BairroEscola: "—",
+    CepEscola: "—",
     DataInicioContrato: options?.contractStartDate ? formatDate(options.contractStartDate) : "—",
     DataFimContrato: options?.contractEndDate ? formatDate(options.contractEndDate) : "—",
     DataHoje: formatDate(new Date()),

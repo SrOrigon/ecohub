@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { applyMergeTags, buildDocumentMergeContext } from "@/lib/document-merge";
+import { escapeHtml, sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 import { exportHtmlToDocx } from "@/lib/docx-io";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
@@ -15,7 +16,10 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     return NextResponse.json({ error: "Documento não encontrado." }, { status: 404 });
   }
 
-  const html = applyMergeTags(merge.document.contentHtml ?? `<p>${merge.document.body}</p>`, merge.context);
+  const source = merge.document.contentHtml?.trim()
+    ? merge.document.contentHtml
+    : `<p>${escapeHtml(merge.document.body)}</p>`;
+  const html = sanitizeDocumentHtml(applyMergeTags(source, merge.context));
   const safeTitle = merge.document.title.replace(/[^\w\s-]/g, "").trim() || "documento";
   const { buffer, fileName } = await exportHtmlToDocx(html, safeTitle);
 

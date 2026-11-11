@@ -6,6 +6,7 @@ import {
   importContractTemplateDocxAction,
 } from "@/actions/contract-template";
 import { DOCUMENT_MERGE_FIELDS } from "@/lib/document-merge";
+import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Upload } from "lucide-react";
@@ -13,10 +14,7 @@ import { Trash2, Upload } from "lucide-react";
 const visibleFields = DOCUMENT_MERGE_FIELDS.filter((field) => !field.label.includes("Legado"));
 
 function contractPreviewHtml(html: string) {
-  const withoutCode = html
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/\son\w+=(?:"[^"]*"|'[^']*')/gi, "");
+  const withoutCode = sanitizeDocumentHtml(html);
   return withoutCode.replace(/&lt;&lt;([^&]+)&gt;&gt;|<<([^>]+)>>/g, (_match, encoded: string, raw: string) => {
     const key = (encoded || raw || "").trim();
     return DOCUMENT_MERGE_FIELDS.find((field) => field.key === key)?.label ?? "dado da escola";

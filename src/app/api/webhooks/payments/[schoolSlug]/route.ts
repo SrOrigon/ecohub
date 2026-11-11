@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { decryptSecret } from "@/lib/security/crypto-vault";
 import { awardXp } from "@/lib/gamification";
+import { presentedSecret, secretsMatch } from "@/lib/request-secret";
+import { readStoredSecret } from "@/lib/security/crypto-vault";
 import { getSchoolSettingsForStudent } from "@/lib/school-settings";
 import { makeReceiptCode } from "@/lib/student-finance";
 import { logAuditEvent } from "@/lib/audit-logger";
@@ -18,24 +19,12 @@ export async function POST(
     });
 
     if (!school) {
-      return NextResponse.json({ error: "Escola não encontrada." }, { status: 404 });
+      return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
     }
 
     const config = school.paymentConfigs[0];
-
-    if (config?.encryptedApiKey) {
-      try {
-        decryptSecret(config.encryptedApiKey);
-      } catch {
-        /* ignore decrypt fallback */
-      }
-    }
-    if (config?.encryptedApiSecret) {
-      try {
-        decryptSecret(config.encryptedApiSecret);
-      } catch {
-        /* ignore decrypt fallback */
-      }
+    if (!secretsMatch(presentedSecret(req), readStoredSecret(config?.webhookSecret))) {
+      return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
     }
 
     const body = await req.json();
@@ -170,9 +159,6 @@ export async function POST(
     });
   } catch (error) {
     console.error("[payments-school-webhook] Erro ao processar webhook:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erro interno" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Não foi possível registrar o pagamento." }, { status: 500 });
   }
 }

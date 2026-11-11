@@ -2,17 +2,32 @@
 
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import {
+  AUTH_RATE_LIMIT,
+  enforceAccountRateLimit,
+  enforceRateLimit,
+  RateLimitError,
+  rateLimitMessage,
+} from "@/lib/security/rate-limit";
 import { randomBytes } from "crypto";
 
 export async function requestPasswordReset(formData: FormData) {
-  const email = formData.get("email") as string;
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
 
   if (!email) {
     return { error: "E-mail obrigatório" };
   }
 
+  try {
+    await enforceRateLimit("password-reset", email, AUTH_RATE_LIMIT.passwordReset);
+    await enforceAccountRateLimit("password-reset", email, AUTH_RATE_LIMIT.passwordReset);
+  } catch (error) {
+    if (error instanceof RateLimitError) return { error: rateLimitMessage(error.retryAfterSec) };
+    throw error;
+  }
+
   const user = await prisma.user.findUnique({
-    where: { email: email.toLowerCase() },
+    where: { email },
   });
 
   if (!user) {
@@ -70,7 +85,7 @@ export async function resetPassword(formData: FormData) {
 
   await prisma.user.update({
     where: { email: resetToken.email },
-    data: { passwordHash },
+    data: { passwordHash, passwordChangedAt: new Date() },
   });
 
   await prisma.passwordResetToken.delete({

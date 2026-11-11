@@ -52,6 +52,7 @@ model User {
   id                String             @id @default(cuid())
   email             String             @unique
   passwordHash      String
+  passwordChangedAt DateTime?
   fullName          String
   role              String             @default("student")
   avatarUrl         String?

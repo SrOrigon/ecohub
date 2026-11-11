@@ -132,6 +132,9 @@ export async function repairUserPassword(
   if (!user) return { ok: true, found: false };
 
   const passwordHash = await hashPassword(password);
-  await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash, passwordChangedAt: new Date() },
+  });
   return { ok: true, found: true, email };
 }

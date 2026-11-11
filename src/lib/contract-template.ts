@@ -1,10 +1,11 @@
 import { DEFAULT_CONTRACT_HTML } from "@/lib/document-types";
+import { sanitizeDocumentHtml } from "@/lib/sanitize-document-html";
 import type { SchoolSettings } from "@/lib/school-settings";
 
 /** HTML do modelo de contrato da instituição (ou padrão genérico do sistema). */
 export function getContractTemplateHtml(settings: SchoolSettings): string {
   const custom = settings.documents.contractTemplateHtml?.trim();
-  return custom || DEFAULT_CONTRACT_HTML;
+  return sanitizeDocumentHtml(custom || DEFAULT_CONTRACT_HTML);
 }
 
 export function hasInstitutionContractTemplate(settings: SchoolSettings): boolean {
@@ -41,5 +42,5 @@ export function prepareImportedContractHtml(html: string): string {
     prepared = prepared.replace(pattern, replacement);
   }
 
-  return prepared;
+  return sanitizeDocumentHtml(prepared);
 }

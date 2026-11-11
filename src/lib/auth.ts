@@ -17,6 +17,7 @@ export interface SessionPayload {
   userId: string;
   schoolId: string | null;
   role: string;
+  issuedAt: number;
 }
 
 export interface SessionUser {
@@ -49,6 +50,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
       userId: payload.userId as string,
       schoolId: (payload.schoolId as string | null) ?? null,
       role: (payload.role as string) ?? "student",
+      issuedAt: typeof payload.iat === "number" ? payload.iat : 0,
     };
   } catch {
     return null;
@@ -97,11 +99,31 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
 
   const user = await prisma.user.findUnique({
     where: { id: payload.userId },
-    select: { id: true, email: true, fullName: true, role: true, schoolId: true, avatarUrl: true },
+    select: {
+      id: true,
+      email: true,
+      fullName: true,
+      role: true,
+      schoolId: true,
+      avatarUrl: true,
+      passwordChangedAt: true,
+    },
   });
   if (!user) return null;
 
-  const sessionUser: SessionUser = { ...user, role: user.role as SessionUser["role"] };
+  if (user.passwordChangedAt) {
+    const changedAtSec = Math.floor(user.passwordChangedAt.getTime() / 1000);
+    if (payload.issuedAt < changedAtSec) return null;
+  }
+
+  const sessionUser: SessionUser = {
+    id: user.id,
+    email: user.email,
+    fullName: user.fullName,
+    role: user.role as SessionUser["role"],
+    schoolId: user.schoolId,
+    avatarUrl: user.avatarUrl,
+  };
 
   if (payload.schoolId && user.schoolId && payload.schoolId !== user.schoolId) {
     return null;

@@ -33,17 +33,25 @@ export async function GET(request: Request) {
       user.role === "secretary" ||
       user.role === "teacher";
 
+    const studentScope =
+      user.role === "parent"
+        ? { parentLinks: { some: { parentId: user.id } } }
+        : user.role === "student"
+          ? { userId: user.id }
+          : isStaff
+            ? {
+                OR: [
+                  { user: { schoolId: user.schoolId } },
+                  { classGroup: { schoolId: user.schoolId } },
+                  { classEnrollments: { some: { classGroup: { schoolId: user.schoolId } } } },
+                ],
+              }
+            : { id: "nenhum" };
+
     const [studentsRaw, classesRaw, staffRaw, missionsRaw] = await Promise.all([
-      // 1. Alunos da escola
       prisma.student
         .findMany({
-          where: {
-            OR: [
-              { user: { schoolId: user.schoolId } },
-              { classGroup: { schoolId: user.schoolId } },
-              { classEnrollments: { some: { classGroup: { schoolId: user.schoolId } } } },
-            ],
-          },
+          where: studentScope,
           select: {
             id: true,
             enrollmentCode: true,
@@ -117,7 +125,9 @@ export async function GET(request: Request) {
     const students = scoredStudents.slice(0, 5).map(({ student: s }) => ({
       id: s.id,
       title: s.user?.fullName ?? "Aluno",
-      subtitle: `${s.enrollmentCode ? `Matrícula: ${s.enrollmentCode} · ` : ""}${s.classGroup?.name ?? "Sem turma"}`,
+      subtitle: isStaff
+        ? `${s.enrollmentCode ? `Matrícula: ${s.enrollmentCode} · ` : ""}${s.classGroup?.name ?? "Sem turma"}`
+        : (s.classGroup?.name ?? "Sem turma"),
       level: s.level,
       avatarUrl: s.user?.avatarUrl ?? null,
       href: `/dashboard/alunos/${s.id}`,
@@ -168,7 +178,7 @@ export async function GET(request: Request) {
       return {
         id: t.id,
         title: t.fullName,
-        subtitle: `${roleLabel} · ${t.email}`,
+        subtitle: roleLabel,
         avatarUrl: t.avatarUrl ?? null,
         href: "/dashboard/professores",
         type: "professor" as const,

@@ -1,9 +1,10 @@
 "use server";
 
+import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { encryptSecret } from "@/lib/security/crypto-vault";
+import { encryptSecret, readStoredSecret } from "@/lib/security/crypto-vault";
 import { logAuditEvent } from "@/lib/audit-logger";
 import type { PaymentProviderType, PixKeyType } from "@/types/payment-methods";
 
@@ -41,6 +42,8 @@ export async function getSchoolPaymentConfigAction() {
     whatsappPhoneNumberId: config.whatsappPhoneNumberId,
     hasWhatsappToken: !!config.encryptedWhatsappToken,
     maskedWhatsappToken: maskSecret(config.encryptedWhatsappToken),
+    hasWebhookSecret: Boolean(readStoredSecret(config.webhookSecret)),
+    maskedWebhookSecret: maskSecret(readStoredSecret(config.webhookSecret)),
     createdAt: config.createdAt.toISOString(),
     updatedAt: config.updatedAt.toISOString(),
   };
@@ -87,6 +90,20 @@ export async function saveSchoolPaymentConfigAction(formData: FormData) {
     encryptedWhatsappToken = encryptSecret(whatsappTokenInput);
   }
 
+  const pastedWebhookSecret = String(formData.get("webhookSecret") ?? "").trim();
+  const rotateWebhookSecret = formData.get("rotateWebhookSecret") === "on";
+  const pastedIsNew = Boolean(pastedWebhookSecret) && !pastedWebhookSecret.startsWith("****");
+  let webhookSecret = existing?.webhookSecret ?? null;
+  let webhookSecretOnce: string | undefined;
+  if (pastedIsNew || rotateWebhookSecret || !webhookSecret) {
+    const plain = pastedIsNew ? pastedWebhookSecret : randomBytes(32).toString("hex");
+    if (plain.length < 16) {
+      return { error: "O segredo do webhook precisa ter pelo menos 16 caracteres." };
+    }
+    webhookSecret = encryptSecret(plain);
+    webhookSecretOnce = plain;
+  }
+
   const saved = await prisma.schoolPaymentConfig.upsert({
     where: { schoolId: user.schoolId },
     create: {
@@ -104,6 +121,7 @@ export async function saveSchoolPaymentConfigAction(formData: FormData) {
       whatsappRemindDaysBefore,
       whatsappPhoneNumberId,
       encryptedWhatsappToken,
+      webhookSecret,
     },
     update: {
       providerType,
@@ -119,6 +137,7 @@ export async function saveSchoolPaymentConfigAction(formData: FormData) {
       whatsappRemindDaysBefore,
       whatsappPhoneNumberId,
       encryptedWhatsappToken,
+      webhookSecret,
     },
   });
 
@@ -135,7 +154,13 @@ export async function saveSchoolPaymentConfigAction(formData: FormData) {
   revalidatePath("/dashboard/configuracoes/pagamentos");
   revalidatePath("/dashboard/configuracoes");
 
-  return { success: true, message: "Configuração de pagamentos salva com sucesso." };
+  return {
+    success: true,
+    message: webhookSecretOnce
+      ? "Configuração salva. Copie o segredo do webhook agora — ele não será mostrado de novo."
+      : "Configuração de pagamentos salva com sucesso.",
+    webhookSecretOnce,
+  };
 }
 
 export async function saveCardMachineAction(formData: FormData) {
@@ -234,11 +259,14 @@ export async function testPaymentGatewayConnectionAction(formData: FormData) {
   }
 
   if (!apiKey || apiKey.startsWith("****")) {
-    return { success: true, message: `Conexão testada com sucesso para o gateway ${providerType}!` };
+    return {
+      success: true,
+      message: "Nenhuma chave nova para conferir. O segredo já salvo permanece no cofre.",
+    };
   }
 
   return {
     success: true,
-    message: `Credenciais para ${providerType} validadas com sucesso via API!`,
+    message: `A chave de ${providerType} foi aceita para gravação. A confirmação real acontece quando o gateway enviar um pagamento com o segredo do webhook.`,
   };
 }

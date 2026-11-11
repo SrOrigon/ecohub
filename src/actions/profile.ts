@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSessionResult } from "@/lib/auth";
+import { establishSession, requireSessionResult } from "@/lib/auth";
 import { resolveAvatarFromForm } from "@/lib/avatar";
 import { prisma } from "@/lib/db";
 import { validatePassword, hashPassword, verifyPassword, normalizePassword } from "@/lib/security/password-policy";
@@ -103,8 +103,9 @@ export async function changePasswordAction(formData: FormData) {
   const passwordHash = await hashPassword(newPassword);
   await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash },
+    data: { passwordHash, passwordChangedAt: new Date() },
   });
+  await establishSession({ id: user.id, schoolId: user.schoolId, role: user.role });
 
   await logAuditEvent({
     schoolId: user.schoolId,
