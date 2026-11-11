@@ -256,45 +256,7 @@ export async function getTeacherDiagnosticsAction(): Promise<TopicDiagnostic[]> 
     orderBy: { createdAt: "desc" },
   });
 
-  if (exercises.length === 0) {
-    return [
-      {
-        subject: "Matemática",
-        topic: "Operações com Frações e Decimais",
-        classId: "demo-class",
-        className: "Turma Geral",
-        totalAttempts: 18,
-        errorRate: 62,
-        status: "critical",
-        studentsNeedingHelp: [
-          { id: "s1", name: "Lucas Silva", score: 4.5 },
-          { id: "s2", name: "Mariana Souza", score: 5.0 },
-        ],
-      },
-      {
-        subject: "Português",
-        topic: "Interpretação e Figuras de Linguagem",
-        classId: "demo-class",
-        className: "Turma Geral",
-        totalAttempts: 22,
-        errorRate: 35,
-        status: "warning",
-        studentsNeedingHelp: [
-          { id: "s3", name: "Gabriel Santos", score: 5.8 },
-        ],
-      },
-      {
-        subject: "Ciências",
-        topic: "Ciclo da Água e Ecossistemas",
-        classId: "demo-class",
-        className: "Turma Geral",
-        totalAttempts: 20,
-        errorRate: 15,
-        status: "good",
-        studentsNeedingHelp: [],
-      },
-    ];
-  }
+  if (exercises.length === 0) return [];
 
   const diagnostics: TopicDiagnostic[] = [];
 

@@ -90,7 +90,7 @@ export function SharedCalendarManager({ settings, canManageItems, canManageMeta 
                 <Select id="kind" name="kind" defaultValue="event">
                   <option value="event">Evento geral</option>
                   <option value="exam">Prova / avaliação</option>
-                  <option value="meeting">Reunião de pais</option>
+                  <option value="meeting">Reunião</option>
                 </Select>
               </div>
               <div>

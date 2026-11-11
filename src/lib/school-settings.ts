@@ -248,7 +248,7 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
   },
   gamificationSeason: {
     enabled: false,
-    name: "Temporada 2026.1",
+    name: "",
     startDate: "2026-02-01",
     endDate: "2026-06-30",
   },
@@ -329,6 +329,9 @@ export function parseSchoolSettings(raw: string | null | undefined): SchoolSetti
     ) as unknown as SchoolSettings;
     if (settings.branding.tagline === "Aprender, evoluir, conquistar") {
       settings.branding.tagline = "";
+    }
+    if (settings.gamificationSeason.name === "Temporada 2026.1") {
+      settings.gamificationSeason.name = "";
     }
     if (
       JSON.stringify(settings.calendar.holidays) ===

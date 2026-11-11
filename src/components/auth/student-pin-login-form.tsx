@@ -57,7 +57,6 @@ export function StudentPinLoginForm({
                 id="schoolSlug"
                 name="schoolSlug"
                 required
-                placeholder="ex.: minha-escola"
                 defaultValue={schoolSlug}
                 readOnly={!!schoolSlug}
               />

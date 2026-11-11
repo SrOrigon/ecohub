@@ -174,7 +174,6 @@ export function EditBadgeForm({
                 name="xpRequired"
                 type="number"
                 defaultValue={badge.xpRequired}
-                placeholder="Ex: 100 ou -50"
               />
             </div>
             <div>
@@ -184,7 +183,6 @@ export function EditBadgeForm({
                 name="coinsReward"
                 type="number"
                 defaultValue={badge.coinsReward ?? 0}
-                placeholder="Ex: 20 ou -10"
               />
             </div>
             <div>

@@ -54,7 +54,7 @@ export function CreateProjectButton() {
               <Input
                 id="title"
                 name="title"
-                placeholder="Ex: Jogo da Memória Eco"
+                placeholder="Título do projeto"
                 required
               />
             </div>

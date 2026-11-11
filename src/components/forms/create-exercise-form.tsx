@@ -437,7 +437,7 @@ export function CreateExerciseForm({
                   <Input
                     value={aiTopic}
                     onChange={(e) => setAiTopic(e.target.value)}
-                    placeholder="Tema pedagógico (ex.: frações equivalentes)"
+                    placeholder="Tema da questão"
                     aria-label="Tema para gerar questões"
                   />
                   <Select

@@ -584,7 +584,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
                       },
                     }))
                   }
-                  placeholder="2026-04-21|Tiradentes"
+                  placeholder="AAAA-MM-DD|nome"
                 />
               </div>
               <div>
@@ -617,7 +617,7 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
                       },
                     }))
                   }
-                  placeholder="2026-06-10|Prova final|exam"
+                  placeholder="AAAA-MM-DD|nome|tipo"
                 />
               </div>
             </div>

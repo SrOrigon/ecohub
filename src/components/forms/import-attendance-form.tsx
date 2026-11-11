@@ -97,15 +97,6 @@ export function ImportAttendanceForm({ classes }: { classes: ClassOption[] }) {
     null
   );
 
-  function insertSampleCsv() {
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const sample = `data,id_aluno_ou_email,status,id_turma
-2026-05-10,aluno1@escola.com,present
-2026-05-10,aluno2@escola.com,absent
-${todayStr},aluno3@escola.com,late`;
-    setCsvText(sample);
-  }
-
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -159,23 +150,14 @@ ${todayStr},aluno3@escola.com,late`;
                 />
               </div>
               <div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="csvData">Dados CSV / Texto</Label>
-                  <button
-                    type="button"
-                    onClick={insertSampleCsv}
-                    className="text-xs text-sky-600 hover:underline"
-                  >
-                    Usar exemplo
-                  </button>
-                </div>
+                <Label htmlFor="csvData">Dados CSV / Texto</Label>
                 <textarea
                   id="csvData"
                   name="csvData"
                   rows={6}
                   value={csvText}
                   onChange={(e) => setCsvText(e.target.value)}
-                  placeholder={`data,email_ou_id,status\n2026-05-15,aluno@escola.com,present`}
+                  placeholder="data,id_aluno_ou_email,status"
                   className="mt-1 w-full rounded-md border border-slate-300 p-2 text-xs font-mono focus:border-emerald-500 focus:outline-none"
                 />
               </div>

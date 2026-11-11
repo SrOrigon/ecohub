@@ -88,7 +88,6 @@ function ExtraProfileFields({
               id={`${idPrefix}-latitude`}
               name="latitude"
               inputMode="decimal"
-              placeholder="-23.5505"
               defaultValue={values?.latitude ?? ""}
             />
           </div>
@@ -98,7 +97,6 @@ function ExtraProfileFields({
               id={`${idPrefix}-longitude`}
               name="longitude"
               inputMode="decimal"
-              placeholder="-46.6333"
               defaultValue={values?.longitude ?? ""}
             />
           </div>

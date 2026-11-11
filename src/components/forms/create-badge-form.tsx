@@ -111,11 +111,11 @@ export function CreateBadgeForm({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <Label htmlFor="badge-xp">XP (+ / -)</Label>
-              <Input id="badge-xp" name="xpRequired" type="number" defaultValue={100} placeholder="Ex: 100 ou -50" />
+              <Input id="badge-xp" name="xpRequired" type="number" required />
             </div>
             <div>
               <Label htmlFor="badge-coins">Moedas (+ / -)</Label>
-              <Input id="badge-coins" name="coinsReward" type="number" defaultValue={20} placeholder="Ex: 20 ou -10" />
+              <Input id="badge-coins" name="coinsReward" type="number" required />
             </div>
             <div>
               <Label htmlFor="badge-icon">Ícone Padrão</Label>

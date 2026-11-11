@@ -42,9 +42,6 @@ export async function adjustStudentPointsAction(formData: FormData) {
   const sign = direction === "loss" ? -1 : 1;
   const xpDelta = xpRaw * sign;
   const coinDelta = coinRaw * sign;
-  // #region agent log
-  fetch('http://127.0.0.1:7835/ingest/5ebca1af-63db-48d1-b506-1de1b9e39b43',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'60f478'},body:JSON.stringify({sessionId:'60f478',runId:'limits-scan',hypothesisId:'A',location:'point-adjustments.ts:38',message:'ajuste de pontos recebido',data:{xpRaw,coinRaw,xpDelta,coinDelta,formXp:String(formData.get('xpAmount')),formCoins:String(formData.get('coinAmount'))},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
 
   if (!studentId) return { error: "Selecione um aluno." };
   if (!activity) return { error: "Descreva a atividade em sala." };

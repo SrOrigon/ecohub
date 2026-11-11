@@ -275,7 +275,7 @@ export function DropoutRiskPanel({
             <textarea
               className="w-full rounded-lg border border-slate-300 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               rows={4}
-              placeholder="Ex: Aulas de recuperação em matemática, monitoria presencial nas terças..."
+              placeholder="Descreva as ações de reforço."
               value={planNotes}
               onChange={(e) => setPlanNotes(e.target.value)}
               required

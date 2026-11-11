@@ -111,7 +111,7 @@ export default async function MensagensPage({
             </div>
             <div>
               <Label htmlFor="newBody">Primeira mensagem</Label>
-              <Textarea id="newBody" name="body" rows={2} required placeholder="Olá, gostaria de..." />
+              <Textarea id="newBody" name="body" rows={2} required placeholder="Escreva a mensagem" />
             </div>
             <Button type="submit" size="sm" className="w-full sm:w-auto">
               Enviar

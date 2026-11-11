@@ -45,7 +45,6 @@ export function RegisterParentForm({ initialSchoolSlug = "" }: { initialSchoolSl
               id="schoolSlug"
               name="schoolSlug"
               required
-              placeholder="codigo-da-escola"
               defaultValue={initialSchoolSlug}
             />
           </div>

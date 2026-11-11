@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 export function ConfigureSubjectsPrompt({
   canManage,
   title = "Cadastre as disciplinas da instituição",
-  description = "Notas, horários, diário e exercícios usam somente as matérias que você cadastrar. Ex.: um curso de programação pode ter apenas “Programação Web”.",
+  description = "Notas, horários, diário e exercícios usam somente as matérias que você cadastrar.",
 }: {
   canManage: boolean;
   title?: string;

@@ -36,7 +36,7 @@ export function SchedulingServiceForm({ instructors }: { instructors: any[] }) {
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
         <Label>Nome do Serviço</Label>
-        <Input name="name" required placeholder="Ex: Aula de Robótica" />
+        <Input name="name" required />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>

@@ -66,7 +66,6 @@ export function EditClassForm({
               id={`class-name-${turma.id}`}
               name="name"
               defaultValue={turma.name}
-              placeholder="Design de Games Kids"
               required
             />
           </div>
@@ -76,7 +75,6 @@ export function EditClassForm({
               id={`class-grade-${turma.id}`}
               name="gradeLevel"
               defaultValue={turma.gradeLevel}
-              placeholder="Sexta-feira · 08h às 10h"
               required
             />
           </div>

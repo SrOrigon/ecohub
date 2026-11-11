@@ -80,7 +80,6 @@ export function RegisterStudentForm({ initialSchoolSlug = "" }: { initialSchoolS
               id="schoolSlug"
               name="schoolSlug"
               required
-              placeholder="codigo-da-escola"
               value={schoolSlug}
               onChange={(e) => {
                 const v = e.target.value.toLowerCase();

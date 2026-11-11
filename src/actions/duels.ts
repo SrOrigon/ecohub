@@ -97,9 +97,6 @@ export async function startTeacherDuelSessionAction(formData: FormData) {
   const requestedXp = Number(formData.get("maxBetXp") ?? 30);
   const maxBetCoins = Math.max(0, Number.isFinite(requestedCoins) ? requestedCoins : 0);
   const maxBetXp = Math.max(0, Number.isFinite(requestedXp) ? requestedXp : 0);
-  // #region agent log
-  fetch('http://127.0.0.1:7835/ingest/5ebca1af-63db-48d1-b506-1de1b9e39b43',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'60f478'},body:JSON.stringify({sessionId:'60f478',runId:'post-fix',hypothesisId:'B',location:'duels.ts:96',message:'abrir arena: teto aplicado',data:{requestedCoins,requestedXp,maxBetCoins,maxBetXp,clamped:requestedCoins>100||requestedXp>100},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
 
   if (!classId) return { error: "Selecione uma turma." };
 
@@ -146,9 +143,6 @@ export async function updateTeacherDuelSessionLimitsAction(formData: FormData) {
   const requestedXp = Number(formData.get("maxBetXp") ?? 30);
   const maxBetCoins = Math.max(0, Number.isFinite(requestedCoins) ? requestedCoins : 0);
   const maxBetXp = Math.max(0, Number.isFinite(requestedXp) ? requestedXp : 0);
-  // #region agent log
-  fetch('http://127.0.0.1:7835/ingest/5ebca1af-63db-48d1-b506-1de1b9e39b43',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'60f478'},body:JSON.stringify({sessionId:'60f478',runId:'post-fix',hypothesisId:'B',location:'duels.ts:140',message:'atualizar arena: teto aplicado',data:{requestedCoins,requestedXp,maxBetCoins,maxBetXp,clamped:requestedCoins>100||requestedXp>100},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   if (!sessionId) return { error: "Sessão inválida." };
 
   const session = await prisma.duelSession.findFirst({

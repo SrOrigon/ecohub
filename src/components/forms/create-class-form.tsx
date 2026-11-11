@@ -47,15 +47,15 @@ export function CreateClassForm({
           )}
           <div>
             <Label htmlFor="name">Nome da turma</Label>
-            <Input id="name" name="name" placeholder="8º Ano A" required />
+            <Input id="name" name="name" required />
           </div>
           <div>
             <Label htmlFor="gradeLevel">Série / período / horário</Label>
-            <Input id="gradeLevel" name="gradeLevel" placeholder="Sexta-feira · 08h às 10h" required />
+            <Input id="gradeLevel" name="gradeLevel" required />
           </div>
           <div>
             <Label htmlFor="year">Ano letivo</Label>
-            <Input id="year" name="year" type="number" defaultValue={2026} required />
+            <Input id="year" name="year" type="number" defaultValue={new Date().getFullYear()} required />
           </div>
           {!teacherMode && teachers.length > 0 && (
             <div>

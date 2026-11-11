@@ -22,9 +22,7 @@ export function BulkImportModal({
 
   function handleDownloadTemplate() {
     const csvContent =
-      "Nome do Aluno,Data Nasc (AAAA-MM-DD),Nome do Responsável,whatsapp_responsavel,Email Responsável,Turma\n" +
-      "Lucas Silva,2015-05-20,Maria Silva,11999998888,maria.silva@email.com,5º Ano A\n" +
-      "Ana Souza,2016-08-12,João Souza,11988887777,joao.souza@email.com,4º Ano B\n";
+      "Nome do Aluno,Data Nasc (AAAA-MM-DD),Nome do Responsável,whatsapp_responsavel,Email Responsável,Turma\n";
 
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);

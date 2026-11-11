@@ -159,7 +159,7 @@ export function PersonalNotesManager({
             <EmptyState
               icon={NotebookPen}
               title={`Sem anotações em ${formatDate(selectedDate)}`}
-              description="Ex.: lembrete de material para prova, revisão ou horário de entrega."
+              description="Anote o que precisa lembrar neste dia."
             >
               <Button onClick={() => openCreate("dated")}>Adicionar para este dia</Button>
             </EmptyState>
