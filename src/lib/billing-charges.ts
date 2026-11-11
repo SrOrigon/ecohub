@@ -11,6 +11,7 @@ import {
   referenceMonthLabel,
   standingLabel,
   summarizeCharges,
+  takeChargePayment,
 } from "@/lib/billing-status";
 
 type InvoiceRow = {
@@ -31,6 +32,7 @@ type PaymentRow = {
   paidAt: Date;
   dueDate: Date;
   installmentId: string | null;
+  receiptCode: string;
 };
 
 type InstallmentRow = {
@@ -68,7 +70,14 @@ export async function listBillingCharges(schoolId: string, studentId?: string) {
             expectedInstallments: true,
             createdAt: true,
             payments: {
-              select: { id: true, amountCents: true, paidAt: true, dueDate: true, installmentId: true },
+              select: {
+                id: true,
+                amountCents: true,
+                paidAt: true,
+                dueDate: true,
+                installmentId: true,
+                receiptCode: true,
+              },
             },
             installments: {
               select: {
@@ -173,7 +182,7 @@ export async function listBillingCharges(schoolId: string, studentId?: string) {
       const usedPayments = new Set<string>();
       for (const installment of account.installments) {
         covered.add(monthKey(installment.dueDate));
-        const payment = takeInstallmentPayment(account.payments, installment, usedPayments);
+        const payment = takeChargePayment(account.payments, installment, usedPayments);
         charges.push(
           chargeFromInstallment({
             installment,
@@ -266,20 +275,6 @@ export async function getBillingFlags(schoolId: string) {
   return flags;
 }
 
-function takeInstallmentPayment(payments: PaymentRow[], installment: InstallmentRow, used: Set<string>) {
-  const linked = payments.find((item) => item.installmentId === installment.id && !used.has(item.id));
-  if (linked) {
-    used.add(linked.id);
-    return linked;
-  }
-  const key = monthKey(installment.dueDate);
-  const byMonth = payments.find(
-    (item) => !item.installmentId && !used.has(item.id) && (monthKey(item.dueDate) === key || monthKey(item.paidAt) === key)
-  );
-  if (byMonth) used.add(byMonth.id);
-  return byMonth ?? null;
-}
-
 function chargeFromInstallment(input: {
   installment: InstallmentRow;
   studentId: string;
@@ -311,6 +306,7 @@ function chargeFromInstallment(input: {
     source: "installment",
     pixCopyPaste: null,
     lastWhatsappAt: input.lastWhatsapp.get(input.installment.id) ?? null,
+    receiptCode: input.payment?.receiptCode ?? null,
   };
 }
 
@@ -372,6 +368,7 @@ function buildMonthCharge(input: {
     source: "plan",
     pixCopyPaste: source?.pixCopyPaste ?? null,
     lastWhatsappAt: input.lastWhatsapp.get(id) ?? null,
+    receiptCode: input.payment?.receiptCode ?? null,
   };
 }
 

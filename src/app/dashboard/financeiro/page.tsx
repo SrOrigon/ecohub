@@ -1,6 +1,7 @@
 import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
+import { DelinquencyPanel } from "@/components/finance/delinquency-panel";
 import { InstitutionTuitionPlans } from "@/components/finance/institution-tuition-plans";
 import { StudentBillingTabs } from "@/components/finance/student-billing-tabs";
 import { listBillingCharges } from "@/lib/billing-charges";
@@ -43,6 +44,8 @@ export default async function FinanceiroGestaoPage({
         title="Cobranças e pendências"
         description="A instituição define o valor, o vencimento e as parcelas. Com isso o sistema mostra quem tem pendência e envia a cobrança no WhatsApp do responsável."
       />
+
+      <DelinquencyPanel charges={charges} />
 
       <InstitutionTuitionPlans classes={tuition.classes} plans={tuition.plans} />
 

@@ -86,7 +86,7 @@ export function LearningDiagnosticsPanel({
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                      {diag.className}
+                      Turma · {diag.className}
                     </span>
                     <Badge
                       variant={isCritical ? "danger" : isWarning ? "warning" : "success"}

@@ -423,9 +423,12 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
                   description="Cria registro de nota ao corrigir"
                 />
               </div>
-              <p className="text-sm text-slate-600">Presets do wizard (rótulo · XP · moedas · pontos):</p>
+              <p className="text-sm text-slate-600">Pesos que o professor pode aplicar ao criar um exercício (rótulo, XP, moedas e pontos):</p>
+              {settings.exercises.presets.length === 0 && (
+                <p className="text-sm text-slate-500">Nenhum peso cadastrado. Inclua os que a escola usa.</p>
+              )}
               {settings.exercises.presets.map((p, i) => (
-                <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]">
                   <Input
                     value={p.label}
                     onChange={(e) =>
@@ -473,8 +476,40 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
                     }
                     aria-label="Pontos"
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setSettings((s) => ({
+                        ...s,
+                        exercises: {
+                          ...s.exercises,
+                          presets: s.exercises.presets.filter((_, index) => index !== i),
+                        },
+                      }))
+                    }
+                  >
+                    Remover
+                  </Button>
                 </div>
               ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setSettings((s) => ({
+                    ...s,
+                    exercises: {
+                      ...s.exercises,
+                      presets: [...s.exercises.presets, { label: "", xp: 0, coins: 0, points: 0 }],
+                    },
+                  }))
+                }
+              >
+                Incluir peso
+              </Button>
             </div>
           )}
 

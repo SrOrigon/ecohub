@@ -10,9 +10,13 @@ export function DeleteStudentButton({ studentId, studentName }: { studentId: str
   const router = useRouter();
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
-      if (!confirm(`Excluir o aluno ${studentName}? Esta ação não pode ser desfeita.`)) {
-        return { error: "Cancelado." };
+      const typed = window.prompt(
+        `Esta exclusão apaga os dados de ${studentName} e não pode ser desfeita. Baixe os dados antes, se a família pediu uma cópia. Digite o nome completo para confirmar.`
+      );
+      if (typed?.trim() !== studentName.trim()) {
+        return { error: "O nome não confere. Nada foi excluído." };
       }
+      formData.set("confirmName", typed.trim());
       const result = await deleteStudentAction(formData);
       if (result.success) router.push("/dashboard/alunos");
       return result;
@@ -21,8 +25,14 @@ export function DeleteStudentButton({ studentId, studentName }: { studentId: str
   );
 
   return (
-    <form action={formAction}>
+    <form action={formAction} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="studentId" value={studentId} />
+      <a
+        href={`/api/alunos/${studentId}/dados`}
+        className="inline-flex h-8 items-center rounded-md border border-slate-200 px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+      >
+        Baixar dados
+      </a>
       <Button
         type="submit"
         variant="outline"

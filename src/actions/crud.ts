@@ -400,11 +400,14 @@ export async function createGradeAction(formData: FormData) {
   const studentId = String(formData.get("studentId") ?? "");
   const subject = String(formData.get("subject") ?? "");
   const value = parseFloat(String(formData.get("value") ?? "0"));
-  const period = String(formData.get("period") ?? settings.academic.periods[0] ?? "1º Bimestre");
+  const period = String(formData.get("period") ?? "").trim() || settings.academic.periods[0] || "";
   const maxGrade = settings.academic.maxGrade;
 
   if (!studentId || !subject || isNaN(value)) {
     return { error: "Preencha todos os campos." };
+  }
+  if (!period) {
+    return { error: "Cadastre os períodos letivos da instituição antes de lançar notas." };
   }
 
   const subjectCheck = assertInstitutionSubject(subject, settings.academic.subjects);
@@ -1609,6 +1612,21 @@ export async function deleteStudentAction(formData: FormData) {
   });
   if (!student) return { error: "Aluno não encontrado." };
 
+  const confirmName = String(formData.get("confirmName") ?? "").trim();
+  if (confirmName !== student.user.fullName.trim()) {
+    return { error: "Digite o nome completo do aluno para excluir os dados." };
+  }
+
+  await logAuditEvent({
+    schoolId: user.schoolId,
+    actorId: user.id,
+    actorRole: user.role,
+    action: "STUDENT_DATA_DELETE",
+    entityType: "Student",
+    entityId: student.id,
+    diffBefore: { fullName: student.user.fullName, enrollmentCode: student.enrollmentCode },
+  });
+
   await prisma.user.delete({ where: { id: student.userId } });
   revalidateGroups("core", "people", "academic", "gamification", "analytics", "alerts", "exercises");
   invalidateSchoolCaches(user.schoolId);
@@ -2012,9 +2030,6 @@ export async function updateSchoolSettingsAction(formData: FormData) {
   const current = parseSchoolSettings(school.settings);
   const merged = mergeSchoolSettings(current, patch);
 
-  if (merged.academic.periods.length === 0) {
-    return { error: "Informe ao menos um período." };
-  }
   if (merged.xp.xpPerLevel < 50) {
     return { error: "XP por nível deve ser no mínimo 50." };
   }

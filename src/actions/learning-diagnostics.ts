@@ -272,10 +272,10 @@ export async function getTeacherDiagnosticsAction(): Promise<TopicDiagnostic[]> 
     else if (errorRate >= 25) status = "warning";
 
     diagnostics.push({
-      subject: ex.classGroup?.name ?? "Geral",
+      subject: "",
       topic: ex.title,
       classId: ex.classId ?? "",
-      className: ex.classGroup?.name ?? "Turma",
+      className: ex.classGroup?.name ?? "Sem turma",
       totalAttempts: totalSubmissions,
       errorRate,
       status,

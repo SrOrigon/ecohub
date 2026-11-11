@@ -20,6 +20,7 @@ export function parseDateOnly(iso: string) {
 }
 
 export function isWithinSchoolYear(date: Date, settings: SchoolSettings) {
+  if (!settings.calendar.yearStart || !settings.calendar.yearEnd) return true;
   const start = parseDateOnly(settings.calendar.yearStart);
   const end = parseDateOnly(settings.calendar.yearEnd);
   end.setHours(23, 59, 59, 999);

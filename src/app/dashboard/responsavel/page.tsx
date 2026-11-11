@@ -18,7 +18,9 @@ import { CreateHomeTaskForm } from "@/components/forms/create-home-task-form";
 import { ParentHomeTasksPanel } from "@/components/home-tasks/parent-home-tasks-panel";
 import { AttentionAlertsPanel } from "@/components/alerts/attention-alerts-panel";
 import { getAttentionAlertsSnapshot } from "@/lib/attention-alerts";
-import { getBillingFlags } from "@/lib/billing-charges";
+import { chargesToRemind, getRemindDaysBefore, listChargesForChildren } from "@/lib/parent-finance";
+import { formatDueDate, summarizeCharges, type BillingCharge } from "@/lib/billing-status";
+import { formatBRL } from "@/lib/student-finance";
 import { redirect } from "next/navigation";
 
 const relationLabels: Record<string, string> = {
@@ -63,9 +65,25 @@ export default async function ResponsavelPortalPage() {
         })
       : [];
   const pendingMap = new Map(pendingByStudent.map((p) => [p.studentId, p._count.id]));
-  const financeFlags = user.schoolId
-    ? await getBillingFlags(user.schoolId).catch(() => ({} as Record<string, "pending" | "clear" | "none">))
-    : {};
+  const [chargesByChild, remindDays] = user.schoolId
+    ? await Promise.all([
+        listChargesForChildren(user.schoolId, children.map((c) => c.student.id)),
+        getRemindDaysBefore(user.schoolId),
+      ])
+    : [new Map<string, BillingCharge[]>(), 0];
+  const financeFlags: Record<string, "pending" | "clear" | "none"> = {};
+  for (const [studentId, charges] of chargesByChild) {
+    financeFlags[studentId] = summarizeCharges(charges).state;
+  }
+  const reminders = children
+    .flatMap(({ student }) =>
+      chargesToRemind(chargesByChild.get(student.id) ?? [], remindDays).map((charge) => ({
+        charge,
+        studentId: student.id,
+        studentName: student.user.fullName,
+      }))
+    )
+    .sort((a, b) => new Date(a.charge.dueDate).getTime() - new Date(b.charge.dueDate).getTime());
 
   const childSummaries = children.map(({ student }) => {
     const avg =
@@ -106,6 +124,41 @@ export default async function ResponsavelPortalPage() {
           passGrade={passGrade}
           assistantName={assistantName}
         />
+      )}
+
+      {reminders.length > 0 && (
+        <Card className="border-amber-200">
+          <CardHeader>
+            <CardTitle>Mensalidades para pagar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y divide-slate-100 text-sm">
+              {reminders.map(({ charge, studentId, studentName }) => (
+                <li key={charge.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-900">
+                      {studentName} · {charge.title}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Vencimento {formatDueDate(new Date(charge.dueDate))} · {formatBRL(charge.amountCents)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={charge.standing === "overdue" ? "danger" : "warning"}>
+                      {charge.standing === "overdue" ? "Em atraso" : charge.standing === "due" ? "Vence hoje" : "A vencer"}
+                    </Badge>
+                    <Link
+                      href={`/dashboard/responsavel/filho/${studentId}#financeiro`}
+                      className="text-sm font-medium text-indigo-700 hover:underline"
+                    >
+                      Ver parcelas
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       )}
 
       {children.length > 0 && (

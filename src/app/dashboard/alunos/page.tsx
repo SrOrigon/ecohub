@@ -7,6 +7,7 @@ import { StudentsListPanel } from "@/components/students/students-list-panel";
 import { InstitutionalSetupHint } from "@/components/school/institutional-setup-hint";
 import { requirePageAccess, STAFF_ROLES } from "@/lib/access-control";
 import { getBillingFlags } from "@/lib/billing-charges";
+import { prisma } from "@/lib/db";
 
 export default async function AlunosPage() {
   const user = await requirePageAccess(STAFF_ROLES);
@@ -20,10 +21,20 @@ export default async function AlunosPage() {
   const canDeleteStudents =
     user.role === "admin" || user.role === "director" || user.role === "secretary";
 
-  const [students, classes, settings, financeFlags] = await Promise.all([
+  const [students, classes, settings, financePlanCount, financeFlags] = await Promise.all([
     getStudents(user.schoolId).catch(() => []),
     getClasses(user.schoolId).catch(() => []),
     getSchoolSettings(user.schoolId),
+    user.schoolId
+      ? prisma.studentFinanceAccount
+          .count({
+            where: {
+              student: { user: { schoolId: user.schoolId } },
+              OR: [{ monthlyAmountCents: { gt: 0 } }, { installments: { some: {} } }],
+            },
+          })
+          .catch(() => 0)
+      : Promise.resolve(0),
     user.schoolId
       ? getBillingFlags(user.schoolId).catch((error) => {
           console.error("[alunos] pendências", error);
@@ -74,6 +85,9 @@ export default async function AlunosPage() {
           canManageSettings={canManageSettings}
           classCount={classes.length}
           subjectCount={settings?.academic?.subjects?.length ?? 0}
+          periodCount={settings?.academic?.periods?.length ?? 0}
+          studentCount={students.length}
+          financePlanCount={financePlanCount}
         />
       )}
 

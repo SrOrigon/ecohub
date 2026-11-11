@@ -35,8 +35,6 @@ export const SUBJECTS = [
   "Artes",
 ];
 
-export const PERIODS = ["1º Bimestre", "2º Bimestre", "3º Bimestre", "4º Bimestre"];
-
 export const BRAZILIAN_STATES = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
   "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",

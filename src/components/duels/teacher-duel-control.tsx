@@ -29,8 +29,8 @@ export function TeacherDuelControl({
   activeSession?: ActiveDuelSessionInfo | null;
 }) {
   const [selectedClassId, setSelectedClassId] = useState(classes[0]?.id ?? "");
-  const [maxBetCoins, setMaxBetCoins] = useState(activeSession?.maxBetCoins ?? 30);
-  const [maxBetXp, setMaxBetXp] = useState(activeSession?.maxBetXp ?? 30);
+  const [maxBetCoins, setMaxBetCoins] = useState(activeSession ? String(activeSession.maxBetCoins) : "");
+  const [maxBetXp, setMaxBetXp] = useState(activeSession ? String(activeSession.maxBetXp) : "");
   const [limitMessage, setLimitMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -116,8 +116,9 @@ export function TeacherDuelControl({
               type="number"
               min={0}
               value={maxBetCoins}
+              required
               disabled={isPending}
-              onChange={(e) => setMaxBetCoins(Math.max(0, Number.parseInt(e.target.value, 10) || 0))}
+              onChange={(e) => setMaxBetCoins(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>
@@ -130,8 +131,9 @@ export function TeacherDuelControl({
               type="number"
               min={0}
               value={maxBetXp}
+              required
               disabled={isPending}
-              onChange={(e) => setMaxBetXp(Math.max(0, Number.parseInt(e.target.value, 10) || 0))}
+              onChange={(e) => setMaxBetXp(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>

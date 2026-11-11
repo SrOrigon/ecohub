@@ -75,8 +75,14 @@ export default async function CalendarioPage() {
             <CardTitle className="stat-card-label">Período letivo</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-[var(--foreground)]">
-            <p>{formatDate(settings.calendar.yearStart)}</p>
-            <p>até {formatDate(settings.calendar.yearEnd)}</p>
+            {settings.calendar.yearStart && settings.calendar.yearEnd ? (
+              <>
+                <p>{formatDate(settings.calendar.yearStart)}</p>
+                <p>até {formatDate(settings.calendar.yearEnd)}</p>
+              </>
+            ) : (
+              <p>A escola ainda não definiu o período letivo.</p>
+            )}
           </CardContent>
         </Card>
         <Card className="stat-card">

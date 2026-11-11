@@ -87,16 +87,25 @@ async function assertStudentsShareClass(studentIdA: string, studentIdB: string, 
   return classIdsA.includes(classId) && classIdsB.includes(classId);
 }
 
+function readBetCap(value: FormDataEntryValue | null) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 0) return null;
+  return parsed;
+}
+
 /** Professor abre a Arena de Duelos para a sua turma */
 export async function startTeacherDuelSessionAction(formData: FormData) {
   const user = await requireSession(["teacher", "director", "admin"]);
   if (!user.schoolId) return { error: "Escola não configurada." };
 
   const classId = String(formData.get("classId") ?? "").trim();
-  const requestedCoins = Number(formData.get("maxBetCoins") ?? 30);
-  const requestedXp = Number(formData.get("maxBetXp") ?? 30);
-  const maxBetCoins = Math.max(0, Number.isFinite(requestedCoins) ? requestedCoins : 0);
-  const maxBetXp = Math.max(0, Number.isFinite(requestedXp) ? requestedXp : 0);
+  const maxBetCoins = readBetCap(formData.get("maxBetCoins"));
+  const maxBetXp = readBetCap(formData.get("maxBetXp"));
+  if (maxBetCoins === null || maxBetXp === null) {
+    return { error: "Informe o teto de moedas e o teto de XP da arena." };
+  }
 
   if (!classId) return { error: "Selecione uma turma." };
 
@@ -139,10 +148,11 @@ export async function updateTeacherDuelSessionLimitsAction(formData: FormData) {
   if (!user.schoolId) return { error: "Escola não configurada." };
 
   const sessionId = String(formData.get("sessionId") ?? "").trim();
-  const requestedCoins = Number(formData.get("maxBetCoins") ?? 30);
-  const requestedXp = Number(formData.get("maxBetXp") ?? 30);
-  const maxBetCoins = Math.max(0, Number.isFinite(requestedCoins) ? requestedCoins : 0);
-  const maxBetXp = Math.max(0, Number.isFinite(requestedXp) ? requestedXp : 0);
+  const maxBetCoins = readBetCap(formData.get("maxBetCoins"));
+  const maxBetXp = readBetCap(formData.get("maxBetXp"));
+  if (maxBetCoins === null || maxBetXp === null) {
+    return { error: "Informe o teto de moedas e o teto de XP da arena." };
+  }
   if (!sessionId) return { error: "Sessão inválida." };
 
   const session = await prisma.duelSession.findFirst({

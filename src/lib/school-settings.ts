@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db";
 import { cache } from "react";
-import { PERIODS as DEFAULT_PERIODS } from "@/lib/constants";
 import { CACHE_TTL, cacheGetOrSet } from "@/lib/runtime-cache";
 
 export type ExercisePreset = {
@@ -175,15 +174,11 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
   exercises: {
     autoGradeEnabled: true,
     postGradeToBulletin: true,
-    presets: [
-      { label: "Leve", xp: 50, coins: 15, points: 5 },
-      { label: "Médio", xp: 80, coins: 25, points: 10 },
-      { label: "Prova", xp: 150, coins: 40, points: 10 },
-    ],
+    presets: [],
   },
   academic: {
     subjects: [],
-    periods: [...DEFAULT_PERIODS],
+    periods: [],
     maxGrade: 10,
     passGrade: 7,
   },
@@ -204,8 +199,8 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
     requireStock: false,
   },
   calendar: {
-    yearStart: "2026-02-01",
-    yearEnd: "2026-12-15",
+    yearStart: "",
+    yearEnd: "",
     classStartTime: "07:30",
     classEndTime: "12:00",
     schoolDays: [1, 2, 3, 4, 5],
@@ -249,8 +244,8 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
   gamificationSeason: {
     enabled: false,
     name: "",
-    startDate: "2026-02-01",
-    endDate: "2026-06-30",
+    startDate: "",
+    endDate: "",
   },
   auth: {
     teacherSignupMode: "invite_only",

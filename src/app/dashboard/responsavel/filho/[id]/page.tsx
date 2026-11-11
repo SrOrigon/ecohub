@@ -23,6 +23,9 @@ import { AttentionAlertsPanel } from "@/components/alerts/attention-alerts-panel
 import { getAttentionAlertsSnapshot } from "@/lib/attention-alerts";
 import { ParentEncouragementPanel } from "@/components/parents/parent-encouragement";
 import { SkillsRadarChart } from "@/components/charts/skills-radar-chart";
+import { ParentFinanceCard } from "@/components/parents/parent-finance-card";
+import { listBillingCharges } from "@/lib/billing-charges";
+import { getSchoolPaymentInstructions } from "@/lib/parent-finance";
 import { notFound, redirect } from "next/navigation";
 import { BookOpen, FileText, Gift, Medal, Target, PenLine, Home } from "lucide-react";
 
@@ -52,10 +55,12 @@ export default async function FilhoDetailPage({ params }: { params: Promise<{ id
     return { ...ex, sub, status };
   });
   const pendingExercises = exerciseItems.filter((e) => e.status === "pending").length;
-  const [occurrences, homeTasks, alertsSnapshot] = await Promise.all([
+  const [occurrences, homeTasks, alertsSnapshot, charges, paymentInstructions] = await Promise.all([
     getOccurrencesForStudent(student.id, user.schoolId ?? ""),
     getHomeTasksForStudent(student.id),
     getAttentionAlertsSnapshot(user),
+    user.schoolId ? listBillingCharges(user.schoolId, student.id).catch(() => []) : Promise.resolve([]),
+    user.schoolId ? getSchoolPaymentInstructions(user.schoolId) : Promise.resolve(null),
   ]);
 
   const grades = student.grades ?? [];
@@ -143,6 +148,8 @@ export default async function FilhoDetailPage({ params }: { params: Promise<{ id
 
       {/* Gráfico Teia de Competências 360° */}
       <SkillsRadarChart axes={radarAxes} studentName={student.user.fullName} />
+
+      <ParentFinanceCard charges={charges} payment={paymentInstructions} />
 
       <AttentionAlertsPanel
         initialAlerts={alertsSnapshot.alerts}

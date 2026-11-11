@@ -13,7 +13,6 @@ import {
   type SchoolVerificationStatus,
 } from "@/lib/school-verification";
 import { TenantUrlCard } from "@/components/school/tenant-url-card";
-import { PERIODS } from "@/lib/constants";
 import { closePeriodAction } from "@/actions/product-suite";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form-fields";
@@ -154,13 +153,16 @@ export default async function ConfiguracoesPage() {
               ? settings.gradeRules.closedPeriods.join(", ")
               : "nenhum"}
           </p>
+          {settings.academic.periods.length === 0 ? (
+            <p className="text-sm text-slate-600">Cadastre os períodos letivos nas regras da instituição para poder fechá-los.</p>
+          ) : (
           <form action={closePeriodAction} className="flex flex-wrap items-end gap-3">
             <div>
               <label htmlFor="period" className="mb-1 block text-sm font-medium">
                 Fechar período
               </label>
-              <Select id="period" name="period" required defaultValue={PERIODS[0]}>
-                {PERIODS.map((p) => (
+              <Select id="period" name="period" required defaultValue={settings.academic.periods[0]}>
+                {settings.academic.periods.map((p) => (
                   <option key={p} value={p} disabled={settings.gradeRules.closedPeriods.includes(p)}>
                     {p}
                     {settings.gradeRules.closedPeriods.includes(p) ? " (fechado)" : ""}
@@ -169,9 +171,10 @@ export default async function ConfiguracoesPage() {
               </Select>
             </div>
             <Button type="submit" variant="outline">
-              Fechar bimestre
+              Fechar período
             </Button>
           </form>
+          )}
         </CardContent>
       </Card>
 

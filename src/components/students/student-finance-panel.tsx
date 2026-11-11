@@ -1,11 +1,13 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { createStudentInvoiceAction, upsertStudentFinanceAction } from "@/actions/student-finance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form-fields";
-import { formatBRL, parseReaisToCents, type FinanceSnapshot, type FinancePaymentRecord } from "@/lib/student-finance";
+import { formatBRL, parseReaisToCents, type FinanceSnapshot } from "@/lib/student-finance";
+import { receiptHref } from "@/lib/receipt-href";
 import { formatDate } from "@/lib/utils";
 import { Check, Copy, Download, QrCode } from "lucide-react";
 import { StudentInstallmentsBox } from "@/components/finance/student-installments-box";
@@ -117,44 +119,6 @@ export function StudentFinancePanel({
     navigator.clipboard.writeText(createdInvoice.pixCopyPaste);
     setCopyState(true);
     setTimeout(() => setCopyState(false), 2000);
-  }
-
-  function downloadReceiptPdf(payment: FinancePaymentRecord) {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Comprovante de Pagamento - ${payment.receiptCode}</title>
-          <style>
-            body { font-family: system-ui, sans-serif; padding: 40px; color: #0f172a; max-width: 600px; margin: 0 auto; }
-            .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; }
-            .receipt-id { font-family: monospace; font-size: 14px; color: #64748b; }
-            .amount { font-size: 28px; font-weight: bold; color: #047857; margin: 16px 0; }
-            .details { background: #f8fafc; padding: 16px; border-radius: 12px; margin-bottom: 24px; }
-            .footer { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 40px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h2>Ecohub - Comprovante Oficial de Quitação</h2>
-            <p class="receipt-id">Recibo: ${payment.receiptCode}</p>
-          </div>
-          <div class="amount">${formatBRL(payment.amountCents)}</div>
-          <div class="details">
-            <p><strong>Data de Pagamento:</strong> ${formatDate(payment.paidAt)}</p>
-            <p><strong>Vencimento Original:</strong> ${formatDate(payment.dueDate)}</p>
-            <p><strong>Forma de Pagamento:</strong> ${payment.method === "pix_gateway" ? "Pix Dinâmico" : "Presencial / Manual"}</p>
-            <p><strong>Recompensa de Gamificação:</strong> +${payment.awardedXp} XP · +${payment.awardedCoins} moedas</p>
-          </div>
-          <p style="color: #047857; font-weight: bold;">✔ MENSALIDADE QUITADA E CONCILIADA</p>
-          <div class="footer">Autenticado digitalmente pela plataforma Ecohub SaaS.</div>
-          <script>window.print();</script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
   }
 
   return (
@@ -349,16 +313,13 @@ export function StudentFinancePanel({
                   <p>{formatDate(payment.paidAt)} · {formatBRL(payment.amountCents)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-xs gap-1 text-slate-600"
-                    onClick={() => downloadReceiptPdf(payment)}
+                  <Link
+                    href={receiptHref(payment.receiptCode)}
+                    className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs text-slate-600 hover:bg-slate-100"
                   >
                     <Download className="h-3 w-3" />
-                    PDF
-                  </Button>
+                    Recibo
+                  </Link>
                   <p className="text-xs text-emerald-700 font-medium">
                     +{payment.awardedXp} XP · +{payment.awardedCoins} moedas
                   </p>

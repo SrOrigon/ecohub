@@ -50,7 +50,9 @@ export function SchoolCalendarWidget({
           <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
             <p>
               <strong>Letivo:</strong>{" "}
-              {formatDate(settings.calendar.yearStart)} – {formatDate(settings.calendar.yearEnd)}
+              {settings.calendar.yearStart && settings.calendar.yearEnd
+                ? `${formatDate(settings.calendar.yearStart)} – ${formatDate(settings.calendar.yearEnd)}`
+                : "a escola ainda não definiu"}
             </p>
             <p>
               <strong>Dias de aula:</strong> {formatSchoolDays(settings.calendar.schoolDays)}

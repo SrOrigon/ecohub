@@ -33,21 +33,9 @@ interface ClassOption {
 
 type Preset = { label: string; xp: number; coins: number; points: number };
 
-const DEFAULT_PRESETS: Preset[] = [
-  { label: "Leve", xp: 50, coins: 15, points: 5 },
-  { label: "Médio", xp: 80, coins: 25, points: 10 },
-  { label: "Prova", xp: 150, coins: 40, points: 10 },
-];
-
-const EXAM_PRESETS: Preset[] = [
-  { label: "Avaliação Parcial", xp: 100, coins: 30, points: 5 },
-  { label: "Prova Bimestral", xp: 200, coins: 50, points: 10 },
-  { label: "Simulado Oficial", xp: 250, coins: 60, points: 10 },
-];
-
 export function CreateExerciseForm({
   classes,
-  presets = DEFAULT_PRESETS,
+  presets = [],
   subjects = [],
   trigger,
   hideDefaultTrigger = false,
@@ -78,11 +66,10 @@ export function CreateExerciseForm({
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [clientError, setClientError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion(defaultQuestionType)]);
-  const mid = presets[1] ?? presets[0] ?? DEFAULT_PRESETS[1];
   const [rewards, setRewards] = useState({
-    xp: mid.xp,
-    coins: mid.coins,
-    maxPoints: mid.points,
+    xp: 0,
+    coins: 0,
+    maxPoints: 0,
   });
   const basicsRef = useLatest(basics);
   const classFilterRef = useLatest(classFilter);
@@ -130,7 +117,7 @@ export function CreateExerciseForm({
         setSelectedStudentIds([]);
         setClientError(null);
         setQuestions([newQuestion()]);
-        setRewards({ xp: mid.xp, coins: mid.coins, maxPoints: mid.points });
+        setRewards({ xp: 0, coins: 0, maxPoints: 0 });
       }
       return result;
     },
@@ -295,13 +282,7 @@ export function CreateExerciseForm({
                     id="kind"
                     name="kind"
                     value={kind}
-                    onChange={(e) => {
-                      const newKind = e.target.value as "homework" | "exam";
-                      setKind(newKind);
-                      if (newKind === "exam") {
-                        setRewards({ xp: EXAM_PRESETS[1].xp, coins: EXAM_PRESETS[1].coins, maxPoints: EXAM_PRESETS[1].points });
-                      }
-                    }}
+                    onChange={(e) => setKind(e.target.value as "homework" | "exam")}
                   >
                     <option value="homework">Exercício de casa</option>
                     <option value="exam">Prova / Avaliação Oficial</option>
@@ -349,23 +330,29 @@ export function CreateExerciseForm({
                   </span>
                 </div>
               )}
-              <p className="text-sm font-medium text-slate-700">
-                Presets {kind === "exam" ? "de Prova Oficial" : "de Recompensa"} (ou personalize abaixo):
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {(kind === "exam" ? EXAM_PRESETS : presets).map((p) => (
-                  <Button
-                    key={p.label}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="gap-1 border-indigo-200 hover:bg-indigo-50"
-                    onClick={() => setRewards({ xp: p.xp, coins: p.coins, maxPoints: p.points })}
-                  >
-                    🎯 {p.label}: ⚡ {p.xp} XP · 🪙 {p.coins} moedas ({p.points} pts)
-                  </Button>
-                ))}
-              </div>
+              {presets.length > 0 ? (
+                <>
+                  <p className="text-sm font-medium text-slate-700">Pesos definidos pela escola:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {presets.map((p) => (
+                      <Button
+                        key={p.label}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 border-indigo-200 hover:bg-indigo-50"
+                        onClick={() => setRewards({ xp: p.xp, coins: p.coins, maxPoints: p.points })}
+                      >
+                        {p.label}: {p.xp} XP · {p.coins} moedas ({p.points} pts)
+                      </Button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-slate-600">
+                  A escola ainda não definiu pesos. Informe a pontuação, o XP e as moedas abaixo, ou cadastre os pesos nas regras da instituição.
+                </p>
+              )}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
                   <Label htmlFor="maxPoints">Pontuação Máxima (Conjunto)</Label>
@@ -375,7 +362,7 @@ export function CreateExerciseForm({
                     type="number"
                     step="0.5"
                     value={rewards.maxPoints}
-                    onChange={(e) => setRewards((r) => ({ ...r, maxPoints: parseBoundedFloat(e.target.value, 10) }))}
+                    onChange={(e) => setRewards((r) => ({ ...r, maxPoints: parseBoundedFloat(e.target.value, 0) }))}
                     required
                   />
                 </div>

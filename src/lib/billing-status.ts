@@ -19,6 +19,7 @@ export type BillingCharge = {
   source: "installment" | "plan" | "invoice";
   pixCopyPaste: string | null;
   lastWhatsappAt: string | null;
+  receiptCode?: string | null;
 };
 
 export type BillingSummary = {
@@ -120,4 +121,34 @@ export function isInsideRemindWindow(due: Date, remindDaysBefore: number, now = 
   const limit = startOfDay(now);
   limit.setDate(limit.getDate() + Math.max(0, remindDaysBefore));
   return startOfDay(due).getTime() <= limit.getTime();
+}
+
+export function daysPastDue(due: Date, now = new Date()) {
+  const diff = startOfDay(now).getTime() - startOfDay(due).getTime();
+  return Math.max(0, Math.round(diff / 86_400_000));
+}
+
+type ChargePayment = {
+  id: string;
+  installmentId: string | null;
+  dueDate: Date;
+  paidAt: Date;
+};
+
+export function takeChargePayment<T extends ChargePayment>(
+  payments: T[],
+  installment: { id: string; dueDate: Date },
+  used: Set<string>
+) {
+  const linked = payments.find((item) => item.installmentId === installment.id && !used.has(item.id));
+  if (linked) {
+    used.add(linked.id);
+    return linked;
+  }
+  const key = monthKey(installment.dueDate);
+  const byMonth = payments.find(
+    (item) => !item.installmentId && !used.has(item.id) && (monthKey(item.dueDate) === key || monthKey(item.paidAt) === key)
+  );
+  if (byMonth) used.add(byMonth.id);
+  return byMonth ?? null;
 }
