@@ -688,7 +688,6 @@ export function SchoolRulesForm({ initial }: { initial: SchoolSettings }) {
                       branding: { ...s.branding, tagline: e.target.value },
                     }))
                   }
-                  placeholder="Ex.: Aprender, evoluir, conquistar"
                 />
               </div>
               <div

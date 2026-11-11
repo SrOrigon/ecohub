@@ -36,7 +36,7 @@ export function CreateStudentActivityForm({ studentId }: { studentId: string }) 
       </div>
       <div>
         <Label htmlFor="activity-title">Título</Label>
-        <Input id="activity-title" name="title" required placeholder="Ex.: Feira de ciências" />
+        <Input id="activity-title" name="title" required />
       </div>
       <div>
         <Label htmlFor="activity-detail">Detalhe (opcional)</Label>

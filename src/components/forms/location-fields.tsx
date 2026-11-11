@@ -36,7 +36,6 @@ export function StreetAddressFields({
           id={streetFieldId}
           name={streetId}
           autoComplete="street-address"
-          placeholder="Ex.: Rua das Flores"
           required={required}
           defaultValue={defaultStreet}
         />
@@ -47,7 +46,6 @@ export function StreetAddressFields({
           <Input
             id={numberFieldId}
             name={streetNumberId}
-            placeholder="Ex.: 123"
             required={required}
             defaultValue={defaultStreetNumber}
           />
@@ -112,7 +110,6 @@ export function LocationFields({
           <Input
             id={cityId}
             name={cityId}
-            placeholder="Ex.: São Paulo"
             required={required}
             defaultValue={defaultCity}
           />

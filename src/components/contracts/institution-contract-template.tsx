@@ -4,13 +4,24 @@ import { useRef, useState, useTransition } from "react";
 import {
   clearContractTemplateAction,
   importContractTemplateDocxAction,
-  saveContractTemplateAction,
 } from "@/actions/contract-template";
 import { DOCUMENT_MERGE_FIELDS } from "@/lib/document-merge";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/form-fields";
 import { Badge } from "@/components/ui/badge";
-import { FileUp, Trash2, Upload } from "lucide-react";
+import { Trash2, Upload } from "lucide-react";
+
+const visibleFields = DOCUMENT_MERGE_FIELDS.filter((field) => !field.label.includes("Legado"));
+
+function contractPreviewHtml(html: string) {
+  const withoutCode = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/\son\w+=(?:"[^"]*"|'[^']*')/gi, "");
+  return withoutCode.replace(/&lt;&lt;([^&]+)&gt;&gt;|<<([^>]+)>>/g, (_match, encoded: string, raw: string) => {
+    const key = (encoded || raw || "").trim();
+    return DOCUMENT_MERGE_FIELDS.find((field) => field.key === key)?.label ?? "dado da escola";
+  });
+}
 
 export function InstitutionContractTemplatePanel({
   hasCustomTemplate,
@@ -24,12 +35,11 @@ export function InstitutionContractTemplatePanel({
   initialHtml: string;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [html, setHtml] = useState(initialHtml);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [importPending, startImport] = useTransition();
-  const [savePending, startSave] = useTransition();
   const [clearPending, startClear] = useTransition();
+  const fileLabel = sourceName && !/\.(html?|jsx?|tsx?)$/i.test(sourceName) ? sourceName : null;
 
   function handleImport(file: File) {
     setMessage(null);
@@ -43,23 +53,6 @@ export function InstitutionContractTemplatePanel({
         return;
       }
       setMessage(`Modelo "${result.sourceName}" importado e salvo para esta instituição.`);
-      window.location.reload();
-    });
-  }
-
-  function handleSave() {
-    setMessage(null);
-    setError(null);
-    const formData = new FormData();
-    formData.append("contractTemplateHtml", html);
-    formData.append("sourceName", sourceName ?? "modelo-editado.html");
-    startSave(async () => {
-      const result = await saveContractTemplateAction(null, formData);
-      if (result?.error) {
-        setError(result.error);
-        return;
-      }
-      setMessage("Modelo institucional salvo.");
       window.location.reload();
     });
   }
@@ -82,7 +75,7 @@ export function InstitutionContractTemplatePanel({
         <Badge variant={hasCustomTemplate ? "success" : "secondary"}>
           {hasCustomTemplate ? "Modelo personalizado ativo" : "Usando modelo padrão do sistema"}
         </Badge>
-        {sourceName && <span className="text-xs text-slate-500">Arquivo: {sourceName}</span>}
+        {fileLabel && <span className="text-xs text-slate-500">Arquivo: {fileLabel}</span>}
         {updatedAt && (
           <span className="text-xs text-slate-500">
             Atualizado em {new Date(updatedAt).toLocaleString("pt-BR")}
@@ -91,8 +84,7 @@ export function InstitutionContractTemplatePanel({
       </div>
 
       <p className="text-sm text-slate-600">
-        Cada instituição tem seu próprio modelo de contrato, salvo apenas na conta da escola logada.
-        Use campos como <code className="text-xs">&lt;&lt;NomeAluno&gt;&gt;</code> para preenchimento automático.
+        Esta é a prévia do contrato da escola. Importe o arquivo Word para trocar o texto. Os dados do aluno e da instituição entram sozinhos.
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -116,7 +108,7 @@ export function InstitutionContractTemplatePanel({
           onClick={() => fileInputRef.current?.click()}
         >
           <Upload className="h-4 w-4" />
-          {importPending ? "Importando..." : "Importar .docx"}
+          {importPending ? "Importando..." : "Importar Word"}
         </Button>
         {hasCustomTemplate && (
           <Button
@@ -134,33 +126,25 @@ export function InstitutionContractTemplatePanel({
       </div>
 
       <div>
-        <Label htmlFor="contract-template-html">Modelo HTML da instituição</Label>
-        <textarea
-          id="contract-template-html"
-          value={html}
-          onChange={(event) => setHtml(event.target.value)}
-          rows={8}
-          className="mt-2 max-h-56 w-full resize-y overflow-y-auto rounded-lg border border-slate-200 bg-white p-3 font-mono text-xs leading-relaxed text-slate-800 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-          spellCheck={false}
-        />
-        <Button
-          type="button"
-          size="sm"
-          className="mt-2 gap-2"
-          disabled={savePending || !html.trim()}
-          onClick={handleSave}
-        >
-          <FileUp className="h-4 w-4" />
-          {savePending ? "Salvando..." : "Salvar modelo"}
-        </Button>
+        <p className="text-sm font-medium text-slate-800">Prévia do contrato</p>
+        {initialHtml.trim() ? (
+          <div
+            className="mt-2 max-h-72 overflow-auto rounded-lg border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-800 [&_h2]:text-center [&_h2]:text-base [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:font-semibold [&_table]:mt-2 [&_table]:w-full [&_td]:border [&_td]:border-slate-200 [&_td]:p-2"
+            dangerouslySetInnerHTML={{ __html: contractPreviewHtml(initialHtml) }}
+          />
+        ) : (
+          <p className="mt-2 rounded-lg border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+            A escola ainda não enviou o modelo. Importe o arquivo Word do contrato.
+          </p>
+        )}
       </div>
 
       <details className="rounded-lg border border-slate-200 p-3 text-sm">
-        <summary className="cursor-pointer font-medium text-slate-700">Campos de mesclagem disponíveis</summary>
+        <summary className="cursor-pointer font-medium text-slate-700">Dados que entram no contrato</summary>
         <ul className="mt-3 grid gap-1 sm:grid-cols-2">
-          {DOCUMENT_MERGE_FIELDS.map((field) => (
+          {visibleFields.map((field) => (
             <li key={field.key} className="text-xs text-slate-600">
-              <code>&lt;&lt;{field.key}&gt;&gt;</code> — {field.label}
+              {field.label}
             </li>
           ))}
         </ul>

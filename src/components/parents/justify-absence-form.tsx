@@ -79,7 +79,6 @@ export function JustifyAbsencePanel({
               required
               minLength={10}
               maxLength={500}
-              placeholder="Ex.: Consulta médica com atestado entregue na secretaria."
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
             />
           </div>

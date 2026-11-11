@@ -209,18 +209,13 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
     classStartTime: "07:30",
     classEndTime: "12:00",
     schoolDays: [1, 2, 3, 4, 5],
-    holidays: [
-      { date: "2026-04-21", label: "Tiradentes" },
-      { date: "2026-09-07", label: "Independência" },
-    ],
-    events: [
-      { date: "2026-03-15", label: "Reunião de pais", kind: "meeting" },
-    ],
+    holidays: [],
+    events: [],
   },
   branding: {
     primaryColor: "#4f46e5",
     accentColor: "#f59e0b",
-    tagline: "Aprender, evoluir, conquistar",
+    tagline: "",
   },
   classGoals: {
     defaultTargetPercent: 80,
@@ -328,10 +323,29 @@ export function parseSchoolSettings(raw: string | null | undefined): SchoolSetti
   if (!raw || raw === "{}") return structuredClone(DEFAULT_SCHOOL_SETTINGS);
   try {
     const parsed = JSON.parse(raw) as unknown;
-    return deepMerge(
+    const settings = deepMerge(
       structuredClone(DEFAULT_SCHOOL_SETTINGS) as unknown as Record<string, unknown>,
       parsed
     ) as unknown as SchoolSettings;
+    if (settings.branding.tagline === "Aprender, evoluir, conquistar") {
+      settings.branding.tagline = "";
+    }
+    if (
+      JSON.stringify(settings.calendar.holidays) ===
+      JSON.stringify([
+        { date: "2026-04-21", label: "Tiradentes" },
+        { date: "2026-09-07", label: "Independência" },
+      ])
+    ) {
+      settings.calendar.holidays = [];
+    }
+    if (
+      JSON.stringify(settings.calendar.events) ===
+      JSON.stringify([{ date: "2026-03-15", label: "Reunião de pais", kind: "meeting" }])
+    ) {
+      settings.calendar.events = [];
+    }
+    return settings;
   } catch {
     return structuredClone(DEFAULT_SCHOOL_SETTINGS);
   }

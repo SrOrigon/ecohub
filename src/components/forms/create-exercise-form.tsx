@@ -284,7 +284,6 @@ export function CreateExerciseForm({
                   id="title"
                   name="title"
                   required
-                  placeholder="Ex.: Frações Equivalentes  -  Exercício Semanal"
                   value={basics.title}
                   onChange={(event) => setBasics((current) => ({ ...current, title: event.target.value }))}
                 />

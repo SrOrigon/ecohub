@@ -274,7 +274,6 @@ export default async function ContratosPage({
                     id="contrato"
                     name="contrato"
                     defaultValue={params.contrato ?? ""}
-                    placeholder="Ex.: 202600001"
                   />
                 </div>
                 <div>

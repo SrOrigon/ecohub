@@ -82,7 +82,6 @@ export function SubjectsManagerForm({
                 <Input
                   value={subject}
                   onChange={(e) => updateAt(index, e.target.value)}
-                  placeholder="Ex.: Programação Web"
                   aria-label={`Disciplina ${index + 1}`}
                 />
                 <Button

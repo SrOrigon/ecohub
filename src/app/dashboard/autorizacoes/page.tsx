@@ -64,7 +64,7 @@ export default async function AutorizacoesPage() {
             <form action={createAuthorizationFormAction} className={`${layout.formGrid} gap-3`}>
               <div className={layout.formGridFull}>
                 <Label htmlFor="title">Título</Label>
-                <Input id="title" name="title" required placeholder="Ex.: Autorização passeio ao museu" />
+                <Input id="title" name="title" required />
               </div>
               <div>
                 <Label htmlFor="classId">Turma (opcional)</Label>

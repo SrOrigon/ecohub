@@ -84,7 +84,7 @@ export function CreateTrailForm({
           )}
           <div>
             <Label htmlFor="trail-title">Título</Label>
-            <Input id="trail-title" name="title" required placeholder="Ex.: Módulo Frações" />
+            <Input id="trail-title" name="title" required />
           </div>
           <div>
             <Label htmlFor="trail-classId">Turma</Label>

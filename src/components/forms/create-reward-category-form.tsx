@@ -42,7 +42,7 @@ export function CreateRewardCategoryForm({
         <form action={formAction} className="space-y-4">
           <div>
             <Label htmlFor={`${formId}-name`}>Nome</Label>
-            <Input id={`${formId}-name`} name="name" required placeholder="Ex.: Lanches" />
+            <Input id={`${formId}-name`} name="name" required />
           </div>
           <div>
             <Label htmlFor={`${formId}-description`}>Descrição (opcional)</Label>

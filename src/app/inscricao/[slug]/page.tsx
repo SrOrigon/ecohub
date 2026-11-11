@@ -84,7 +84,7 @@ export default async function InscricaoPage({
                 ))}
               </Select>
             ) : (
-              <Input id="gradeLevel" name="gradeLevel" required placeholder="Ex.: Design de Games Kids" />
+              <Input id="gradeLevel" name="gradeLevel" required />
             )}
           </div>
           <hr className="border-slate-100" />

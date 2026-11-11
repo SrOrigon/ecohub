@@ -99,7 +99,7 @@ export function SharedCalendarManager({ settings, canManageItems, canManageMeta 
               </div>
               <div className="sm:col-span-2 lg:col-span-1">
                 <Label htmlFor="label">Nome</Label>
-                <Input id="label" name="label" required placeholder="Ex.: Tiradentes" />
+                <Input id="label" name="label" required />
               </div>
               <div className="flex items-end sm:col-span-2 lg:col-span-4">
                 <Button type="submit" disabled={pending}>

@@ -88,7 +88,7 @@ export function AnnouncementBoard({
             <form action={formAction} className="space-y-4">
               <div>
                 <Label htmlFor="ann-title">Título</Label>
-                <Input id="ann-title" name="title" required placeholder="Ex.: Reunião de pais" />
+                <Input id="ann-title" name="title" required />
               </div>
               <div>
                 <Label htmlFor="ann-classId">Destinatários</Label>

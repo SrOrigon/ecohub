@@ -102,7 +102,7 @@ export function CreateBadgeForm({
         <form action={formAction} className="space-y-4">
           <div>
             <Label htmlFor="badge-name">Nome</Label>
-            <Input id="badge-name" name="name" required placeholder="Ex.: Pontualidade exemplar" />
+            <Input id="badge-name" name="name" required />
           </div>
           <div>
             <Label htmlFor="badge-description">Descrição</Label>

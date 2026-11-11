@@ -50,7 +50,7 @@ export function CreateHomeTaskForm({ childOptions }: { childOptions: ChildOption
           </div>
           <div>
             <Label htmlFor="ht-title">O que fazer?</Label>
-            <Input id="ht-title" name="title" required placeholder="Ex.: Arrumar o quarto" />
+            <Input id="ht-title" name="title" required />
           </div>
           <div>
             <Label htmlFor="ht-description">Detalhes (opcional)</Label>

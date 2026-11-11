@@ -52,7 +52,7 @@ export function CreateClassGoalForm({
           </div>
           <div>
             <Label htmlFor="goal-title">Título</Label>
-            <Input id="goal-title" name="title" required placeholder="Ex.: 80% das missões da semana" />
+            <Input id="goal-title" name="title" required />
           </div>
           <div>
             <Label htmlFor="goal-metric">Métrica</Label>

@@ -110,7 +110,7 @@ export function EditScheduleSlotForm({
           </div>
           <div>
             <Label htmlFor={`edit-room-${slot.id}`}>Sala</Label>
-            <Input id={`edit-room-${slot.id}`} name="room" defaultValue={slot.room ?? ""} placeholder="Ex.: 12" />
+            <Input id={`edit-room-${slot.id}`} name="room" defaultValue={slot.room ?? ""} />
           </div>
           <div className="sm:col-span-2">
             <FormMessage message={state} />

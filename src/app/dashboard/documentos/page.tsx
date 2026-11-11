@@ -98,7 +98,7 @@ export default async function DocumentosPage({
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="title">Título</Label>
-              <Input id="title" name="title" placeholder="Ex.: Contrato de prestação de serviço" />
+              <Input id="title" name="title" />
             </div>
             <Button type="submit" className="w-fit gap-2">
               <FileText className="h-4 w-4" />

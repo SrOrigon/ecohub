@@ -78,7 +78,6 @@ export function AdjustStudentPointsForm({
           name="activity"
           required
           rows={2}
-          placeholder="Ex.: Apresentação oral, participação no grupo, uso indevido do celular..."
         />
       </div>
 

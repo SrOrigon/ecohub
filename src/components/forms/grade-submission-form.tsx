@@ -198,7 +198,6 @@ export function GradeSubmissionForm({
           id={`feedback-${submissionId}`}
           name="feedback"
           defaultValue={initialFeedback ?? ""}
-          placeholder="Ex.: Ótimo trabalho! Revise a questão 2 sobre frações."
           rows={2}
         />
       </div>

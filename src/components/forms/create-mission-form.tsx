@@ -53,7 +53,7 @@ export function CreateMissionForm({
         <form action={formAction} className="space-y-4">
           <div>
             <Label htmlFor="title">Título da missão</Label>
-            <Input id="title" name="title" required placeholder="Ex.: Leitura do Capítulo 3" />
+            <Input id="title" name="title" required />
           </div>
           <div>
             <Label htmlFor="description">Descrição</Label>

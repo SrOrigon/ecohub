@@ -68,7 +68,7 @@ export function ScheduleSlotForm({
       </div>
       <div>
         <Label htmlFor="room">Sala</Label>
-        <Input id="room" name="room" placeholder="Ex.: 12" />
+        <Input id="room" name="room" />
       </div>
       <div className="sm:col-span-2 lg:col-span-3">
         <FormMessage message={state} />

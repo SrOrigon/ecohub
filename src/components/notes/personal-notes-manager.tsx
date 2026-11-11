@@ -228,7 +228,7 @@ export function PersonalNotesManager({
           )}
           <div>
             <Label htmlFor="create-title">Título (opcional)</Label>
-            <Input id="create-title" name="title" placeholder="Ex.: Revisão de matemática" />
+            <Input id="create-title" name="title" />
           </div>
           <div>
             <Label htmlFor="create-content">Conteúdo</Label>

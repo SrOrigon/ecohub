@@ -124,12 +124,9 @@ export function RegisterSchoolForm({
                 {volumeReason ??
                   "Falta um banco PostgreSQL (recomendado) ou um Volume em /data no Railway."}
               </p>
-              <ol className="mt-2 list-inside list-decimal space-y-1 text-xs">
-                <li>Railway → projeto → <strong>New</strong> → <strong>Database</strong> → <strong>PostgreSQL</strong></li>
-                <li>No serviço <strong>eduhub</strong> → Variables → apague <code>DATABASE_URL=file:/data/prod.db</code></li>
-                <li>Adicione <code>DATABASE_URL</code> apontando para o Postgres (variable reference)</li>
-                <li>Redeploy e recarregue esta página</li>
-              </ol>
+              <p className="mt-2 text-xs">
+                Conecte o banco PostgreSQL do projeto e publique de novo. Depois, recarregue esta página para concluir o cadastro.
+              </p>
             </div>
           )}
           <form action={formAction} className="space-y-4">

@@ -39,7 +39,6 @@ export function LinkChildForm() {
               <Input
                 id="enrollmentCode"
                 name="enrollmentCode"
-                placeholder="Ex.: 2026001"
                 required
                 autoComplete="off"
               />
