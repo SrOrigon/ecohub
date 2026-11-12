@@ -407,6 +407,71 @@ html.scroll-locked .app-content {
   border-radius: 0.875rem;
 }
 
+/* Suporte de arrasto com o mouse (Drag-to-scroll) */
+.responsive-table-wrap[data-can-drag="true"],
+.table-scroll-container[data-can-drag="true"],
+.overflow-x-auto[data-can-drag="true"],
+[data-drag-scroll="true"][data-can-drag="true"] {
+  cursor: grab;
+}
+
+.responsive-table-wrap[data-can-drag="true"] a,
+.responsive-table-wrap[data-can-drag="true"] button,
+.table-scroll-container[data-can-drag="true"] a,
+.table-scroll-container[data-can-drag="true"] button,
+.overflow-x-auto[data-can-drag="true"] a,
+.overflow-x-auto[data-can-drag="true"] button,
+[data-drag-scroll="true"][data-can-drag="true"] a,
+[data-drag-scroll="true"][data-can-drag="true"] button {
+  cursor: pointer;
+}
+
+.responsive-table-wrap input,
+.responsive-table-wrap textarea,
+.responsive-table-wrap select,
+.table-scroll-container input,
+.table-scroll-container textarea,
+.table-scroll-container select,
+.overflow-x-auto input,
+.overflow-x-auto textarea,
+.overflow-x-auto select {
+  cursor: text;
+}
+
+body.dragging-scroll,
+body.dragging-scroll * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+.is-dragging-scroll {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+/* Barra de rolagem horizontal aprimorada para tabelas */
+.responsive-table-wrap::-webkit-scrollbar,
+.table-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.responsive-table-wrap::-webkit-scrollbar-track,
+.table-scroll-container::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--hover) 40%, transparent);
+  border-radius: 9999px;
+}
+
+.responsive-table-wrap::-webkit-scrollbar-thumb,
+.table-scroll-container::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+  border-radius: 9999px;
+}
+
+.responsive-table-wrap::-webkit-scrollbar-thumb:hover,
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted) 60%, transparent);
+}
+
 @media (min-width: 768px) {
   .responsive-table-wrap {
     margin-inline: 0;
